@@ -1,0 +1,147 @@
+{
+  "id": "GA-12",
+  "num": 28,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Vector vs Parquet/SQL Decision",
+  "hook": "Not every question needs meaning. **The wrong index wastes money and lies politely.** Choose per question.",
+  "chapters": [
+    "Structured questions",
+    "Semantic questions",
+    "Hybrid architecture",
+    "Anti-patterns"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SQL QUESTIONS",
+      "title": "\"Total sales by region, last quarter\" — **vectors can't**",
+      "sub": "Aggregates, filters, exact joins: SQL's home turf",
+      "narration": "Start with what vectors are bad at: exactness and arithmetic. 'Total sales by region last quarter' is an aggregation over known columns — the answer is computed, not semantically discovered. 'How many tickets mention refund' is a filter or a keyword count. 'Join invoices to customers and rank by value' is relational algebra. These questions have precise answers that must be COMPLETE and CORRECT — a similarity score is not an answer to them, it's a category error. SQL — Postgres, SQL Server, DuckDB over Parquet — owns this territory and always will."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔢", "t": "Aggregates & arithmetic", "s": "SUM, AVG, GROUP BY — computed answers, exact by definition" },
+        { "e": "🎯", "t": "Exact filters & joins", "s": "WHERE status='refunded' · invoice ⨝ customer — completeness matters" },
+        { "e": "📅", "t": "Time-series & reporting", "s": "Monthly trends, cohorts, KPIs — DuckDB/SQL territory from Stage 3" }
+      ],
+      "narration": "The SQL-shaped question family. Aggregations — sums, averages, counts by dimension — where approximate semantic matching is meaningless. Exact filters and joins, where missing one row is a bug, not a rounding error. Reporting and time-series, where Stage 3's toolkit — SQL, DuckDB, Parquet — is purpose-built and cheap. The heuristic: if the question mentions a NUMBER, a DATE, a STATUS, or 'how many', you're writing SQL. Your agent architectures will route these questions to SQL automatically — this chapter teaches you which is which."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · SEMANTIC QUESTIONS",
+      "title": "\"Find similar complaints\" — **SQL can't**",
+      "sub": "Meaning-over-form questions are the vector's home turf",
+      "narration": "Now the flip side. 'Find complaints similar to this customer's issue' — no column captures 'similar'; meaning lives across phrasing. 'Which policy sections apply to remote work in India' — intent, not keywords. 'Show me precedents for this contract clause' — conceptual resemblance. These questions have fuzzy boundaries by nature; the user wants the closest useful things, not a complete enumeration. That's the vector database's exact competence: top-k by meaning, robust to synonyms and phrasing. When the question is about resemblance, not computation — vector."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🔎", "t": "Find-similar / dedupe", "s": "'Near-duplicates in this feedback pile' — pairwise similarity, SQL-blind" },
+        { "e": "🧭", "t": "Intent & concept search", "s": "'Sections about termination' — regardless of the exact words used" },
+        { "e": "📚", "t": "Retrieval for generation", "s": "RAG's core step — fetch meaning-relevant chunks for the LLM (GA-13)" }
+      ],
+      "narration": "The vector-shaped family. Similarity search — find-alikes, near-duplicate detection, related-items — where the metric is resemblance. Concept retrieval across phrasings — policies, precedents, themes. And the workhorse: fetching context for LLM generation, which is Stage 5's entire architecture. Notice the common thread: these questions accept ranked, approximate, top-k answers — they were born fuzzy. The moment your question's success criterion is 'the best matches', you're in vector land. The moment it's 'the correct total', you're in SQL land. Most systems need both, routing between them."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · HYBRID",
+      "title": "Real systems: **both engines, one router**",
+      "sub": "SQL for facts, vectors for meaning — an agent chooses per question",
+      "narration": "The mature architecture isn't a choice — it's both engines with a router. A question arrives; the system classifies it — structured or semantic or both; structured queries hit SQL, semantic queries hit the vector store, mixed queries combine — vector for candidate finding, SQL to filter those candidates by exact business rules. Your retrieval interface from GA-10 becomes part of a bigger query layer: one ask, engines behind, results fused. In agent systems, the LLM itself does the routing via tool calling — GA-04's mechanism — choosing SQL tools or vector tools per question. This reel is that design's foundation."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "❓", "t": "Question in", "s": "'Top refund reasons in March' · 'Cases like this one'" },
+        { "e": "🧭", "t": "Router", "s": "Classify: structured / semantic / hybrid → (agent via tool calling, or rules)" },
+        { "e": "🗄️", "t": "SQL engine", "s": "Postgres/DuckDB — exact aggregates, filters, joins" },
+        { "e": "🧲", "t": "Vector engine", "s": "pgvector/Qdrant — semantic top-k candidates" },
+        { "e": "🤝", "t": "Fuse & answer", "s": "Candidates filtered by SQL rules, or scores + numbers combined" }
+      ],
+      "narration": "The hybrid pipeline. Question in; router decides — a cheap classifier, or in agent systems, the LLM picking between a SQL tool and a vector tool. Structured leg: exact SQL. Semantic leg: vector top-k. Hybrid leg — the commonest in practice: vectors find the twenty most relevant support tickets, SQL filters them to your product line and date range, aggregates produce the count. Each engine does what it's provably best at. When you design the capstone agent, this is its query layer — and you'll have earned every component by then."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · ANTI-PATTERNS",
+      "title": "**Vectorizing data that needs SQL**",
+      "sub": "The expensive mistake that's easy to spot — once you know it",
+      "narration": "The anti-pattern to burn into your instincts: embedding structured, exact data and searching it semantically. A product catalog with SKUs and prices doesn't want 'semantically similar products' when the user typed an exact model number. An invoice ledger doesn't want 'relevant invoices' when the accountant wants a total. Semantic search on exact data returns plausible-wrong answers with confidence — the worst outcome. And it's expensive: embeddings, vector stores, ANN indexes — all solving a problem SQL answers in milliseconds for free. Ask: does this data have exact answers? Then it needs SQL."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🚩", "t": "Red flag: exact identifiers in vector space", "s": "SKU 'AX-2041' must match exactly — semantic neighbors are WRONG answers" },
+        { "e": "💸", "t": "Red flag: cost of the wrong tool", "s": "Embedding + storing + indexing data SQL queries free — pay for novelty, not necessity" },
+        { "e": "✅", "t": "The test: approximate or exact?", "s": "Is 'close enough' an acceptable answer? No → SQL. Yes → vectors. Both → hybrid" }
+      ],
+      "narration": "Spotting it in the wild. Exact identifiers — serials, codes, account numbers — in semantic search is the loudest red flag; their meaning IS their literal form. Cost is the quieter one: vectorizing a table SQL handles brilliantly is paying a permanent tax for zero gain. And the one-question test that resolves nearly every design debate: is an approximate, ranked answer acceptable? If the honest answer is no — a total must be exact, a match must be complete — the tool is SQL. If yes — best matches, similar items, relevant passages — the tool is vectors. Say the question out loud; the index usually picks itself."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-13",
+      "title": "Engines understood. Time to build the system on top",
+      "next": "Reel 29 · RAG Architecture — the end-to-end pipeline, finally"
+    }
+  ],
+  "recap": [
+    "SQL owns exactness: aggregates, filters, joins — computed answers that must be complete",
+    "Vectors own meaning: similarity, intent, retrieval — ranked answers where 'close enough' is correct",
+    "Hybrid architecture with a router (or agent tool-calling); never vectorize exact data"
+  ],
+  "quiz": [
+    {
+      "q": "Which question belongs to the vector engine?",
+      "opts": [
+        "Total refunds by region in March",
+        "Tickets similar to this customer's complaint",
+        "How many invoices are overdue",
+        "Join customers to orders and rank by value"
+      ],
+      "a": 1,
+      "why": "'Similar to' is a semantic, top-k question. The others demand exact, complete, computed answers — SQL's territory."
+    },
+    {
+      "q": "The clearest sign you're vectorizing data that needs SQL?",
+      "opts": [
+        "The vectors are large",
+        "Exact identifiers (SKUs, account numbers) being searched semantically — where neighbors are wrong answers",
+        "The store is expensive",
+        "Queries are slow"
+      ],
+      "a": 1,
+      "why": "When literal identity IS the meaning, approximate matching fails by design — the most expensive and least visible of these mistakes."
+    },
+    {
+      "q": "A question needs 'the 20 most relevant tickets, but only from the Enterprise product line, last quarter'. Best architecture?",
+      "opts": [
+        "Pure vector search",
+        "Pure SQL",
+        "Hybrid: vectors fetch candidates, SQL filters to product line and date, then aggregate",
+        "Ask the user to narrow it down"
+      ],
+      "a": 2,
+      "why": "Relevance is semantic (vector); the product/date constraint is exact (SQL). Fuse them — each engine does what it provably does best."
+    }
+  ],
+  "code": {
+    "title": "The routing query layer — SQL leg, vector leg, one interface",
+    "body": "from typing import Protocol\n\nclass QueryEngine(Protocol):\n    def run(self, question: str, ctx: dict) -> Answer: ...\n\nclass SqlEngine:\n    \"\"\"Structured questions — DuckDB/SQL over the warehouse.\"\"\"\n    def run(self, question, ctx):\n        sql = llm_to_sql(question, schema=WAREHOUSE_SCHEMA)   # text-to-SQL,\n        rows = duckdb.sql(sql, params=ctx.get(\"params\"))       # validated before exec\n        return Answer(kind=\"table\", data=rows.df())\n\nclass VectorEngine:\n    \"\"\"Semantic questions — top-k retrieval.\"\"\"\n    def run(self, question, ctx):\n        hits = retriever.search(embed(question), k=20,\n                                where=ctx.get(\"filters\"))\n        return Answer(kind=\"docs\", data=[h.payload[\"text\"] for h in hits])\n\nROUTER = [(\"structured\", SqlEngine()), (\"semantic\", VectorEngine())]\n\ndef answer(question: str, ctx: dict) -> Answer:\n    kind = classify(question)          # cheap classifier or LLM routing\n    engine = dict(ROUTER)[kind]\n    result = engine.run(question, ctx)\n    if kind == \"semantic\" and ctx.get(\"must_filter\"):\n        # hybrid: vector candidates + exact SQL filtering\n        return sql_filter(result, ctx[\"must_filter\"])\n    return result\n\n# The agent version (Stage 6): the LLM picks sql_query vs vector_search\n# as TOOLS — same two engines, routed by the model.",
+    "annot": [
+      "llm_to_sql output must pass validation (read-only, allowed tables) — Stage 8 territory",
+      "ctx['filters'] flows into the retriever's where — tenant + date, always",
+      "classify() starts as keyword rules; graduates to a small classifier or LLM routing"
+    ]
+  },
+  "notes": "# Vector vs Parquet/SQL Decision\n\n## Structured questions → SQL\n- Aggregates, exact filters, joins, time-series/reporting.\n- Answers must be COMPLETE and EXACT — similarity is a category error.\n- Tools: Postgres / SQL Server / DuckDB over Parquet (Stage 3).\n\n## Semantic questions → vectors\n- Find-similar, dedupe, intent/concept search, RAG retrieval.\n- Answers are ranked, approximate, top-k — 'close enough' is correct.\n- Tools: pgvector / Qdrant / etc. (GA-09–GA-11).\n\n## Hybrid architecture\n- Router (classifier or agent tool-calling) → SQL leg and/or vector leg → fuse.\n- Commonest real pattern: vectors fetch candidates → SQL applies exact filters.\n\n## Anti-patterns\n- ❌ Vectorizing exact data (SKUs, ledgers) — neighbors are wrong answers.\n- ❌ Paying embedding+index costs for questions SQL answers free.\n- ✅ The one-question test: **is an approximate ranked answer acceptable?** No → SQL. Yes → vectors. Both → hybrid."
+}

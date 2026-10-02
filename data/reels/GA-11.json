@@ -1,0 +1,145 @@
+{
+  "id": "GA-11",
+  "num": 27,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Operations",
+  "hook": "Demo day is easy. **Day 400** is the job — upserts, sizing, tenants, and the restore you pray you'll never need.",
+  "chapters": [
+    "Indexing & updates",
+    "Sizing & cost",
+    "Multi-tenancy & security",
+    "Backup & DR"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · UPDATES",
+      "title": "Corpora **change**. Indexes must too.",
+      "sub": "Upserts, deletes, re-indexes — the write side of retrieval",
+      "narration": "Your store's contents are a living dataset: documents get edited, revoked, superseded. The write operations: upsert — insert or replace by ID, the workhorse; delete — remove a vector, harder for ANN indexes than inserts, since graphs must be repaired; re-index — rebuild the whole structure after big changes or parameter updates. The engineering rules: idempotency — the same upsert twice is safe; versioning — tag vectors with source-document versions so a re-ingest can replace exactly; and change-data-capture — feed updates from your source system rather than periodic full rebuilds."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔄", "t": "Upsert by stable ID", "s": "doc_id + chunk_index = deterministic ID → re-ingestion replaces, never duplicates" },
+        { "e": "🗑️", "t": "Deletes are expensive", "s": "ANN graphs repair lazily; budget for it at scale — or tombstone + periodic compact" },
+        { "e": "🏗️", "t": "CDC over re-ingestion", "s": "Source-system events drive incremental updates; full rebuilds are the fallback, not the rhythm" }
+      ],
+      "narration": "Write-path discipline. Deterministic IDs — document ID plus chunk index — make re-runs idempotent by construction: same input, same IDs, replaced not duplicated. Deletes: HNSW handles them, but graph repair costs show up as latency jitter; at high delete volume, many teams tombstone and compact on a schedule. And architecture: wire updates as events from the source — a file changes, a row updates — rather than nightly diff-and-rebuild. Your pipeline from Stage 3 applies verbatim: streaming updates, logs, resumability. The retrieval store is only as fresh as its write path."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · SIZING",
+      "title": "Memory math: **vectors × dimensions × overhead**",
+      "sub": "Size the index, the graph, and the headroom — before purchase",
+      "narration": "Sizing a vector deployment is arithmetic plus margin. Raw vectors: count times dimensions times bytes — a million 1,536-dim float32 vectors is about six gigabytes. The index multiplies: HNSW's graph links add roughly twenty to fifty percent. Then the runtime needs headroom for queries, filters, and the operating system — double the total for comfort, and that's your node. Quantization — float16 or PQ codes — can halve-to-tenth the footprint at a recall cost you've already learned to measure. Do this math in the proposal, not after the incident."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🧮", "t": "1M × 1536 × 4B ≈ 6GB raw", "s": "×1.3-1.5 for HNSW links ×2 for headroom ≈ 16-18GB node — the whole estimate" },
+        { "e": "📉", "t": "Quantization dial", "s": "float16 = half memory · PQ = ~10x smaller at measured recall cost" },
+        { "e": "📈", "t": "Growth plan", "s": "Corpus doubles yearly? Shard before the node fills — resharding a full store is surgery" }
+      ],
+      "narration": "The sizing playbook. Arithmetic first — the formula fits on an index card. Quantization when memory or cost bites, gated by your golden-set recall as always. And the growth conversation: if the corpus doubles annually, plan shard boundaries now — moving a hundred-million-vector store to a new topology under load is the kind of weekend that builds character. Better: shard by tenant or by hash at a size where rebalancing is a routine operation. Capacity planning is unglamorous and absolutely the difference between sleep and pages."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · MULTI-TENANCY",
+      "title": "One store, many tenants — **isolation is the product**",
+      "sub": "Filter-based vs collection-based vs database-per-tenant",
+      "narration": "Every serious deployment is multi-tenant, and the isolation model is an architecture decision with security weight. Option one: shared collection with a tenant filter on every query — cheapest, but the filter must NEVER be forgettable; one missing clause is a data breach. Option two: per-tenant collections or partitions — isolation by construction, more overhead, cleaner audit. Option three: separate databases or clusters per tenant — maximum assurance, maximum cost — reserved for regulated tiers. Choose per tenant class, enforce at the retrieval interface — the one from GA-10 — so no query path can bypass it."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🎛️", "t": "Filter-based: cheap, fragile", "s": "WHERE tenant_id = X on every query — enforce in code, test the enforcement" },
+        { "e": "📦", "t": "Per-tenant collections: structural", "s": "Isolation by construction; index sizes per tenant; no forgotten WHERE" },
+        { "e": "🏰", "t": "Per-tenant DB/cluster: compliance tier", "s": "Regulated clients; cost follows assurance" }
+      ],
+      "narration": "The three postures and their honesty levels. Filter-based scales best but lives one bug away from a breach — if you choose it, the enforcement lives in exactly one code path with tests that would fail a missing clause. Collections give structural isolation with modest overhead — the sweet spot for most SaaS tiers. And full separation for the clients whose contracts demand it — the cost is real and so is the assurance. The architect's move: make tenancy a provisioning decision per client tier, not a global one — and never, ever let a raw query bypass the retrieval interface."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · BACKUP & DR",
+      "title": "Your index is **derived**. Your data is not.",
+      "sub": "Back up the source; snapshot the index; rehearse the restore",
+      "narration": "The disaster-recovery insight that simplifies everything: the vector index is a derived artifact. Given the source documents and the embedding model version, you can rebuild it. So the hierarchy of durability: source documents — irreplaceable, backed up like crown jewels; embeddings and metadata — derived, but expensive to regenerate — snapshot them; the index itself — fastest to rebuild, lowest backup priority. Your DR plan: R-P-O for the source data, a rebuild runbook with measured timings, and — the step everyone skips — a rehearsed restore. An untested backup is a rumor, not a plan."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "👑", "t": "Source docs: crown jewels", "s": "Versioned, replicated, point-in-time recovery — the business asset" },
+        { "e": "📸", "t": "Snapshots for speed", "s": "Store-level snapshots (Qdrant/pgbarman-style) cut restore from hours to minutes" },
+        { "e": "🎭", "t": "Rehearse the restore", "s": "Quarterly: rebuild the index from source in staging, measure time vs RTO" }
+      ],
+      "narration": "The DR checklist, in priority order. Protect the source with the same rigor as any production database — because it is one. Snapshot the derived layers to meet aggressive R-T-Os — rebuilding a hundred-million-vector index might exceed your window, so snapshots buy back minutes you promised. And rehearse: schedule the restore drill, time it, compare against the R-T-O you wrote in the proposal. The difference between a recovery plan and a recovery fantasy is one afternoon of rehearsal per quarter. This is table stakes for any system holding client data."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-12",
+      "title": "Operations mastered — now the honest architecture talk",
+      "next": "Reel 28 · Vector vs Parquet/SQL — when NOT to use vectors"
+    }
+  ],
+  "recap": [
+    "Deterministic IDs + upserts make re-ingestion idempotent; CDC beats rebuilds; deletes need budget",
+    "Size: N × dims × bytes × index overhead × 2 headroom; shard before the node fills; tenancy enforced in one code path",
+    "Source docs are the crown jewels; index is derived — snapshot for RTO, rehearse the restore"
+  ],
+  "quiz": [
+    {
+      "q": "Re-ingesting a document after an edit creates duplicate chunks. What's the fix?",
+      "opts": [
+        "Delete the whole index",
+        "Deterministic IDs (doc_id + chunk_index) so the same input replaces, never duplicates",
+        "Use a bigger machine",
+        "Switch embedding models"
+      ],
+      "a": 1,
+      "why": "Stable IDs make upserts idempotent by construction — re-running the pipeline converges instead of accumulating."
+    },
+    {
+      "q": "Which layer of a vector system deserves the strictest backup discipline?",
+      "opts": [
+        "The HNSW graph",
+        "The source documents — irreplaceable; vectors and indexes are derived rebuildables",
+        "The query cache",
+        "The API keys"
+      ],
+      "a": 1,
+      "why": "Index and embeddings are regenerable from source + model version; the source data is the true asset. Snapshots shorten restores, but source durability is non-negotiable."
+    },
+    {
+      "q": "Filter-based multi-tenancy's main risk?",
+      "opts": [
+        "It's too slow",
+        "A missing tenant filter in any query path leaks data — enforcement must be structural and tested",
+        "It uses too much disk",
+        "It prevents hybrid search"
+      ],
+      "a": 1,
+      "why": "Filter-based isolation is one forgotten WHERE clause from a breach — centralize enforcement in the retrieval interface and test that a bypass fails."
+    }
+  ],
+  "code": {
+    "title": "The operations layer — writes, tenancy, restore drill",
+    "body": "from hashlib import sha1\n\n# --- 1. Deterministic upserts --------------------------------------\ndef chunk_id(doc_id: str, idx: int) -> str:\n    return sha1(f\"{doc_id}:{idx}\".encode()).hexdigest()[:16]\n\nfor doc in changed_docs():              # from CDC events, not a rebuild\n    for i, chunk in enumerate(chunk(doc.text)):\n        store.upsert(id=chunk_id(doc.id, i),\n                     vec=embed(chunk),\n                     payload={\"doc_id\": doc.id, \"v\": doc.version,\n                              \"tenant\": doc.tenant, \"text\": chunk})\n\n# --- 2. Tenant enforcement (one path, tested) ----------------------\ndef search(q, tenant: str, k=5):\n    assert tenant, \"tenant is mandatory\"\n    return store.search(embed(q), k=k, where={\"tenant\": tenant})\n\n# test:  search(q, tenant=None) must raise — CI enforces it\n\n# --- 3. Restore drill (quarterly, timed) ---------------------------\ndef restore_drill():\n    t0 = time.time()\n    for doc in source_store.list_all():          # the crown jewels\n        reindex(doc)                              # embed + upsert\n    elapsed = time.time() - t0\n    assert elapsed < RTO_SECONDS, f\"rebuild {elapsed:.0f}s > RTO\"\n    # Snapshot alternative: store.snapshot() → restore in minutes\n\n# --- 4. Delete = tombstone + compact -------------------------------\n# store.delete(ids) marks; a scheduled job runs store.compact()\n# off-peak — latency stays smooth, graph gets repaired.",
+    "annot": [
+      "chunk_id is stable across re-runs — the idempotency trick",
+      "payload carries doc version: superseded chunks are replaceable on sight",
+      "The restore drill is a scheduled job, not a wiki page"
+    ]
+  },
+  "notes": "# Operations\n\n## Indexing & updates\n- **Upsert** by deterministic ID (`sha1(doc_id:chunk_idx)`) → idempotent re-ingestion.\n- Deletes: ANN graph repair is costly → tombstone + scheduled compact.\n- **CDC** (source events) over periodic rebuilds; full rebuild = fallback.\n\n## Sizing & cost\n- Memory = N × dims × bytes × (1 + HNSW ~0.3-0.5) × 2 (headroom).\n- Quantization (float16 / PQ) when memory bites — gate on golden-set recall.\n- Plan sharding before the node fills; resharding full stores is surgery.\n\n## Multi-tenancy & security\n- Filter-based: cheap, one forgotten WHERE from a breach → enforce centrally + test.\n- Per-tenant collections: structural isolation, moderate overhead — most SaaS tiers.\n- Per-tenant DB/cluster: regulated tiers, cost follows assurance.\n\n## Backup & DR\n- **Source docs = crown jewels** (PIT recovery). Embeddings/index = derived → snapshots for RTO.\n- Rehearse restores quarterly, time them against the promised RTO.\n- Untested backup = rumor."
+}

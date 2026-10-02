@@ -1,0 +1,178 @@
+{
+  "id": "GA-10",
+  "num": 26,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Vector DB Options",
+  "hook": "Fifteen products, one decision matrix. Pick by **constraints**, not by hype.",
+  "chapters": [
+    "pgvector",
+    "Azure AI Search",
+    "Qdrant / Chroma / FAISS",
+    "Pinecone & managed SaaS",
+    "Relational built-ins",
+    "The selection matrix"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · PGVECTOR",
+      "title": "pgvector: the **boring-correct** default",
+      "sub": "Postgres you already run — now with vectors",
+      "narration": "You met pgvector in Reel 24; here's its competitive position. Strengths: zero new infrastructure — the database you already operate, back up, and secure; transactional consistency between vectors and metadata; SQL joins for hybrid queries; honest scale to millions of vectors per node. Weaknesses: not a dedicated ANN engine — throughput and index efficiency lag specialized stores at tens of millions of vectors; HNSW in Postgres is memory-hungry. Verdict: the default for applications, prototypes, and multi-tenant systems up to moderate scale. Graduate when measurements — not marketing — say so."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "✅", "t": "Use when", "s": "Existing Postgres estate · moderate scale · strong consistency + filter needs" },
+        { "e": "⚠️", "t": "Watch", "s": "Memory footprint of HNSW; vacuum/analyze habits change with vector indexes" },
+        { "e": "📏", "t": "Rule of thumb", "s": "Millions of vectors and thousands of QPS → still fine; tens of millions + sustained heavy load → benchmark dedicated stores" }
+      ],
+      "narration": "pgvector's decision card. It wins on operational consolidation — one system, one backup, one auth model — and on queries that mix similarity with relational business logic, which is most of them in business software. The watch-outs are operational: HNSW indexes want RAM, and vector-heavy tables change Postgres tuning habits — revisit autovacuum and memory settings. Set a measurement-triggered exit: define the latency and throughput SLA, benchmark, and let numbers — not architecture fashion — pick the moment to move."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · AZURE AI SEARCH",
+      "title": "Azure AI Search: enterprise **with a compliance badge**",
+      "sub": "Managed, integrated, Microsoft-blessed",
+      "narration": "For the Microsoft estate — and your Deloitte context, this matters — Azure AI Search is the managed vector-plus-keyword search with enterprise plumbing: private endpoints, Entra ID auth, regional data residency, and SLAs. It does hybrid search natively — BM25 and vectors with fusion — plus AI enrichment pipelines that chunk and embed during ingestion. Trade-offs: Azure-shaped pricing that rewards understanding it; query-model details that differ from the open-source stores; and the usual managed-service trade — less control, less operational burden. When the client's security review demands Microsoft-managed everything, this is your vector layer."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "☁️", "t": "When it wins", "s": "Azure-native estates · compliance-driven clients · hybrid search without assembly" },
+        { "e": "🔌", "t": "Integration dividend", "s": "Private networking, Entra auth, DI-based ingestion — enterprise checklist, pre-ticked" },
+        { "e": "💸", "t": "Cost model", "s": "SKU + capacity units — cheaper at steady load than bursty dev; model it before committing" }
+      ],
+      "narration": "The enterprise calculus. Azure AI Search shines when the surrounding estate is Azure and the security questionnaire is long — the managed integration deletes whole sections of it. Hybrid retrieval and semantic ranking come assembled rather than built. The honest caveats: pricing rewards predictable capacity, so dev environments can feel expensive; and as with any managed service, you trade fine-grained control for operational peace. In client architecture conversations, it's the answer that keeps procurement, security, and the roadmap all smiling — price it honestly and it's frequently the right call."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · OPEN SOURCE",
+      "title": "Qdrant, Chroma, FAISS — the **self-host spectrum**",
+      "sub": "From embedded library to production server",
+      "narration": "The open-source tier spans three shapes. FAISS is a library — not a database: the fastest raw ANN indexes, no server, no persistence, no metadata queries; you build everything around it. Chroma is the embedded-friendly store — pip install, runs in-process like DuckDB, perfect for prototypes and small apps. Qdrant is the full production server — HNSW with filtering done right, payload indexes, replication, a real ops story; self-host it on your VMs or their cloud. The pattern mirrors your DuckDB journey: FAISS is a library, Chroma is embedded, Qdrant is the server. Choose per scale and ops appetite."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📚", "t": "FAISS = raw engine", "s": "Benchmark-winning indexes in-process; you own persistence + metadata" },
+        { "e": "🐣", "t": "Chroma = embedded store", "s": "Zero-ops vector DB in your app process — prototypes and small production" },
+        { "e": "🚀", "t": "Qdrant = self-hosted server", "s": "Filtering-friendly HNSW, replication, snapshots — the open-source workhorse" }
+      ],
+      "narration": "Positioning the trio. FAISS when you're building an engine, not an application — the speed king, the flexibility king, the responsibility king. Chroma when you want a database-feel with library-feel operations — the demo-to-small-prod sweet spot. Qdrant when self-hosting is a requirement and production characteristics matter — filtering at scale, replication, backups. All three speak the same mental model from GA-09 — collections, vectors, payloads, k-NN — so prototyping in Chroma and graduating to Qdrant is nearly free. The lock-in risk here is pleasantly low."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · MANAGED SAAS",
+      "title": "Pinecone & friends: **pay, don't operate**",
+      "sub": "The SaaS trade: zero ops, ongoing rent, data leaves your VPC",
+      "narration": "Pinecone defined the managed vector category: serverless indexing, no shards to babysit, scaling without capacity planning. The deal is pure SaaS: you pay per usage and per storage, forever; your data transits a vendor's cloud; and the lock-in is real — not from file formats, but from operational habits and API shapes. When to say yes: small teams shipping fast, spiky workloads, no ops capacity, proofs of concept that must impress. When to negotiate hard: enterprise data residency requirements, steady high-volume workloads where self-host math wins after the first year, and clients who count vendors as risk."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "✅", "t": "SaaS wins", "s": "Speed to market · variable load · no platform team · demo-grade reliability" },
+        { "e": "🧮", "t": "Do the 12-month math", "s": "Steady load: compare 1yr SaaS spend vs self-host VMs + eng time — often a crossover" },
+        { "e": "🔐", "t": "Data residency", "s": "Enterprise clients may simply rule SaaS out — know before you propose" }
+      ],
+      "narration": "The SaaS decision framework. Say yes when velocity and variable scale dominate — startups, spikes, small teams. Run the crossover math for steady-state enterprise load: a year of SaaS invoices versus a couple of VMs plus fractional ops time; the self-host line usually wins beyond it. And lead with the constraint nobody can negotiate: where is the data ALLOWED to live? For regulated clients that answer deletes the SaaS column before the demo starts. Presenting all three postures — pgvector, self-hosted Qdrant, managed Pinecone — with honest math is exactly the architect-level consulting this course trains you for."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · RELATIONAL BUILT-INS",
+      "title": "Your relational DB wants vectors **too**",
+      "sub": "SQL Server, Oracle, MySQL — verify current support; it's 2026",
+      "narration": "The incumbents aren't sitting still. Vector capabilities have been landing in the relational databases enterprises already own — SQL Server added vector functions and index support in recent releases, Oracle has had vector search, others are following. Verify the CURRENT state — this space moved monthly — but the strategic meaning is stable: for clients with strict consolidation mandates, 'vectors in the database we already license' may beat every other option on procurement alone. The technical bar to check: index type and recall characteristics, dimension limits, and whether filtering performance meets your SLA at your scale."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🔍", "t": "Verify before you promise", "s": "Version-specific: check docs for your client's EXACT SQL Server/Oracle version" },
+        { "e": "📉", "t": "Check the index story", "s": "Which ANN structure, recall at your scale, behavior under heavy filtering" },
+        { "e": "🏢", "t": "Procurement gravity", "s": "'Already licensed' beats 'new vendor' in many enterprise rooms — use it" }
+      ],
+      "narration": "The verification discipline. These features land per-version and per-edition, and fast-moving docs mean last quarter's 'no' is this quarter's 'yes' — verify against the exact versions in the client's estate. Technically, interrogate the ANN index: what algorithm, what recall at your million-vector scale, what happens to latency when filters are selective. And politically: in enterprise architecture rooms, 'the capability we already own' carries enormous weight — when it clears your technical bar, it's often the recommendation that actually ships."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · THE MATRIX",
+      "title": "Score against **your** constraints",
+      "sub": "Scale, ops, security, cost — four columns, honest numbers",
+      "narration": "The selection matrix, in one breath. Scale: pgvector to millions per node; Qdrant and Pinecone to hundreds of millions; FAISS to billions if you build the shell. Ops: SaaS is zero, pgvector inherits your existing ops, Qdrant is a new server to run. Security: pgvector and self-hosted keep data in your perimeter; SaaS and cloud-managed trade perimeter for convenience. Cost: steady-state self-host usually wins past year one; bursty and early-stage favors SaaS. Run the matrix per client, document the decision — the next reel makes the chosen store stay healthy in production."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "📊", "t": "Benchmark YOUR corpus", "s": "Recall + latency + filtered QPS on your vectors — synthetic benchmarks lie politely" },
+        { "e": "📄", "t": "Write the ADR", "s": "Architecture Decision Record: options, scores, the call, the review trigger" },
+        { "e": "🚪", "t": "Keep the exit open", "s": "Abstract behind your retrieval interface; vectors + IDs migrate — habits don't" }
+      ],
+      "narration": "The process that makes the matrix real. Benchmark with your own vectors and query mix — every vendor's demo is beautiful. Record the decision as an ADR — options considered, numbers, the chosen path, and the trigger that reopens it. And engineer the exit: a thin retrieval interface in your code means the store is a replaceable detail; your vectors and metadata migrate mechanically. You're not buying a vector database forever — you're renting one until the constraints change. Design like you know it."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · GA-11",
+      "title": "Chosen? Now keep it healthy",
+      "next": "Reel 27 · Operations — upserts, sizing, multi-tenancy, backup & DR"
+    }
+  ],
+  "recap": [
+    "pgvector = consolidation default; Azure AI Search = Microsoft-estate enterprise; Qdrant/Chroma/FAISS = self-host spectrum; Pinecone = SaaS velocity",
+    "Relational DBs are adding vectors — verify per-version before proposing",
+    "Benchmark your corpus, write the ADR, keep the exit open via a thin retrieval interface"
+  ],
+  "quiz": [
+    {
+      "q": "A client's estate is pure Azure and security review demands Microsoft-managed services. Strongest vector-store fit?",
+      "opts": ["FAISS", "Azure AI Search", "A self-hosted Qdrant cluster", "Chroma in-process"],
+      "a": 1,
+      "why": "Managed, Entra-integrated, hybrid-capable, with the compliance posture an Azure-native client requires — the enterprise checklist comes pre-ticked."
+    },
+    {
+      "q": "When does self-hosting (e.g. Qdrant) usually beat SaaS (e.g. Pinecone) on cost?",
+      "opts": [
+        "Never — SaaS is always cheaper",
+        "Steady, high-volume workloads beyond the ~12-month crossover point",
+        "Only for prototypes",
+        "When you need GPUs"
+      ],
+      "a": 1,
+      "why": "Variable/bursty load favors SaaS; steady enterprise load usually crosses over when a year of invoices exceeds VMs + fractional ops time."
+    },
+    {
+      "q": "What's the best protection against vector-store lock-in?",
+      "opts": [
+        "Avoiding vector databases entirely",
+        "A thin retrieval interface in your code + portable vectors/metadata + an ADR with a review trigger",
+        "Using only SQL Server vectors",
+        "Buying perpetual licenses"
+      ],
+      "a": 1,
+      "why": "Vectors and metadata migrate mechanically; what locks you in is scattered API calls. Abstract the interface and the store becomes a replaceable detail."
+    }
+  ],
+  "code": {
+    "title": "The thin retrieval interface — swap stores without tears",
+    "body": "from typing import Protocol, Any\n\nclass Hit(BaseModel):\n    id: str\n    score: float\n    payload: dict\n\nclass Retriever(Protocol):\n    def upsert(self, ids: list[str], vecs, payloads: list[dict]) -> None: ...\n    def search(self, vec, k: int = 10, where: dict | None = None) -> list[Hit]: ...\n    def delete(self, ids: list[str]) -> None: ...\n\n# --- one implementation per store ---------------------------------\nclass QdrantRetriever:\n    def __init__(self, client, collection: str):\n        self.c, self.col = client, collection\n    def search(self, vec, k=10, where=None):\n        r = self.c.search(self.col, vec, limit=k,\n                          query_filter=self._f(where) if where else None)\n        return [Hit(id=h.id, score=h.score, payload=h.payload) for h in r]\n\nclass PgvectorRetriever:\n    def __init__(self, engine): self.engine = engine\n    def search(self, vec, k=10, where=None):\n        sql = text(\"\"\"SELECT id, 1-(embedding <=> :q) AS score, payload\n                      FROM docs\n                      WHERE (:tenant IS NULL OR tenant_id = :tenant)\n                      ORDER BY embedding <=> :q LIMIT :k\"\"\")\n        ...  # same Hit shape\n\n# --- app code depends on the Protocol, never a store --------------\ndef answer_question(q: str, retriever: Retriever):\n    hits = retriever.search(embed(q), k=5, where={\"tenant\": current_tenant()})\n    return generate(context=[h.payload[\"text\"] for h in hits])\n# Qdrant today, pgvector for a conservative client, Azure next —\n# the app doesn't change.",
+    "annot": [
+      "Protocol again (PY-05): structural typing — any store with these 3 methods qualifies",
+      "Hit is the one portable shape: id + score + payload",
+      "New store = one new Retriever class; zero changes to application code"
+    ]
+  },
+  "notes": "# Vector DB Options\n\n## pgvector\n- Postgres + vectors. Default for apps/prototypes/multi-tenant to millions of vectors.\n- Watch: HNSW memory, vacuum habits. Exit when measurements demand.\n\n## Azure AI Search\n- Managed, Entra-integrated, hybrid + semantic ranking, AI enrichment.\n- Wins: Azure estates, compliance-driven clients. Model SKU/capacity pricing.\n\n## Open-source spectrum\n- **FAISS**: library (indexes only — you build the DB).\n- **Chroma**: embedded, zero-ops — prototypes → small prod.\n- **Qdrant**: self-hosted production server — filtering-friendly HNSW, replication.\n\n## Pinecone & managed SaaS\n- Zero ops, serverless scaling, ongoing rent, data leaves your VPC.\n- 12-month crossover math decides vs self-host.\n\n## Relational built-ins\n- SQL Server / Oracle / others adding vector search — **verify per exact version**.\n- 'Already licensed' wins procurement rooms when it clears the technical bar.\n\n## Selection matrix\n- Score: scale · ops · security/data-residency · cost (steady-state math).\n- Benchmark YOUR corpus (recall + filtered QPS) · write the ADR · keep a thin Retriever interface so the store is replaceable."
+}

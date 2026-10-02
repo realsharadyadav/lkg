@@ -1,0 +1,145 @@
+{
+  "id": "GA-08",
+  "num": 23,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Embedding Models",
+  "hook": "The embedding model is a **10-year mortgage** on your data. Choose with the exit cost in mind.",
+  "chapters": [
+    "Choosing a model",
+    "Multilingual needs",
+    "Cost & batching",
+    "Re-embedding migrations"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SELECTION",
+      "title": "Quality, cost, language — **in that order for you**",
+      "sub": "And validate on YOUR corpus, not the leaderboard",
+      "narration": "Three axes for embedding models. Quality: does it rank YOUR document pairs correctly — measure with a small set of known query-answer pairs from your domain. Cost: OpenAI's small model is famously cheap; self-hosted models trade API cost for GPU cost. Language support: English-only models quietly fail on Hindi text — for your corpus, multilingual support isn't a nice-to-have. The procedure is identical to GA-02's model selection: build a small relevance eval set, run candidates, pick the cheapest that passes. The leaderboard is a starting shortlist, never the decision."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🏆", "t": "Start from the MTEB leaderboard", "s": "Massive Text Embedding Benchmark — a shortlist, not a verdict" },
+        { "e": "🧪", "t": "Build a 30-pair relevance eval", "s": "query → the doc that MUST rank #1 → measure hit@5 per candidate" },
+        { "e": "☁️", "t": "API vs self-hosted", "s": "OpenAI/Cohere/Voyage APIs: zero ops. sentence-transformers: private, GPU-billed" }
+      ],
+      "narration": "The selection workflow. Shortlist from MTEB — the public benchmark for embedding quality. Then the part that matters: thirty to fifty query-document pairs from YOUR data, where you KNOW the right answer; score each candidate by whether the correct doc lands in the top five. On cost: API models bill per token — trivial for most corpora; self-hosted via sentence-transformers gives privacy and no per-call cost, at the price of a GPU you now operate. Your Deloitte context likely means: API for prototypes, self-hosted when client data residency demands it."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · MULTILINGUAL",
+      "title": "Hindi + English? **Test it, don't assume it**",
+      "sub": "Mixed-language corpora are the norm in India — and the failure mode",
+      "narration": "Here's a scenario you know intimately: a corpus that's half English policies, half Hindi, with users asking in either language — sometimes mixed within one question. A model that's merely 'multilingual on paper' may cluster English well and Hindi poorly, or worse, never bridge the two — the Hindi policy and its English translation sitting in distant parts of the space. The test from GA-07's visualization chapter is exactly right here: embed known translation pairs, measure their similarity, and look at the plot. Cross-lingual pairs should hug. If they don't, that model is out — regardless of its benchmark average."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🌉", "t": "Translation-pair test", "s": "Embed 20 known EN↔HI pairs; median cosine should be high (0.7+)" },
+        { "e": "🔀", "t": "Cross-lingual retrieval test", "s": "Hindi query → must surface the English doc. Measure hit@5 per direction" },
+        { "e": "⚠️", "t": "Code-switching happens", "s": "Users write 'मुझे refund chahiye' — evaluate on REAL mixed queries" }
+      ],
+      "narration": "The multilingual eval kit. One: translation pairs — same document in both languages should score high similarity; median below point seven is a red flag. Two: directional retrieval — Hindi query finding the English original, and the reverse; some models work one direction and fail the other. Three: code-switched queries — real users mix languages mid-sentence, and your eval should too, because a model that handles clean Hindi but chokes on Hinglish will fail in production. This thirty-minute test has saved more RAG projects than any architecture review."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · COST",
+      "title": "Embedding is a **batch job** — price it like one",
+      "sub": "Bulk discounts, Batch API, and the free tier nobody uses",
+      "narration": "Good news: embedding is the cheap part of the pipeline. Text-embedding-3-small costs a tiny fraction of a cent per thousand tokens — a million typical documents usually land in the tens of dollars. Three optimizations: use the Batch API for initial backfills — the same roughly-half-price discount as the chat Batch API; batch requests — the embeddings endpoint accepts arrays of inputs up to thousands per call, which is also faster; and dimensionality reduction — OpenAI's models let you request fewer dimensions directly, cutting storage at a small quality cost. Embed once per document, store forever — reads are free."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📦", "t": "Batch the input array", "s": "input=[...1000 texts...] per call — fewer round trips, better throughput" },
+        { "e": "🧮", "t": "Do the math once", "s": "avg 800 tokens/doc × 1M docs × price/1M = your backfill cost — usually small" },
+        { "e": "✂️", "t": "dimensions=512 (OpenAI)", "s": "Request reduced dimensions — Matryoshka truncation, ~⅓ storage for ~1-2% quality" }
+      ],
+      "narration": "The levers. Batch your inputs — thousands of texts per request; the endpoint is built for it, and throughput improves dramatically. Do the multiplication once — average tokens per document times document count times price; for most corpora the number is smaller than a team lunch, which recalibrates how much optimization is worth. And if storage is the pressure, request reduced dimensions — OpenAI's models support Matryoshka truncation, where the first N dimensions preserve most of the quality. Cheaper storage, faster indexes, tiny quality cost — evaluate it on your golden pairs."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · MIGRATION",
+      "title": "Changing models = **re-embedding everything**",
+      "sub": "Dimensions change, geometry changes — there's no in-place upgrade",
+      "narration": "The exit cost, stated plainly. Embedding models aren't interchangeable — different dimensionality, and even at equal dimensions, different geometry. A vector from model A means nothing to model B. Switching means: re-embed the entire corpus, rebuild every index, and re-run your retrieval evals. For a million documents this is hours of compute and a real bill. Sometimes it's worth it — a multilingual fix, a quality jump. But go in with eyes open: the cheapest embedding migration is the one you avoid by choosing well the first time."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🗃️", "t": "Store raw text alongside vectors", "s": "Re-embedding requires the source — if you only kept vectors, you're stuck" },
+        { "e": "🧪", "t": "Dual-run before cutover", "s": "Embed a sample with BOTH models; compare hit@5; cut over only when better" },
+        { "e": "🪢", "t": "Version your embeddings", "s": "embed_model + embed_version per record — mixed-generation indexes are bugs" }
+      ],
+      "narration": "The migration playbook. Always keep the source text — the vectors are derived, replaceable data; the text is the asset. Dual-run your eval set through both models before committing: new model wins on hit-at-five across your golden pairs, then cut over. And VERSION every vector with which model produced it — during migration you'll have two generations alive at once, and a query must only compare against its own generation. Architect's take: treat the embedding model like a database engine upgrade — planned, tested, reversible, and rare."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-20",
+      "title": "Vectors chosen — now wire the databases",
+      "next": "Reel 24 · SQL from Python — SQLAlchemy, MSSQL, pooling, pgvector"
+    }
+  ],
+  "recap": [
+    "Shortlist from MTEB, decide on YOUR 30-50 relevance pairs (hit@5)",
+    "Multilingual corpora need the translation-pair + cross-lingual + code-switch tests",
+    "Embedding is cheap: batch inputs, consider reduced dimensions; model switches = full re-embed — store source text and version every vector"
+  ],
+  "quiz": [
+    {
+      "q": "Why run your own 30-50 relevance pairs instead of trusting the MTEB leaderboard?",
+      "opts": [
+        "MTEB is fake",
+        "Leaderboards measure average quality on generic tasks; your pairs measure ranking quality on YOUR distribution",
+        "Your pairs are faster",
+        "The API requires it"
+      ],
+      "a": 1,
+      "why": "Domain text (legalese, code, Hinglish) behaves differently from benchmark averages. hit@5 on your own pairs is the decision metric."
+    },
+    {
+      "q": "You switch embedding models but keep the old vectors in the index. What breaks?",
+      "opts": [
+        "Nothing — vectors are universal",
+        "Old and new vectors live in different geometries — comparisons are meaningless; you must re-embed and version",
+        "Only the metadata filters",
+        "The API converts automatically"
+      ],
+      "a": 1,
+      "why": "Different models = different spaces. Mixed-generation indexes silently return garbage rankings. Version vectors by model and re-embed fully on migration."
+    },
+    {
+      "q": "A corpus is 60% Hindi, 40% English. Which test best predicts production retrieval quality?",
+      "opts": [
+        "English-only benchmark scores",
+        "Cross-lingual retrieval: Hindi queries must surface English docs and vice versa",
+        "Vector dimension count",
+        "Price per 1M tokens"
+      ],
+      "a": 1,
+      "why": "Cross-lingual hit@5 in both directions is the direct measure — a model can excel monolingually yet place translation pairs far apart."
+    }
+  ],
+  "code": {
+    "title": "Embedding selection + backfill, done right",
+    "body": "import numpy as np\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# --- 1. Your relevance eval (the ONLY decision metric) ------------\nGOLDEN = [\n    (\"refund policy for damaged goods\", \"policy_returns_v2.pdf#3\"),\n    (\"remote work allowance rules\", \"hr_policy_2026.pdf#7\"),\n]\nDOCS = {id_: text for id_, text in load_corpus().items()}\n\ndef hit_at5(model: str) -> float:\n    doc_ids = list(DOCS)\n    doc_vecs = embed_all(DOCS.values(), model=model)     # batched\n    hits = 0\n    for q, want in GOLDEN:\n        qv = embed_all([q], model=model)[0]\n        sims = doc_vecs @ (qv / np.linalg.norm(qv))\n        top5 = [doc_ids[i] for i in np.argsort(sims)[::-1][:5]]\n        hits += want in top5\n    return hits / len(GOLDEN)\n\nfor m in [\"text-embedding-3-small\", \"text-embedding-3-large\"]:\n    print(m, hit_at5(m))     # pick the cheapest model at hit@5 == 1.0\n\n# --- 2. Bulk backfill: batch + version ---------------------------\ndef embed_all(texts, model, batch=1000):\n    vecs = []\n    texts = list(texts)\n    for i in range(0, len(texts), batch):\n        r = client.embeddings.create(model=model, input=texts[i:i+batch])\n        vecs.extend(d.embedding for d in r.data)\n    return np.array(vecs)\n\n# store per record: {text, vector, embed_model: \"text-embedding-3-small\",\n#                    embed_version: 1, dims: 1536}",
+    "annot": [
+      "Batch 1000 texts per call — throughput beats latency for backfills",
+      "hit@5 == 1.0 on your golden set is the bar; pay for 'large' only if 'small' misses",
+      "embed_model + version per record makes future migrations safe"
+    ]
+  },
+  "notes": "# Embedding Models\n\n## Choosing\n- Shortlist: **MTEB leaderboard** → decide: your 30–50 query→doc pairs, score **hit@5**.\n- API (OpenAI/Cohere/Voyage): zero ops. Self-hosted (sentence-transformers): privacy, GPU cost.\n\n## Multilingual (EN + HI)\n- Translation-pair test: EN↔HI pairs, median cosine ≥ ~0.7.\n- Cross-lingual hit@5 BOTH directions.\n- Code-switched queries (\"मुझे refund chahiye\") — evaluate on real mixed usage.\n\n## Cost & batching\n- Embedding is cheap: do the token math once (usually small $).\n- Batch thousands of texts per call; Batch API for big backfills.\n- `dimensions=512/1024` (Matryoshka) → ~⅓ storage for ~1-2% quality.\n- Reads are free — embed once, store forever.\n\n## Migration (re-embedding)\n- Different model = different space → full re-embed, no in-place upgrade.\n- **Store raw text** (the asset) + version every vector (embed_model, version).\n- Dual-run eval on both models before cutover."
+}

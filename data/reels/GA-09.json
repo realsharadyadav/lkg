@@ -1,0 +1,183 @@
+{
+  "id": "GA-09",
+  "num": 25,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Vector DB Fundamentals",
+  "hook": "Exact search on a million vectors would take **minutes**. ANN finds the answer in **milliseconds** — here's the honest trade.",
+  "chapters": [
+    "What & why",
+    "Why not a plain SQL table",
+    "ANN algorithms",
+    "Recall vs speed",
+    "Metadata filtering",
+    "Hybrid search"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE STORE",
+      "title": "A vector DB does **two jobs**",
+      "sub": "Store millions of vectors · find the k nearest, fast",
+      "narration": "A vector database is a purpose-built system for one query: given a vector, return the k most similar vectors in the store. Two responsibilities — persistence at scale, and the nearest-neighbor search itself. The search is the hard part: comparing one query against a million vectors means a million distance computations; against a hundred million, it's prohibitive — unless you cheat intelligently. Every design decision in this reel is about one question: how do we avoid comparing everything while still finding almost-always the right things?"
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📦", "t": "Persistence + index", "s": "Vectors + metadata + payloads, organized for retrieval" },
+        { "e": "⚡", "t": "The k-NN query is the product", "s": "'top-5 most similar to THIS' — the core operation, everything else supports it" },
+        { "e": "🧩", "t": "Also: filters, payloads, hybrid", "s": "Metadata constraints and keyword fusion ride on top (chapters 5-6)" }
+      ],
+      "narration": "The anatomy. Storage keeps vectors with their metadata and payloads — the text you retrieved FOR. The index is a data structure built for similarity, not for keys. And around the core: filtering — constrain the search to a tenant or date range; payloads — return the document, not just an ID; hybrid — blend keyword scores with vector scores. When you evaluate a vector database, you're evaluating how well it does all four under YOUR scale and consistency requirements."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THE INDEX PROBLEM",
+      "title": "B-tree can't do **angles**",
+      "sub": "Why ordinary databases stall on nearest-neighbor",
+      "narration": "Why not just a SQL table with a B-tree index? Because B-trees index order — equality and ranges on scalars. Nearest-neighbor asks a different question: sort by ANGLE, which has no ordering to exploit. Without an index, the engine scans every row — brute force, fine at ten thousand vectors, painful at a million, dead at a hundred million. Brute force is actually the gold standard for correctness — it finds exact neighbors. Every approximate index is a bet that you can skip most comparisons and still get nearly the same answer. That bet is ANN."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "💯", "t": "Exact (brute force)", "s": "Compare all N vectors. Perfect recall, O(N) per query. Fine to ~100k-1M on modern hardware." },
+        { "e": "🚀", "t": "Approximate (ANN)", "s": "Search a smart subset. ~99% recall, O(log N)-ish. The only way at 10M+.", "win": true }
+      ],
+      "narration": "The fundamental fork. Exact search is the baseline — simple, correct, and at small scale, often FAST ENOUGH, especially with SIMD-optimized libraries like FAISS running flat indexes. ANN trades a sliver of recall for orders of magnitude in speed and memory. The right default: start exact or lightly-approximate, measure recall on your golden set, and escalate approximation only when latency or scale demands it. Don't pay the complexity tax before the physics require it — the same lesson as every scaling decision you've made in .NET."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · ANN",
+      "title": "HNSW: the **graph** that finds neighbors",
+      "sub": "Skip lists meet small-world graphs — the default algorithm",
+      "narration": "HNSW — Hierarchical Navigable Small World — is the dominant ANN index, and its intuition is delightful. Build a graph where each vector connects to a handful of neighbors. Search starts at the top layer taking long jumps across the graph, descending layer by layer until it's in the query's neighborhood, then greedily walks to closer and closer nodes. Like asking directions: highway first, then streets, then the doorstep. You never compared against a million vectors — you walked a graph of a few hundred hops. Parameters trade memory for accuracy: more links per node, better recall."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🕸️", "t": "Graph of neighbors, multi-layer", "s": "Upper layers: sparse long links · lower: dense local links" },
+        { "e": "🔧", "t": "M (links/node) + ef (search width)", "s": "Higher = better recall + more memory/slower inserts" },
+        { "e": "🧮", "t": "IVF & PQ: the other families", "s": "IVF: search promising clusters only · PQ: compress vectors ~10x at recall cost" }
+      ],
+      "narration": "The knobs and the alternatives. M — connections per node — and ef — candidate pool size during search — are your recall-versus-resources dials; defaults are decent, tune on your golden set. IVF flips the strategy: cluster the vectors at build time, search only nearby clusters — fast, but cluster boundaries can hide good answers. PQ compresses vectors into short codes — ten times less memory, some recall loss — the standard trick for billion-scale. Most modern stores default to HNSW for good reason: excellent recall-speed balance, incremental inserts, few sharp edges."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · THE TRADE",
+      "title": "Recall is a **budget you set**",
+      "sub": "Measure it on your golden set — never assume the default",
+      "narration": "Approximate search means sometimes the true nearest neighbor isn't in the result — recall below one hundred percent. How much you tolerate is a business decision: for product recommendations, ninety-five percent is invisible; for legal retrieval where a missed clause matters, you chase ninety-nine-plus — with wider search, reranking, or exact fallbacks. The discipline: define recall on YOUR golden query set — the same one from GA-08 — and measure it whenever you change index parameters, scale, or the embedding model. ANN without measured recall is just hope with an API."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🧪", "t": "Golden-set recall", "s": "hit@5 with index ON vs brute force — the gap is your recall loss" },
+        { "e": "🎚️", "t": "Tune to the SLA", "s": "Raise ef / M until recall plateaus; stop there — extra memory buys nothing" },
+        { "e": "🛟", "t": "Reranker backstop", "s": "Fetch top-50 ANN → exact re-score top-50 → recall ~restored at small cost (GA-15)" }
+      ],
+      "narration": "Managing the trade. Measure the gap between approximate and exact on your golden set — that's your true recall. Tune parameters until the gap closes to your SLA, then stop; overspending on the index wastes memory. And keep the reranker trick in your pocket: let ANN fetch a generous candidate set — top fifty — then re-score those exactly with the full-precision vectors, usually via a cross-encoder. You get near-exact recall at a fraction of brute-force cost. This two-stage shape — cheap wide retrieval, precise narrow re-ranking — is one of the most reused patterns in the whole field."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · FILTERING",
+      "title": "Similarity + constraints: **pre- or post-filter?**",
+      "sub": "Metadata filters change both results AND performance",
+      "narration": "Real queries are never just 'similar' — they're 'similar AND tenant equals acme AND year is 2026'. Two execution strategies. Pre-filtering constrains the candidate set before the vector search — correct but potentially slow when the filter is very selective, since the index can't help it. Post-filtering searches broadly then discards — fast but risks returning fewer results than k, or missing the true best matches. Modern stores increasingly fuse both. Your job in design: keep filter selectivity in mind, and benchmark with realistic filter distributions, not just bare vector queries."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "⛓️", "t": "Pre-filter: correct, can crawl", "s": "Tiny candidate sets defeat the index's graph walk" },
+        { "e": "🎣", "t": "Post-filter: fast, can starve", "s": "Top-k inside a big result may yield <k after filtering" },
+        { "e": "🏗️", "t": "Design lever: per-tenant collections", "s": "Hard tenant isolation via separate collections/indexes when filters are always tenant-wide" }
+      ],
+      "narration": "The engineering consequences. A filter matching point one percent of vectors turns pre-filtered graph search into expensive wandering; post-filtering then risks empty-looking pages. Three mitigations: oversample k when filtering post-hoc — ask for fifty, keep five; structure metadata so filters are moderately selective; and for multi-tenant systems where EVERY query filters by tenant, consider per-tenant collections — isolation for free, indexes sized per tenant, and no filter drama at all. This is where vector-database design meets your authz model — think about them together from day one."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · HYBRID",
+      "title": "Vector + keyword = **hybrid search**",
+      "sub": "Fuse two rankings — GA-07's lesson as an architecture",
+      "narration": "GA-07's comparison ends here: production retrieval fuses semantic and keyword signals. Run both searches — vector ANN for meaning, BM25 for exact tokens — then merge the rankings. Fusion methods: simple weighted scores, or Reciprocal Rank Fusion — score each result by the inverse of its rank in each list, sum, re-sort — robust and parameter-light. Why bother: vectors find the paraphrase, keywords nail the SKU. Together they lift recall measurably on every mixed-content corpus you'll meet — and most real corpora are mixed."
+    },
+    {
+      "type": "arch",
+      "chapter": 5,
+      "layers": [
+        { "e": "🔤", "t": "Keyword leg (BM25)", "s": "Inverted index over the corpus — exact tokens, typos-tolerant variants" },
+        { "e": "🧠", "t": "Vector leg (ANN)", "s": "Embedding search over the same corpus — meaning across phrasing" },
+        { "e": "🤝", "t": "Fusion (RRF)", "s": "Reciprocal Rank Fusion: 1/(k+rank) summed per doc → one ranked list" },
+        { "e": "🎯", "t": "Optional rerank", "s": "Cross-encoder re-scores the fused top — precision finale (GA-15)" }
+      ],
+      "narration": "The hybrid pipeline, top to bottom. Two retrievers over the same corpus — BM25 on the left, ANN on the right. Fusion by reciprocal rank: a document ranked second in one list and fifth in the other scores one over k-plus-two plus one over k-plus-five — summed across lists, re-sorted. RRF ignores raw score scales entirely, which makes it robust across wildly different score distributions. Then optionally, a cross-encoder reranker reads the fused top twenty and produces the final five. Four stages, each simple, together near state of the art for production RAG."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · GA-10",
+      "title": "Theory in hand — now the menu",
+      "next": "Reel 26 · Vector DB Options — pgvector, Qdrant, Pinecone, Azure, and how to choose"
+    }
+  ],
+  "recap": [
+    "Vector DB = store + k-NN search; B-trees can't index angles, hence ANN",
+    "HNSW: multi-layer neighbor graph; tune M/ef, measure recall on YOUR golden set",
+    "Filters pre/post trade correctness vs speed; hybrid = BM25 + ANN fused with RRF, optional rerank"
+  ],
+  "quiz": [
+    {
+      "q": "Why doesn't a B-tree index help with nearest-neighbor vector search?",
+      "opts": [
+        "B-trees are too old",
+        "B-trees order scalars; similarity by angle has no total order to index",
+        "Vectors are too small",
+        "B-trees only work on Windows"
+      ],
+      "a": 1,
+      "why": "Nearest-neighbor asks for sort-by-similarity — a geometric property with no scalar ordering. Without an ANN index, the only option is scanning everything."
+    },
+    {
+      "q": "How should you verify your ANN index is 'good enough'?",
+      "opts": [
+        "Trust the default parameters",
+        "Measure hit@5/recall on your golden set vs brute force, tune M/ef to the SLA",
+        "Check the marketing page",
+        "Count the vectors"
+      ],
+      "a": 1,
+      "why": "Recall loss is workload-dependent. Golden-set measurement against exact search is the only honest verification."
+    },
+    {
+      "q": "A query 'similar to X AND tenant=acme' matches 0.1% of vectors. What design helps most?",
+      "opts": [
+        "A bigger HNSW graph",
+        "Per-tenant collections (or oversampling with post-filter)",
+        "Lower dimensions",
+        "More RAM"
+      ],
+      "a": 1,
+      "why": "Ultra-selective filters defeat graph traversal; per-tenant collections remove the filter entirely — isolation and speed for free."
+    }
+  ],
+  "code": {
+    "title": "Hybrid search with Qdrant-style semantics + RRF",
+    "body": "import numpy as np\n\n# --- setup (any ANN store: Qdrant/Chroma/pgvector all share this shape)\n# collection.upsert(ids, vectors=vecs, payloads=[{text, tenant, year}...])\n\ndef vector_search(query_vec, k=50):\n    return ann_index.query(query_vec, top_k=k)      # your ANN leg\n\ndef keyword_search(query, k=50):\n    return bm25_index.search(query, top_k=k)        # your keyword leg\n\ndef rrf_fuse(rankings, k=60):\n    \"\"\"Reciprocal Rank Fusion — robust to different score scales.\"\"\"\n    scores = {}\n    for ranking in rankings:\n        for rank, doc_id in enumerate(ranking):\n            scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank + 1)\n    return sorted(scores, key=scores.get, reverse=True)\n\n# --- one hybrid query ---------------------------------------------\nvec_hits = vector_search(embed(query), k=50)\nkey_hits = keyword_search(query, k=50)\nfinal = rrf_fuse([vec_hits, key_hits])[:10]\n\n# --- recall check against brute force (your golden queries) --------\ndef recall_at5(ann_hits, exact_hits):\n    return len(set(ann_hits[:5]) & set(exact_hits[:5])) / 5\n\n# exact: sims = corpus_u @ query_u; top = argsort(-sims)[:k]\n# assert recall_at5(ann, exact) >= 0.99  → tune M/ef until this passes",
+    "annot": [
+      "RRF ignores score scales — works even when BM25 and cosine scores are incomparable",
+      "k=50/50 then fuse to top-10: wide legs, narrow output — recall then precision",
+      "The recall assertion belongs in CI; index parameter changes should trigger it"
+    ]
+  },
+  "notes": "# Vector DB Fundamentals\n\n## What & why\n- Store vectors + payloads; answer k-NN ('top-k most similar') fast at scale.\n\n## Why not a plain SQL table\n- B-trees index scalar order; similarity-by-angle has none → brute-force scan.\n- Exact scan is the correctness baseline; ANN is how you beat physics.\n\n## ANN algorithms\n- **HNSW** (default): multi-layer small-world graph; long jumps → local walk.\n  - `M` = links/node, `ef` = search width → recall vs memory/insert speed.\n- IVF: cluster first, search promising clusters.\n- PQ: compress vectors (~10x memory) at some recall.\n\n## Recall vs speed\n- Recall < 100% is the price; it's a **budget you set**.\n- Measure hit@5/recall vs brute force on YOUR golden set; tune to SLA.\n- Backstop: ANN top-50 → exact/cross-encoder re-score (near-exact at low cost).\n\n## Metadata filtering\n- Pre-filter: correct, slow at high selectivity. Post-filter: fast, can starve k.\n- Ultra-selective always-on filters (tenant) → per-tenant collections.\n\n## Hybrid search\n- BM25 + ANN → **Reciprocal Rank Fusion**: Σ 1/(k+rank), re-sort.\n- Optional cross-encoder rerank on the fused top (GA-15)."
+}

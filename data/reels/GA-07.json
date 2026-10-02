@@ -1,0 +1,169 @@
+{
+  "id": "GA-07",
+  "num": 22,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Embedding Concepts",
+  "hook": "Meaning, as **math**. Five concepts and you'll understand the technology half of Stage 4.",
+  "chapters": [
+    "What is an embedding",
+    "Dimensions & trade-offs",
+    "Similarity metrics",
+    "Semantic vs keyword search",
+    "Visualizing embeddings"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE IDEA",
+      "title": "Meaning → a **list of numbers**",
+      "sub": "A point in space where distance = difference in meaning",
+      "narration": "An embedding is a vector — a list of numbers — that a model produces to represent the MEANING of a piece of text. 'Cat chases mouse' becomes something like five hundred floating-point numbers. The magic is geometric: texts with similar meanings get vectors that point in similar directions. Meaning has become measurable — not by reading, but by measuring angles between lists of numbers. Every search bar, recommendation, and RAG system in this course stands on this one idea."
+    },
+    {
+      "type": "embednums",
+      "chapter": 0,
+      "word": "quarterly report",
+      "vals": ["0.11", "-0.42", "0.87", "0.05", "-0.63", "0.29"],
+      "dims": "×1,536",
+      "countTo": 1536,
+      "narration": "Watch it happen. The phrase 'quarterly report' goes into the embedding model, and out comes a point in space — one number per dimension, 1,536 of them for a typical OpenAI model. No single number means anything readable; meaning lives in the PATTERN across all of them. Change a word — 'annual report' — and the point moves slightly. Change the topic entirely — 'chocolate cake' — and it moves far. Similar direction, similar meaning. That's the entire trick."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · DIMENSIONS",
+      "title": "384, 768, 1,536 — how many **numbers** do you need?",
+      "sub": "Bigger = richer meaning, heavier storage and compute",
+      "narration": "Embedding models differ in dimension count — small models produce 384 or 768 numbers; flagship models, one thousand five hundred thirty-six or more. Trade-offs: higher dimensions capture finer semantic distinctions — 'bank' the river versus 'bank' the finance institution separate more cleanly — but every vector costs storage, memory, and compute forever. A million documents at 1,536 dimensions is 6 gigabytes of raw floats before any index overhead. Pick the smallest dimensionality that passes YOUR eval — this is a workload decision, not a prestige one."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🧮", "t": "1M docs × 1,536 dims × 4B ≈ 6.1 GB", "s": "Raw vectors alone — an HNSW index typically adds 20-50% on top" },
+        { "e": "⚖️", "t": "384 dims ≈ 1.5 GB per 1M docs", "s": "Same corpus, 4x lighter — if quality holds on your eval, it's the right call" },
+        { "e": "🔒", "t": "Dimensions are locked to the model", "s": "Changing models = re-embedding everything (GA-08 covers the migration)" }
+      ],
+      "narration": "The arithmetic to keep in your pocket. Memory footprint is documents times dimensions times bytes per float — float32 at four bytes; some stores support float16 or quantization to halve that. The index adds its own overhead. And remember: dimensions are a property of the MODEL, not the data — you can't downsize retroactively without re-embedding. This is why the model choice in the next reel has long-tail consequences: you're committing to a geometry for your whole corpus."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · METRICS",
+      "title": "Cosine, dot, Euclidean — **which ruler?**",
+      "sub": "Usually cosine. The others matter in specific setups.",
+      "narration": "Three rulers for comparing vectors, and you met the math in Reel 16. Cosine similarity — angle only, ignoring length — the default for text embeddings because direction encodes meaning. Dot product — angle times length; equals cosine when vectors are normalized, and it's the cheapest to compute. Euclidean distance — straight-line distance — sensible when magnitudes carry information, common in some image and recommendation setups. Your vector store will ask which one; for text embeddings, the answer is cosine unless your model's documentation says otherwise."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📐", "t": "Cosine: direction only", "s": "Text default — 'bank' river vs finance separates via angle, not size" },
+        { "e": "⚡", "t": "Dot: fastest, needs normalization", "s": "If you normalize at write time, dot product IS cosine — free speed" },
+        { "e": "📏", "t": "Euclidean: magnitude-aware", "s": "Some image/recsys models train magnitudes to mean confidence" }
+      ],
+      "narration": "Choosing rules. Text embeddings: cosine, or dot with pre-normalized vectors — normalize once at ingestion and the cheaper dot product gives identical rankings. Some embedding models — notably certain image and recommendation models — bake information into vector length, making Euclidean appropriate. The action item: check your model's documentation for its intended metric, and normalize upfront if you want dot-product speed with cosine semantics. One less thing to think about at query time."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SEMANTIC VS KEYWORD",
+      "title": "'sofa' ≠ 'couch' — **unless you search by meaning**",
+      "sub": "Keyword finds matches. Semantic finds meaning. You need both.",
+      "narration": "Keyword search — like SQL LIKE or BM25 — matches literal tokens. Search 'sofa' and documents saying 'couch' are invisible. Semantic search finds by meaning: 'couch' and 'sofa' sit close in embedding space, so both surface. But semantic has its own blind spots: exact codes, error strings, product numbers, and people's names — things where the literal string IS the meaning. SKU 'AX-2041' must match 'AX-2041', not something semantically adjacent. This is why mature systems use hybrid search — both signals fused — a reel we'll build to in GA-15."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "🔤", "t": "Keyword (BM25)", "s": "Exact tokens, fast, interpretable. Misses synonyms; brittle to typos and phrasing." },
+        { "e": "🧠", "t": "Semantic (vectors)", "s": "Matches meaning across synonyms and phrasing. Blurry on exact codes; can drift.", "win": true }
+      ],
+      "narration": "Side by side. Keyword: the classic inverted index — precise, explainable, but deaf to synonyms and word order nuance. Semantic: meaning-space retrieval — forgiving of phrasing, powerful for concepts, but it can rank a 'similar enough' wrong answer above an exact match, and it hallucinates neighbors for rare tokens like serial numbers. Neither wins alone; the systems you'll build fuse them. Hold this comparison — GA-15 turns it into a retrieval architecture."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · SEEING MEANING",
+      "title": "1,536 dimensions → a **picture**",
+      "sub": "PCA & t-SNE: projection, lossy but honest",
+      "narration": "You can't see 1,536 dimensions — nobody can. But you can PROJECT them down to two or three for visualization, and the patterns survive. PCA — the linear workhorse — finds the directions of maximum variance and flattens along them; fast, stable, great for a first look. t-SNE — the famous one — bends space nonlinearly so neighbors stay neighbors; gorgeous clusters, but distances between clusters can mislead. Use projections to sanity-check your embeddings: do invoices cluster apart from contracts? Do Hindi and English versions of the same policy sit together? Meaning you can SEE is meaning you can debug."
+    },
+    {
+      "type": "vector",
+      "chapter": 3,
+      "points": [
+        { "n": "invoice_01", "x": 18, "y": 26, "c": "#f59e0b" },
+        { "n": "invoice_02", "x": 25, "y": 22, "c": "#f59e0b" },
+        { "n": "contract_a", "x": 68, "y": 30, "c": "#0d9488" },
+        { "n": "contract_b", "x": 74, "y": 36, "c": "#0d9488" },
+        { "n": "policy_en", "x": 40, "y": 70, "c": "#65a30d" },
+        { "n": "policy_hi", "x": 46, "y": 74, "c": "#65a30d" }
+      ],
+      "pairs": [
+        { "a": "invoice_01", "b": "invoice_02", "tag": "same topic", "color": "#f59e0b" },
+        { "a": "policy_en", "b": "policy_hi", "tag": "same meaning, 2 languages", "color": "#65a30d" }
+      ],
+      "narration": "A flattened view of a healthy corpus. Invoices cluster with invoices — orange together. Contracts form their own island — teal. And look at the green pair: the English policy and its Hindi translation sit close — cross-lingual meaning survived the projection. When your real corpus plots like THIS, retrieval will work. When it plots as mush — everything overlapping randomly — the problem is upstream: bad chunking, a mismatched embedding model, or documents that aren't actually what you think they are."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · GA-08",
+      "title": "Concepts done — now pick your model",
+      "next": "Reel 23 · Embedding Models — choosing, batching, and the re-embedding bill"
+    }
+  ],
+  "recap": [
+    "Embeddings = meaning as vectors; similar direction = similar meaning",
+    "Dimensions trade quality for memory; cosine is the default metric (dot if normalized)",
+    "Semantic search finds meaning, keyword finds literals — visualize with PCA/t-SNE to debug your corpus"
+  ],
+  "quiz": [
+    {
+      "q": "Why does keyword search fail on the query 'sofa' when the document says 'couch'?",
+      "opts": [
+        "The document wasn't indexed",
+        "Keyword search matches literal tokens — it has no notion of synonymy",
+        "The vector store rejected it",
+        "Both words have too many letters"
+      ],
+      "a": 1,
+      "why": "BM25-style search matches tokens, not meanings. 'Sofa' and 'couch' share no tokens — semantic search closes that gap."
+    },
+    {
+      "q": "When does dot product equal cosine similarity?",
+      "opts": [
+        "Never — they're unrelated",
+        "When both vectors are normalized to unit length",
+        "Only for 384-dimensional vectors",
+        "When the temperature is zero"
+      ],
+      "a": 1,
+      "why": "cos = dot/(‖a‖·‖b‖); with unit norms the denominator is 1 — so normalize once at ingestion and use the cheaper dot product."
+    },
+    {
+      "q": "Your projected embedding plot shows everything as one undifferentiated blob. Most likely cause?",
+      "opts": [
+        "PCA is broken",
+        "Upstream problems: bad chunking, wrong embedding model for the content, or mislabeled documents",
+        "You need more dimensions",
+        "Nothing — blobs are normal"
+      ],
+      "a": 1,
+      "why": "Healthy corpora cluster by topic in projection. A blob signals the embeddings aren't capturing meaningful structure — debug chunking and model fit first."
+    }
+  ],
+  "code": {
+    "title": "Embeddings, from text to plot",
+    "body": "import numpy as np\nfrom openai import OpenAI\nfrom sklearn.decomposition import PCA\nimport matplotlib.pyplot as plt\n\nclient = OpenAI()\n\ndef embed(texts: list[str]) -> np.ndarray:\n    r = client.embeddings.create(model=\"text-embedding-3-small\", input=texts)\n    return np.array([d.embedding for d in r.data])\n\ndocs = [\n    \"Quarterly revenue rose 12% to $4.1M\",\n    \"Q1 earnings: total income $4.1 million, up 12%\",\n    \"The sofa arrives in grey fabric on Friday\",\n    \"Error AX-2041: printer queue timeout\",\n    \"Policy updated: remote work now 3 days per week\",\n    \"नई नीति: दूरस्थ कार्य अब सप्ताह में 3 दिन\",\n]\nvecs = embed(docs)                     # (6, 1536)\nprint(vecs.shape)\n\n# similarity sanity check (unit-normalized → dot = cosine)\nu = vecs / np.linalg.norm(vecs, axis=1, keepdims=True)\nsim = u @ u.T\nprint(\"revenue pair:\", round(sim[0, 1], 3))   # high — paraphrase\nprint(\"revenue vs sofa:\", round(sim[0, 2], 3)) # near 0 — unrelated\n\n# 1536 → 2 for a look\nxy = PCA(n_components=2).fit_transform(vecs)\nplt.scatter(xy[:, 0], xy[:, 1])\nfor (x, y), d in zip(xy, docs):\n    plt.annotate(d[:20], (x, y))\nplt.show()                              # clusters = healthy corpus",
+    "annot": [
+      "text-embedding-3-small: 1536 dims, cheap, strong — the default workhorse",
+      "Paraphrase pairs should score > 0.8; unrelated < 0.2 — calibrate on known pairs",
+      "PCA plot: same-topic docs should hug; cross-lingual pairs should neighbor"
+    ]
+  },
+  "notes": "# Embedding Concepts\n\n## What is an embedding\n- Text → fixed-length vector of floats; **similar direction = similar meaning**.\n- Meaning becomes measurable geometry.\n\n## Dimensions\n- 384 / 768 / 1536 / 3072… richer ≠ always better.\n- Memory: 1M docs × 1536 × 4B ≈ 6 GB (+index). Pick the smallest size that passes your eval.\n- Dimensions are model-locked → model change = full re-embedding (GA-08).\n\n## Similarity metrics\n| Metric | When |\n| --- | --- |\n| **Cosine** | text default (direction only) |\n| Dot | normalized vectors → == cosine, faster |\n| Euclidean | when magnitude carries signal (some image/recsys) |\n- Normalize at write time → query with cheap dot product.\n\n## Semantic vs keyword\n- Keyword: exact tokens — precise on codes/IDs, deaf to synonyms.\n- Semantic: meaning — synonym-robust, blurry on exact strings.\n- Production answer: **hybrid** (GA-15).\n\n## Visualizing\n- PCA: fast linear projection — first look.\n- t-SNE: cluster-preserving, nonlinear — pretty, distorts global distances.\n- Healthy corpus → topic clusters + cross-lingual neighbors. Blob → fix chunking/model upstream."
+}
