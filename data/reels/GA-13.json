@@ -1,0 +1,146 @@
+{
+  "id": "GA-13",
+  "num": 29,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "RAG Architecture",
+  "hook": "**RAG**: the highest-ROI pattern in GenAI. One pipeline: ingest, chunk, embed, retrieve, generate. This reel is the map.",
+  "chapters": [
+    "Why RAG",
+    "End-to-end pipeline",
+    "Naive vs advanced RAG",
+    "RAG vs long context"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · WHY",
+      "title": "Fresh, private, grounded — **without retraining**",
+      "sub": "The model's knowledge is frozen. Your data isn't.",
+      "narration": "An LLM's knowledge ends at training time and lives outside your firewall. Three problems: freshness — it doesn't know yesterday's policy; privacy — your documents never reached its training set, and shouldn't; grounding — left alone, it fills gaps with plausible invention. Fine-tuning fixes tone, not facts, and can't see new data. RAG — Retrieval-Augmented Generation — solves all three architecturally: retrieve the relevant facts at query time, put them in the prompt, and let the model answer from what it sees. No retraining, data stays in your perimeter, answers cite real sources."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🕒", "t": "Freshness", "s": "Re-index at ingest; the answer reflects this morning's document" },
+        { "e": "🔐", "t": "Privacy", "s": "Data never leaves your systems — retrieval happens in your perimeter" },
+        { "e": "⚓", "t": "Grounding", "s": "Answers quote retrieved text → hallucination drops, citations appear" }
+      ],
+      "narration": "The three wins, restated as architecture properties. Freshness becomes an ingest-pipeline property — however often you re-index, that's how current the answers are. Privacy becomes a deployment property — the model sees only what your retrieval layer hands it, and nothing else ever leaves. Grounding becomes a prompt property — the answer is composed in the presence of evidence. Add the observability bonus: you can inspect EXACTLY what the model saw, which turns 'why did it say that' from mystery into debugging. This is why RAG became the default pattern for enterprise GenAI."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THE PIPELINE",
+      "title": "Five stages, each independently improvable",
+      "sub": "Ingest → chunk → embed → retrieve → generate",
+      "narration": "The pipeline, end to end. Ingest: pull documents from their sources — files, SharePoint, databases. Chunk: cut them into retrieval-sized pieces — the craft of Stage 4's next reels. Embed: turn chunks into vectors with your chosen model. Retrieve: for a question, find the most relevant chunks. Generate: place them in the prompt with the question and let the LLM compose an answer that cites its sources. Each stage is a separable component with its own quality levers — which is why RAG systems improve incrementally, and why each of the next four reels takes one stage deep."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "📥", "t": "Ingest", "s": "Sources → raw documents (watch formats: PDF, DOCX, HTML — GA-14)" },
+        { "e": "✂️", "t": "Chunk", "s": "Documents → sized pieces + metadata (the highest-leverage stage)" },
+        { "e": "🧮", "t": "Embed & store", "s": "Chunks → vectors → vector DB with payloads" },
+        { "e": "🔍", "t": "Retrieve", "s": "Question → top-k chunks (hybrid, rerank — GA-15)" },
+        { "e": "✍️", "t": "Generate", "s": "Question + context → cited answer (GA-16)" }
+      ],
+      "narration": "See the separability. Ingestion is plumbing — scheduled pulls, format parsing. Chunking is the craft — size, overlap, structure; get it wrong and no retrieval quality saves you. Embedding is a library call you've already mastered. Retrieval is where GA-09 through GA-12 pay off — hybrid, filters, reranking. Generation is prompt engineering with evidence. Each stage can be measured in isolation — chunk quality, retrieval recall, answer faithfulness — which gives RAG a superpower most AI systems lack: you can tell WHICH stage is failing."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · NAIVE VS ADVANCED",
+      "title": "Naive RAG works — **until it doesn't**",
+      "sub": "Know the failure modes before you meet them in production",
+      "narration": "Naive RAG: fixed-size chunks, single vector search, everything into one prompt. It demos beautifully and fails in specific, predictable ways. Retrieved chunks miss the point — the answer's in the document but not in the chunks that surfaced. The question is ambiguous — 'what about refunds' means different things to different askers. The answer needs ten documents — top-k retrieves three. Multi-hop questions — 'compare our policy to the vendor's' — need sequential retrieval. Each failure has a named fix: better chunking, query rewriting, hybrid search, reranking, agentic retrieval. That's what 'advanced RAG' means — not magic, just diagnosed failure modes with engineered countermeasures."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🧨", "t": "Failure: chunking kills context", "s": "Mid-sentence splits · tables shattered → retrieval finds fragments (fix: GA-14)" },
+        { "e": "🌫️", "t": "Failure: vague questions", "s": "'Tell me about it' — nothing to match → rewrite/expand first (GA-15)" },
+        { "e": "🪜", "t": "Failure: multi-hop needs", "s": "Comparisons, chains of evidence → iterate retrieval or agentic RAG (GA-17)" }
+      ],
+      "narration": "The failure-mode catalog. Chunking failures are the commonest and least visible — a table split across chunks is unretrievable meaning; the fix is structural chunking, next reel. Ambiguity failures: short queries under-specify the search; rewriting and expansion recover them. Depth failures: the answer lives across documents; single-shot top-k can't assemble it, so advanced systems iterate — retrieve, read, retrieve again — or hand control to an agent that decides when to retrieve. Advanced RAG is a decision tree over these fixes, chosen by diagnosis."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · LONG CONTEXT",
+      "title": "Why not just paste **everything** into the prompt?",
+      "sub": "Long-context models change the math — not the answer",
+      "narration": "Fair question: context windows now reach a million tokens. Why retrieve at all? Three honest answers. Cost: a million-token prompt per query is a fortune at volume; retrieval spends thousands. Latency: huge prompts are slow; retrieval plus small context is fast. Accuracy: models degrade on needle-in-haystack tasks — lost-in-the-middle from GA-01 — and RAG's curation often beats brute stuffing. Where long context genuinely wins: when you need MOST of a document, or global summarization over a bounded corpus. The architect's answer: RAG and long context are complementary tools; retrieval decides what deserves the desk space."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "📚", "t": "Long-context stuffing", "s": "Simple · correct for small corpora · costly, slow, attention-degrades at scale", "win": true },
+        { "e": "🎯", "t": "RAG retrieval", "s": "Cheap, fast, curated · adds a pipeline to operate · wins at scale", "win": true }
+      ],
+      "narration": "Both cards win — for different shapes of problem. Stuffing: your corpus is a hundred pages and fits comfortably — just paste it, skip the infrastructure, ship the feature. RAG: your corpus is ten thousand documents and each question needs a slice — retrieval finds the slice at a hundredth of the cost. And a hybrid pattern worth knowing: retrieve broadly, stuff the winners — top-fifty chunks into a long-context model, letting the big window do synthesis while retrieval did the filtering. The question is never 'RAG or long context' — it's 'what deserves to be on the desk for THIS question'. GA-16 turns that into the assembly step."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-14",
+      "title": "Map complete — now the highest-leverage craft",
+      "next": "Reel 30 · Ingestion & Chunking — where RAG quality is actually decided"
+    }
+  ],
+  "recap": [
+    "RAG = fresh + private + grounded answers without retraining; evidence is inspectable",
+    "Pipeline: ingest → chunk → embed → retrieve → generate — each stage separable and measurable",
+    "Naive RAG fails predictably (chunks, ambiguity, depth); long context complements rather than replaces retrieval"
+  ],
+  "quiz": [
+    {
+      "q": "Why does RAG reduce hallucination more reliably than a better system prompt?",
+      "opts": [
+        "It trains the model on your data",
+        "The answer is composed in the presence of retrieved evidence — and you can inspect exactly what the model saw",
+        "It uses a bigger model",
+        "It lowers the temperature"
+      ],
+      "a": 1,
+      "why": "Grounding gives the model facts to quote and gives YOU an auditable trail — the context is debuggable, unlike behavior-only prompt tweaks."
+    },
+    {
+      "q": "What's the primary advantage of RAG's staged architecture?",
+      "opts": [
+        "It's faster to build",
+        "Each stage is measurable in isolation — you can diagnose WHICH stage is failing",
+        "It needs no vector database",
+        "It works without embeddings"
+      ],
+      "a": 1,
+      "why": "Chunk quality, retrieval recall, and answer faithfulness are separately evaluable — incremental improvement replaces guesswork."
+    },
+    {
+      "q": "When does simply stuffing the corpus into a long-context prompt beat RAG?",
+      "opts": [
+        "Never",
+        "When the corpus is small/bounded and the task needs most of it — simplicity beats infrastructure",
+        "When cost doesn't matter at all",
+        "When the model is open-weight"
+      ],
+      "a": 1,
+      "why": "For a bounded corpus, skipping retrieval is simpler and correct; RAG earns its complexity when the corpus outgrows what any question needs."
+    }
+  ],
+  "code": {
+    "title": "RAG, end to end — the whole pipeline in one file",
+    "body": "from openai import OpenAI\n\nclient = OpenAI()\nCOLLECTION = \"handbook\"\n\n# --- ingest + chunk + embed (offline, incremental) ----------------\ndef index_document(doc_id: str, text: str):\n    for i, chunk in enumerate(recursive_chunks(text, size=500, overlap=80)):\n        vec = client.embeddings.create(\n            model=\"text-embedding-3-small\", input=chunk).data[0].embedding\n        store.upsert(\n            id=f\"{doc_id}:{i}\",\n            vector=vec,\n            payload={\"doc_id\": doc_id, \"chunk\": i, \"text\": chunk,\n                     \"source\": doc_id, \"version\": doc_version(doc_id)},\n        )\n\n# --- retrieve (hybrid + filter, per GA-09/GA-15) ------------------\ndef retrieve(question: str, k: int = 8) -> list[str]:\n    qv = client.embeddings.create(\n        model=\"text-embedding-3-small\", input=question).data[0].embedding\n    hits = store.search(qv, k=k, where={\"tenant\": current_tenant()})\n    return [h.payload[\"text\"] for h in rerank(question, hits)[:k]]\n\n# --- generate (grounded + cited) -----------------------------------\ndef ask(question: str) -> str:\n    context = retrieve(question)\n    prompt = f\"\"\"Answer using ONLY the context below.\nIf the answer isn't there, say \"I don't have that information.\"\nCite sources as [source].\n\n<context>\n{''.join(f'<doc src=\"{i}\">{c}</doc>' for i, c in enumerate(context))}\n</context>\n\nQuestion: {question}\"\"\"\n    return client.chat.completions.create(\n        model=\"gpt-4o\", temperature=0,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    ).choices[0].message.content\n\n# That's the whole pattern. Everything after this reel improves\n# one stage at a time — measure before you tune.",
+    "annot": [
+      "Upsert by deterministic ID → re-indexing a document replaces its chunks cleanly (GA-11)",
+      "The 'ONLY the context' + 'I don't know' + citation instructions are GA-16's themes, previewed",
+      "rerank() is the GA-15 upgrade slot — pipeline shape doesn't change"
+    ]
+  },
+  "notes": "# RAG Architecture\n\n## Why RAG\n- LLM knowledge: frozen at training, outside your perimeter, fills gaps with invention.\n- RAG: retrieve relevant facts at query time → prompt with evidence.\n- **Freshness** (re-index = current) · **Privacy** (data stays home) · **Grounding** (answers cite real text — inspectable).\n\n## End-to-end pipeline\n1. **Ingest** — sources → documents (formats: GA-14)\n2. **Chunk** — documents → pieces + metadata (highest-leverage craft)\n3. **Embed & store** — chunks → vectors → vector DB\n4. **Retrieve** — question → top-k (hybrid/rerank: GA-15)\n5. **Generate** — question + context → cited answer (GA-16)\n> Each stage separately measurable → you know WHICH stage fails.\n\n## Naive vs advanced\n- Naive: fixed chunks + one vector search. Fails on: chunking, ambiguous queries, multi-doc/multi-hop answers.\n- Advanced = diagnosed failure mode → named fix (better chunks, rewrite, hybrid, rerank, agentic loop).\n\n## RAG vs long context\n- Stuffing wins: small bounded corpus, task needs most of it.\n- RAG wins: large corpus, slice per question — cost, latency, attention quality.\n- Hybrid: retrieve broadly → stuff winners into the long window."
+}
