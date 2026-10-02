@@ -1,0 +1,145 @@
+{
+  "id": "PY-08",
+  "num": 8,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Type Hints",
+  "hook": "Miss your **compiler**? Good news — Python can have compile-time safety too. Optional, gradual, and free.",
+  "chapters": [
+    "Basic hints",
+    "Optional & Union",
+    "Generics & TypedDict",
+    "mypy / pyright"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · BASIC HINTS",
+      "title": "Annotate the **shape**, keep the freedom",
+      "sub": "Hints are for readers and checkers — Python ignores them at runtime",
+      "narration": "Type hints are annotations — colons and arrows that describe what a function takes and returns. Python itself ignores them completely at runtime; the power comes from external checkers that read your code statically. That means you get C sharp-style safety without giving up Python's flexibility — and you can adopt it gradually, file by file, function by function."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔤", "t": "def greet(name: str) -> str:", "s": "Parameters and return — the two annotations every function gets" },
+        { "e": "📚", "t": "list[str] · dict[str, int]", "s": "Built-in generics — parameterize collections like List<string> in C#" },
+        { "e": "🧓", "t": "Legacy: from typing import List", "s": "Pre-3.9 code used typing.List — modern code uses lowercase builtins" }
+      ],
+      "narration": "The syntax: name colon type, and an arrow before the return type. Collections take parameters in square brackets — list of string, dict of string to int. And a modernization note: before Python 3.9 you imported capital-L List from typing; today lowercase builtins are the standard. If you see capital versions in older codebases, that's the reason."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · OPTIONAL & UNION",
+      "title": "**Optional[X]** = X or None",
+      "sub": "The nullable you must declare",
+      "narration": "In C sharp, string can be null unless you enable nullable reference types. In Python-with-hints, the rule is explicit: a parameter typed string does not accept None — if None is legal, you must say Optional of string, which means string or None. The checker will then force every caller to handle the None case. This one annotation eliminates the most common runtime crash in the language."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🤝", "t": "str | int (modern) / Union[str, int]", "s": "Either type is acceptable — the pipe syntax is Python 3.10+" },
+        { "e": "❓", "t": "Optional[str] ≡ str | None", "s": "None is just another type in a union — write it explicitly" },
+        { "e": "🛡️", "t": "The checker enforces handling", "s": "Callers of Optional must narrow: if x is not None — mypy verifies" }
+      ],
+      "narration": "Unions say 'either'. Modern syntax: string pipe int. The checker tracks every path: if a value might be None, calling a string method on it is a red squiggle, not a production incident. Combined with isinstance narrowing — if isinstance of x comma string — the checker understands your guard and clears the error. It genuinely feels like getting the compiler back."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · GENERICS & TYPEDDICT",
+      "title": "Generics: **write once, type forever**",
+      "sub": "TypedDict: give your dicts a shape",
+      "narration": "Generics parameterize functions and classes over types — T in C sharp, TypeVar in Python. One function, first of list of T, type-checks for lists of anything while keeping the element type. And TypedDict is the gem you'll actually use daily: it gives a dictionary a fixed schema — which keys exist, what types they hold — which is precisely the shape of every LLM API payload you'll handle."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🔁", "t": "def first[T](items: list[T]) -> T:", "s": "3.12+ syntax: [T] declares the type parameter inline (TypeVar before)" },
+        { "e": "📐", "t": "class ApiResponse(TypedDict):", "s": "model: str · tokens: int — dicts that check like classes" },
+        { "e": "⚖️", "t": "TypedDict vs dataclass", "s": "TypedDict = the data IS a dict (JSON land) · dataclass = a real object" }
+      ],
+      "narration": "Two tools, one choice. Generics with a type parameter T: write first, get first of strings, first of ints, all type-checked. TypedDict declares schemas for data that stays a dict — API responses, tool arguments. And the boundary: if the data is JSON throughout, TypedDict; if it's a real object with behavior, dataclass or Pydantic. Knowing which side of that line you're on is a senior signal."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · THE CHECKERS",
+      "title": "mypy & pyright: **your new compiler**",
+      "sub": "Run them in CI, watch them in your editor",
+      "narration": "The two mainstream checkers: mypy — the original, runs as a command line tool, great in CI. Pyright — Microsoft's engine, powers Pylance in VS Code, extremely fast with the best error messages. Either is fine; pyright if you live in VS Code. Wire one into your editor for red squiggles as you type, and into CI so type errors can never merge. Start lenient, tighten gradually."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🚀", "t": "Start: mypy --ignore-missing-imports src/", "s": "Third-party libraries without stubs won't block you on day one" },
+        { "e": "📈", "t": "Gradual strictness", "s": "disallow_untyped_defs next; full strict when the codebase is ready" },
+        { "e": "🧪", "t": "CI gate: mypy src/ || exit 1", "s": "Types only help if they're enforced — make the build fail on errors" }
+      ],
+      "narration": "Adoption path. Day one: run mypy loose, only on your code. Week two: require annotations on new functions — disallow untyped defs. Then tighten toward strict. The trap to avoid: annotating half a codebase and ignoring the checker output. Types are a contract; an unenforced contract is just decoration. One CI line makes it real — mypy, and fail the build."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-09",
+      "title": "From hints to enforcement",
+      "next": "Reel 9 · Pydantic — validated models, the backbone of LLM structured output"
+    }
+  ],
+  "recap": [
+    "Hints: name: type -> return; collections parameterize as list[str]",
+    "Optional[str] = str | None — declare None or the checker complains at callers",
+    "TypedDict for dict-shaped data; mypy/pyright in editor + CI, tighten gradually"
+  ],
+  "quiz": [
+    {
+      "q": "What does `Optional[str]` mean?",
+      "opts": [
+        "The parameter is optional (can be omitted)",
+        "The value is str or None",
+        "The string may be empty",
+        "The function might return nothing"
+      ],
+      "a": 1,
+      "why": "Optional[X] = X | None. 'Can be omitted' is what a default value expresses — a different thing."
+    },
+    {
+      "q": "When is TypedDict the right choice over dataclass?",
+      "opts": [
+        "When you need methods on the object",
+        "When the data must remain a plain dict (e.g. JSON payloads)",
+        "When you need validation of values",
+        "When immutability is required"
+      ],
+      "a": 1,
+      "why": "TypedDict types dicts in place — perfect for API/JSON-shaped data. Real objects with behavior → dataclass/Pydantic."
+    },
+    {
+      "q": "Do type hints change how Python runs?",
+      "opts": [
+        "Yes — they make it faster",
+        "Yes — wrong hints raise TypeError",
+        "No — Python ignores them at runtime; checkers use them statically",
+        "Only in Python 3.12+"
+      ],
+      "a": 2,
+      "why": "Hints are inert at runtime. The safety comes from mypy/pyright analyzing the code before it runs."
+    }
+  ],
+  "code": {
+    "title": "Type hints that earn their keep",
+    "body": "from typing import TypedDict, Optional\n\n# --- basics ---------------------------------------------------\ndef estimate_cost(model: str, tokens: int) -> float:\n    prices: dict[str, float] = {\"gpt-4o\": 2.50, \"sonnet\": 3.00}\n    return tokens / 1_000_000 * prices.get(model, 1.00)\n\n# --- Optional: None must be declared ---------------------------\ndef find_model(name: str) -> Optional[str]:\n    return name if name.startswith(\"gpt\") else None\n\nm = find_model(\"gpt-4o\")\nif m is not None:                 # narrowing — mypy verifies this guard\n    print(m.upper())\n\n# --- TypedDict: schemas for dict-shaped data -------------------\nclass ChatMessage(TypedDict):\n    role: str\n    content: str\n\nclass ApiResponse(TypedDict):\n    model: str\n    message: ChatMessage\n    tokens: int\n\npayload: ApiResponse = {\n    \"model\": \"gpt-4o\",\n    \"message\": {\"role\": \"assistant\", \"content\": \"hi\"},\n    \"tokens\": 12,\n}\n\n# --- check -----------------------------------------------------\n# $ pip install mypy\n# $ mypy --ignore-missing-imports src/\n# CI: mypy src/ && pytest          # types gate + tests gate",
+    "annot": [
+      "prices.get(model, 1.00) — a default beats Optional handling for lookup-style dicts",
+      "`if m is not None` narrowing: mypy knows m is str inside the block",
+      "TypedDicts nest — ApiResponse contains a ChatMessage, fully checked"
+    ]
+  },
+  "notes": "# Type Hints\n\n## Basics\n- `def f(name: str, n: int = 1) -> str:` — params + return.\n- Collections parameterize: `list[str]`, `dict[str, int]`, `tuple[str, int]`.\n- Modern (3.9+): lowercase builtins; legacy code uses `typing.List` etc.\n\n## Optional & Union\n- `Optional[str]` ≡ `str | None` — None must be **declared**.\n- `str | int` (3.10+) / `Union[str, int]`.\n- Narrow with `if x is not None:` / `isinstance(...)` — checkers understand guards.\n\n## Generics & TypedDict\n```python\ndef first[T](items: list[T]) -> T:   # 3.12+ (TypeVar before 3.12)\n    return items[0]\n\nclass ApiResponse(TypedDict):\n    model: str\n    tokens: int\n```\n- **TypedDict** = dict with a schema (JSON land) · **dataclass/Pydantic** = real objects.\n\n## mypy / pyright\n- Editor: pyright (Pylance) · CI: `mypy src/` (fail build on errors).\n- Adopt gradually: loose → `disallow_untyped_defs` → strict."
+}

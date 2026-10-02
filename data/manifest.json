@@ -1,0 +1,710 @@
+{
+ "tracks": {
+  "python": {
+   "label": "Python",
+   "icon": "🐍"
+  },
+  "genai": {
+   "label": "GenAI",
+   "icon": "🧠"
+  },
+  "agentic": {
+   "label": "Agentic AI",
+   "icon": "🤖"
+  }
+ },
+ "stages": [
+  {
+   "name": "1. Python Core",
+   "reels": [
+    "PY-01",
+    "PY-02",
+    "PY-03",
+    "PY-04",
+    "PY-05",
+    "PY-06",
+    "PY-07",
+    "PY-08",
+    "PY-09"
+   ]
+  },
+  {
+   "name": "2. LLM Basics + API",
+   "reels": [
+    "GA-01",
+    "GA-02",
+    "GA-03",
+    "GA-04",
+    "GA-05",
+    "GA-06"
+   ]
+  },
+  {
+   "name": "3. Python for Data",
+   "reels": [
+    "PY-24",
+    "PY-25",
+    "PY-15",
+    "PY-17",
+    "PY-18",
+    "PY-19"
+   ]
+  },
+  {
+   "name": "4. Embeddings > Vector DB > RAG",
+   "reels": [
+    "GA-07",
+    "GA-08",
+    "PY-20",
+    "GA-09",
+    "GA-10",
+    "GA-11",
+    "GA-12",
+    "GA-13",
+    "GA-14",
+    "GA-15",
+    "GA-16",
+    "GA-17"
+   ]
+  },
+  {
+   "name": "5. App Building + Quality",
+   "reels": [
+    "PY-10",
+    "PY-11",
+    "PY-12",
+    "PY-13",
+    "PY-22",
+    "GA-20",
+    "GA-21"
+   ]
+  },
+  {
+   "name": "6. Agents Core + MCP",
+   "reels": [
+    "AG-01",
+    "AG-02",
+    "AG-03",
+    "GA-18",
+    "GA-19",
+    "AG-04",
+    "AG-05",
+    "AG-06",
+    "AG-07",
+    "AG-08",
+    "AG-09"
+   ]
+  },
+  {
+   "name": "7. Patterns + Frameworks",
+   "reels": [
+    "AG-10",
+    "AG-11",
+    "AG-12",
+    "AG-13",
+    "AG-14",
+    "AG-15",
+    "AG-16"
+   ]
+  },
+  {
+   "name": "8. Production + Security",
+   "reels": [
+    "GA-22",
+    "GA-23",
+    "GA-24",
+    "GA-25",
+    "GA-26",
+    "AG-17",
+    "AG-18",
+    "AG-19",
+    "AG-20",
+    "PY-23"
+   ]
+  },
+  {
+   "name": "9. Hands-on Projects",
+   "reels": [
+    "AG-21",
+    "AG-22",
+    "AG-23",
+    "AG-24"
+   ]
+  },
+  {
+   "name": "10. Architect Layer + Extras",
+   "reels": [
+    "GA-29",
+    "GA-30",
+    "AG-25",
+    "GA-27",
+    "GA-28",
+    "PY-14",
+    "PY-16",
+    "PY-21"
+   ]
+  }
+ ],
+ "reels": [
+  {
+   "id": "PY-01",
+   "num": 1,
+   "track": "python",
+   "topic": "Setup & Tooling",
+   "file": "data/reels/PY-01.json"
+  },
+  {
+   "id": "PY-02",
+   "num": 2,
+   "track": "python",
+   "topic": "Syntax Basics",
+   "file": "data/reels/PY-02.json"
+  },
+  {
+   "id": "PY-03",
+   "num": 3,
+   "track": "python",
+   "topic": "Core Data Structures",
+   "file": "data/reels/PY-03.json"
+  },
+  {
+   "id": "PY-04",
+   "num": 4,
+   "track": "python",
+   "topic": "Functions",
+   "file": "data/reels/PY-04.json"
+  },
+  {
+   "id": "PY-05",
+   "num": 5,
+   "track": "python",
+   "topic": "OOP in Python",
+   "file": "data/reels/PY-05.json"
+  },
+  {
+   "id": "PY-06",
+   "num": 6,
+   "track": "python",
+   "topic": "Modules & Project Structure",
+   "file": "data/reels/PY-06.json"
+  },
+  {
+   "id": "PY-07",
+   "num": 7,
+   "track": "python",
+   "topic": "Errors, Files & Config",
+   "file": "data/reels/PY-07.json"
+  },
+  {
+   "id": "PY-08",
+   "num": 8,
+   "track": "python",
+   "topic": "Type Hints",
+   "file": "data/reels/PY-08.json"
+  },
+  {
+   "id": "PY-09",
+   "num": 9,
+   "track": "python",
+   "topic": "Pydantic",
+   "file": "data/reels/PY-09.json"
+  },
+  {
+   "id": "GA-01",
+   "num": 10,
+   "track": "genai",
+   "topic": "How LLMs Work",
+   "file": "data/reels/GA-01.json"
+  },
+  {
+   "id": "GA-02",
+   "num": 11,
+   "track": "genai",
+   "topic": "Model Landscape",
+   "file": "data/reels/GA-02.json"
+  },
+  {
+   "id": "GA-03",
+   "num": 12,
+   "track": "genai",
+   "topic": "API Basics",
+   "file": "data/reels/GA-03.json"
+  },
+  {
+   "id": "GA-04",
+   "num": 13,
+   "track": "genai",
+   "topic": "Structured Output & Tools",
+   "file": "data/reels/GA-04.json"
+  },
+  {
+   "id": "GA-05",
+   "num": 14,
+   "track": "genai",
+   "topic": "Core Techniques",
+   "file": "data/reels/GA-05.json"
+  },
+  {
+   "id": "GA-06",
+   "num": 15,
+   "track": "genai",
+   "topic": "Prompt Lifecycle",
+   "file": "data/reels/GA-06.json"
+  },
+  {
+   "id": "PY-24",
+   "num": 16,
+   "track": "python",
+   "topic": "NumPy & Vectors",
+   "file": "data/reels/PY-24.json"
+  },
+  {
+   "id": "PY-25",
+   "num": 17,
+   "track": "python",
+   "topic": "ML Basics",
+   "file": "data/reels/PY-25.json"
+  },
+  {
+   "id": "PY-15",
+   "num": 18,
+   "track": "python",
+   "topic": "pandas",
+   "file": "data/reels/PY-15.json"
+  },
+  {
+   "id": "PY-17",
+   "num": 19,
+   "track": "python",
+   "topic": "File Formats",
+   "file": "data/reels/PY-17.json"
+  },
+  {
+   "id": "PY-18",
+   "num": 20,
+   "track": "python",
+   "topic": "DuckDB",
+   "file": "data/reels/PY-18.json"
+  },
+  {
+   "id": "PY-19",
+   "num": 21,
+   "track": "python",
+   "topic": "Excel Automation",
+   "file": "data/reels/PY-19.json"
+  },
+  {
+   "id": "GA-07",
+   "num": 22,
+   "track": "genai",
+   "topic": "Embedding Concepts",
+   "file": "data/reels/GA-07.json"
+  },
+  {
+   "id": "GA-08",
+   "num": 23,
+   "track": "genai",
+   "topic": "Embedding Models",
+   "file": "data/reels/GA-08.json"
+  },
+  {
+   "id": "PY-20",
+   "num": 24,
+   "track": "python",
+   "topic": "SQL from Python",
+   "file": "data/reels/PY-20.json"
+  },
+  {
+   "id": "GA-09",
+   "num": 25,
+   "track": "genai",
+   "topic": "Vector DB Fundamentals",
+   "file": "data/reels/GA-09.json"
+  },
+  {
+   "id": "GA-10",
+   "num": 26,
+   "track": "genai",
+   "topic": "Vector DB Options",
+   "file": "data/reels/GA-10.json"
+  },
+  {
+   "id": "GA-11",
+   "num": 27,
+   "track": "genai",
+   "topic": "Operations",
+   "file": "data/reels/GA-11.json"
+  },
+  {
+   "id": "GA-12",
+   "num": 28,
+   "track": "genai",
+   "topic": "Vector vs Parquet/SQL Decision",
+   "file": "data/reels/GA-12.json"
+  },
+  {
+   "id": "GA-13",
+   "num": 29,
+   "track": "genai",
+   "topic": "RAG Architecture",
+   "file": "data/reels/GA-13.json"
+  },
+  {
+   "id": "GA-14",
+   "num": 30,
+   "track": "genai",
+   "topic": "Ingestion & Chunking",
+   "file": "data/reels/GA-14.json"
+  },
+  {
+   "id": "GA-15",
+   "num": 31,
+   "track": "genai",
+   "topic": "Retrieval Quality",
+   "file": "data/reels/GA-15.json"
+  },
+  {
+   "id": "GA-16",
+   "num": 32,
+   "track": "genai",
+   "topic": "Generation & Citations",
+   "file": "data/reels/GA-16.json"
+  },
+  {
+   "id": "GA-17",
+   "num": 33,
+   "track": "genai",
+   "topic": "Advanced RAG",
+   "file": "data/reels/GA-17.json"
+  },
+  {
+   "id": "PY-10",
+   "num": 34,
+   "track": "python",
+   "topic": "asyncio",
+   "file": "data/reels/PY-10.json"
+  },
+  {
+   "id": "PY-11",
+   "num": 35,
+   "track": "python",
+   "topic": "Threads vs Processes",
+   "file": "data/reels/PY-11.json"
+  },
+  {
+   "id": "PY-12",
+   "num": 36,
+   "track": "python",
+   "topic": "HTTP Clients",
+   "file": "data/reels/PY-12.json"
+  },
+  {
+   "id": "PY-13",
+   "num": 37,
+   "track": "python",
+   "topic": "FastAPI",
+   "file": "data/reels/PY-13.json"
+  },
+  {
+   "id": "PY-22",
+   "num": 38,
+   "track": "python",
+   "topic": "Testing & Quality",
+   "file": "data/reels/PY-22.json"
+  },
+  {
+   "id": "GA-20",
+   "num": 39,
+   "track": "genai",
+   "topic": "Eval Fundamentals",
+   "file": "data/reels/GA-20.json"
+  },
+  {
+   "id": "GA-21",
+   "num": 40,
+   "track": "genai",
+   "topic": "RAG & LLM Metrics",
+   "file": "data/reels/GA-21.json"
+  },
+  {
+   "id": "AG-01",
+   "num": 41,
+   "track": "agentic",
+   "topic": "What is an Agent",
+   "file": "data/reels/AG-01.json"
+  },
+  {
+   "id": "AG-02",
+   "num": 42,
+   "track": "agentic",
+   "topic": "Tool Design",
+   "file": "data/reels/AG-02.json"
+  },
+  {
+   "id": "AG-03",
+   "num": 43,
+   "track": "agentic",
+   "topic": "Built-in Capabilities",
+   "file": "data/reels/AG-03.json"
+  },
+  {
+   "id": "GA-18",
+   "num": 44,
+   "track": "genai",
+   "topic": "Text-to-SQL",
+   "file": "data/reels/GA-18.json"
+  },
+  {
+   "id": "GA-19",
+   "num": 45,
+   "track": "genai",
+   "topic": "Files as Data Source",
+   "file": "data/reels/GA-19.json"
+  },
+  {
+   "id": "AG-04",
+   "num": 46,
+   "track": "agentic",
+   "topic": "MCP Concepts",
+   "file": "data/reels/AG-04.json"
+  },
+  {
+   "id": "AG-05",
+   "num": 47,
+   "track": "agentic",
+   "topic": "MCP Spec Evolution",
+   "file": "data/reels/AG-05.json"
+  },
+  {
+   "id": "AG-06",
+   "num": 48,
+   "track": "agentic",
+   "topic": "Using Existing MCP Servers",
+   "file": "data/reels/AG-06.json"
+  },
+  {
+   "id": "AG-07",
+   "num": 49,
+   "track": "agentic",
+   "topic": "MCP Security",
+   "file": "data/reels/AG-07.json"
+  },
+  {
+   "id": "AG-08",
+   "num": 50,
+   "track": "agentic",
+   "topic": "MCP Server Development",
+   "file": "data/reels/AG-08.json"
+  },
+  {
+   "id": "AG-09",
+   "num": 51,
+   "track": "agentic",
+   "topic": "Project: Excel MCP Server",
+   "file": "data/reels/AG-09.json"
+  },
+  {
+   "id": "AG-10",
+   "num": 52,
+   "track": "agentic",
+   "topic": "Workflow Patterns",
+   "file": "data/reels/AG-10.json"
+  },
+  {
+   "id": "AG-11",
+   "num": 53,
+   "track": "agentic",
+   "topic": "Agent Reasoning",
+   "file": "data/reels/AG-11.json"
+  },
+  {
+   "id": "AG-12",
+   "num": 54,
+   "track": "agentic",
+   "topic": "Memory Types",
+   "file": "data/reels/AG-12.json"
+  },
+  {
+   "id": "AG-13",
+   "num": 55,
+   "track": "agentic",
+   "topic": "Context Management",
+   "file": "data/reels/AG-13.json"
+  },
+  {
+   "id": "AG-14",
+   "num": 56,
+   "track": "agentic",
+   "topic": "Architectures",
+   "file": "data/reels/AG-14.json"
+  },
+  {
+   "id": "AG-15",
+   "num": 57,
+   "track": "agentic",
+   "topic": "Framework Landscape",
+   "file": "data/reels/AG-15.json"
+  },
+  {
+   "id": "AG-16",
+   "num": 58,
+   "track": "agentic",
+   "topic": "Framework Selection",
+   "file": "data/reels/AG-16.json"
+  },
+  {
+   "id": "GA-22",
+   "num": 59,
+   "track": "genai",
+   "topic": "Security Threats",
+   "file": "data/reels/GA-22.json"
+  },
+  {
+   "id": "GA-23",
+   "num": 60,
+   "track": "genai",
+   "topic": "Controls",
+   "file": "data/reels/GA-23.json"
+  },
+  {
+   "id": "GA-24",
+   "num": 61,
+   "track": "genai",
+   "topic": "Observability",
+   "file": "data/reels/GA-24.json"
+  },
+  {
+   "id": "GA-25",
+   "num": 62,
+   "track": "genai",
+   "topic": "Performance & Cost",
+   "file": "data/reels/GA-25.json"
+  },
+  {
+   "id": "GA-26",
+   "num": 63,
+   "track": "genai",
+   "topic": "Deployment",
+   "file": "data/reels/GA-26.json"
+  },
+  {
+   "id": "AG-17",
+   "num": 64,
+   "track": "agentic",
+   "topic": "Control Design",
+   "file": "data/reels/AG-17.json"
+  },
+  {
+   "id": "AG-18",
+   "num": 65,
+   "track": "agentic",
+   "topic": "Agent Evals",
+   "file": "data/reels/AG-18.json"
+  },
+  {
+   "id": "AG-19",
+   "num": 66,
+   "track": "agentic",
+   "topic": "Production Engineering",
+   "file": "data/reels/AG-19.json"
+  },
+  {
+   "id": "AG-20",
+   "num": 67,
+   "track": "agentic",
+   "topic": "Threat Model",
+   "file": "data/reels/AG-20.json"
+  },
+  {
+   "id": "PY-23",
+   "num": 68,
+   "track": "python",
+   "topic": "Packaging & Deployment",
+   "file": "data/reels/PY-23.json"
+  },
+  {
+   "id": "AG-21",
+   "num": 69,
+   "track": "agentic",
+   "topic": "Project: SOP-to-Excel Agent",
+   "file": "data/reels/AG-21.json"
+  },
+  {
+   "id": "AG-22",
+   "num": 70,
+   "track": "agentic",
+   "topic": "Project: Data Analyst Agent",
+   "file": "data/reels/AG-22.json"
+  },
+  {
+   "id": "AG-23",
+   "num": 71,
+   "track": "agentic",
+   "topic": "Project: Document Processing Agent",
+   "file": "data/reels/AG-23.json"
+  },
+  {
+   "id": "AG-24",
+   "num": 72,
+   "track": "agentic",
+   "topic": "Project: Messaging Assistant",
+   "file": "data/reels/AG-24.json"
+  },
+  {
+   "id": "GA-29",
+   "num": 73,
+   "track": "genai",
+   "topic": "Azure AI Services",
+   "file": "data/reels/GA-29.json"
+  },
+  {
+   "id": "GA-30",
+   "num": 74,
+   "track": "genai",
+   "topic": "Architect Toolkit",
+   "file": "data/reels/GA-30.json"
+  },
+  {
+   "id": "AG-25",
+   "num": 75,
+   "track": "agentic",
+   "topic": "Architect Toolkit",
+   "file": "data/reels/AG-25.json"
+  },
+  {
+   "id": "GA-27",
+   "num": 76,
+   "track": "genai",
+   "topic": "RAG vs Fine-tune vs Prompt",
+   "file": "data/reels/GA-27.json"
+  },
+  {
+   "id": "GA-28",
+   "num": 77,
+   "track": "genai",
+   "topic": "Beyond Text",
+   "file": "data/reels/GA-28.json"
+  },
+  {
+   "id": "PY-14",
+   "num": 78,
+   "track": "python",
+   "topic": "Real-time & Webhooks",
+   "file": "data/reels/PY-14.json"
+  },
+  {
+   "id": "PY-16",
+   "num": 79,
+   "track": "python",
+   "topic": "polars",
+   "file": "data/reels/PY-16.json"
+  },
+  {
+   "id": "PY-21",
+   "num": 80,
+   "track": "python",
+   "topic": "NoSQL & Cache",
+   "file": "data/reels/PY-21.json"
+  }
+ ]
+}

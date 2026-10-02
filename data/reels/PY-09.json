@@ -1,0 +1,147 @@
+{
+  "id": "PY-09",
+  "num": 9,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Pydantic",
+  "hook": "LLMs speak JSON. JSON **lies** sometimes. Pydantic is the lie detector every GenAI app runs on.",
+  "chapters": [
+    "BaseModel",
+    "Field validators",
+    "pydantic-settings",
+    "JSON Schema export"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · BASEMODEL",
+      "title": "Parse, don't **pray**",
+      "sub": "BaseModel validates at the boundary — bad data dies early",
+      "narration": "Here's the single most valuable library for your GenAI work. Pydantic's BaseModel is a class where every field is declared with a type — and when you construct it from raw data, every value is validated and coerced. String where an int belongs? Error, immediately, with a readable message. Missing required field? Error. This is the difference between hoping JSON is well-formed and knowing it — parse, don't pray."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🏗️", "t": "class Config(BaseModel): model: str · temp: float = 0.7", "s": "Type-annotated fields double as validation rules" },
+        { "e": "🧲", "t": "Config(**json_data) or model_validate(json)", "s": "Construction IS validation — bad payloads raise ValidationError" },
+        { "e": "🔧", "t": "Smart coercion: \"42\" → 42 · \"true\" → True", "s": "Strings from JSON become proper types when unambiguous" }
+      ],
+      "narration": "The workflow: declare your model with type-annotated fields — same syntax as a dataclass. Then parse incoming data with model validate, or construct directly from a dict. Coercion is smart: the string forty-two becomes an integer if the field says int. And when validation fails, you get one ValidationError listing every problem — which is exactly what you show an LLM in the retry loop."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · VALIDATORS",
+      "title": "Your rules, **not just types**",
+      "sub": "@field_validator — temperature between 0 and 2, not just 'a float'",
+      "narration": "Types catch wrong shapes; validators catch wrong values. A temperature of nine hundred is a perfectly good float and a completely broken model call. Pydantic lets you attach validation functions to fields — check the range, check the format, check that the model name is one you actually support. Write the rule once, and every parse enforces it, everywhere, forever."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📏", "t": "@field_validator(\"temperature\")", "s": "classmethod receiving the value — raise ValueError to reject" },
+        { "e": "🤖", "t": "Validate LLM output: allowed models only", "s": "Reject 'gpt-99' before it costs you a confusing API error" },
+        { "e": "🏭", "t": "@model_validator — cross-field rules", "s": "\"max_tokens must exceed min_tokens\" lives here" }
+      ],
+      "narration": "Two levels. Field validators run per field — range checks, membership in an allowed set. Raise ValueError and Pydantic wraps it into the validation report. Model validators see the whole object for cross-field logic — max must beat min, end date after start date. For agents, the killer use is whitelisting: only model names you've tested, only tools that exist. Garbage gets stopped at the door."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · SETTINGS",
+      "title": "Config that **validates itself**",
+      "sub": "pydantic-settings: env vars → typed, validated settings object",
+      "narration": "Remember environment variables from Reel 7? pydantic-settings upgrades that pattern: a BaseSettings subclass whose fields populate from environment variables automatically — with names, prefixes, defaults, and full validation. Twelve-factor config, but typed. A missing required key fails at startup with a clear message instead of failing three API calls later. This is how every service you'll build should boot."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🌱", "t": "class Settings(BaseSettings):", "s": "model_config = SettingsConfigDict(env_prefix=\"APP_\")" },
+        { "e": "✅", "t": "Validation at boot", "s": "OPENAI_API_KEY empty or missing → loud crash on startup, not mid-request" },
+        { "e": "🧊", "t": "@lru_cache on get_settings()", "s": "One settings instance for the whole app — the FastAPI pattern" }
+      ],
+      "narration": "The shape: subclass BaseSettings, declare fields, configure an env prefix like app underscore. Values flow in from the environment and through your validators at startup. And the FastAPI idiom you'll see everywhere — a get settings function cached with lru cache, so the whole app shares one immutable settings object. Dependency injection reads it; tests override it. Simple, typed, verified before the first request."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · JSON SCHEMA",
+      "title": "The bridge to **structured output**",
+      "sub": "model_json_schema() → the exact JSON Schema LLMs can be forced to return",
+      "narration": "Now the payoff that connects to Stage 2. Every Pydantic model can export its JSON Schema — the formal contract of its shape. Modern LLM APIs accept a schema and guarantee the response conforms to it: OpenAI's structured outputs, tool calling parameters — all schema-driven. Define once in Pydantic, export the schema, hand it to the model, parse the reply back into the same model. One source of truth, end to end."
+    },
+    {
+      "type": "diagram",
+      "chapter": 3,
+      "nodes": [
+        { "e": "🐍", "t": "Pydantic model", "s": "typed fields + validators" },
+        { "e": "📋", "t": "JSON Schema", "s": "model_json_schema()" },
+        { "e": "🧠", "t": "LLM call", "s": "response_format = schema" },
+        { "e": "✅", "t": "Validated object", "s": "Model.model_validate_json()" }
+      ],
+      "linkLabel": "feeds",
+      "narration": "Follow the loop. Your Pydantic model exports its schema. The API call includes it as the response format. The model physically cannot return shape-violating JSON — the API enforces it. You parse the reply back into your model and get a fully typed, validated object. This loop — define, export, constrain, parse — is the backbone of reliable AI features. Stage 2 uses it constantly."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 1 COMPLETE · UP NEXT",
+      "title": "Python core: **done** 🎉",
+      "next": "Stage 2 starts: Reel 10 · How LLMs Work"
+    }
+  ],
+  "recap": [
+    "BaseModel validates at the boundary — parse LLM JSON instead of hoping",
+    "field_validator/model_validator enforce value rules, not just types",
+    "model_json_schema() feeds structured output — one model, end to end"
+  ],
+  "quiz": [
+    {
+      "q": "What happens when you construct a Pydantic model with a string in an int field?",
+      "opts": [
+        "Nothing — Python is dynamically typed",
+        "It coerces when unambiguous (\"42\" → 42), else raises ValidationError",
+        "It always raises an error, even for \"42\"",
+        "It stores the string silently"
+      ],
+      "a": 1,
+      "why": "Pydantic validates and coerces smartly at the boundary: clean coercions succeed, real mismatches raise a detailed ValidationError."
+    },
+    {
+      "q": "Where do cross-field rules (max_tokens > min_tokens) go?",
+      "opts": [
+        "@field_validator(\"max_tokens\")",
+        "@model_validator",
+        "In __init__ after super()",
+        "They can't be expressed in Pydantic"
+      ],
+      "a": 1,
+      "why": "@model_validator sees the whole model; field validators only see one field's value."
+    },
+    {
+      "q": "How does Pydantic connect to LLM structured output?",
+      "opts": [
+        "It sends the model class to the API",
+        "model_json_schema() exports the schema the API enforces, then model_validate_json() parses the reply",
+        "It fine-tunes the model on your fields",
+        "It wraps the API response in try/except"
+      ],
+      "a": 1,
+      "why": "One source of truth: the Pydantic model generates the JSON Schema for the API constraint and validates the response — define once, use at both ends."
+    }
+  ],
+  "code": {
+    "title": "Pydantic — the GenAI backbone pattern",
+    "body": "from pydantic import BaseModel, Field, field_validator\nfrom pydantic_settings import BaseSettings, SettingsConfigDict\n\n# --- 1. BaseModel: parse, don't pray ---------------------------\nclass ChatRequest(BaseModel):\n    model: str\n    prompt: str\n    temperature: float = 0.7\n    max_tokens: int = Field(default=1000, ge=1, le=128_000)\n\nreq = ChatRequest(**{\"model\": \"gpt-4o\", \"prompt\": \"hi\", \"temperature\": \"0.2\"})\n\n# --- 2. Validators: value rules --------------------------------\nALLOWED = {\"gpt-4o\", \"claude-sonnet\", \"llama-3\"}\n\n@field_validator(\"model\")\n@classmethod\ndef model_must_be_supported(cls, v: str) -> str:\n    if v not in ALLOWED:\n        raise ValueError(f\"unsupported model: {v}\")\n    return v\n\n# --- 3. Settings: validated env config -------------------------\nclass Settings(BaseSettings):\n    model_config = SettingsConfigDict(env_prefix=\"APP_\")\n    openai_api_key: str\n    model: str = \"gpt-4o\"\n    max_retries: int = 3\n\n# export APP_OPENAI_API_KEY=sk-...\n# settings = Settings()   # crashes loudly if the key is missing\n\n# --- 4. JSON Schema: structured output --------------------------\nprint(ChatRequest.model_json_schema())\n# → the schema you pass as response_format / tool parameters\n\n# reply = client.chat(..., response_format=ChatRequestSchema)\n# parsed = ChatRequest.model_validate_json(reply)",
+    "annot": [
+      "Field(ge=1, le=128_000) — range constraints inline, no custom validator needed",
+      "Settings reads env vars like APP_OPENAI_API_KEY with type checking at boot",
+      "model_json_schema() + model_validate_json() = one model at both ends of the LLM call"
+    ]
+  },
+  "notes": "# Pydantic\n\n## BaseModel\n```python\nclass ChatRequest(BaseModel):\n    model: str\n    prompt: str\n    temperature: float = 0.7\nreq = ChatRequest(**json_from_llm)   # validates + coerces\n```\n- Bad data → `ValidationError` with every problem listed.\n\n## Validators\n- `Field(ge=, le=, min_length=, ...)` for simple rules.\n- `@field_validator(\"model\")` — per-field; raise ValueError to reject.\n- `@model_validator` — cross-field rules.\n\n## pydantic-settings\n```python\nclass Settings(BaseSettings):\n    model_config = SettingsConfigDict(env_prefix=\"APP_\")\n    openai_api_key: str\n```\n- Env vars → typed, validated config; crashes at boot when required keys are missing.\n\n## JSON Schema export\n```python\nschema = ChatRequest.model_json_schema()\nreply  = ChatRequest.model_validate_json(raw)\n```\n- **The structured-output loop**: define once → constrain the LLM → validate the reply. Backbone of Stage 2+."
+}

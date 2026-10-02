@@ -1,0 +1,183 @@
+{
+  "id": "PY-07",
+  "num": 7,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Errors, Files & Config",
+  "hook": "Real programs **fail**. The difference between a demo and a system is how you handle it — files, config, and clean failure paths.",
+  "chapters": [
+    "try / except / finally",
+    "Custom exceptions",
+    "Context managers (with)",
+    "pathlib — modern paths",
+    "JSON files",
+    "Env vars & .env"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · EXCEPTIONS",
+      "title": "Errors are **exceptions**, and they travel",
+      "sub": "try → raise → catch where you can act",
+      "narration": "Python errors are exceptions — objects that travel up the call stack until something catches them. Wrap risky code in try, handle specific exceptions in except, and put cleanup in finally, which always runs. The C sharp shape is identical — the difference is culture: catching the bare Exception base class is a smell here; always catch what you can actually handle and let the rest crash loudly."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🎯", "t": "except ValueError:", "s": "Catch the SPECIFIC error — bare except hides bugs and KeyboardInterrupt" },
+        { "e": "📦", "t": "except (A, B) as e:", "s": "Tuple of exceptions; `e` holds the instance with its message" },
+        { "e": "🔄", "t": "raise", "s": "Bare raise re-throws the current exception — add context, then re-raise" }
+      ],
+      "narration": "Three habits. Catch specific exceptions — ValueError, FileNotFoundError — never bare except, which swallows everything including the keypress that should stop your program. Capture the exception with as-e when you need its message. And when you catch just to log, re-raise with a bare raise so the error still travels. Silence is the worst failure mode."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · CUSTOM EXCEPTIONS",
+      "title": "Domain errors are **classes**",
+      "sub": "class ConfigError(Exception) — three words, infinite clarity",
+      "narration": "When an LLM returns malformed output, or a config file is missing a key — that's not a ValueError, that's a domain failure. Define your own exceptions by inheriting from Exception. Callers can then catch exactly your error, and stack traces read like documentation. In agent systems, custom exceptions become your control flow: retry the transient ones, alert on the fatal ones."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🧱", "t": "class LLMOutputError(Exception)", "s": "Inherit Exception (or a domain base like AppError)" },
+        { "e": "🔗", "t": "Add context in the message", "s": "raise ConfigError(f\"missing key: {key}\") from original" },
+        { "e": "🌳", "t": "Inherit domain bases", "s": "AppError → ConfigError, LLMError → RetryableError: catch hierarchies" }
+      ],
+      "narration": "The pattern: a small tree. AppError at the root, then ConfigError, LLMError under it. Raise with a helpful message, and chain with 'from' when wrapping a lower error — it keeps both stack traces. Callers catch the base to handle everything, or a leaf to handle one thing. This is how you keep error handling readable at three in the morning."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · WITH",
+      "title": "with = **using / IDisposable**",
+      "sub": "Guaranteed cleanup — files, locks, connections, retries",
+      "narration": "The with statement is C sharp's using block: acquire a resource, use it, and no matter what happens — exception, return, crash — cleanup runs automatically. Files are the textbook case, but anything with setup and teardown works: database connections, locks, even timed sections. In the LLM world you'll use it for httpx clients so connections are pooled and released correctly."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📂", "t": "with open(\"config.json\") as f:", "s": "File closes even if parsing inside throws" },
+        { "e": "🧰", "t": "Multiple in one line", "s": "with open(a) as fa, open(b) as fb: — nested or comma-separated" },
+        { "e": "🏗️", "t": "Build your own: contextlib", "s": "@contextmanager turns a generator into a context manager" }
+      ],
+      "narration": "Details worth knowing. One with can hold multiple resources — comma separated. Files close even when the code inside raises. And you can build your own using contextlib's contextmanager decorator — write a generator that yields the resource, and everything after yield becomes the cleanup. It's the idiomatic way to wrap retry logic or temporary state."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · PATHLIB",
+      "title": "Stop using strings for paths",
+      "sub": "pathlib.Path — joins, globs, and readability",
+      "narration": "New rule: never manipulate file paths as strings. Pathlib's Path object joins with a slash operator, reads text in one call, lists directories with glob patterns, and never has a double-slash bug. It reads like the problem: data folder slash file dot json. Windows, Mac, Linux — one code path. This is the modern standard, and it's been built in since 3.4."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🔗", "t": "Path(\"data\") / \"raw\" / \"users.json\"", "s": "Slash operator builds OS-correct paths — no string concat" },
+        { "e": "📖", "t": ".read_text() / .write_text()", "s": "One-liner file IO: path.read_text(encoding=\"utf-8\")" },
+        { "e": "🌍", "t": ".glob(\"*.csv\") · .exists() · .mkdir()", "s": "Pattern listing, checks, and directory creation built in" }
+      ],
+      "narration": "Your daily set: build with slash, read with dot read text, write with dot write text — always specify utf-8 encoding, by the way; that's the most common cross-platform bug. Then glob for patterns — all CSVs, all JSONs — exists for checks, and mkdir with parents equals true to create folders. Every path operation you'll need lives on Path."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · JSON",
+      "title": "JSON: Python's **native dialect**",
+      "sub": "dict ↔ JSON round-trips in two calls",
+      "narration": "JSON is the lingua franca of every API you'll touch, and Python maps it perfectly: JSON objects become dicts, arrays become lists, strings, numbers, booleans, and null becomes None. The json module converts with two calls — loads for strings, dumps for output. Every LLM response you receive and every request you send goes through these two functions."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "📥", "t": "json.loads(text) → dict", "s": "Parse API responses; json.load(f) reads straight from a file object" },
+        { "e": "📤", "t": "json.dumps(obj, indent=2)", "s": "Serialize; indent=2 for humans, default compact for APIs" },
+        { "e": "🧬", "t": "dataclasses/Pydantic bridge", "s": "Parse into typed objects instead of raw dicts — Reel 9 (Pydantic)" }
+      ],
+      "narration": "The round trip: loads turns response text into nested dicts — access with square brackets or get. Dumps goes back out, with indent for pretty printing. One warning: raw dicts don't validate anything. A missing key fails three functions later. The professional move is parsing straight into typed objects — dataclasses today, Pydantic models in Reel 9. That's when JSON stops being fragile."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · CONFIG & SECRETS",
+      "title": "**Env vars** are how config leaves your code",
+      "sub": "os.environ + python-dotenv — never hardcode secrets",
+      "narration": "Last chapter: configuration. Anything that changes between environments — API keys, endpoints, model names — comes from environment variables, read via os dot environ. The dot env file holds them during development, loaded by python-dotenv; in production, the platform injects them. And the iron rule, the one with career consequences: secrets never enter source control. Not even once, not even for a minute."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "🔑", "t": "os.environ[\"OPENAI_API_KEY\"]", "s": "KeyError if missing — os.getenv(\"KEY\") returns None instead" },
+        { "e": "📄", "t": ".env file + python-dotenv", "s": "KEY=value lines; dotenv loads them on startup; .env lives in .gitignore" },
+        { "e": "🚫", "t": "git commit -m \"add key\" = breach", "s": "Keys in git history are compromised forever — rotate immediately" }
+      ],
+      "narration": "Mechanics: environ with square brackets throws when missing — good for required config. Getenv returns none — fine with defaults. The dot env file keeps development convenient, and it must sit in gitignore from the first commit. If a key ever lands in history, rotating it isn't optional — bots scan GitHub within minutes. This discipline carries directly into every agent you deploy."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · PY-08",
+      "title": "Make the runtime checks compile-time",
+      "next": "Reel 8 · Type Hints — get your C# safety net back"
+    }
+  ],
+  "recap": [
+    "Catch specific exceptions, re-raise with bare raise, build domain exception trees",
+    "with guarantees cleanup; pathlib replaces string paths; JSON ↔ dict via loads/dumps",
+    "Config and secrets come from env vars; .env is dev-only and gitignored"
+  ],
+  "quiz": [
+    {
+      "q": "Why is bare `except:` considered bad practice?",
+      "opts": [
+        "It slows down the program",
+        "It catches everything including interrupts, hiding real bugs",
+        "It doesn't work in Python 3",
+        "It can only be used once per file"
+      ],
+      "a": 1,
+      "why": "Bare except swallows every exception type — including KeyboardInterrupt — so failures become silent wrong behavior. Catch what you can handle."
+    },
+    {
+      "q": "What does `with open(\"f.txt\") as f:` guarantee?",
+      "opts": [
+        "The file is locked from other processes",
+        "The file closes even if an exception is raised inside",
+        "The file is read into memory",
+        "The file is deleted afterwards"
+      ],
+      "a": 1,
+      "why": "The context manager's __exit__ runs on every exit path — normal, exception, or return — giving IDisposable-style cleanup."
+    },
+    {
+      "q": "Where should API keys live in a Python project?",
+      "opts": [
+        "In a config.py file committed to git",
+        "Hardcoded at the top of the script that uses them",
+        "In environment variables / a gitignored .env file",
+        "In a JSON file next to the code"
+      ],
+      "a": 2,
+      "why": "Environment variables keep secrets out of source control; .env is a dev convenience and must be in .gitignore. Keys committed to git are compromised."
+    }
+  ],
+  "code": {
+    "title": "Errors, files & config — production-shaped",
+    "body": "import json, os\nfrom pathlib import Path\nfrom dotenv import load_dotenv\n\nload_dotenv()                       # reads .env into os.environ\nAPI_KEY = os.environ[\"OPENAI_API_KEY\"]   # fail fast if missing\n\n# --- custom exceptions ----------------------------------------\nclass AppError(Exception): pass\nclass ConfigError(AppError): pass\n\n# --- config from JSON with real errors -------------------------\nCONFIG_PATH = Path(\"config\") / \"app.json\"\n\ndef load_config() -> dict:\n    try:\n        return json.loads(CONFIG_PATH.read_text(encoding=\"utf-8\"))\n    except FileNotFoundError as e:\n        raise ConfigError(f\"missing config: {CONFIG_PATH}\") from e\n    except json.JSONDecodeError as e:\n        raise ConfigError(f\"invalid JSON at line {e.lineno}\") from e\n\n# --- with = guaranteed cleanup ---------------------------------\nwith open(\"data/users.csv\", encoding=\"utf-8\") as f:\n    header = f.readline().strip()\n\n# --- pathlib everywhere ----------------------------------------\nout = Path(\"output\") / \"report.json\"\nout.parent.mkdir(parents=True, exist_ok=True)\nout.write_text(json.dumps({\"rows\": 42}, indent=2), encoding=\"utf-8\")\n\ncsvs = sorted(Path(\"data\").glob(\"*.csv\"))",
+    "annot": [
+      "os.environ[...] fails fast on missing required config — better than None surprises",
+      "raise ... from e chains exceptions: traceback shows both causes",
+      "mkdir(parents=True, exist_ok=True) = create the whole tree, no errors if present"
+    ]
+  },
+  "notes": "# Errors, Files & Config\n\n## try / except / finally\n- Catch **specific** exceptions; bare `except:` is a smell.\n- `except (A, B) as e:` · `finally:` always runs.\n- Log then `raise` (bare) — don't swallow.\n\n## Custom exceptions\n```python\nclass AppError(Exception): ...\nclass ConfigError(AppError): ...\nraise ConfigError(\"missing key\") from original\n```\n- Domain trees let callers catch broadly or narrowly.\n\n## Context managers\n- `with X() as x:` ≡ C# `using` — cleanup on every exit path.\n- Roll your own: `contextlib.contextmanager` decorator.\n\n## pathlib\n```python\np = Path(\"data\") / \"raw\" / \"x.json\"\ntext = p.read_text(encoding=\"utf-8\")\nPath(\"out\").mkdir(parents=True, exist_ok=True)\nlist(Path(\"data\").glob(\"*.csv\"))\n```\n\n## JSON\n- `json.loads(text)` → dict · `json.dumps(obj, indent=2)` → text.\n- `json.load(f)` / `json.dump(obj, f)` for file objects.\n- Raw dicts don't validate → typed parsing (Pydantic, Reel PY-09).\n\n## Env vars & .env\n- `os.environ[\"KEY\"]` (strict) · `os.getenv(\"KEY\", default)`.\n- `.env` + python-dotenv for dev; **gitignore it**.\n- Secrets in git history = rotate immediately."
+}

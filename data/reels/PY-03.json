@@ -1,0 +1,158 @@
+{
+  "id": "PY-03",
+  "num": 3,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Core Data Structures",
+  "hook": "Four structures run **90% of all Python code**. Master these and every LLM library will feel familiar.",
+  "chapters": [
+    "list & tuple",
+    "dict — the hash map",
+    "set — unique & fast",
+    "Comprehensions",
+    "Slicing & unpacking"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · LIST & TUPLE",
+      "title": "list = **List<T>**. tuple = a frozen one.",
+      "sub": "Ordered sequences — one mutable, one not",
+      "narration": "A Python list is C sharp's List of T — ordered, zero-indexed, growable, mixed types allowed. A tuple is the same thing but immutable: once created, never changed. Use lists for collections that evolve; tuples for fixed records — like a coordinate pair, or a row you don't want anyone, including yourself, mutating by accident."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "📋", "t": "list [1, 2, 3]", "s": "Mutable: append, insert, remove, sort. The default workhorse.", "win": true },
+        { "e": "🔒", "t": "tuple (1, 2, 3)", "s": "Immutable: fixed size, hashable, slightly faster. Fixed records." }
+      ],
+      "narration": "Compare: lists mutate — append, insert, remove, sort in place. Tuples are frozen — no changes, ever. Tuples are hashable, so they can be dict keys, and they signal intent: this record is complete. Everything else about them — indexing, slicing, iteration — is identical."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · DICT",
+      "title": "dict — **the** most-used structure in Python",
+      "sub": "Hash map with literal syntax: {\"key\": value}",
+      "narration": "The dictionary is Python's hash map — think Dictionary of string to object in C sharp, but with first-class syntax. Curly braces, key colon value. And here's why it matters for your future: every LLM API speaks JSON, and every JSON object becomes a dict in Python. You will live in dicts."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🔑", "t": "Lookup, insert, delete are O(1)", "s": "config[\"model\"] · config[\"temp\"] = 0.7 · del config[\"temp\"]" },
+        { "e": "🚶", "t": ".items(), .keys(), .values()", "s": "for key, value in config.items() — iterate pairs directly" },
+        { "e": "🛡️", "t": ".get() avoids KeyError", "s": "config.get(\"temp\", 0.5) returns 0.5 if the key is missing" }
+      ],
+      "narration": "Three habits. One: lookup, insert, and delete are constant time. Two: iterate with dot items to get key-value pairs in one step. Three: use dot get with a default instead of square brackets when the key might be missing — square brackets on a missing key throws KeyError, and dot get just returns your default."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · SET",
+      "title": "set = **HashSet<T>**, and it's instant",
+      "sub": "Unordered, unique, lightning-fast membership",
+      "narration": "A set is exactly C sharp's HashSet: unordered collection of unique items. Add a duplicate and it silently ignores it. Its superpower is membership testing — 'is this item in the set' is constant time, even with a million entries. Use it for deduplication and for 'have I seen this before' checks."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "➕", "t": "{1, 2} | {2, 3} → {1, 2, 3}", "s": "Pipe = union, & = intersection, - = difference — set algebra built in" },
+        { "e": "✂️", "t": "list(set(items)) = dedupe", "s": "The classic one-liner; order is lost (use dict.fromkeys to keep it)" },
+        { "e": "⚡", "t": "x in my_set is O(1)", "s": "Same as C# HashSet.Contains — even at 10 million items" }
+      ],
+      "narration": "Sets come with algebra: pipe for union, ampersand for intersection, minus for difference. Dedupe a list by converting to set and back — though order disappears; use dict dot fromkeys if you need to preserve it. And remember: membership checks never slow down as the set grows."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · COMPREHENSIONS",
+      "title": "Comprehensions = **LINQ in one line**",
+      "sub": "[expr for x in items if cond]",
+      "narration": "This is the feature that makes Python feel like magic. A comprehension transforms a collection in a single readable line — it's LINQ's select and where, fused. Square brackets make a list, curly braces make a set or dict. Once your eyes adjust, you'll read them as easily as a loop."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🗺️", "t": "[m.upper() for m in models]", "s": "Select: like models.Select(m => m.ToUpper())" },
+        { "e": "🔍", "t": "[m for m in models if \"gpt\" in m]", "s": "Where + Select combined — filter and transform in one pass" },
+        { "e": "📊", "t": "{m: len(m) for m in models}", "s": "Dict comprehension: model name → its length" }
+      ],
+      "narration": "Read left to right: expression, for, items, optional if. Uppercase every model name — that's select. Keep only names containing g-p-t, transformed — that's where plus select. And the dict version maps each name to its length. Same idea, three shapes. If a comprehension gets longer than one line, go back to a plain loop."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · SLICING & UNPACKING",
+      "title": "Slicing: **a[1:3]** means indexes 1 and 2",
+      "sub": "Start inclusive, end exclusive — half-open, like .Substring",
+      "narration": "Slicing pulls sub-ranges out of lists, tuples, and strings. The rule: start inclusive, end exclusive — exactly like C sharp's substring. a square bracket one colon three gives you elements at index one and two. Leave the start empty to begin at zero; leave the end empty to go to the finish; negative numbers count from the back."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "✂️", "t": "a[:3] · a[2:] · a[-2:]", "s": "First three · from index 2 on · last two — negatives count from the end" },
+        { "e": "🧳", "t": "first, *rest = items", "s": "Unpacking: first gets items[0], rest gets everything else as a list" },
+        { "e": "🔄", "t": "a, b = b, a", "s": "Swap without a temp variable — tuple packing behind the scenes" }
+      ],
+      "narration": "The patterns you'll type daily: a colon three — first three. Two colon — everything from index two. Minus two colon — last two. Unpacking spreads a collection into names: first comma star rest — first gets one element, rest gets the remainder. And the famous swap: a comma b equals b comma a. No temp variable. Tuples make it work."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-04",
+      "title": "Time to write your own functions",
+      "next": "Reel 4 · Functions — args, kwargs, decorators, generators"
+    }
+  ],
+  "recap": [
+    "list = mutable sequence, tuple = immutable record, dict = the JSON-shaped hash map",
+    "Comprehensions are LINQ in one line — [x for x in items if cond]",
+    "Slicing is half-open (start inclusive, end exclusive); unpacking + *rest replaces index plumbing"
+  ],
+  "quiz": [
+    {
+      "q": "What does `a[1:3]` return for a = [10, 20, 30, 40]?",
+      "opts": ["[10, 20, 30]", "[20, 30]", "[20, 30, 40]", "[10, 20]"],
+      "a": 1,
+      "why": "Slicing is half-open: index 1 is included, index 3 is excluded — so [20, 30]."
+    },
+    {
+      "q": "How do you safely read a possibly-missing dict key with a default of 0.5?",
+      "opts": [
+        "config[\"temp\"] or 0.5",
+        "config.get(\"temp\", 0.5)",
+        "config[\"temp\", 0.5]",
+        "config.fetch(\"temp\", 0.5)"
+      ],
+      "a": 1,
+      "why": ".get(key, default) returns the default instead of raising KeyError. (The `or` trick fails when the stored value is legitimately falsy.)"
+    },
+    {
+      "q": "Which comprehension uppercases every string in `models` that contains 'gpt'?",
+      "opts": [
+        "[m.upper() for m in models if \"gpt\" in m]",
+        "[for m in models if \"gpt\" in m: m.upper()]",
+        "models.where(\"gpt\").select(\"upper\")",
+        "[m if \"gpt\" in m else m.upper() for m in models]"
+      ],
+      "a": 0,
+      "why": "Read it left to right: expression, for, source, if-filter — exactly LINQ's Select+Where in one line."
+    }
+  ],
+  "code": {
+    "title": "The four structures + comprehensions in action",
+    "body": "models = [\"gpt-4o\", \"claude-sonnet\", \"gpt-4o-mini\", \"llama-3\"]\n\n# list: mutable sequence\nmodels.append(\"gemini-flash\")\nmodels.sort()\n\n# tuple: immutable record\nendpoint = (\"api.openai.com\", 443)   # host, port — fixed\nhost, port = endpoint                 # unpacked in one line\n\n# dict: the structure of every LLM API response\nresponse = {\"model\": \"gpt-4o\", \"tokens\": 42, \"ok\": True}\nmodel = response.get(\"model\", \"unknown\")\nfor key, value in response.items():\n    print(f\"  {key}: {value}\")\n\n# set: dedupe + instant membership\ntags = list({\"ai\", \"python\", \"ai\", \"rag\"})   # → ['ai', 'python', 'rag']\n\n# comprehension = LINQ in one line\ngpts = [m.upper() for m in models if \"gpt\" in m]\nlengths = {m: len(m) for m in models}\n\n# slicing & unpacking\nfirst, *rest = models\nlast_two = models[-2:]",
+    "annot": [
+      "dict.fromkeys(items) also dedupes but preserves order — use it when order matters",
+      "Unpacking `host, port = endpoint` works because tuples unpack by position",
+      "Comprehensions over files: [line.strip() for line in open('f.txt')]"
+    ]
+  },
+  "notes": "# Core Data Structures\n\n## list & tuple\n| | list `[1,2]` | tuple `(1,2)` |\n| --- | --- | --- |\n| Mutable | ✅ append/insert/remove/sort | ❌ frozen |\n| Hashable (usable as dict key) | ❌ | ✅ |\n| Use for | evolving collections | fixed records |\n\n## dict\n- Hash map: `{\"key\": value}` — keys must be hashable (str, number, tuple).\n- O(1) lookup/insert/delete.\n- `d.get(k, default)` — safe read · `d.items()` — iterate pairs · `d.keys()` / `d.values()`.\n- **Every JSON object becomes a dict** — this is the LLM-era structure.\n\n## set\n- Unordered unique items; O(1) membership.\n- `|` union · `&` intersection · `-` difference.\n- `list(set(x))` dedupes (order lost) · `dict.fromkeys(x)` dedupes, keeps order.\n\n## Comprehensions\n```python\n[m.upper() for m in models]                 # select\n[m for m in models if \"gpt\" in m]           # where\n[m.upper() for m in models if \"gpt\" in m]   # both\n{m: len(m) for m in models}                 # dict comp\n```\n> One line max — longer means go back to a loop.\n\n## Slicing & unpacking\n- `a[1:3]` = indexes 1,2 (half-open) · `a[:3]` · `a[-2:]` (last two).\n- `first, *rest = items` · `a, b = b, a` (swap)."
+}

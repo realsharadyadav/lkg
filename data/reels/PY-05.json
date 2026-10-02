@@ -1,0 +1,251 @@
+{
+  "id": "PY-05",
+  "num": 5,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "OOP in Python",
+  "hook": "Python OOP is **lighter than C#** — fewer keywords, more conventions. Six ideas, no fluff.",
+  "chapters": [
+    "Classes & __init__",
+    "Dunder methods",
+    "Inheritance & super()",
+    "dataclasses",
+    "Protocol & ABC",
+    "@property"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CLASSES",
+      "title": "class is the same. **self** is the difference.",
+      "sub": "The instance passes itself to every method",
+      "narration": "A Python class looks familiar — class keyword, methods inside. The big difference: every instance method takes self as its first parameter, and you pass it explicitly. Self is this — but visible. The constructor is a dunder method called init. No access modifiers either: one underscore means 'please don't', two means 'name-mangled, really don't' — it's convention, not enforcement."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        {
+          "e": "🏗️",
+          "t": "def __init__(self, name)",
+          "s": "The constructor — runs on Model(name=\"gpt\")"
+        },
+        {
+          "e": "🙋",
+          "t": "self.name = name",
+          "s": "Attributes are created by assignment — no field declarations"
+        },
+        {
+          "e": "🔓",
+          "t": "_private by convention",
+          "s": "_x = 'please don't' · __x = name-mangled — trust, not enforcement"
+        }
+      ],
+      "narration": "Mechanics: init runs at construction. Attributes just appear when you assign them — no declaration block, no types required. And privacy is by honor: underscore prefix says 'internal', double underscore makes the compiler rename it so subclasses can't collide. Python trusts you more than C sharp does — that includes trusting you not to break things."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · DUNDER METHODS",
+      "title": "**Dunder** = the interface protocol",
+      "sub": "__len__, __eq__, __str__ — Python's operator overloading",
+      "narration": "Dunder means double underscore. These methods plug your class into Python's own syntax. Implement len and len of your object works. Implement eq and double-equals works. Implement str and print shows something human. It's C sharp's operator overloading plus interfaces plus ToString — one mechanism, everywhere, no ceremony."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        {
+          "e": "📏",
+          "t": "__len__ → len(obj)",
+          "s": "Also makes your object pass truthiness checks naturally"
+        },
+        {
+          "e": "🖨️",
+          "t": "__str__ / __repr__",
+          "s": "__str__ = pretty (print) · __repr__ = debug (REPL) — implement both"
+        },
+        {
+          "e": "➕",
+          "t": "__eq__, __add__, __getitem__",
+          "s": "==, +, and obj[i] all become overloadable"
+        }
+      ],
+      "narration": "The ones you'll write constantly: len for length, str for display, repr for debugging, eq for value comparison. Add getitem and square-bracket indexing works on your object. The mindset shift: you're not calling methods, you're teaching Python's operators what your object means. This is exactly how Pydantic models behave like plain data."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · INHERITANCE",
+      "title": "Inheritance exists. **Prefer composition.**",
+      "sub": "super() calls the parent — mixins are common",
+      "narration": "Inheritance works as you'd expect: class B of A, super calls the parent, and you can override or extend. But Python's culture is blunter than C sharp's: deep hierarchies are frowned on. Composition and duck typing solve most problems inheritance used to. When you do inherit, keep it shallow — one level, maybe two."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        {
+          "e": "👪",
+          "t": "class Tool(BaseTool):",
+          "s": "Inherit, override run(), call super().run() to extend behavior"
+        },
+        {
+          "e": "🧬",
+          "t": "super().__init__(...)",
+          "s": "Python 3: plain super() inside a method — no class name needed"
+        },
+        {
+          "e": "🧱",
+          "t": "Mixins: small, single-purpose parents",
+          "s": "class JsonMixin, class LoggerMixin — composed, not deep trees"
+        }
+      ],
+      "narration": "Syntax: class Tool, parenthesis Base Tool. Super with empty parens calls the parent — cleaner than C sharp's base keyword. And a Python specialty: mixins — tiny classes that add one capability, composed together. Agent frameworks love them: one mixin for logging, one for retries, one for schema — stack them, stay flat."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DATACLASSES",
+      "title": "dataclass = **record type**, built in",
+      "sub": "@dataclass writes __init__, __eq__, __repr__ for you",
+      "narration": "Here's the class you'll actually write most. Put at-dataclass above a class, list fields with type hints, and Python generates the constructor, equality, and a clean repr automatically. It's C sharp's record types — constructor, equality, ToString — with one decorator. Defaults, mutable defaults done safely, even frozen for immutability."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        {
+          "e": "⚡",
+          "t": "@dataclass class Config:",
+          "s": "Three lines replace fifteen — init, eq, repr generated"
+        },
+        {
+          "e": "🔒",
+          "t": "@dataclass(frozen=True)",
+          "s": "Immutable records — hashable, safe to share"
+        },
+        {
+          "e": "🧷",
+          "t": "field(default_factory=list)",
+          "s": "Safe mutable defaults — the trap from Reel 4, handled for you"
+        }
+      ],
+      "narration": "The essentials: at-dataclass, then fields as class annotations with defaults. Frozen equals true makes it immutable — perfect for config and value objects. And field with default factory creates fresh mutable values per instance — the mutable-default trap, solved by design. When you outgrow dataclasses, Pydantic models are the next step — that's Reel 9."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · INTERFACES",
+      "title": "Interfaces: **Protocol beats ABC**",
+      "sub": "Duck typing + static checking = structural interfaces",
+      "narration": "C sharp interfaces are nominal — you declare them. Python has two options. Abstract base classes: the C sharp way, explicit inheritance. Protocols: the modern way — you define the methods you expect, and any class that happens to implement them automatically satisfies the protocol. No inheritance needed. It's structural typing, exactly like TypeScript."
+    },
+    {
+      "type": "compare",
+      "chapter": 4,
+      "cards": [
+        {
+          "e": "🅰️",
+          "t": "ABC (nominal)",
+          "s": "class Storage(ABC) + @abstractmethod. Explicit, but forces inheritance."
+        },
+        {
+          "e": "🅿️",
+          "t": "Protocol (structural)",
+          "s": "class Storage(Protocol): def save(...) — any match qualifies. Zero coupling.",
+          "win": true
+        }
+      ],
+      "narration": "Side by side. ABC: you inherit from it, and forget a method — instantiation fails loudly. Protocol: you just declare the shape, and mypy checks that anything passed in matches. Your vector store, your cache, your LLM client — define them as protocols and test doubles become trivial. In 2026 codebases, reach for Protocol first."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · @PROPERTY",
+      "title": "Methods that behave like **fields**",
+      "sub": "@property = computed values without ()",
+      "narration": "Last tool: property turns a method into an attribute. Access it without parentheses, but it computes on every read. This is where validation and derived values live: a temperature in Celsius that also exposes Fahrenheit, or a config that reads an environment variable lazily. Pair it with a setter and you get C sharp property syntax, Python-style."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        {
+          "e": "✨",
+          "t": "@property def cost_usd(self)",
+          "s": "model.cost_usd — no parens, computed fresh each read"
+        },
+        {
+          "e": "🛡️",
+          "t": "@cost.setter validates on write",
+          "s": "Raise ValueError on bad input — validation lives in the class"
+        },
+        {
+          "e": "💡",
+          "t": "Cache with functools.cached_property",
+          "s": "Compute once, then serve the cached value forever"
+        }
+      ],
+      "narration": "The pattern: at-property for computed reads, at-name dot setter for guarded writes. ValueError on anything invalid — fail fast, close to the data. And when the computation is expensive but stable, cached property from functools computes once and memoizes. Clean, testable, and no boilerplate getters in sight."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · PY-06",
+      "title": "From scripts to a real project",
+      "next": "Reel 6 · Modules & Project Structure — imports, layout, entry points"
+    }
+  ],
+  "recap": [
+    "self is explicit; attributes are created by assignment; _underscore = convention",
+    "Dunders plug your class into Python syntax; dataclasses replace boilerplate records",
+    "Protocol > ABC for interfaces; @property = computed fields"
+  ],
+  "quiz": [
+    {
+      "q": "What does the `@dataclass` decorator generate for you?",
+      "opts": [
+        "A database table",
+        "__init__, __eq__, and __repr__ from field annotations",
+        "Automatic type checking at runtime",
+        "Thread-safe accessors"
+      ],
+      "a": 1,
+      "why": "@dataclass reads the type-annotated fields and generates the constructor, equality, and repr — C# record types in one line."
+    },
+    {
+      "q": "What's the key difference between ABC and Protocol?",
+      "opts": [
+        "ABC is faster at runtime",
+        "Protocol uses structural typing — any class with the right methods matches, no inheritance",
+        "Protocol only works with dataclasses",
+        "There is no difference"
+      ],
+      "a": 1,
+      "why": "ABC is nominal (explicit inheritance); Protocol is structural (duck typing checked by mypy) — zero coupling, like TypeScript interfaces."
+    },
+    {
+      "q": "Which dunder method makes `len(obj)` work?",
+      "opts": [
+        "__length__",
+        "__len__",
+        "__size__",
+        "__count__"
+      ],
+      "a": 1,
+      "why": "__len__ plugs your class into len(); same pattern: __str__ → print, __eq__ → ==, __getitem__ → obj[i]."
+    }
+  ],
+  "code": {
+    "title": "OOP the Python way — 30 lines, everything from this reel",
+    "body": "from dataclasses import dataclass, field\nfrom typing import Protocol\nimport functools\n\n# --- dataclass: the record you'll write most ------------------\n@dataclass(frozen=True)\nclass Model:\n    name: str\n    input_price: float          # per 1M tokens, USD\n\n    @property\n    def cost_usd(self, tokens: int = 1_000_000) -> float:\n        return self.input_price * tokens / 1_000_000\n\n# --- Protocol: structural interface (no inheritance!) ---------\nclass Storage(Protocol):\n    def save(self, key: str, value: dict) -> None: ...\n    def load(self, key: str) -> dict | None: ...\n\nclass MemoryStore:               # satisfies Storage automatically\n    def __init__(self): self._data = {}\n    def save(self, key, value): self._data[key] = value\n    def load(self, key): return self._data.get(key)\n\ndef persist(store: Storage):     # mypy checks the SHAPE, not the parent\n    store.save(\"config\", {\"model\": \"gpt-4o\"})\n\n# --- classic class with dunders -------------------------------\nclass Pipeline:\n    def __init__(self, steps: list | None = None):\n        self.steps = steps if steps is not None else []\n\n    def __len__(self): return len(self.steps)\n    def __str__(self): return f\"Pipeline({len(self.steps)} steps)\"\n\n    def add(self, step): self.steps.append(step); return self\n\np = Pipeline().add(\"embed\").add(\"search\")\nprint(len(p), str(p))",
+    "annot": [
+      "frozen=True → immutable + hashable; still allows @property computed values",
+      "Protocol + mypy: pass ANY object with save/load — test doubles are one-liners",
+      "Method chaining (`return self`) is idiomatic for builders like this Pipeline"
+    ]
+  },
+  "notes": "# OOP in Python\n\n## Classes & __init__\n```python\nclass Model:\n    def __init__(self, name: str, price: float = 0.0):\n        self.name = name          # attribute created by assignment\n        self.price = price\n```\n- `self` = C# `this`, but explicit in every method signature.\n- `_x` = internal by convention · `__x` = name-mangled (not truly private).\n\n## Dunder methods\n| Dunder | Enables |\n| --- | --- |\n| `__init__` | construction |\n| `__len__` | `len(obj)` |\n| `__str__` / `__repr__` | `print` / REPL debug |\n| `__eq__` | `==` |\n| `__getitem__` | `obj[i]` |\n\n## Inheritance & super()\n- `class Tool(BaseTool):` · `super().run()` (Py3: bare `super()`).\n- **Keep hierarchies shallow** — prefer composition + mixins.\n\n## dataclasses\n```python\n@dataclass(frozen=True)\nclass Model:\n    name: str\n    tags: list = field(default_factory=list)\n```\n= records: `__init__` + `__eq__` + `__repr__` generated.\n\n## Protocol & ABC\n- **ABC**: nominal — inherit, `@abstractmethod`, loud failures.\n- **Protocol**: structural — declare the shape; any match qualifies (mypy-checked). Prefer Protocol.\n\n## @property\n- Computed attribute without `()`; add `@x.setter` for validation; `functools.cached_property` to memoize."
+}

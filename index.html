@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8f5e9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="LKG — your path from .NET architect to GenAI architect. 80 chaptered reels: Python, GenAI, Agentic AI.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>LKG · GenAI Architect Path</title>
+<link rel="stylesheet" href="css/app.css?v=1">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand">LKG<span class="brand-sub">GenAI Architect</span></div>
+    <div class="top-right">
+      <span class="prog-pill" id="courseProgress" title="Course progress">✅ 0/80</span>
+      <div class="streak" id="streakBadge" title="Daily streak">🔥<b id="streakCount">0</b></div>
+      <button id="settingsBtn" class="iconbtn" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <main id="feeds"></main>
+
+  <div id="scrim"></div>
+
+  <aside id="codePanel" class="sheet right">
+    <div class="sheet-head"><span id="codeTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-scroll">
+      <pre id="codeBody" class="code"></pre>
+      <div id="codeNotes" class="annotes"></div>
+    </div>
+  </aside>
+
+  <section id="notesSheet" class="sheet bottom">
+    <div class="grab"></div>
+    <div class="sheet-head"><span id="notesTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
+    <div id="notesBody" class="sheet-scroll notes-body"></div>
+  </section>
+
+  <section id="settingsSheet" class="sheet bottom">
+    <div class="grab"></div>
+    <div class="sheet-head"><span class="sheet-title">⚙️ Settings</span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-scroll set-body">
+      <label class="set-row">🗣️ Voice
+        <select id="voiceSel"></select>
+        <button id="voiceTest" class="iconbtn" aria-label="Preview voice" title="Preview this voice">🔊</button>
+      </label>
+      <label class="set-row">⏩ Speed <b id="rateVal">1.05×</b>
+        <input type="range" id="rateSel" min="0.8" max="1.6" step="0.05">
+      </label>
+      <label class="set-row">🎭 Expressiveness <b id="exprVal">60%</b>
+        <input type="range" id="exprSel" min="0" max="1" step="0.05">
+      </label>
+      <label class="set-row">🔇 Mute narration
+        <input type="checkbox" id="muteSel">
+      </label>
+      <button id="resetBtn" class="danger">🗑 Reset all progress</button>
+      <p class="set-hint">Progress, likes &amp; streak live on this device only.<br>Full path · 80 reels · 10 stages · zero dependencies 🚀</p>
+    </div>
+  </section>
+
+  <div id="toast"></div>
+</div>
+
+<script src="js/state.js?v=1"></script>
+<script src="js/narrator.js?v=1"></script>
+<script src="js/scenes.js?v=1"></script>
+<script src="js/data.js?v=1"></script>
+<script src="js/player.js?v=1"></script>
+<script src="js/feed.js?v=1"></script>
+<script src="js/main.js?v=1"></script>
+</body>
+</html>

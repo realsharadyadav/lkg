@@ -1,0 +1,163 @@
+{
+  "id": "PY-04",
+  "num": 4,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Functions",
+  "hook": "Functions in Python are **objects** — pass them around, wrap them, make them lazy. Five skills that separate tourists from locals.",
+  "chapters": [
+    "def, args & kwargs",
+    "The mutable default-arg trap",
+    "lambda & closures",
+    "Decorators",
+    "Generators & yield"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · ARGS & KWARGS",
+      "title": "Positional, keyword, and the famous **\\*\\***",
+      "sub": "How tool-call arguments arrive in agent code",
+      "narration": "Define with def, then three kinds of parameters: positional, keyword with defaults, and the collectors — star args gathers extra positionals into a tuple, star star kwargs gathers extra keywords into a dict. If you remember one thing: when an LLM calls your tool, the arguments arrive as a dict that becomes kwargs. This pattern powers every agent framework."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📞", "t": "def call(model, temperature=0.7, **kwargs)", "s": "Defaults make args optional; **kwargs swallows the rest as a dict" },
+        { "e": "🧾", "t": "call(\"gpt-4o\", temperature=0.2)", "s": "Keyword args can arrive in any order — self-documenting at the call site" },
+        { "e": "🤖", "t": "tool_args = {\"temperature\": 0.2}", "s": "call(\"gpt-4o\", **tool_args) — a dict splats into keyword arguments" }
+      ],
+      "narration": "Look at the calling conventions. Defaults make parameters optional. Star star kwargs collects anything extra into a dict. And the reverse — a dict splatted with double star becomes keyword arguments. That last move is how an agent framework takes the JSON arguments an LLM produced and calls your Python function with them."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THE TRAP",
+      "title": "The **mutable default** — Python's #1 gotcha",
+      "sub": "Default values are created ONCE, and shared",
+      "narration": "Now the most famous bug in Python. A default value is evaluated once — when the function is defined — not each call. So a default of empty list means every call shares the same list. Add an item in one call, and it's still there in the next. C sharp devs never see this because params can't have defaults backed by mutable state like this."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "🐛", "t": "def f(items=[])", "s": "The list is created once. Items leak between calls. Silent data corruption." },
+        { "e": "✅", "t": "def f(items=None):\n  if items is None: items = []", "s": "None default → fresh list per call. The universal safe pattern.", "win": true }
+      ],
+      "narration": "Wrong: default of empty list — items accumulate across calls. Right: default of None, then create a fresh list inside. It's the universal safe pattern, and every experienced Python dev writes it automatically. When you review agent code that keeps 'remembering' things it shouldn't — check for mutable defaults first."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · LAMBDA & CLOSURES",
+      "title": "lambda = one-expression function. Closures = captured state.",
+      "sub": "Small tools, composed inline",
+      "narration": "A lambda is a tiny anonymous function — one expression, no statements. Fine for short transforms you pass to other functions. A closure is a function that remembers the variables around where it was created — like a C sharp lambda capturing local variables. Together they give you LINQ-style composition without ceremony."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "λ", "t": "sorted(models, key=lambda m: len(m))", "s": "Lambda as the sort key — inline, no named helper needed" },
+        { "e": "🧠", "t": "Closures capture variables, not values", "s": "The late-binding gotcha: loop variables are shared unless bound as defaults" },
+        { "e": "🎯", "t": "Use named def beyond one expression", "s": "PEP 8: if the lambda needs a name, give it a real def" }
+      ],
+      "narration": "Practical rules. Sorted with a lambda key — shortest models first — is the everyday use. Closures capture the variable, not a snapshot — the classic bug is lambdas in a loop all seeing the last value; fix it by binding the loop variable as a default argument. And style: one expression is the limit — anything bigger deserves a name."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DECORATORS",
+      "title": "Decorators: **middleware** for functions",
+      "sub": "@retry  @log  @require_auth — wrap without touching",
+      "narration": "A decorator wraps a function with extra behavior — the exact shape of ASP dot net middleware or an ActionFilter. You write at-sign retry above a function, and every call now retries on failure. The mechanism is beautifully simple: a function that takes a function and returns a wrapped function. In agent systems, decorators add logging, timing, and rate-limit handling to every tool."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🎁", "t": "@timer above def call_api():", "s": "Syntactic sugar: call_api = timer(call_api) — same thing, spelled better" },
+        { "e": "🧩", "t": "functools.wraps preserves the name/doc", "s": "Without it, every wrapped function claims to be called 'wrapper'" },
+        { "e": "🔌", "t": "Stack them: @log @retry @validate", "s": "Order matters — top decorator runs first on the way in, last on the way out" }
+      ],
+      "narration": "Mechanics: at-sign name above a function is sugar for passing the function through the decorator. Use functools dot wraps so the wrapper keeps the original name and docstring — otherwise your stack traces all say 'wrapper'. And decorators stack, applied bottom-up: validate, then retry, then log — each one wrapping the previous."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · GENERATORS",
+      "title": "yield = **IEnumerable** that pauses",
+      "sub": "Stream a million rows with 4 lines",
+      "narration": "A generator is a function that yields values one at a time and pauses between them — Python's IEnumerable, but written as an ordinary function. Each yield hands out one item and freezes the function's state until the next call. No list in memory, no index bookkeeping. This is how you stream LLM responses token by token and process gigabyte files on a laptop."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🌊", "t": "yield streams; return materializes", "s": "Processing 10M rows via yield uses constant memory" },
+        { "e": "🔗", "t": "Generators compose into pipelines", "s": "read() → parse() → embed() → store(), each stage lazy" },
+        { "e": "📦", "t": "Generator expressions: (x*x for x in nums)", "s": "Parentheses version of a comprehension — lazy, feeds sums/loops" }
+      ],
+      "narration": "The payoff: constant memory regardless of data size, because only one item exists at a time. And generators chain — read lines, parse records, embed them — each stage pulling from the previous on demand. That's the architecture of every serious data and RAG pipeline you'll build. Generator expressions, parentheses instead of brackets, are the lazy cousin of comprehensions."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-05",
+      "title": "Objects, the Python way",
+      "next": "Reel 5 · OOP — classes, dunders, dataclasses, protocols"
+    }
+  ],
+  "recap": [
+    "**kwargs collects/splats dicts — how LLM tool arguments reach your code",
+    "Never use mutable defaults; use None + create inside",
+    "Decorators = middleware; yield = lazy streaming with constant memory"
+  ],
+  "quiz": [
+    {
+      "q": "Why is `def f(items=[])` dangerous?",
+      "opts": [
+        "It raises a syntax error",
+        "The list is created once and shared across all calls",
+        "It forces every call to pass items",
+        "It makes the function slower to define"
+      ],
+      "a": 1,
+      "why": "Defaults are evaluated once at definition time — every call shares the same list, so data leaks between calls. Use items=None and create the list inside."
+    },
+    {
+      "q": "An LLM returns tool arguments as JSON: {\"city\": \"Paris\", \"days\": 3}. How do you call f(city, days)?",
+      "opts": [
+        "f(args)",
+        "f(**args)",
+        "f(*args)",
+        "f(args[0], args[1])"
+      ],
+      "a": 1,
+      "why": "** splats a dict into keyword arguments — f(city=\"Paris\", days=3). * would splat a list/tuple positionally."
+    },
+    {
+      "q": "What does `yield` do inside a function?",
+      "opts": [
+        "Ends the function permanently",
+        "Returns one value and pauses the function, resuming on the next call",
+        "Spawns a new thread",
+        "Converts the function into a lambda"
+      ],
+      "a": 1,
+      "why": "yield makes the function a generator: each next() pulls one value and freezes state — streaming with constant memory."
+    }
+  ],
+  "code": {
+    "title": "Functions: the five skills in one file",
+    "body": "import functools, time, random\n\n# --- 1. args & kwargs: how tool calls arrive -----------------\ndef call_api(model, temperature=0.7, **kwargs):\n    print(f\"{model=} {temperature=} extra={kwargs}\")\n\nargs = {\"city\": \"Paris\", \"days\": 3}          # from an LLM's tool call\ndef plan_trip(city, days): return f\"{days} days in {city}\"\nplan_trip(**args)                              # dict → keyword args\n\n# --- 2. NEVER do this ----------------------------------------\n# def bad(items=[]):  items.append(1); return items   # shared!\ndef good(items=None):\n    items = [] if items is None else items\n    items.append(1)\n    return items\n\n# --- 3. lambda & closures ------------------------------------\nmodels = [\"gpt-4o\", \"llama-3\", \"claude-sonnet\"]\nmodels.sort(key=lambda m: len(m))\n\n# --- 4. decorators = middleware -------------------------------\ndef retry(fn):\n    @functools.wraps(fn)\n    def wrapper(*a, **kw):\n        for attempt in range(3):\n            try:\n                return fn(*a, **kw)\n            except Exception:\n                if attempt == 2: raise\n                time.sleep(0.2 * (attempt + 1))\n    return wrapper\n\n@retry\ndef flaky_llm_call():\n    if random.random() < 0.7: raise ConnectionError(\"429\")\n    return \"ok\"\n\n# --- 5. generators = streaming --------------------------------\ndef read_lines(path):\n    with open(path) as f:\n        for line in f:\n            yield line.strip()\n\nfor row in read_lines(\"bigfile.csv\"):   # constant memory\n    pass",
+    "annot": [
+      "functools.wraps keeps the wrapped function's __name__ — debugging depends on it",
+      "retry with exponential backoff is exactly what production LLM calls need",
+      "Generators + `with` = the standard pattern for streaming files"
+    ]
+  },
+  "notes": "# Functions\n\n## def, args, kwargs\n```python\ndef call(model, temperature=0.7, **kwargs): ...\ncall(\"gpt-4o\", temperature=0.2, stream=True)\ntool_args = {\"city\": \"Paris\"}; f(**tool_args)   # dict → kwargs\n```\n- `*args` → tuple of extra positionals · `**kwargs` → dict of extra keywords.\n- LLM tool calls arrive as JSON → `**args`. This pattern is everywhere in agent code.\n\n## Mutable default trap\n```python\ndef bad(items=[]): ...          # shared list! items persist between calls\ndef good(items=None):\n    items = [] if items is None else items\n```\n\n## lambda & closures\n- `lambda m: len(m)` — one expression, inline.\n- Closures capture **variables** (late binding) — bind loop vars as defaults: `lambda i=i: i`.\n\n## Decorators = middleware\n```python\ndef retry(fn):\n    @functools.wraps(fn)\n    def wrapper(*a, **kw): ...\n    return wrapper\n```\n- `@decorator` above `def f` ≡ `f = decorator(f)`.\n- Use `@functools.wraps(fn)` — otherwise traces say 'wrapper'.\n\n## Generators & yield\n```python\ndef read_lines(path):\n    with open(path) as f:\n        for line in f: yield line.strip()\n```\n- Lazy + constant memory; compose into pipelines; sibling: generator expression `(x*x for x in nums)`."
+}

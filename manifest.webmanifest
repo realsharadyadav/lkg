@@ -1,0 +1,13 @@
+{
+  "name": "LKG — GenAI Architect Path",
+  "short_name": "LKG",
+  "description": "Your path from .NET architect to GenAI architect — 80 chaptered reels.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#e8f5e9",
+  "theme_color": "#e8f5e9",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

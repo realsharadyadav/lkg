@@ -1,0 +1,163 @@
+{
+  "id": "PY-02",
+  "num": 2,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Syntax Basics",
+  "hook": "Python syntax will feel **weird for exactly one day** — then it clicks. Five ideas, one reel.",
+  "chapters": [
+    "Dynamic typing",
+    "Indentation & blocks",
+    "f-strings & formatting",
+    "None & truthiness",
+    "Operators & ranges"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · DYNAMIC TYPING",
+      "title": "No type declarations. **Ever.**",
+      "sub": "The variable is just a name tag on an object",
+      "narration": "In C sharp, you declare the type, then the name. In Python, you just name the value. The name is a sticker on the object — peel it off, stick it on something else, even a different type. Python doesn't care. The trade-off: less ceremony, but type errors show up at run time instead of compile time. That's why we'll add type hints later — reel eight."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "🔷", "t": "C#", "s": "int count = 5; string name = \"x\"; — declared, fixed, compiler-checked." },
+        { "e": "🐍", "t": "Python", "s": "count = 5; name = \"x\" — the name tag moves freely. Checked at runtime.", "win": true }
+      ],
+      "narration": "Side by side: in C sharp, int count equals five locks the sticker to integers. In Python, count equals five just sticks the name on a five. Later, count equals some text is perfectly legal. Nothing is declared; everything is an object with a type of its own. The variable is untyped — the value isn't."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · INDENTATION",
+      "title": "Whitespace **is** the syntax",
+      "sub": "Indentation = braces. There is no other way.",
+      "narration": "Here's the biggest culture shock: Python has no curly braces. The indentation is the block. If a line is inside an if, it's indented four spaces — that's the whole rule. It's not a style choice like in C sharp; it's the language. The good news: every Python file on Earth looks the same. The bad news: one mixed tab and your day is gone."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "4️⃣", "t": "4 spaces per level", "s": "PEP 8 — and configure your editor to insert spaces on Tab" },
+        { "e": "⬇️", "t": "Dedent = block ends", "s": "No closing brace to hunt for — unindenting is the closing brace" },
+        { "e": "🚫", "t": "Single-statement gotcha", "s": "Everything in the block must be indented — even one-liners" }
+      ],
+      "narration": "Three rules. Four spaces per level — set your editor to convert tabs. A block ends when the indentation ends — unindenting is your closing brace. And everything inside a block must be indented, even a single line. The compiler won't guess your intent — it reads the whitespace, literally."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · F-STRINGS",
+      "title": "String interpolation, **upgraded**",
+      "sub": "The f-string makes C# interpolation look basic",
+      "narration": "Now the fun part. Put an f before a string, and any expression in curly braces is evaluated inside it. But here's what C sharp can't do: format specifiers live right in the braces — colon point two f for floats, colon comma for thousands, even date formatting and alignment. It's the string interpolation you know, with the format string built in."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🧷", "t": "f\"Total: {price:.2f}\"", "s": "Float with 2 decimals — :.2f = fixed-point precision" },
+        { "e": "🔢", "t": "f\"{n:,} rows\"", "s": "12_345_678 → '12,345,678' — the comma format inserts separators" },
+        { "e": "🧮", "t": "Any expression works", "s": "f\"{len(items) * 2} slots\" — call functions, do math, inline" }
+      ],
+      "narration": "Look at the power here. f-quote total colon point two f — gives you two decimals. f-quote n colon comma — inserts thousands separators. And the braces take any expression: function calls, math, whatever. One line, no string dot format, no concatenation. You'll use this constantly in logging and LLM prompt building."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · NONE & TRUTHINESS",
+      "title": "null is gone. Meet **None**",
+      "sub": "And almost everything can be truthy or falsy",
+      "narration": "C sharp's null becomes None in Python — capital N. Same idea: the absence of a value. But Python goes further: nearly every object is either truthy or falsy. Empty string, empty list, zero, None — all falsy. Non-empty collections and non-zero numbers are truthy. So you can write 'if items:' instead of 'if items dot count greater than zero'."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🕳️", "t": "Falsy: None, 0, \"\", [], {}", "s": "None · zero · empty string · empty list · empty dict — all falsy" },
+        { "e": "✅", "t": "Truthy: almost everything else", "s": "Non-empty collections, non-zero numbers, non-empty strings" },
+        { "e": "⚠️", "t": "Explicit check for None", "s": "Use `is None`, not `== None` — identity vs equality" }
+      ],
+      "narration": "The falsy family: None, zero, empty string, empty list, empty dict — all read as false. Everything else is true. And one habit from your spec: check for None with 'is None', not double-equals. Is compares identity — is it literally the None object. It's the idiomatic, slightly faster check."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · OPERATORS & RANGES",
+      "title": "The operators that **surprise** C# devs",
+      "sub": "is vs == · in · range()",
+      "narration": "Three operators to rewire in your head. First: double-equals checks value equality, while 'is' checks identity — same object in memory. Second: 'in' tests membership — is this value inside that collection. Third: range generates numbers lazily — range of five is not a list, it's a sequence you iterate once."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🆚", "t": "== vs is", "s": "a == b (equal values) vs a is b (same object) — use == for data" },
+        { "e": "🎯", "t": "\"prompt\" in text", "s": "Membership test — works on strings, lists, dicts, sets" },
+        { "e": "🔁", "t": "for i in range(5)", "s": "Yields 0,1,2,3,4 — lazy, not a list; wrap in list() if you need one" }
+      ],
+      "narration": "In practice: compare data with double-equals, use 'is' only for None and sentinel objects. Membership with 'in' — quote prompt in text — is how you'll check if an LLM's output contains a marker. And range of five feeds a loop zero through four. If you need an actual list, wrap it: list of range five."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-03",
+      "title": "Data structures — Python's superpower",
+      "next": "Reel 3 · Core Data Structures — list, dict, set, comprehensions"
+    }
+  ],
+  "recap": [
+    "Variables are name tags — untyped, movable, runtime-checked",
+    "Indentation IS the block structure — 4 spaces, no braces",
+    "f-strings interpolate anything; falsy = None/0/empty; use `is None`"
+  ],
+  "quiz": [
+    {
+      "q": "What makes a Python block end?",
+      "opts": [
+        "A closing curly brace }",
+        "The line is no longer indented",
+        "A semicolon at the end of the line",
+        "The `end` keyword"
+      ],
+      "a": 1,
+      "why": "Indentation is syntax in Python — dedenting closes the block. No braces, no end keyword."
+    },
+    {
+      "q": "Which values are falsy in Python?",
+      "opts": [
+        "Only False and None",
+        "False, None, 0, and empty collections/strings",
+        "Only empty strings",
+        "Nothing is falsy — Python is strictly typed"
+      ],
+      "a": 1,
+      "why": "None, 0, \"\", [], {}, and False are all falsy — so `if items:` is the idiomatic emptiness check."
+    },
+    {
+      "q": "What's the difference between `is` and `==`?",
+      "opts": [
+        "They are identical in Python",
+        "== compares values; `is` compares object identity",
+        "`is` compares values; == compares identity",
+        "== only works on numbers"
+      ],
+      "a": 1,
+      "why": "== asks 'equal values?'; `is` asks 'same object in memory?' — that's why None is checked with `is None`."
+    }
+  ],
+  "code": {
+    "title": "Syntax basics in 20 lines",
+    "body": "# Dynamic typing — name tags, not declarations\nprice = 19.99\nlabel = \"pro\"\nprice = label          # legal! the tag moves to a string\n\n# Indentation is the block\nif price == \"pro\":\n    print(\"Pro plan\")\n    print(\"  unlimited reels\")\nprint(\"always runs\")   # dedented → outside the if\n\n# f-strings: interpolation + formatting\nrows = 1_234_567\nprint(f\"Imported {rows:,} rows in {0.847:.2f}s\")\n\n# Truthiness\nitems = []\nif not items:          # same as: if len(items) == 0\n    print(\"empty list is falsy\")\n\nif price is None:\n    pass               # explicit None check with `is`\n\n# in + range\nfor i in range(3):     # 0, 1, 2\n    if \"pro\" in label:\n        print(f\"  step {i + 1} of 3\")",
+    "annot": [
+      "1_234_567 — underscores in numeric literals are legal and ignored (readability)",
+      "f-strings take ANY expression: f\"{len(x) * 2} slots\" is fine",
+      "range(3) is lazy — cheap even for range(10_000_000)"
+    ]
+  },
+  "notes": "# Syntax Basics\n\n## Dynamic typing\n- `x = 5` — no type declaration. Variables are **names bound to objects**.\n- Rebinding to another type is legal; errors appear at **runtime** (type hints + mypy fix this — Reel PY-08).\n\n## Indentation & blocks\n- Whitespace is syntax: indent = enter block, dedent = exit block.\n- **4 spaces** per level (PEP 8); set the editor to convert tabs.\n- Everything in a block must be indented — even single statements.\n\n## f-strings\n```python\nf\"Total: {price:.2f}\"      # format spec inside braces\nf\"{n:,}\"                   # thousands separators\nf\"{name.upper()} ok\"       # any expression\n```\n\n## None & truthiness\n- `None` = absence of a value (like null). Check with `is None`.\n| Falsy | Truthy |\n| --- | --- |\n| `None`, `False`, `0`, `\"\"`, `[]`, `{}`, `()` | everything else |\n\n## Operators\n- `==` value equality · `is` identity (same object) · `in` membership.\n- `range(5)` → lazy sequence 0..4; `list(range(5))` materializes it.\n- `for i in range(n):` replaces C-style index loops in most cases."
+}

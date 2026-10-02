@@ -1,0 +1,146 @@
+{
+  "id": "PY-06",
+  "num": 6,
+  "track": "python",
+  "stage": "1. Python Core",
+  "topic": "Modules & Project Structure",
+  "hook": "Scripts are fun, but **projects pay**. Four ideas that turn a pile of files into something shippable.",
+  "chapters": [
+    "The import system",
+    "Folder layout",
+    "Relative vs absolute imports",
+    "Entry points"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · IMPORTS",
+      "title": "Every **.py file is a module**",
+      "sub": "import = namespaces, not includes",
+      "narration": "Every Python file is a module, and a folder of modules with an init file is a package. Import loads a module once and binds its namespace to a name — it's closer to C sharp's using plus a static class than to a text include. Import the module, then dot into it: import config, then config dot database. You can also import specific names, or star — though star pollutes your namespace and breaks tooling; avoid it in real code."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📥", "t": "import services.users", "s": "Binds the module — call services.users.find_all(). Verbose but unambiguous" },
+        { "e": "🎯", "t": "from services import users", "s": "Binds the name directly — users.find_all()" },
+        { "e": "🧭", "t": "import alias: import numpy as np", "s": "Community-standard aliases: np, pd, plt — follow them" }
+      ],
+      "narration": "Three import styles. Import the full path — most explicit. From-import — shorter at call sites, and the style you'll use for packages you own. And aliases: numpy as np, pandas as pd — these aren't optional style; the whole ecosystem expects them. One rule: import the module when names might collide, import the name when it won't."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · LAYOUT",
+      "title": "The **src layout** — learn it once",
+      "sub": "Code in src/, tests beside it, config at root",
+      "narration": "Here's the folder layout the ecosystem converged on. A src folder holding your package — this matters because it forces imports to go through the installed package instead of accidently importing from the current folder. Tests in their own tree. Configuration — pyproject, readmes, dot env — at the root. Small projects can skip src, but start with it and you'll never have the 'works from one folder but not another' disease."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "📁", "t": "myproject/", "s": "pyproject.toml · README · .env · .venv/" },
+        { "e": "📦", "t": "src/myproject/", "s": "__init__.py · config.py · services/" },
+        { "e": "🧩", "t": "services/", "s": "users.py · billing.py — one module per domain" },
+        { "e": "🧪", "t": "tests/", "s": "test_users.py — mirrors the package structure" }
+      ],
+      "narration": "Picture it top to bottom. The project root holds configuration, readme, environment. Inside, src contains your actual package — always imported by its full name, myproject dot services dot users. Each module owns one domain. And tests mirror the package tree, one test file per module. This shape works for a hundred-line tool and a ten-thousand-line service."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · IMPORT PITFALLS",
+      "title": "Relative imports: **avoid them**",
+      "sub": "Absolute imports always — circular imports bite silently",
+      "narration": "Python allows relative imports — dot dot for parent, single dot for sibling. They work, until you move a file or run a script directly, and then they explode. The community rule: absolute imports, always — from myproject dot services import users. The second classic failure is circular imports — module A imports B, B imports A. Python handles some cycles, but the fix is architectural: extract the shared piece into a third module both import."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🚫", "t": "from . import users", "s": "Relative — breaks when files move or scripts run directly" },
+        { "e": "✅", "t": "from myproject.services import users", "s": "Absolute — unambiguous, tool-friendly, refactorable" },
+        { "e": "⭕", "t": "Circular import?", "s": "A imports B, B imports A → extract shared code to module C" }
+      ],
+      "narration": "Memorize the left column as don't, the right as do. And when you see an import error that mentions partially initialized module — that's the circular import. The cure isn't reordering imports; it's moving the shared code — usually models or constants — into its own module that both sides import. Dependencies then flow one direction, always."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · ENTRY POINTS",
+      "title": "if __name__ == \"__main__\"",
+      "sub": "The most-typed line in Python, explained in 30 seconds",
+      "narration": "Every module has a hidden variable, dunder name. When Python runs a file directly, that variable equals the string main. When the file is imported instead, it equals the module's name. So the idiom if name equals main wraps code that should only run as a script — demos, test data, CLI behavior. It's how one file can be both an importable library and a runnable tool."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🚀", "t": "python -m myproject.cli", "s": "Runs as main inside the package — imports work, no path hacks" },
+        { "e": "🧷", "t": "pyproject [project.scripts]", "s": "cli = \"myproject.cli:main\" → install a real `myproject` command" },
+        { "e": "📦", "t": "uv pip install -e .", "s": "Editable install: your package importable everywhere while you edit" }
+      ],
+      "narration": "Three ways to run. Python dash m runs a module as main — the reliable way during development. Then the grown-up path: declare a console script in pie project, and after install your command exists on the path. And the development trick of the trade — editable install. Your package behaves as if fully installed, but every edit takes effect immediately. This is your daily workflow from now on."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-07",
+      "title": "Code that survives reality",
+      "next": "Reel 7 · Errors, Files & Config — exceptions, context managers, env vars"
+    }
+  ],
+  "recap": [
+    "Modules import once into namespaces; avoid `import *`; follow np/pd aliases",
+    "Use the src layout + absolute imports; fix cycles by extracting a third module",
+    "if __name__ == \"__main__\" separates library from script; use editable installs"
+  ],
+  "quiz": [
+    {
+      "q": "What does `if __name__ == \"__main__\":` actually check?",
+      "opts": [
+        "Whether the code is running in production",
+        "Whether the file was run directly (not imported)",
+        "Whether the main thread is active",
+        "Whether the debugger is attached"
+      ],
+      "a": 1,
+      "why": "__name__ is \"__main__\" only when the file is executed directly; on import it's the module name — so the guard separates script behavior from library behavior."
+    },
+    {
+      "q": "What's the recommended fix for a circular import (A imports B, B imports A)?",
+      "opts": [
+        "Reorder the import statements",
+        "Use relative imports",
+        "Extract the shared code into a third module both import",
+        "Wrap both imports in try/except"
+      ],
+      "a": 2,
+      "why": "Reordering hides the symptom; restructuring removes the cycle — shared models/constants move to a module C that A and B both depend on."
+    },
+    {
+      "q": "Why does the src layout matter?",
+      "opts": [
+        "It makes imports faster",
+        "It prevents accidental imports from the current working directory",
+        "It's required by pip",
+        "It enables multiprocessing"
+      ],
+      "a": 1,
+      "why": "With code under src/, your package must be installed to be imported — no more 'works from one folder, breaks from another'."
+    }
+  ],
+  "code": {
+    "title": "Project skeleton + safe entry point",
+    "body": "# layout:\n# myproject/\n#   pyproject.toml\n#   src/myproject/__init__.py\n#   src/myproject/config.py\n#   src/myproject/services/__init__.py\n#   src/myproject/services/users.py\n#   tests/test_users.py\n\n# --- src/myproject/services/users.py --------------------------\nfrom __future__ import annotations\n\n_users: dict[str, dict] = {}\n\ndef add(name: str) -> dict:\n    _users[name] = {\"name\": name}\n    return _users[name]\n\ndef count() -> int:\n    return len(_users)\n\n# --- src/myproject/cli.py --------------------------------------\nfrom myproject.services import users\n\ndef main() -> None:\n    users.add(\"ada\")\n    print(f\"{users.count()} users\")\n\nif __name__ == \"__main__\":\n    main()          # runs only when executed directly,\n                    # not when imported\n\n# --- pyproject.toml --------------------------------------------\n# [project.scripts]\n# myproject = \"myproject.cli:main\"\n\n# dev workflow:\n#   uv pip install -e .        # editable install\n#   myproject                  # now a real command",
+    "annot": [
+      "Absolute import (myproject.services...) — works from any directory, any entry point",
+      "The __main__ guard means tests can import cli.py without side effects",
+      "uv pip install -e . = develop mode; changes are live immediately"
+    ]
+  },
+  "notes": "# Modules & Project Structure\n\n## Import system\n- Every `.py` = a module; folder + `__init__.py` = a package.\n- `import a.b` → bind namespace · `from a import b` → bind name · `import x as y`.\n- Avoid `from x import *` (pollutes namespace, breaks tooling).\n- Standard aliases: `np` (numpy), `pd` (pandas), `plt` (matplotlib).\n\n## Folder layout (src layout)\n```\nmyproject/\n  pyproject.toml\n  src/myproject/\n    __init__.py\n    services/users.py\n  tests/test_users.py\n```\n- src layout forces imports through the installed package.\n\n## Relative vs absolute\n- ❌ `from . import users` — breaks on moves/direct execution.\n- ✅ `from myproject.services import users` — always.\n- Circular imports → **extract shared code to a third module**.\n\n## Entry points\n- `__name__ == \"__main__\"` → True only when run directly.\n- Run during dev: `python -m myproject.cli`.\n- Ship a command: `[project.scripts]` in pyproject.toml.\n- Daily driver: `uv pip install -e .` (editable install)."
+}
