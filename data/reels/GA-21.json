@@ -1,0 +1,145 @@
+{
+  "id": "GA-21",
+  "num": 40,
+  "track": "genai",
+  "stage": "5. App Building + Quality",
+  "topic": "RAG & LLM Metrics",
+  "hook": "Faithfulness, context precision, LLM-as-judge — the metric stack that tells you **which stage of your RAG is lying** and when a 'better' change actually isn't.",
+  "chapters": [
+    "The metric stack",
+    "LLM-as-judge",
+    "Regression testing",
+    "Eval tooling"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · METRICS",
+      "title": "Four metrics, one per failure mode",
+      "sub": "Faithfulness · context recall/precision · answer relevance",
+      "narration": "RAG fails in three separable places — retrieval, generation, and intent — and each has a metric. Context recall: did retrieval fetch the chunks containing the answer? Measured against golden reference chunks. Context precision: of what retrieval fetched, how much was useful — a low score means padding. Faithfulness: is every claim in the answer SUPPORTED by the retrieved context — the anti-hallucination metric; check by asking a judge to verify each claim against the context. Answer relevance: does the answer address the actual question — catches verbose off-topic drift. Together they triangulate the failing stage: low context recall → GA-15's problem; high recall, low faithfulness → GA-16's assembly or the model's honesty."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🎯", "t": "Context recall / precision", "s": "Did retrieval FIND the answer chunks / how much fetched was useful → retrieval stage health" },
+        { "e": "⚓", "t": "Faithfulness", "s": "Every claim supported by retrieved context? → generation honesty, claim-by-claim" },
+        { "e": "🧭", "t": "Answer relevance", "s": "Does it answer THIS question? → intent alignment, catches drift & padding" }
+      ],
+      "narration": "The diagnostic matrix is the real deliverable. Low recall plus low precision: retrieval itself is broken — fix chunking, hybrid search, k. High recall, low faithfulness: retrieval delivers, generation fabricates — strengthen the context contract, add abstention gates. High faithfulness, low relevance: honest but off-target — the retrieval found true-but-wrong chunks, so query rewriting or embedding fit is failing. All metrics healthy but users unhappy: your golden set doesn't match real usage — a dataset problem, not a model problem. Write the matrix down in your eval dashboard; when quality drops, the metric pattern names the stage, and the stage names the fix. This is how RAG stops being a black box."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · LLM-AS-JUDGE",
+      "title": "An LLM grading an LLM: **powerful, biased — calibrate it**",
+      "sub": "How judging works and where it lies",
+      "narration": "LLM-as-judge: a strong model grades outputs against criteria — 'verify each claim against this context; answer supported, partially, or unsupported'. It scales evals to thousands of cases for dollars. But judges have systematic biases, measured in research: position bias — preferring the first answer in a comparison; verbosity bias — longer answers score higher regardless of quality; self-preference — favoring answers from their own model family. Mitigations: use rubric-based, reference-free scoring over 'which is better' comparisons; randomize option order in pairwise setups; anchor grades with human-verified samples to measure judge accuracy — kappa again, GA-20's lesson; use a DIFFERENT model family as judge than the one being judged. A judge you haven't calibrated is a second unmeasured system."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📍", "t": "Position bias", "s": "First answer wins in comparisons → randomize order, prefer absolute rubric scores" },
+        { "e": "📏", "t": "Verbosity bias", "s": "Longer scores higher → grade claim-by-claim, penalize unsupported padding explicitly" },
+        { "e": "🪞", "t": "Self-preference", "s": "Favors its own family → judge with a different vendor's model" }
+      ],
+      "narration": "The judge prompt design matters as much as the judge model. For faithfulness, the strongest pattern is atomic claim verification: decompose the answer into individual claims, check each against the retrieved context — the final score is the fraction supported. Atomic checks blunt verbosity bias because a padded answer has MORE claims that can fail. Keep the rubric concrete: 'supported means the context states it; inferred is partial; unsupported is contradicted or absent' — abstract grading invites drift. And version your judge prompts exactly like golden data: when you change the judge, re-run a human-anchored calibration set so you know the new grader's drift. Teams have 'improved' eval scores by editing the judge prompt — measure the judge, or celebrate nothing."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · REGRESSION",
+      "title": "Evals that **gate** — quality is a CI check, not a hope",
+      "sub": "Regression testing for GenAI behavior",
+      "narration": "A regression suite for a GenAI system looks like: every PR runs a fast eval subset — minutes, dozens of cases — and fails the build if metrics drop beyond a threshold. Thresholds, not absolutes: require context recall within two points of baseline, faithfulness no lower than the main branch. Nightly, the full golden set runs and results publish to a dashboard with history — trends visible, deltas alertable. Also version-pin and date-stamp everything: model version, prompt hash, dataset version in every run record, so 'what changed?' is a query, not an investigation. This is GA-20's pipeline with teeth: offline evals promoted from reporting to gatekeeping — the single strongest signal that an organization treats quality as engineering."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "🔀", "t": "PR gate", "s": "Fast subset · minutes · build fails if recall/faithfulness drop > threshold" },
+        { "e": "🌙", "t": "Nightly full run", "s": "Complete golden set → dashboard with history · trend deltas alert" },
+        { "e": "🧾", "t": "Every run records", "s": "model version · prompt hash · dataset version → 'what changed?' is a query" }
+      ],
+      "narration": "Build the gates in stages — perfect is the enemy of gating. Week one: nightly full run with dashboard, no blocking — you get visibility without friction. Week three: add the PR gate on the metric that matters most, usually faithfulness, with a generous threshold — catches disasters, tolerates noise. Then tighten: as judge calibration data accumulates, thresholds narrow from 'disaster-only' to 'regression-blocking'. The recorded-provenance layer — model, prompt, dataset versions per run — pays off the first time a provider silently updates a model and your faithfulness graph steps down on a date you can name. Without provenance, that conversation is mythology; with it, it's a support ticket to the vendor with evidence attached."
+    },
+    {
+      "type": "bigtext",
+      "chapter" : 3,
+      "kicker": "CHAPTER 4 · TOOLING",
+      "title": "Don't build the harness — **adopt it**",
+      "sub": "Ragas, promptfoo, Langfuse, and friends",
+      "narration": "The eval tool ecosystem matured fast. Ragas: the RAG-specific metrics library — faithfulness, context precision and recall computed from your traces, with golden-set workflows; the fastest path from 'we should measure' to numbers. Promptfoo: prompt-level testing — dataset-driven runs, assertions on outputs, side-by-side comparisons of prompts and models from the command line and CI; excellent for the PR gate. Langfuse: open-source observability — trace every request through your pipeline, inspect retrieval and generation stages per call, and feed production traces back into eval datasets. Verify current capabilities before committing — this space ships weekly — but the architecture is stable: a metrics library, a test runner, an observability sink, and your golden set gluing them together."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "📐", "t": "Ragas", "s": "RAG metrics out of the box (faithfulness, recall, precision) · dataset workflows", "win": true },
+        { "e": "🔬", "t": "promptfoo", "s": "Prompt/model A-B testing · assertions · CLI + CI friendly → the PR gate", "win": true },
+        { "e": "🔭", "t": "Langfuse", "s": "Request tracing/observability → production signals become eval datasets", "win": true }
+      ],
+      "narration": "The composite setup most teams converge on: Langfuse traces production — every question, retrieval scores, generated answer; sampled traces flow into the golden set and flag interesting cases. Ragas scores the offline golden runs with the standard metrics. Promptfoo runs the fast gate on PRs and compares candidate prompts against baseline. One warning: tools encode DEFAULT judge prompts — the biases from chapter two ship inside them. Override judge configuration deliberately, calibrate against human anchors, and treat the tool's score as a proxy that YOU have validated, not truth. The metrics are only as honest as the judging layer beneath them — and the judging layer is only as honest as your calibration."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 5 COMPLETE",
+      "title": "Async, HTTP, FastAPI, testing, evals — the builder's toolkit.",
+      "next": "Reel 41 · Stage 6: Agents — core concepts and the MCP standard"
+    }
+  ],
+  "recap": [
+    "Metric stack maps to stages: context recall/precision → retrieval · faithfulness → generation honesty · relevance → intent",
+    "LLM-as-judge scales grading but carries position, verbosity, and self-preference biases — calibrate against human anchors, grade atomically",
+    "Promote evals to CI gates (fast subset on PR, full nightly) and record model/prompt/dataset versions per run"
+  ],
+  "quiz": [
+    {
+      "q": "High context recall but low faithfulness means what?",
+      "opts": [
+        "Retrieval is broken",
+        "Retrieval delivers the right chunks but generation fabricates — the fix lives in the generation stage (assembly, abstention)",
+        "The judge is biased",
+        "The golden set is stale"
+      ],
+      "a": 1,
+      "why": "The metric pattern localizes the failure: right evidence, dishonest answer → strengthen grounding and abstention gates."
+    },
+    {
+      "q": "Why does atomic claim-by-claim verification reduce verbosity bias in judges?",
+      "opts": [
+        "It's faster",
+        "A padded answer has more claims that can each fail — length stops being a free advantage",
+        "It uses fewer tokens",
+        "Judges prefer short prompts"
+      ],
+      "a": 1,
+      "why": "Scoring the fraction of supported claims makes every unsupported sentence a liability — verbosity becomes risk, not reward."
+    },
+    {
+      "q": "What must every eval run record to make 'what changed?' answerable?",
+      "opts": [
+        "The cost in tokens",
+        "Model version, prompt hash, and dataset version — provenance turns drift investigation into a query",
+        "The engineer's name",
+        "The judge's temperature"
+      ],
+      "a": 1,
+      "why": "Silent model updates and prompt edits are only detectable if each run's full provenance is stored and comparable."
+    }
+  ],
+  "code": {
+    "title": "Faithfulness via atomic claim checking",
+    "body": "JUDGE = \"\"\"You are a strict fact-checker.\nGiven CONTEXT and ANSWER:\n1. Decompose ANSWER into atomic claims (short, single-fact).\n2. For each claim, classify:\n   SUPPORTED   — context states it\n   PARTIAL     — context implies but doesn't state it\n   UNSUPPORTED — context contradicts or lacks it\n3. Reply as JSON: {\"claims\": [{\"text\": ..., \"verdict\": ...}],\n                  \"faithfulness\": supported/total}\nGrade ONLY from the CONTEXT. Unknown = UNSUPPORTED.\"\"\"\n\ndef faithfulness(context: str, answer: str) -> float:\n    verdicts = llm(JUDGE, context=context, answer=answer)\n    claims = verdicts[\"claims\"]\n    supported = sum(1 for c in claims if c[\"verdict\"] == \"SUPPORTED\")\n    return supported / max(len(claims), 1)\n\n# Threshold in CI:  faithfulness(answer) >= 0.9\n# Calibrate monthly: run 50 human-graded cases through the judge,\n# compute agreement — if kappa sags, the JUDGE drifted, not the app.",
+    "annot": [
+      "Decompose-then-grade is the bias-resistant shape: length adds claims, claims add risk",
+      "'Unknown = UNSUPPORTED' encodes abstention discipline into the grader itself",
+      "Judge calibration is scheduled maintenance, not a one-time setup — judges drift like models do"
+    ]
+  },
+  "notes": "# RAG & LLM Metrics\n\n## Metric stack (maps to stages)\n- **Context recall/precision** → retrieval stage (GA-15 fixes).\n- **Faithfulness** → generation honesty (claim-by-claim support).\n- **Answer relevance** → intent alignment.\n- Pattern-matching triage: which metric dropped names the stage.\n\n## LLM-as-judge\n- Biases: position, verbosity, self-preference.\n- Mitigate: rubric-based absolute scores, randomized order, atomic claim checks, different-family judge.\n- Calibrate vs human anchors (kappa) — scheduled, not once.\n\n## Regression testing\n- PR gate: fast subset, thresholds on deltas.\n- Nightly full golden run → dashboard + trend alerts.\n- Record model version + prompt hash + dataset version per run.\n\n## Tooling\n- Ragas (metrics), promptfoo (prompt testing/CI), Langfuse (tracing).\n- Tools ship default judges — override and calibrate deliberately."
+}

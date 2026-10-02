@@ -1,0 +1,166 @@
+{
+  "id": "PY-22",
+  "num": 38,
+  "track": "python",
+  "stage": "5. App Building + Quality",
+  "topic": "Testing & Quality",
+  "hook": "LLM apps are nondeterministic — your TESTS must not be. pytest, deterministic mocking, structured logs, and automation that **refuses bad commits**.",
+  "chapters": [
+    "pytest fundamentals",
+    "Mocking LLMs & APIs",
+    "Logging done right",
+    "Automation: ruff, black, pre-commit"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · PYTEST",
+      "title": "pytest: tests as plain functions, power as decorators",
+      "sub": "Fixtures share setup; parametrize multiplies cases",
+      "narration": "Pytest's core bargain: write plain functions that assert, name them test-something, and the runner finds and executes them — no classes, no boilerplate, no framework ceremony. The two superpowers are fixtures and parametrize. Fixtures: setup code — a test database, a temp file, a client — written once as a decorated generator, injected by naming it as a parameter; pytest builds, shares, and tears them down per test. Parametrize: run ONE test function over a table of inputs — twenty edge cases become a single function plus a decorator, and each row reports as its own test. Test discovery, rich assertion introspection, and a plugin ecosystem come standard."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "fixtures + parametrize in one test file",
+      "lang": "python",
+      "body": "import pytest\n\n@pytest.fixture\ndef rag():                       # built per test, torn down cleanly\n    store = VectorStore(\":memory:\")\n    yield RagPipeline(store)     # yield → teardown runs even on failure\n    store.close()\n\n@pytest.mark.parametrize(\"question,expected\", [\n    (\"What is the refund window?\", \"30 days\"),\n    (\"Do you ship internationally?\", \"yes, 40 countries\"),\n    (\"Is there a free tier?\", \"no free tier\"),   # unanswerable → abstain\n])\ndef test_answers_are_grounded(rag, question, expected):\n    answer = rag.ask(question)\n    assert expected.lower() in answer.lower()\n\n@pytest.mark.parametrize(\"bad\", [\"\", \"a\", \"x\" * 5000])\ndef test_validation_rejects_garbage(rag, bad):\n    with pytest.raises(ValidationError):\n        rag.ask(bad)",
+      "annot": [
+        "The fixture is injected by NAME — no setup methods, no inheritance",
+        "Each parametrize row = an independent test in the report; one failing row doesn't hide the others",
+        "pytest.raises asserts the exception type — 'garbage in raises X' is a testable contract"
+      ],
+      "narration": "Notice the third parametrize row — an unanswerable question whose correct behavior is abstention. That's the GenAI testing mindset: test the CONTRACT — grounded answers, honest refusal, validation boundaries — not exact strings, because the model's phrasing varies run to run. Keep assertions structural: 'the answer contains the key fact', 'the answer cites a source', 'unknown questions are declined'. The fixture builds an in-memory vector store per test: hermetic — no shared state between tests, no test-order dependencies. If your tests pass alone and fail in the suite, shared mutable fixtures are the first suspect."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · MOCKING",
+      "title": "Mock the LLM, keep the logic: **deterministic tests**",
+      "sub": "Fake the boundary, test your code",
+      "narration": "Never call a real LLM in unit tests: slow, costly, and nondeterministic — the same test could pass and fail with no code change. The rule: mock at the BOUNDARY — the client call — with a deterministic fake, and test everything YOUR code does around it: prompt construction, context assembly, error handling, citation formatting. unittest.mock patches the call site: patch the SDK method, return a canned response, assert your code used it correctly — right model, right parameters. Better still: define your own provider interface and inject a FakeProvider in tests — no patching, no monkey business, the same seam FastAPI taught. Either way, one suite runs offline, in milliseconds, forever deterministically."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "FakeProvider: inject the seam, test the logic",
+      "lang": "python",
+      "body": "class LLMProvider(Protocol):\n    async def complete(self, prompt: str) -> str: ...\n\nclass FakeLLM:\n    \"\"\"Deterministic stand-in. Scripts EXACT replies per prompt.\"\"\"\n    def __init__(self, replies: dict[str, str]):\n        self.replies, self.calls = replies, []\n\n    async def complete(self, prompt: str) -> str:\n        self.calls.append(prompt)          # inspect what you sent!\n        return self.replies.get(prompt, \"I don't know.\")\n\nasync def test_prompt_carries_context():\n    fake = FakeLLM({\"CTX[refund] Q: window?\": \"30 days\"})\n    rag = RagPipeline(llm=fake, store=memory_store())\n    answer = await rag.ask(\"What is the refund window?\")\n    assert \"30 days\" in answer\n    # assert on the PROMPT, not just the answer:\n    assert \"CTX[refund]\" in fake.calls[0]      # context was assembled\n    assert \"citation\" in fake.calls[0].lower() # citation rule included",
+      "annot": [
+        "Fake records its calls → you assert on INPUTS (prompt assembly), not just outputs",
+        "The unknown-prompt default ('I don't know.') tests abstention without an LLM in the loop",
+        "Protocol-typed seam: production gets the real provider, tests get the fake — same RagPipeline code"
+      ],
+      "narration": "The fake doubles as an inspector: recording every prompt it receives lets you assert on what your pipeline SENDS — context assembled, citation instructions present, question included — which is where real bugs live. This is the deepest testing insight for LLM apps: your code's job is everything up to the API call; test that, deterministically, forever. What you cannot unit-test is model QUALITY — that belongs to evals, GA-20 and GA-21. Keep the boundary sharp: unit tests with fakes for logic, evals with real models for quality, and a few end-to-end smoke tests with capped spend for wiring."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · LOGGING",
+      "title": "Logs you'll actually read at 3 a.m.",
+      "sub": "Structured logs, levels, and correlation IDs",
+      "narration": "print debugging doesn't survive production. The logging module gives you levels — debug, info, warning, error — filtered by environment: verbose in development, info-and-above in production. Structured logging is the upgrade that matters: log JSON objects — timestamp, level, event, request-id, key fields — not prose sentences; structured logs are queryable, aggregatable, alertable, and play natively with log aggregation stacks. The request-id from FastAPI's middleware becomes your correlation ID: attach it to every log line in the request, and a user report of 'it broke' becomes a single filtered query instead of an archaeology dig. Rule: log events with context, not narration — 'retrieval returned 0 chunks, query rewritten twice' beats 'something went wrong'."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        {
+          "e": "🎚️",
+          "t": "Levels discipline",
+          "s": "DEBUG for diagnosis · INFO for business events · ERROR for failures + stack traces"
+        },
+        {
+          "e": "🧱",
+          "t": "Structured JSON logs",
+          "s": "machine-queryable: filter retrieval.score < 0.5 across all requests in seconds"
+        },
+        {
+          "e": "🪢",
+          "t": "Correlation IDs",
+          "s": "request-id on every line → one filter reconstructs a full user session"
+        }
+      ],
+      "narration": "The GenAI-specific logging insight: log the RETRIEVAL TELEMETRY GA-15 asked you to capture — original question, rewritten queries, top scores, chunk sources. When answer quality drops, that trail is how you diagnose which stage regressed without reproducing anything. Also: never log secrets, prompts containing PII, or full LLM responses by default — redact at the logging boundary; compliance audits ask exactly these questions. Use logging config once at app startup, and in async code remember logging is sync — one slow log sink can block the loop; queue-based handlers exist for that. Boring logging is the difference between 'we saw errors' and 'we know why'."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · AUTOMATION",
+      "title": "Let the toolchain **refuse** bad code before humans review it",
+      "sub": "ruff + black + pre-commit hooks",
+      "narration": "Manual quality discipline decays; automated discipline doesn't. Ruff is the modern Python linter — absurdly fast, one tool replacing flake8, isort, and a drawer of plugins; it catches unused imports, shadowed names, risky patterns, style violations — configurable via one pyproject file. Black is the formatter: one opinionated style, zero debates — run it and every diff shows substance, never formatting. Pre-commit wires both into git itself: a hooks file runs checks on every commit — lint, format, even pytest-fast or type checks — and REJECTS the commit if any fail. Bad code never enters history; reviewers never spend attention on style; main stays green by construction."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": ".pre-commit-config.yaml + ruff/black wired in",
+      "lang": "yaml",
+      "body": "# .pre-commit-config.yaml — checks run on EVERY git commit\nrepos:\n  - repo: https://github.com/astral-sh/ruff-pre-commit\n    rev: v0.6.9\n    hooks:\n      - id: ruff          # lint: bugs, unused imports, style\n        args: [--fix]     # auto-fix what's fixable\n  - repo: https://github.com/psf/black-pre-commit-mirror\n    rev: 24.10.0\n    hooks:\n      - id: black         # format: one style, zero debates\n\n# pyproject.toml:\n# [tool.ruff]\n# line-length = 100\n# select = [\"E\", \"F\", \"I\", \"UP\", \"B\"]  # errors, pyflakes, isort,\n#                                        # pyupgrade, bugbear\n\n# pip install pre-commit && pre-commit install\n# From now on: git commit runs the chain — fail = commit refused",
+      "annot": [
+        "ruff --fix auto-repairs trivial issues — the hook fixes, you review, commit proceeds",
+        "B (bugbear) rules catch real bugs: mutable default args, loop variable capture, and friends",
+        "pre-commit install wires the git hook once per clone — CI and local now share the same gate"
+      ],
+      "narration": "The workflow after this is installed: you commit, ruff lints and auto-fixes, black normalizes formatting, and only substance reaches review. Add more hooks as the project matures — mypy for type checking, bandit for security scanning, even a hook that regenerates the OpenAPI spec when routes change. The deeper point: every check that CAN be automated SHOULD be, because attention is the scarcest resource on a team and spending it on style is waste. Ruff's speed matters here — a linter that takes milliseconds runs on every commit without friction; one that takes minutes gets bypassed. Design your quality gates to be too cheap to skip."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-20",
+      "title": "Code quality nailed. But how do you measure ANSWER quality?",
+      "next": "Reel 39 · Eval Fundamentals — golden datasets, offline vs online, human review"
+    }
+  ],
+  "recap": [
+    "pytest: plain functions + fixtures (shared, teardown-safe setup) + parametrize (one function, N cases); test contracts, not exact LLM phrasing",
+    "Mock at the boundary: FakeProvider records prompts so you assert on inputs (assembly, citations); real-model quality belongs to evals, not unit tests",
+    "Structured JSON logs with correlation IDs make production debuggable; ruff + black + pre-commit refuse bad code before review"
+  ],
+  "quiz": [
+    {
+      "q": "Why mock the LLM client in unit tests instead of calling the real API?",
+      "opts": [
+        "To save API credits in CI",
+        "Real LLM calls are slow, costly, and nondeterministic — the same test could pass and fail with no code change",
+        "The API forbids test traffic",
+        "pytest requires it"
+      ],
+      "a": 1,
+      "why": "Determinism is the foundation of testing: mock at the boundary, keep everything your code does testable, and leave model quality to evals."
+    },
+    {
+      "q": "What does parametrize give you over writing separate test functions?",
+      "opts": [
+        "Faster execution",
+        "One function over a data table → N independent test cases in the report, no copied test logic",
+        "It skips failing rows",
+        "Automatic fixtures"
+      ],
+      "a": 1,
+      "why": "The test logic lives once; the table is data. Each row reports independently — one failing case never masks another."
+    },
+    {
+      "q": "What does pre-commit add that CI alone doesn't?",
+      "opts": [
+        "Prettier web UI",
+        "Checks run locally BEFORE commit — bad code never enters history instead of failing after push",
+        "It replaces pytest",
+        "Cloud storage"
+      ],
+      "a": 1,
+      "why": "The cheapest place to catch an issue is before it exists: shift-left means the same gates run on every developer's machine, every commit."
+    }
+  ],
+  "code": {
+    "title": "The quality loop: tests + fake LLM + structured logging",
+    "body": "import logging, json, pytest\n\nlog = logging.getLogger(\"rag\")\n\nclass StructuredFormatter(logging.Formatter):\n    def format(self, record):\n        return json.dumps({\n            \"ts\": self.formatTime(record),\n            \"level\": record.levelname,\n            \"event\": record.msg if isinstance(record.msg, str) else None,\n            **getattr(record, \"fields\", {}),   # extra context rides along\n        })\n\nasync def ask(rag, question, request_id):\n    log.info(\"ask.start\", extra={\"fields\": {\n        \"request_id\": request_id, \"q\": question[:80]}})\n    answer = await rag.ask(question)\n    log.info(\"ask.done\", extra={\"fields\": {\n        \"request_id\": request_id, \"abstained\": answer.abstained}})\n    return answer\n\n# In tests: caplog captures everything — assert on LOGGED events:\ndef test_abstention_is_logged(rag, caplog):\n    with caplog.at_level(logging.INFO, logger=\"rag\"):\n        asyncio.run(ask(rag, \"totally unknown thing?\", \"req-1\"))\n    abstentions = [r for r in caplog.records\n                   if getattr(r, \"abstained\", None) is True]\n    assert abstentions, \"expected an abstention event in the logs\"",
+    "annot": [
+      "caplog makes log assertions first-class: 'the system logged an abstention' is a testable behavior",
+      "request_id flows into every record → test asserts the correlation field exists, production uses it",
+      "The structured formatter keeps one code path for dev (pretty) and prod (JSON) via config"
+    ]
+  },
+  "notes": "# Testing & Quality\n\n## pytest\n- Plain functions + assert; fixtures injected by name; yield → teardown.\n- `@pytest.mark.parametrize` — data-driven cases, independent reports.\n- LLM apps: test CONTRACTS (grounded, abstains, validates), not phrasing.\n\n## Mocking LLMs\n- Never call real APIs in unit tests: slow, costly, nondeterministic.\n- FakeProvider pattern: deterministic replies + records prompts → assert on INPUTS (context assembly, citation rules).\n- Model quality → evals (GA-20/21), not unit tests.\n\n## Logging\n- Levels: DEBUG/INFO/ERROR; structured JSON; correlation/request IDs.\n- Log retrieval telemetry (rewrites, scores, sources) for quality debugging.\n- Never log secrets/PII; redact at the boundary.\n\n## Automation\n- ruff (lint, fast, --fix) + black (format) + pre-commit (gates on every commit).\n- Shift-left: same checks locally and in CI; too cheap to bypass."
+}

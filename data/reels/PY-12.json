@@ -1,0 +1,154 @@
+{
+  "id": "PY-12",
+  "num": 36,
+  "track": "python",
+  "stage": "5. App Building + Quality",
+  "topic": "HTTP Clients",
+  "hook": "Every LLM call you make travels over HTTP. Auth headers, retries on 429s, pagination, streaming — the client layer decides whether your app is **robust or fragile**.",
+  "chapters": [
+    "requests vs httpx",
+    "Auth & headers",
+    "Retries & backoff",
+    "Pagination & streaming"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CLIENTS",
+      "title": "requests wrote the textbook. **httpx wrote the sequel.**",
+      "sub": "One API, two modes: sync and async",
+      "narration": "Requests is Python's legendary HTTP library — simple API, huge ecosystem. But it is synchronous only, and in an async world that's a dealbreaker: a requests call inside an async function blocks the entire event loop — PY-10's cardinal sin. httpx is the modern successor: nearly identical API, PLUS first-class async support — same code shape, await added. It also speaks HTTP/2, which some APIs require, and has built-in timeout discipline. Rule for GenAI apps: default to httpx; use requests only in legacy sync scripts. Most official SDKs — OpenAI, Anthropic — already wrap httpx under the hood, so this choice mostly matters when you call APIs directly."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "📗", "t": "requests", "s": "The classic · sync-only · blocking inside async code freezes the loop", "win": false },
+        { "e": "⚡", "t": "httpx (sync)", "s": "Same ergonomics · HTTP/2 · strict timeouts by default", "win": true },
+        { "e": "🌀", "t": "httpx (async)", "s": "awaitable client · the only sane choice inside asyncio · official SDKs wrap it", "win": true }
+      ],
+      "narration": "The choice that matters most is the third card. Inside any async code — and your GenAI pipelines should be async — only an async client keeps the event loop breathing. httpx gives you one mental model for both worlds: instantiate an AsyncClient for pipelines, a Client for scripts, same method names, same response API. Two httpx specifics worth internalizing: timeouts are NOT optional — httpx enforces a default five-second timeout pool, which surfaces hung-call bugs immediately instead of silently; and connection pooling via a shared client instance reuses sockets across requests, a large latency win versus creating a client per call. Client-per-request is the requests habit you must unlearn."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · AUTH",
+      "title": "Bearer tokens, API keys, OAuth — **speak the dialects**",
+      "sub": "How credentials ride on HTTP headers",
+      "narration": "Three auth dialects cover most GenAI integrations. API keys: usually a custom header — x-api-key — or a query parameter, depending on the provider. Bearer tokens: the Authorization header with the word Bearer and a token — the OpenAI and most LLM APIs' pattern; it's OAuth's token format used directly. OAuth 2: a full handshake — your app exchanges a client-id and secret for a short-lived access token, refreshes it on expiry; use it when acting ON BEHALF of users — 'sign in with Google'-style flows — rather than service-to-service calls. For service-to-service, a long-lived API key or bearer token in an environment variable is the norm. One rule above all: never hardcode secrets — os.environ at minimum, a secrets manager in production."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "httpx client with auth, shared across calls",
+      "lang": "python",
+      "body": "import os, httpx\n\n# ONE shared client: connection pooling + auth in one place\nclient = httpx.AsyncClient(\n    base_url=\"https://api.example.com/v1\",\n    headers={\n        \"Authorization\": f\"Bearer {os.environ['API_KEY']}\",\n        # \"x-api-key\": os.environ[\"API_KEY\"],   # dialect B\n    },\n    timeout=httpx.Timeout(30.0, connect=5.0),  # total 30s, connect 5s\n)\n\nasync def get_report(id: str) -> dict:\n    resp = await client.get(f\"/reports/{id}\")\n    resp.raise_for_status()          # 4xx/5xx → exception, not silent None\n    return resp.json()\n\n# OAuth refresh pattern (simplified):\n# token = exchange(client_id, secret)          # expires in 3600s\n# schedule refresh BEFORE expiry, never mid-call",
+      "annot": [
+        "base_url + relative paths: one client serves every endpoint of an API",
+        "raise_for_status() converts HTTP errors into exceptions — silent failures are the real enemy",
+        "Two-part timeout: fast-fail on connect, generous on read — 'connected but slow' ≠ 'unreachable'"
+      ],
+      "narration": "The shared-client pattern: auth header configured once, connection pool reused across hundreds of calls, timeouts explicit. Two disciplines shown here. raise-for-status: an un-checked response means a 500-error page flows into your json parser as garbage; exceptions make failures loud and local. The timeout split matters operationally: a connect timeout of five seconds catches dead networks fast, while the read timeout carries the real work — thirty seconds for a heavy report. On OAuth, the production subtlety is refresh timing: refresh on a schedule before expiry — say at eighty percent of lifetime — rather than reacting to 401s mid-call, or every expiry becomes a failed request for some unlucky user."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · RETRIES",
+      "title": "429 and 5xx are **transient weather**, not failures",
+      "sub": "Retry with exponential backoff + jitter",
+      "narration": "APIs fail in two families: permanent — 400 bad request, 401 unauthorized, 404 missing — retrying these is pointless and rude; and transient — 429 rate-limited, 500/502/503 server hiccups — these PASS, if you wait. The recipe: retry only transient statuses, with exponential backoff — one second, two, four, eight — capped at a max wait, and add jitter — small randomness — so a fleet of your instances doesn't retry in synchronized waves that hammer the recovering server. Tenacity is the standard library for this in Python: a decorator that encodes exactly these rules. And respect the Retry-After header when present — the server is literally telling you when to come back."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "tenacity: the retry recipe, declarative",
+      "lang": "python",
+      "body": "import httpx, tenacity\n\n# Retry ONLY transient errors, backoff exponentially, cap the wait\ndef is_transient(exc: BaseException) -> bool:\n    return (isinstance(exc, httpx.HTTPStatusError)\n            and exc.response.status_code in (429, 500, 502, 503))\n\n@tenacity.retry(\n    retry=tenacity.retry_if_exception(is_transient),\n    wait=tenacity.wait_exponential(\n        multiplier=1, min=1, max=30) + tenacity.wait_random(0, 1),\n    stop=tenacity.stop_after_attempt(5),\n    reraise=True,\n)\nasync def call_llm(prompt: str) -> str:\n    resp = await client.post(\"/chat\",\n                             json={\"prompt\": prompt})\n    resp.raise_for_status()\n    return resp.json()[\"text\"]",
+      "annot": [
+        "retry_if_exception gates WHICH failures retry — 401/404 fail immediately",
+        "exponential + random jitter: synchronized client retries are how retries become a DDoS",
+        "stop_after_attempt bounds total time; combine with PY-10's wait_for for a hard ceiling"
+      ],
+      "narration": "The full recipe in one decorator. Retries only the transient family — the gate is the important part, because retrying a 400 means hammering a server that is correctly rejecting you. Exponential growth respects recovering services; the random jitter is not decoration — if a thousand clients hit a failing endpoint and retry at exactly one, two, four seconds, the retry storm itself keeps the server down; jitter de-synchronizes the herd. Five attempts with a thirty-second cap means worst-case latency is bounded and knowable. Compose with PY-10: tenacity governs the retry rhythm, asyncio-dot-wait-for governs the absolute deadline — together they make 'how bad can it get' a number you can write down."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · PAGINATION & STREAMING",
+      "title": "Big results arrive in pieces — **or one token at a time**",
+      "sub": "Pagination patterns + SSE streaming",
+      "narration": "Pagination: list endpoints return pages, not the whole collection — cursor-based, where the response hands you an opaque next-cursor that you feed into the next request, is the modern pattern, immune to shifting data; offset-based — skip the first N — is simpler but breaks when items are inserted mid-walk. Loop until the cursor is empty. Streaming: LLM responses arrive token-by-token via server-sent events — an HTTP response that never closes, emitting chunks. Why it matters: time-to-first-token drops from twenty seconds to half a second — the user starts reading while the model still thinks. Two consumption modes: iterate chunks for live UX, or accumulate to a full response for downstream processing."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Cursor pagination + SSE token streaming",
+      "lang": "python",
+      "body": "async def list_all_users() -> list[dict]:\n    users, cursor = [], None\n    while True:\n        params = {\"limit\": 100, **({\"cursor\": cursor} if cursor else {})}\n        data = (await client.get(\"/users\", params=params)).json()\n        users += data[\"items\"]\n        cursor = data.get(\"next_cursor\")   # empty/None → done\n        if not cursor:\n            return users\n\nasync def stream_answer(prompt: str):\n    # SSE: response never \"finishes\" until the model is done\n    async with client.stream(\"POST\", \"/chat\",\n                             json={\"prompt\": prompt}) as resp:\n        async for line in resp.aiter_lines():\n            if line.startswith(\"data: \"):\n                payload = json.loads(line[6:])\n                if payload.get(\"done\"):\n                    return\n                yield payload[\"token\"]   # half-second to first token",
+      "annot": [
+        "Cursor loop: state lives in the response, not your math — insertion-safe unlike offsets",
+        "client.stream keeps the connection open and yields chunks — plain .post would buffer everything",
+        "the 'data: ' prefix is the SSE protocol — parse, don't split naively on newlines"
+      ],
+      "narration": "Both patterns shown side by side because they share one idea: HTTP as a FLOW, not a snapshot. Pagination walks a cursor until the API says done — never compute offsets yourself; the cursor is opaque for a reason, and branching data makes offset math wrong. Streaming via client-dot-stream and aiter-lines: the connection stays open, each server-sent event line arrives as it's produced. The protocol detail — events prefixed with 'data colon space' — matters because blank lines are keepalive heartbeats, not content; parse with the prefix check, not naive splitting. FastAPI can EMIT SSE just as easily — PY-13 covers that — completing the loop: your app streams from the LLM and streams to the browser, end to end."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-13",
+      "title": "Clients mastered. Time to BE the server.",
+      "next": "Reel 37 · FastAPI — routes, models, DI, streaming, auth"
+    }
+  ],
+  "recap": [
+    "httpx for everything new: one API for sync and async, HTTP/2, enforced timeouts — requests blocks the event loop",
+    "Auth dialects: x-api-key, Bearer tokens, full OAuth for user-delegation; secrets from env, never code",
+    "Retry only transient statuses with exponential backoff + jitter; paginate via opaque cursors; stream LLM tokens with client.stream for instant UX"
+  ],
+  "quiz": [
+    {
+      "q": "Why is requests a liability inside async code?",
+      "opts": [
+        "It's unmaintained",
+        "It's synchronous — a blocking call freezes the entire event loop until the response arrives",
+        "It doesn't support HTTPS",
+        "It's slower at parsing JSON"
+      ],
+      "a": 1,
+      "why": "The event loop's power is doing other work while waiting; a blocking client wastes every other coroutine's time."
+    },
+    {
+      "q": "Which failures should a retry policy retry?",
+      "opts": [
+        "All HTTP errors",
+        "Only transient ones — 429/5xx — with exponential backoff and jitter; 4xx client errors fail immediately",
+        "Only 404s",
+        "None — retries are an anti-pattern"
+      ],
+      "a": 1,
+      "why": "Retrying permanent errors hammers a correctly-rejecting server; jitter prevents synchronized retry storms."
+    },
+    {
+      "q": "Why prefer cursor pagination over offset pagination for changing data?",
+      "opts": [
+        "Cursors are faster to type",
+        "Offsets break when items are inserted/deleted mid-walk (you skip or repeat rows); cursors are insertion-stable by design",
+        "APIs don't support offsets",
+        "Cursors need no loop"
+      ],
+      "a": 1,
+      "why": "The cursor is an opaque bookmark into the server's ordering — your page math can't be invalidated by inserts."
+    }
+  ],
+  "code": {
+    "title": "The resilient LLM client, assembled",
+    "body": "import os, httpx, tenacity\n\nclient = httpx.AsyncClient(\n    base_url=\"https://api.llm-provider.com/v1\",\n    headers={\"Authorization\": f\"Bearer {os.environ['LLM_KEY']}\"},\n    timeout=httpx.Timeout(60.0, connect=5.0),\n    limits=httpx.Limits(max_connections=100),  # pool cap\n)\n\ndef transient(e: BaseException) -> bool:\n    return isinstance(e, httpx.HTTPStatusError) \\\n        and e.response.status_code in (429, 500, 502, 503)\n\n@tenacity.retry(retry=tenacity.retry_if_exception(transient),\n                wait=tenacity.wait_exponential(1, max=30)\n                     + tenacity.wait_random(0, 1),\n                stop=tenacity.stop_after_attempt(5), reraise=True)\nasync def complete(prompt: str) -> str:\n    r = await client.post(\"/chat\", json={\"prompt\": prompt})\n    r.raise_for_status()\n    return r.json()[\"text\"]\n\nasync def complete_stream(prompt: str):\n    async with client.stream(\"POST\", \"/chat\",\n                             json={\"prompt\": prompt}) as r:\n        async for line in r.aiter_lines():\n            if line.startswith(\"data: \") and line != \"data: [DONE]\":\n                yield json.loads(line[6:])[\"token\"]\n\n# One client, two personalities: buffered complete + live stream",
+    "annot": [
+      "max_connections caps the pool — combined with PY-10's semaphore, backpressure has two gates",
+      "One shared client = one auth config, one pool, one timeout policy — consistency by construction",
+      "complete_stream is the production UX path: first token in <1s beats 'complete' in 20s every time"
+    ]
+  },
+  "notes": "# HTTP Clients\n\n## requests vs httpx\n- requests: sync-only → blocks event loops. Legacy scripts only.\n- httpx: same API, sync + async, HTTP/2, strict default timeouts.\n- Shared client instance: connection pooling; never client-per-request.\n\n## Auth\n- Dialects: `x-api-key` header · `Authorization: Bearer` · OAuth2 (user-delegation flows).\n- Service-to-service: env-var key/bearer. Never hardcode; secrets manager in prod.\n- `raise_for_status()` everywhere — silent failures are worse than crashes.\n\n## Retries\n- Transient only: 429, 500/502/503. 4xx fails fast.\n- Exponential backoff + jitter; respect Retry-After; cap attempts; tenacity.\n\n## Pagination & streaming\n- Cursor-based (opaque next_cursor) > offset for changing data.\n- SSE via `client.stream` + `aiter_lines()`; parse `data: ` prefix; blank lines are heartbeats.\n- Streaming = sub-second time-to-first-token UX."
+}

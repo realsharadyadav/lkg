@@ -1,0 +1,148 @@
+{
+  "id": "PY-11",
+  "num": 35,
+  "track": "python",
+  "stage": "5. App Building + Quality",
+  "topic": "Threads vs Processes",
+  "hook": "asyncio, threads, processes — three ways to do \"at the same time\", each right for a different enemy: **waiting, latency, and the GIL**.",
+  "chapters": [
+    "The GIL",
+    "Threads for I/O",
+    "Processes for CPU",
+    "Choosing & executors"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE GIL",
+      "title": "The GIL: why threads don't speed up **CPU work**",
+      "sub": "One interpreter lock; only one thread runs Python bytecode at a time",
+      "narration": "CPython — the Python you run — has a Global Interpreter Lock: a single lock each thread must hold to execute Python bytecode. Two threads on two cores still take turns; pure-Python CPU work never runs in parallel across threads. This surprises every developer arriving from C-sharp or Java, where threads do parallelize CPU work. But here's the nuance people miss: the GIL is RELEASED during I/O and during calls into C extensions — NumPy, cryptography, many database drivers — so threads still help those cases. The GIL isn't 'Python can't do concurrency'; it's 'Python threads can't parallelize pure-Python computation'."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "🧵", "t": "Threads share memory", "s": "Same heap, cheap communication · GIL caps pure-Python CPU parallelism", "win": true },
+        { "e": "🏭", "t": "Processes own memory", "s": "Separate interpreters, true CPU parallelism · costly data transfer between them", "win": true },
+        { "e": "📞", "t": "GIL releases on I/O & C calls", "s": "Threads still win for I/O-bound and NumPy-heavy workloads despite the lock", "win": true }
+      ],
+      "narration": "The mental model that resolves the confusion. Threads: one process, shared memory, OS switches between them — great for waiting, useless for parallel pure-Python math because of the GIL. Processes: separate interpreters, each with its own GIL, truly parallel across cores — the only way to speed up CPU-bound Python — but passing data between them means pickling and pipes, which is slow enough to erase gains for small tasks. The third fact is the cheat code: the GIL drops during I/O waits and C-extension calls, so threads parallelize network-bound work fine — and for heavy numeric code on NumPy, threads often parallelize better than you'd expect. Nuance beats slogans."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THREADS",
+      "title": "I/O-bound? Threads are the **boring, reliable** answer",
+      "sub": "When you're waiting, not computing",
+      "narration": "Threads shine when the bottleneck is waiting — network calls, file reads, database round-trips. While one thread blocks on a socket, the GIL is released and another thread runs. Ten threads, ten simultaneous downloads — the throughput win is real even though only one executes Python at a time. The catch for GenAI apps: most of your I-O should already be asyncio — PY-10's event loop handles thousands of waits more cheaply than a thread per request. Reach for threads when you're integrating a BLOCKING library you can't await — an old SDK, a sync database driver — run it in a thread pool so the rest of your async app doesn't freeze. Threads are the adapter, not the architecture."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📥", "t": "Many downloads/DB calls", "s": "Threads overlap the waits · GIL released during I/O" },
+        { "e": "🔌", "t": "Blocking lib in async app", "s": "run_in_executor(threadpool) → freeze-proof integration with sync SDKs" },
+        { "e": "⚠️", "t": "Shared state = locks", "s": "Threads share memory — mutable shared data still needs threading.Lock" }
+      ],
+      "narration": "Threading's danger zone is shared mutable state. The GIL protects bytecode execution, NOT your data structures: two threads incrementing the same counter can interleave and lose updates — you still need locks for shared mutation. The asyncio discipline — no locks because switching is cooperative — does not transfer. Practical GenAI pattern: thread pools via run-in-executor wrap blocking calls for async code; ThreadPoolExecutor for batch sync work. And a debugging note: thread bugs are intermittent by nature — if a counter is 'sometimes wrong under load', suspect a missing lock before anything else. Race conditions don't show up in unit tests; they show up in production."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · PROCESSES",
+      "title": "CPU-bound? Only processes give you **more cores**",
+      "sub": "Embeddings math, parsing, transforms — parallel for real",
+      "narration": "CPU-bound Python — tokenization, chunking at scale, image preprocessing, running evals serially — needs multiprocessing. Each process gets its own interpreter and its own GIL, so four processes genuinely use four cores. Multiprocessing spawns worker processes, hands them tasks through queues, and collects results; ProcessPoolExecutor wraps this in the familiar executor interface. The honest cost: inter-process communication serializes data — pickling every document you send to a worker and every result that comes back. For large payloads that transfer can dominate. Rule: chunk the WORK, not the data — send workers compact task descriptions and let them read big inputs themselves from disk or shared storage."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "ProcessPoolExecutor: parallel CPU across cores",
+      "lang": "python",
+      "body": "from concurrent.futures import ProcessPoolExecutor\n\n# A CPU-heavy pure-Python task: no NumPy shortcut here\ndef tokenize(doc: str) -> list[str]:\n    return [t.lower().strip(\".,;:!?\") for t in doc.split()]\n\ndef embed_batch(texts: list[str]) -> list[list[float]]:\n    # pretend: pure-Python embedding (CPU-bound)\n    return [embedding_model.encode(t) for t in texts]\n\n# 8 worker processes → 8 cores in parallel, 8 GILs\nwith ProcessPoolExecutor(max_workers=8) as pool:\n    tokenized = list(pool.map(tokenize, corpus_docs, chunksize=64))\n\n# chunksize matters: bigger chunks = fewer pickle round-trips\n# (don't send 1M tiny tasks — batch them!)",
+      "annot": [
+        "Each worker is a full interpreter: the function you map must be importable at module level (pickled by reference)",
+        "chunksize batches tasks per trip — the #1 performance knob for ProcessPool",
+        "Rule of thumb: pool.map for embarrassingly parallel CPU work; asyncio for I/O; never the reverse"
+      ],
+      "narration": "ProcessPoolExecutor is the friendly face of multiprocessing — same map interface you'd use on a list, but the work distributes across processes. Three production notes. First, the mapped function must live at module level — the worker imports your module by name, so lambdas and closures fail with obscure pickling errors. Second, chunksize: each task travels to a worker as a pickled message; a million tiny tasks means a million pickling round-trips. Batch with chunksize — sixty-four tasks per trip is a sane starting point. Third, memory: every worker loads its own copy of your module and models — eight workers loading an embedding model means eight copies in RAM. Factor model size into max-workers."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · THE DECISION",
+      "title": "One question picks the tool: **what is the bottleneck?**",
+      "sub": "Waiting → async/threads · Computing → processes",
+      "narration": "Forget flowcharts — one diagnostic question decides: is your program mostly WAITING or mostly COMPUTING? Waiting on network — LLM APIs, vector DBs, webhooks — asyncIO first: thousands of concurrent waits, one thread, no locking. Waiting but stuck with blocking libraries — threads, or asyncio wrapping threads via run-in-executor. Computing — parsing, transforms, pure-Python algorithms, anything NumPy can't absorb — processes, because only separate interpreters escape the GIL. Hybrid systems are the norm: a FastAPI app with async endpoints spawning a ProcessPool for CPU-heavy ingestion. Identify the bottleneck per stage of your pipeline, not per program."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "🌐", "t": "asyncio — waiting", "s": "LLM/API calls, DB waits · thousands concurrent · first choice for I/O", "win": true },
+        { "e": "🧵", "t": "threads — blocked", "s": "Sync/blocking libraries, moderate I/O parallelism · simple, GIL-released on I/O", "win": true },
+        { "e": "🏭", "t": "processes — computing", "s": "CPU-bound pure-Python · true multi-core · costs memory + pickling", "win": true }
+      ],
+      "narration": "The cheat sheet. Notice threads and asyncio overlap for I-O — the tiebreaker is scale and control: asyncio scales to thousands of waits with structured cancellation; threads are simpler when concurrency is modest or libraries force sync. And the trap to avoid: using threads hoping to parallelize CPU work — the GIL makes that a mirage; you'll get context-switch overhead and zero speedup, the most common wasted afternoon in Python performance work. When in doubt, measure: time a thread version and a process version on your real workload — the bottleneck question sometimes has a surprising answer, and profilers beat intuition."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-12",
+      "title": "Concurrency decided. Now the calls themselves.",
+      "next": "Reel 36 · HTTP Clients — auth, retries, pagination, streaming"
+    }
+  ],
+  "recap": [
+    "GIL: one thread executes Python bytecode at a time — threads never parallelize pure-Python CPU work, but the lock releases on I/O and C extensions",
+    "Threads: shared memory, good for I/O waits and wrapping blocking libraries; still need locks for shared mutable state",
+    "Processes: separate interpreters = true multi-core for CPU-bound work; pay in memory duplication and pickling overhead — chunk tasks, not data"
+  ],
+  "quiz": [
+    {
+      "q": "Why don't Python threads speed up a pure-Python CPU-bound computation?",
+      "opts": [
+        "Threads are slower than processes",
+        "The GIL allows only one thread to execute Python bytecode at a time, so two threads on two cores still take turns",
+        "CPython disables multiple cores",
+        "It would use too much memory"
+      ],
+      "a": 1,
+      "why": "The interpreter lock serializes bytecode execution; only separate processes (own GILs) or C extensions that release the lock parallelize."
+    },
+    {
+      "q": "When do threads still help despite the GIL?",
+      "opts": [
+        "Never",
+        "I/O-bound work — the GIL is released while a thread waits on sockets/files, so other threads run",
+        "Only with NumPy",
+        "Only on Linux"
+      ],
+      "a": 1,
+      "why": "The lock drops during I/O waits (and many C-extension calls), so overlapped waiting produces real throughput gains."
+    },
+    {
+      "q": "What's the #1 performance knob when using ProcessPoolExecutor.map?",
+      "opts": [
+        "max_workers",
+        "chunksize — batching tasks per pickling round-trip; tiny tasks individually sent drown in IPC overhead",
+        "The map function's name",
+        "Disabling the GIL"
+      ],
+      "a": 1,
+      "why": "Inter-process communication pickles every task/result; batches amortize that cost — don't ship a million micro-tasks."
+    }
+  ],
+  "code": {
+    "title": "The hybrid reality: async app + thread/process adapters",
+    "body": "import asyncio\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\n# blocking sync SDK you CANNOT change\ndef legacy_translate(text: str) -> str:\n    return old_sdk.translate(text)   # blocks, no async version\n\ndef cpu_heavy_score(text: str) -> float:\n    return sum(ord(c) for c in text) % 100 / 100  # pretend: pure-Python math\n\nasync def pipeline(texts: list[str]) -> list[str]:\n    loop = asyncio.get_running_loop()\n\n    with ThreadPoolExecutor(8) as tpool, ProcessPoolExecutor(4) as ppool:\n        # 1 · blocking SDK off the event loop (threads)\n        translations = await loop.run_in_executor(\n            tpool, lambda: list(map(legacy_translate, texts)))\n\n        # 2 · CPU math on real cores (processes)\n        scores = await loop.run_in_executor(\n            ppool, lambda: list(ppool.map(cpu_heavy_score, texts)))\n\n    # 3 · back on the loop: async I/O continues\n    return await asyncio.gather(\n        *[notify_api(t, s) for t, s in zip(translations, scores)])",
+    "annot": [
+      "run_in_executor is the bridge: sync code runs off the event loop, await keeps the app responsive",
+      "threads for the blocking SDK (I/O-shaped), processes for the CPU math — chosen per bottleneck, not per habit",
+      "executors as context managers shut workers down cleanly — leaked pools keep processes alive past exit"
+    ]
+  },
+  "notes": "# Threads vs Processes\n\n## The GIL\n- Global Interpreter Lock: one thread runs Python bytecode at a time.\n- Released during I/O and C-extension calls (NumPy, crypto, DB drivers).\n- Threads ≠ CPU parallelism in Python; processes = own GIL per interpreter.\n\n## Threads — I/O-bound\n- Overlap waits; simple; GIL released during blocking I/O.\n- Use to wrap blocking libs inside async apps (`run_in_executor`).\n- Shared mutable state still needs `threading.Lock`.\n\n## Processes — CPU-bound\n- True multi-core; costs: RAM per worker, pickling IPC.\n- `ProcessPoolExecutor.map(fn, items, chunksize=64)` — batch tasks.\n- Mapped fn must be module-level (picklable by reference).\n\n## Decision\n- Bottleneck = waiting → asyncio; = blocking lib → threads; = computing → processes.\n- Hybrid is normal: async app + thread/process adapters per pipeline stage."
+}

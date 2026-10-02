@@ -1,0 +1,144 @@
+{
+  "id": "GA-20",
+  "num": 39,
+  "track": "genai",
+  "stage": "5. App Building + Quality",
+  "topic": "Eval Fundamentals",
+  "hook": "**You can't improve what you don't measure.** In GenAI, the model's mood is not a metric. Evals are how quality becomes engineering instead of vibes.",
+  "chapters": [
+    "Why evals",
+    "The golden dataset",
+    "Offline vs online",
+    "Human review loops"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · WHY",
+      "title": "Prompts drift. Models drift. **Only evals notice.**",
+      "sub": "Change without measurement is gambling",
+      "narration": "Every change in a GenAI system — new prompt wording, a new model version, a new chunk size — is a bet on quality. Without evals, you find out whether the bet paid off from user complaints. Three forces make change constant: prompt iteration never ends; models update silently — a provider's 'gpt-same-name' behaves differently in March than January; and your DATA changes — new documents, edited policies. Evals convert all three from surprises into detected, measurable deltas. The rule that changes culture: no prompt change, model swap, or pipeline tweak ships without an eval run — the same discipline as unit tests for code, applied to behavior."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📝", "t": "Prompt iterations", "s": "'small wording fix' is a quality bet — evals settle whether it paid" },
+        { "e": "🔄", "t": "Silent model updates", "s": "Same model name, new behavior · evals detect drift you can't see by vibe" },
+        { "e": "📚", "t": "Living data", "s": "Re-indexed corpora change answers · evals catch freshness regressions" }
+      ],
+      "narration": "A concrete story for each force. Prompt iteration: 'just make it friendlier' subtly drops citation rigor — an eval measuring citation coverage catches it in the PR, not in a customer call. Silent updates: providers fine-tune and re-deploy under the same model name; your golden set run weekly becomes a drift alarm. Living data: the corpus you re-indexed Tuesday now answers 'refund window' from a deprecated policy page; the eval flags the regression before users do. The unifying point: in classical software, code that passes tests behaves the same tomorrow. In GenAI, passing behavior decays on its own — evals are the only regression defense."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · GOLDEN DATASET",
+      "title": "The golden dataset: **fifty questions you trust completely**",
+      "sub": "Small, curated, versioned — the anchor of everything",
+      "narration": "The golden dataset is your source of truth: fifty to a few hundred real questions, each with a known-correct answer or grading criteria, drawn from actual user queries and reviewed by domain experts. Quality beats size — two hundred vetted questions outperform ten thousand noisy ones. Cover the shape of reality: common questions, edge cases, adversarial inputs, and — critically — UNANSWERABLE questions, so abstention is measured, not assumed. Version it like code: golden-v1, golden-v2 — when you add cases, the dataset grows deliberately, and old versions stay runnable so you can compare runs across time. This dataset is also GA-15's recall-measuring tool and GA-16's abstention test — one artifact, many evals."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🎯", "t": "Real questions, expert answers", "s": "From actual logs + SME review · a wrong 'golden' answer corrupts every metric downstream" },
+        { "e": "🧪", "t": "Cover the distribution", "s": "Common · edge · adversarial · unanswerable → measures hits AND honesty" },
+        { "e": "🗂️", "t": "Versioned like code", "s": "golden-v1, v2… · every eval run records WHICH dataset version scored it" }
+      ],
+      "narration": "Build it incrementally: start with fifty questions from support tickets and sales calls — the questions users actually ask, not the ones you imagine. Get subject-matter experts to write reference answers and, importantly, grading guidance: some answers are exact-match, others need rubric judgments — 'must mention X, must not claim Y'. Then treat contamination as the enemy: golden questions must never leak into few-shot prompts or fine-tuning data, or your eval measures memorization. Finally, budget maintenance: assign an owner; a stale golden set measuring last year's product is worse than none — schedule quarterly reviews against current docs and fresh logs. The dataset is infrastructure, with all that implies."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · OFFLINE VS ONLINE",
+      "title": "Two eval arenas: **the lab and the field**",
+      "sub": "Offline before release, online after — each catches different failures",
+      "narration": "Offline evals run pre-release: the golden dataset, fixed inputs, reproducible scores — your regression gate, comparable run-over-run. Their blind spot: the golden set is a SAMPLE of reality, and reality is wider. Online evals run in production: sampled real traffic scored in shadow — the system answers the user AND a judge scores the exchange. Three online patterns: shadow judging — score a copy of production traffic without affecting users; user feedback — thumbs, ratings, reported issues, cheap and biased but directional; canary analysis — route five percent of traffic to the new prompt and compare quality metrics against the control. The rule: offline gates every release; online monitors every hour."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "🧪", "t": "Offline (golden set)", "s": "Reproducible · comparable · gates releases · limited by sample coverage", "win": true },
+        { "e": "🌍", "t": "Online (shadow traffic)", "s": "Real distribution, real drift detection · noisier · needs sampling + privacy care", "win": true }
+      ],
+      "narration": "How they compose into a pipeline: every PR runs offline evals — fast subset, fifty cases, minutes; nightly runs the full golden set; release requires no-regression. In production, sample one to five percent of traffic for shadow judging — enough signal, manageable cost. Wire alerts on deltas, not absolutes: 'faithfulness dropped twelve percent week-over-week' pages someone; a single bad score doesn't. One more distinction that saves confusion: offline evals measure the SYSTEM's changeability — did my edit help? Online evals measure reality's drift — is the world different? You need both questions answered continuously, and conflating them is how teams ship confidently into a silently degraded product."
+    },
+    {
+      "type": "bigtext",
+      "chapter" : 3,
+      "kicker": "CHAPTER 4 · HUMAN LOOPS",
+      "title": "When the judge is a person: **calibrate first**",
+      "sub": "SME review loops that scale without rotting",
+      "narration": "Some quality dimensions resist automation: brand voice, legal nuance, clinical correctness — domains where an LLM judge hallucinating a grade is worse than no grade. Human review is the ground truth for those — but raw human judgment drifts between reviewers and within one reviewer across a long session. The fix is calibration: run the same twenty cases past every reviewer, compare judgments, discuss disagreements until the rubric is understood identically — THEN start production review. Inter-rater agreement — measured, say, with Cohen's kappa — becomes a health metric for the review process itself. And close the loop: human verdicts feed back into better golden sets and better LLM-judge prompts — people calibrate the machines that will absorb most of the volume."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "👥", "t": "Calibrate", "s": "Shared 20-case set · discussion · Cohen's kappa ≥ target before production review" },
+        { "e": "🔍", "t": "Review samples", "s": "Random + flagged cases · rubric-driven, not vibes" },
+        { "e": "♻️", "t": "Feed back", "s": "Verdicts → golden set additions + judge-prompt improvements" }
+      ],
+      "narration": "The scaled review loop. Sampling strategy matters: purely random sampling misses the tail — mix in FLAGGED cases: low retrieval scores, user thumbs-down, abstentions, unusually long answers. Reviewers with a rubric grade consistently; reviewers without one grade their mood. Budget honestly: full human review doesn't scale to millions of requests, and isn't needed — review to CALIBRATE the automated layer, then let automation carry the volume with humans auditing a shrinking percentage. The failure mode to avoid is review theater: high review volume, no disagreement discussions, kappa unmeasured — that's cost without quality. Measure the reviewers the way you measure the models, or neither number means anything."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-21",
+      "title": "Eval culture established. Now the specific metrics.",
+      "next": "Reel 40 · RAG & LLM Metrics — faithfulness, context recall, LLM-as-judge"
+    }
+  ],
+  "recap": [
+    "Change is constant (prompts, silent model updates, living data) — evals are the only regression defense in GenAI",
+    "Golden dataset: 50–200 expert-reviewed real questions, versioned like code, including unanswerable cases; quality over size",
+    "Offline gates releases, online monitors drift; human review calibrates machines — measure the reviewers too"
+  ],
+  "quiz": [
+    {
+      "q": "Why is a wrong 'golden' answer especially damaging?",
+      "opts": [
+        "It fails the test runner",
+        "Every metric computed against it is corrupted — you're optimizing toward a wrong target",
+        "It makes evals slower",
+        "It violates the API license"
+      ],
+      "a": 1,
+      "why": "The golden set is the anchor of all measurement; SME review exists precisely because one bad reference answer skews every downstream score."
+    },
+    {
+      "q": "What must a golden dataset include to measure abstention?",
+      "opts": [
+        "Only common questions",
+        "Unanswerable questions — otherwise 'never says no' scores the same as 'honest'",
+        "Adversarial jailbreaks only",
+        "Synthetic paraphrases"
+      ],
+      "a": 1,
+      "why": "Without unanswerable cases, abstention is untestable — the system gets no credit for honesty and no penalty for confabulation."
+    },
+    {
+      "q": "What is Cohen's kappa measuring in a human review loop?",
+      "opts": [
+        "Reviewer speed",
+        "Inter-rater agreement beyond chance — the health metric of the review process itself",
+        "Cost per review",
+        "Model accuracy"
+      ],
+      "a": 1,
+      "why": "Low kappa means reviewers disagree systematically — grading noise, not product signal; calibrate before trusting verdicts."
+    }
+  ],
+  "code": {
+    "title": "Versioned golden set + offline eval runner",
+    "body": "# golden/v2.jsonl  — versioned like code, reviewed by SMEs\n{\"q\": \"What is the refund window?\", \"must_contain\": [\"30 days\"], \"answerable\": true}\n{\"q\": \"Who is the CEO's dentist?\",    \"answerable\": false}   # abstain expected\n\n# eval_runner.py\nimport json, datetime\n\ndef run_golden(pipeline, version: str) -> dict:\n    cases = [json.loads(l) for l in open(f\"golden/{version}.jsonl\")]\n    rows = []\n    for c in cases:\n        out = pipeline.ask(c[\"q\"])\n        rows.append({\n            \"q\": c[\"q\"],\n            \"hit\": all(k in out.answer for k in c.get(\"must_contain\", [])),\n            \"abstained\": out.abstained,\n            \"abstain_correct\": (not c[\"answerable\"]) == out.abstained,\n        })\n    return {\n        \"dataset\": version,\n        \"run_at\": datetime.datetime.utcnow().isoformat(),\n        \"hit_rate\": sum(r[\"hit\"] for r in rows) / len(rows),\n        \"abstention_accuracy\": sum(r[\"abstain_correct\"] for r in rows) / len(rows),\n        \"rows\": rows,\n    }\n\n# Store every run:  runs/2026-10-03T05-12.json\n# Compare: current run vs previous runs on the SAME dataset version —\n# a regression is a delta, not a vibe.",
+    "annot": [
+      "abstain_correct encodes the full 2x2: answerable→answered, unanswerable→abstained — both directions scored",
+      "Every run is persisted with its dataset version — comparison across time is apples-to-apples",
+      "must_contain keeps the check structural (facts present), robust to phrasing variation"
+    ]
+  },
+  "notes": "# Eval Fundamentals\n\n## Why evals\n- Change is constant: prompt iterations, silent model updates, living data.\n- No eval → quality discovered via complaints.\n- Rule: nothing ships without an eval run (same discipline as tests).\n\n## Golden dataset\n- 50–200 REAL questions + expert reference answers; quality > size.\n- Cover: common · edge · adversarial · **unanswerable** (abstention).\n- Versioned (golden-v1, v2…); never leak into prompts/training.\n- Owner + quarterly review; stale gold is worse than none.\n\n## Offline vs online\n- **Offline**: golden set, reproducible, gates releases.\n- **Online**: shadow judging, user feedback, canary analysis; monitors drift.\n- Alert on DELTAS, not single scores.\n\n## Human review loops\n- Rubric + calibration (shared cases, Cohen's kappa).\n- Sample: random + flagged (low scores, thumbs-down, abstentions).\n- Humans calibrate machines; review volume shrinks as judges improve."
+}
