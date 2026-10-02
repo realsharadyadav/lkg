@@ -1,0 +1,183 @@
+{
+  "id": "PY-15",
+  "num": 18,
+  "track": "python",
+  "stage": "3. Python for Data",
+  "topic": "pandas",
+  "hook": "pandas is **LINQ + DataTables**, rebuilt for the real world. If you know SQL, you already know 70%.",
+  "chapters": [
+    "DataFrame & Series",
+    "Select, filter, sort",
+    "groupby & aggregate",
+    "merge / join",
+    "Missing data & dtypes",
+    "Memory & performance"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE STRUCTURES",
+      "title": "DataFrame = **a table**. Series = **a column**.",
+      "sub": "Labeled, typed, and vectorized like NumPy underneath",
+      "narration": "The DataFrame is a table with named columns and an index — think a SQL result set you can manipulate in memory. A Series is one column — a labeled array. Everything is built on NumPy, so operations are vectorized and fast. Columns can differ in type — strings, floats, dates in one table. And the index is first-class: it aligns data automatically during math and joins, which is both the superpower and the source of every beginner's confusion."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🏗️", "t": "df = pd.read_csv(\"tickets.csv\")", "s": "One call: file → DataFrame. Also read_parquet, read_excel, read_json" },
+        { "e": "📋", "t": "df.shape · df.columns · df.dtypes", "s": "First three things to check on ANY new dataframe" },
+        { "e": "🧮", "t": "df[\"amount\"] * 1.2 vectorizes", "s": "Column ops apply to every row — no loops" }
+      ],
+      "narration": "Day-one moves. Read a file with one call — CSV, Parquet, Excel, JSON. Then orient: shape tells you rows and columns, dtypes tell you what you're holding — and mismatched dtypes are the number-one silent bug. Then compute on whole columns at once — a price column times a factor applies to every row in one vectorized shot. If you find yourself iterating rows, stop; there's a vectorized way."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · QUERYING",
+      "title": "Filter with **boolean masks**",
+      "sub": "df[df[\"priority\"] == \"P1\"] — SQL WHERE, dataframe style",
+      "narration": "Filtering is a two-step mask pattern: build a boolean Series — true for rows you want — then index the frame with it. Priority equals P1 inside brackets keeps only matching rows. Combine conditions with ampersand and pipe, and remember parentheses — Python's precedence bites here. loc selects by label with a comma — rows comma columns. iloc selects by position. Sort with sort values. This is WHERE, SELECT, and ORDER BY, translated."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🎭", "t": "mask = (df[\"priority\"] == \"P1\") & (df[\"status\"] == \"open\")", "s": "Parentheses around each condition — & binds tighter than ==" },
+        { "e": "🎯", "t": "df.loc[mask, [\"id\", \"amount\"]]", "s": "Rows AND columns in one call — SELECT id, amount WHERE ..." },
+        { "e": "🔢", "t": "df.sort_values(\"amount\", ascending=False).head(10)", "s": "ORDER BY amount DESC LIMIT 10" }
+      ],
+      "narration": "The patterns to internalize. Mask with ampersand and parentheses — the precedence error is a rite of passage. loc with rows comma columns selects both dimensions at once — that's your select-where. And sort values plus head is order-by-limit. If you're a SQL person, say the query in SQL first, then translate: where becomes masks, select becomes the column list, order by becomes sort values. You'll be fluent within a week."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · GROUPBY",
+      "title": "groupby = **SQL GROUP BY**, with sprinkles",
+      "sub": "Split → apply → combine, in one expression",
+      "narration": "Group-by splits the table by a key, applies an aggregation per group, and combines results into a new frame — identical to SQL's group by, but composable with everything else in pandas. Average ticket amount by priority. Count of tickets per agent per day. The trick that unlocks fluency: agg lets you run several aggregations at once, named — and the result is just another DataFrame you can keep transforming. Chain the whole pipeline in one expression."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📊", "t": "df.groupby(\"priority\")[\"amount\"].mean()", "s": "SELECT AVG(amount) FROM t GROUP BY priority" },
+        { "e": "🎛️", "t": ".agg(avg=(\"amount\",\"mean\"), n=(\"id\",\"count\"))", "s": "Multiple aggregations, named — one pass over the data" },
+        { "e": "🔗", "t": ".groupby([\"agent\", \"day\"]) — multi-key", "s": "Group by several columns → a MultiIndex result" }
+      ],
+      "narration": "The essentials. Group, select a column, aggregate — mean, sum, count. Or aggregate several columns several ways with agg and named outputs. Multi-key grouping gives a multi-index result — powerful, but reset index early until you're comfortable. Where groupby really shines over SQL: the result chains. Group, aggregate, then merge, then filter — one expression, no temp tables. That's pandas' composability dividend."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · JOINS",
+      "title": "merge = **SQL JOIN**, defaults differ — check them",
+      "sub": "Inner by default in pandas; how='left' for the SQL LEFT you expect",
+      "narration": "Merging is SQL joins: inner, left, right, outer — same semantics, one call. But defaults differ from SQL culture: pandas defaults to INNER, and the join key defaults to all shared column names, which silently joins on the wrong column when two tables both have an id. Always state on explicitly. The other classic trap: duplicate keys on one side multiply rows — a one-to-many join quietly duplicates, and your totals double. Validate row counts before and after, every time."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🔗", "t": "df.merge(prices, on=\"sku\", how=\"left\")", "s": "Explicit on + explicit how — never trust defaults" },
+        { "e": "👯", "t": "validate=\"1:1\" / \"m:1\"", "s": "Assert the key relationship — duplicate keys fail loudly instead of duplicating rows" },
+        { "e": "🔍", "t": "indicator=True → _merge column", "s": "See which rows matched: both, left_only, right_only" }
+      ],
+      "narration": "Three flags that prevent pain. How left for the SQL left join you're imagining. Validate with one colon one or m colon one — pandas will raise if your assumption about key uniqueness is wrong, catching the silent-duplication bug at the join instead of in the invoice. And indicator true adds a merge column showing match status — your debugger for why row counts changed. These three flags are the difference between trusting a merge and hoping."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · CLEAN DATA",
+      "title": "**NaN** is your constant companion",
+      "sub": "Missing data, wrong dtypes — the real work of data",
+      "narration": "Real data is dirty: missing values are NaN — not a number — a float sentinel that contaminates arithmetic silently. Pandas gives you isna to find them, fillna to fill, dropna to remove. Dtypes drift too: numbers that arrived as strings, dates as text. Fix with astype and to datetime. The discipline: look at dtypes and isna counts FIRST, before any analysis — the number of wrong conclusions caused by a string-typed amount column is uncountable."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🕳️", "t": "df.isna().sum()", "s": "Missing counts per column — run this on every new dataset" },
+        { "e": "🩹", "t": "fillna(0) · fillna(df.median()) · dropna()", "s": "Fill with meaning, not convenience — a filled value is a claim" },
+        { "e": "🔧", "t": "pd.to_datetime(df[\"created\"])", "s": "Parse dates once; astype for the rest. Lock dtypes in a schema" }
+      ],
+      "narration": "The cleaning checklist. Missing counts first — know the holes before you build on them. Filling is a data decision: zero is a claim, median is a claim, drop is a claim — document whichever you choose. Parse dates immediately; datetime columns unlock resampling and time math. And if you're loading the same structure repeatedly, codify it — a dtypes dict applied on read — so cleaning becomes code instead of archaeology."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · PERFORMANCE",
+      "title": "Memory: pandas eats it. **Feed it less.**",
+      "sub": "Categories, chunks, and the right file format",
+      "narration": "Last chapter: scale. Memory first: object columns — strings — are the hogs; converting low-cardinality strings to category dtype can cut memory by ten times. Compute second: vectorized ops, not apply with a function — apply is a Python loop in a trench coat. Data bigger than RAM? Read in chunks and aggregate incrementally, or — better — switch to Parquet and let DuckDB query it without loading, which is the next reel. Right tool, right layer."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "🗜️", "t": "df[\"status\"] = df[\"status\"].astype(\"category\")", "s": "Repeated strings → codes in memory. Massive win on low-cardinality columns" },
+        { "e": "🚫", "t": "Avoid .apply(f) — vectorize", "s": "apply is a Python loop; native ops and np.where run in C" },
+        { "e": "🧩", "t": "read_csv(chunksize=100_000)", "s": "Stream big files; or query Parquet/DuckDB without loading (next reels)" }
+      ],
+      "narration": "The playbook. Categories for repeated strings — status, region, type. Vectorized everything — if apply feels necessary, ask whether a mask, np dot where, or a merge does it faster. And the escape hatch for big data: chunking reads, or better, stop loading entirely. Parquet plus DuckDB — two reels from now — queries files on disk without a dataframe ever existing. pandas is for in-memory work; beyond RAM, the architecture changes, and that's a feature, not a failure."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-17",
+      "title": "Data has shape — files have formats",
+      "next": "Reel 19 · File Formats — CSV's lies, JSON's flexibility, Parquet's truth"
+    }
+  ],
+  "recap": [
+    "DataFrame = table, Series = column; boolean masks = WHERE; loc = SELECT…WHERE",
+    "groupby.agg = SQL GROUP BY; merge needs explicit on/how/validate — trust nothing",
+    "isna first, fillna as a documented claim, category dtype + vectorization for scale"
+  ],
+  "quiz": [
+    {
+      "q": "What does df[(df[\"a\"] > 1) & (df[\"b\"] == \"x\")] do?",
+      "opts": [
+        "Updates rows in place",
+        "Filters rows where a > 1 AND b == 'x' via a boolean mask",
+        "Joins two dataframes",
+        "Sorts by columns a and b"
+      ],
+      "a": 1,
+      "why": "The inner comparisons build boolean Series; & combines them; indexing with the mask keeps matching rows. Parentheses are required — & binds tighter than ==."
+    },
+    {
+      "q": "Your merge doubled your row count. Most likely cause?",
+      "opts": [
+        "pandas is buggy",
+        "Duplicate keys on one side (unintended many-to-many) — use validate=\"m:1\" to catch it",
+        "The CSV was too large",
+        "NaN values in the join key"
+      ],
+      "a": 1,
+      "why": "Joins multiply rows on duplicate keys. `validate=\"m:1\"` (or \"1:1\") makes pandas raise instead of silently duplicating."
+    },
+    {
+      "q": "A column of repeated status strings uses 400MB. Cheapest fix?",
+      "opts": [
+        "Buy more RAM",
+        "Switch to a GPU dataframe",
+        "astype(\"category\") — codes in memory instead of repeated strings",
+        "Convert to float"
+      ],
+      "a": 2,
+      "why": "Category dtype stores each unique string once plus small integer codes — often 10x memory reduction on low-cardinality columns."
+    }
+  ],
+  "code": {
+    "title": "pandas for the SQL-brained — one realistic pipeline",
+    "body": "import pandas as pd\n\n# --- load + orient ------------------------------------------------\ndf = pd.read_csv(\"tickets.csv\")\nprint(df.shape, df.dtypes, df.isna().sum(), sep=\"\\n\")\n\n# --- clean (documented claims!) ------------------------------------\ndf[\"created\"] = pd.to_datetime(df[\"created\"], errors=\"coerce\")\ndf[\"amount\"] = pd.to_numeric(df[\"amount\"], errors=\"coerce\")\ndf[\"amount\"] = df[\"amount\"].fillna(0)          # claim: missing = free ticket\n\n# --- WHERE + ORDER BY ----------------------------------------------\nhot = (df[(df[\"priority\"] == \"P1\") & (df[\"status\"] == \"open\")]\n         .sort_values(\"created\"))\n\n# --- GROUP BY (named aggs) -----------------------------------------\nsummary = (df.groupby([\"priority\", \"status\"])\n             .agg(total=(\"amount\", \"sum\"),\n                  n=(\"id\", \"count\"),\n                  avg=(\"amount\", \"mean\"))\n             .reset_index())\n\n# --- JOIN (explicit everything) ------------------------------------\nagents = pd.read_csv(\"agents.csv\")[[\"agent_id\", \"team\"]]\nreport = (df.merge(agents, on=\"agent_id\", how=\"left\", validate=\"m:1\")\n           .groupby(\"team\")[\"amount\"].sum())\n\n# --- memory trick ----------------------------------------------------\ndf[\"status\"] = df[\"status\"].astype(\"category\")\n\nreport.to_csv(\"team_report.csv\")",
+    "annot": [
+      "errors=\"coerce\" turns bad values into NaN instead of crashing — then you count and decide",
+      "validate=\"m:1\" asserts your key assumption; duplicates raise instead of duplicating rows",
+      "Named aggs (total=, n=, avg=) produce labeled columns in one pass"
+    ]
+  },
+  "notes": "# pandas\n\n## DataFrame & Series\n- DataFrame = labeled table; Series = one column. Built on NumPy → vectorized.\n- First moves: `read_*` → `.shape` / `.dtypes` / `.isna().sum()`.\n\n## Select / filter / sort\n| SQL | pandas |\n| --- | --- |\n| WHERE | `df[df[\"x\"] > 1]` (boolean mask; `&` `|` need parens) |\n| SELECT cols | `df.loc[mask, [\"a\", \"b\"]]` |\n| ORDER BY … LIMIT | `.sort_values(\"x\", ascending=False).head(10)` |\n\n## groupby & aggregate\n- `df.groupby(\"k\")[\"v\"].mean()` · `.agg(total=(\"v\",\"sum\"), n=(\"id\",\"count\"))`.\n\n## merge / join\n- `df.merge(other, on=\"key\", how=\"left\", validate=\"m:1\", indicator=True)`.\n- Defaults differ from SQL: inner join + shared-column keys → always be explicit.\n- Duplicated keys silently multiply rows → validate + row-count checks.\n\n## Missing data & dtypes\n- `isna` → know the holes · `fillna` = a documented claim · `dropna`.\n- `pd.to_datetime` / `pd.to_numeric(errors=\"coerce\")` early; codify dtypes in a schema.\n\n## Memory & performance\n- `astype(\"category\")` for low-cardinality strings (~10x).\n- Avoid `.apply(f)` — vectorize with masks / np.where / merges.\n- Bigger than RAM: `read_csv(chunksize=…)` — or Parquet + DuckDB (next reels)."
+}

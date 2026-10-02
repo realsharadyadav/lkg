@@ -1,0 +1,150 @@
+{
+  "id": "PY-24",
+  "num": 16,
+  "track": "python",
+  "stage": "3. Python for Data",
+  "topic": "NumPy & Vectors",
+  "hook": "Embeddings are vectors. Vectors are NumPy. **This reel is the math your AI career runs on.**",
+  "chapters": [
+    "NumPy arrays",
+    "Dot product & norm",
+    "Cosine similarity",
+    "Broadcasting"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · ARRAYS",
+      "title": "Python lists are slow. **Arrays are 50x fast.**",
+      "sub": "One type, tightly packed, computed in C",
+      "narration": "Python lists are arrays of pointers to objects — flexible, but every number is boxed and every loop is interpreted. NumPy's ndarray changes the deal: one type, numbers packed contiguously in memory, and operations dispatched to compiled C. The result is loop-free, vectorized code that runs fifty to a hundred times faster. Every data and ML library — pandas, scikit-learn, PyTorch — is built on this foundation. And it's the natural home of embeddings."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "⚡", "t": "np.array([1, 2, 3]) — one dtype, fixed shape", "s": "a * 2 multiplies every element — no loop, no list comprehension" },
+        { "e": "📐", "t": "Shape & dtype are first-class", "s": "a.shape · a.dtype — (1536,) float32 = a 1,536-dim embedding" },
+        { "e": "🧊", "t": "2D+: a[0] row, a[:, 0] column", "s": "Matrices embed naturally: one row per document" }
+      ],
+      "narration": "The essentials. Create with np dot array; the array has a shape and a dtype, and those matter — a 1,536-element float32 array is exactly one OpenAI embedding. Arithmetic is element-wise and vectorized: multiply the array, multiply everything. And 2D indexing reads like the math: a zero gives row zero, a colon comma zero gives column zero. Store your corpus as one matrix — a row per chunk — and every similarity computation becomes array math."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THE MATH",
+      "title": "**Dot product** = how much two vectors agree",
+      "sub": "Multiply element-wise, sum. The norm = vector length.",
+      "narration": "Two operations run the embedding world. The dot product: multiply corresponding elements and sum the results — high when vectors point the same way, negative when they oppose. The norm: the vector's length — square root of the sum of squares, straight from Pythagoras. Together they produce cosine similarity. No PhD required — it's arithmetic with a geometric picture, and NumPy computes both in one call."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "✖️", "t": "np.dot(a, b) — the dot product", "s": "Sum of element-wise products: big & positive = aligned" },
+        { "e": "📏", "t": "np.linalg.norm(a) — the length", "s": "√(a₁² + a₂² + …) — unit vectors have norm 1.0" },
+        { "e": "🖼️", "t": "The picture", "s": "Vectors are arrows; agreement = angle between them, not distance" }
+      ],
+      "narration": "Anchor the geometry. Think of each embedding as an arrow from the origin. The dot product grows with arrow length and with alignment. The norm is just the arrow's length. Similarity is about the ANGLE between arrows — direction, not size — which is exactly why we normalize and why cosine similarity is the standard for embeddings. When Stage 4 searches documents, this is the entire computation under the hood."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · COSINE SIMILARITY",
+      "title": "cos(θ) = dot ÷ (length × length)",
+      "sub": "1.0 = same direction · 0 = unrelated · −1 = opposite",
+      "narration": "Cosine similarity divides the dot product by both vectors' norms — canceling magnitude so only direction remains. The score ranges from one — identical meaning — through zero — unrelated — to minus one — opposite. 'cat' and 'kitten' score high; 'cat' and 'tax law' near zero. This single number, computed a billion times a day, is how retrieval finds 'the chunks most like your question'. One line of NumPy — and one of the highest-leverage lines in the whole field."
+    },
+    {
+      "type": "vector",
+      "chapter": 2,
+      "points": [
+        { "n": "cat", "x": 22, "y": 30 },
+        { "n": "kitten", "x": 28, "y": 38 },
+        { "n": "dog", "x": 30, "y": 26 },
+        { "n": "tax law", "x": 78, "y": 74 }
+      ],
+      "pairs": [
+        { "a": "cat", "b": "kitten", "tag": "0.92", "color": "#65a30d" },
+        { "a": "cat", "b": "tax law", "tag": "0.04", "color": "#94a3b8" }
+      ],
+      "narration": "See it in a flattened view. Similar meanings cluster: cat and kitten sit close, scoring point nine two. Unrelated concepts sit far apart in direction: cat and tax law, essentially zero. Real embeddings live in 1,536 dimensions — impossible to picture — but the geometry is identical: distance in direction equals difference in meaning. Retrieval is literally: compute this score between your question and every chunk, return the top few."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · BROADCASTING",
+      "title": "Broadcasting: array-op **magic**",
+      "sub": "Different shapes that still compute — by the rules",
+      "narration": "NumPy's broadcasting lets arrays of different shapes compute together under strict rules: align from the right, and dimensions must match or one of them must be one. The payoff for embeddings is huge — a matrix of ten thousand chunk vectors against one query vector broadcasts into a single operation: ten thousand dot products, no loop, one compiled call. If you write a Python loop over rows, you've left a hundredfold speedup on the table."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🎯", "t": "query @ corpus.T", "s": "@ is matmul: (1,1536) × (1536,10000) → 10,000 similarities at once" },
+        { "e": "🧊", "t": "Normalize first: v / norm(v)", "s": "Unit vectors → dot product IS cosine similarity — skip the division later" },
+        { "e": "⚠️", "t": "float32 vs float64", "s": "Embeddings usually float32 — half the memory, check dtype before mixing" }
+      ],
+      "narration": "The production pattern, step by step. Normalize all vectors to unit length — divide each by its norm — then a single matrix multiplication against the corpus transpose returns every similarity score at once. That's the entire search primitive of a vector database, hand-rolled in three lines. Later you'll meet FAISS and friends, which optimize this same computation — but you'll never be confused about what they do, because you just wrote it."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · PY-25",
+      "title": "Vectors in hand — now the ML worldview",
+      "next": "Reel 17 · ML Basics — train/test, metrics, and how models actually learn"
+    }
+  ],
+  "recap": [
+    "ndarray = typed, packed, vectorized — 50-100x faster than lists; embeddings live here",
+    "Cosine similarity = dot ÷ norms; 1 = same meaning — the retrieval computation in one line",
+    "Normalize to unit vectors, then query @ corpus.T = all similarities at once"
+  ],
+  "quiz": [
+    {
+      "q": "Why are NumPy arrays faster than Python lists?",
+      "opts": [
+        "They use more memory",
+        "One dtype, contiguous memory, and vectorized ops compiled in C",
+        "They run on the GPU automatically",
+        "They avoid integers entirely"
+      ],
+      "a": 1,
+      "why": "Packing one type contiguously + dispatching to compiled code is the entire speed story — no boxing, no interpreted loops."
+    },
+    {
+      "q": "Two unit vectors (norm = 1) have a dot product of 0.97. What does that mean?",
+      "opts": [
+        "They are identical strings",
+        "Their cosine similarity is 0.97 — nearly the same direction/meaning",
+        "The product of their lengths is 0.97",
+        "One vector is longer than the other"
+      ],
+      "a": 1,
+      "why": "For unit vectors, dot product = cosine similarity: 0.97 means near-identical direction, i.e., very similar meaning."
+    },
+    {
+      "q": "What's the idiomatic way to compute similarities between one query and 10,000 chunk vectors?",
+      "opts": [
+        "A Python for-loop calling np.dot 10,000 times",
+        "Normalize, then query @ corpus.T — one broadcast matrix multiply",
+        "Convert everything to lists first",
+        "Call the API 10,000 times"
+      ],
+      "a": 1,
+      "why": "Broadcasting/matmul computes all dot products in one compiled pass — ~100x faster than a Python loop."
+    }
+  ],
+  "code": {
+    "title": "Hand-rolled similarity search — 15 lines",
+    "body": "import numpy as np\n\n# Simulate: 10,000 chunks, 1,536-dim embeddings (like OpenAI's)\nrng = np.random.default_rng(42)\ncorpus = rng.normal(size=(10_000, 1536)).astype(np.float32)\nquery  = rng.normal(size=(1536,)).astype(np.float32)\n\n# --- 1. normalize to unit length (norm = 1) --------------------\ndef unit(v: np.ndarray) -> np.ndarray:\n    return v / np.linalg.norm(v, axis=-1, keepdims=True)\n\ncorpus_u = unit(corpus)          # (10000, 1536), norms now 1\nquery_u  = unit(query)           # (1536,)\n\n# --- 2. ALL cosine similarities in ONE matmul -------------------\nsims = corpus_u @ query_u        # (10000,) — dot = cosine (unit vectors)\n\n# --- 3. top-5 most similar chunks -------------------------------\ntop5 = np.argsort(sims)[::-1][:5]\nfor rank, idx in enumerate(top5, 1):\n    print(f\"#{rank} chunk={idx}  sim={sims[idx]:.4f}\")\n\n# This 3-step pattern is the beating heart of every vector DB.\n# FAISS/HNSW just make step 2 faster — the math is identical.",
+    "annot": [
+      "keepdims=True keeps broadcasting correct for the row-wise divide",
+      "Unit vectors: dot product == cosine similarity — no division at query time",
+      "np.argsort on 10k items is ~1ms; scale problems come at 10M+ (that's Stage 4's ANN problem)"
+    ]
+  },
+  "notes": "# NumPy & Vectors\n\n## Arrays\n- `ndarray`: one dtype, contiguous memory, vectorized C ops → 50-100× lists.\n- `a.shape`, `a.dtype` — `(1536,)` float32 = one embedding.\n- 2D: rows = documents; `a[0]` row · `a[:, 0]` column.\n\n## Dot product & norm\n- **Dot**: `np.dot(a, b)` = Σ aᵢbᵢ — agreement measure.\n- **Norm**: `np.linalg.norm(a)` = √(Σ aᵢ²) — vector length.\n\n## Cosine similarity\n```\ncos(θ) = dot(a, b) / (norm(a) · norm(b))\n```\n- 1.0 = same direction · 0 = unrelated · −1 = opposite.\n- Similarity = angle (direction), not distance.\n\n## Broadcasting\n- Align dims right-to-left; must match or be 1.\n- Pattern: normalize all vectors → `sims = corpus_u @ query_u` (one matmul = all cosine scores).\n- Vector DBs optimize exactly this — you now know what they do."
+}

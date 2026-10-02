@@ -1,0 +1,164 @@
+{
+  "id": "PY-25",
+  "num": 17,
+  "track": "python",
+  "stage": "3. Python for Data",
+  "topic": "ML Basics",
+  "hook": "You won't train models — but you'll **evaluate** them, daily. Five concepts make that possible.",
+  "chapters": [
+    "Supervised vs unsupervised",
+    "Train/test split & overfitting",
+    "Metrics: accuracy, precision, recall, F1",
+    "scikit-learn basics",
+    "Neural network intuition"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · ML TYPES",
+      "title": "Learning from **labels** vs from **structure**",
+      "sub": "Supervised: answers included. Unsupervised: find the groups.",
+      "narration": "Machine learning splits in two. Supervised learning trains on labeled examples — emails marked spam or not, and the model learns the mapping. Classification for categories, regression for numbers. Unsupervised learning gets no labels — clustering finds natural groups, dimensionality reduction compresses while preserving structure. Your day-to-day work touches both: evaluating classifiers you built, and using embeddings — which come from unsupervised-ish training — for retrieval."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "🏷️", "t": "Supervised", "s": "Labeled data → predict labels. Spam filter, price estimation, ticket routing.", "win": true },
+        { "e": "🌀", "t": "Unsupervised", "s": "No labels → discover structure. Clustering customers, embeddings, topics." }
+      ],
+      "narration": "The distinction that organizes everything. Supervised: you have ground truth and you measure against it — most business ML, and every eval you'll run. Unsupervised: no truth, just structure — clustering, embeddings, topic discovery. One bridges to the other constantly: cluster your embeddings, then label a few examples per cluster, then train a cheap classifier. As an architect, you'll mostly CONSUME models — but you'll supervise their evaluation, which is the next three chapters."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · OVERFITTING",
+      "title": "Memorizing ≠ **learning**",
+      "sub": "The test set is sacred — touch it once",
+      "narration": "A model can memorize its training data and score perfectly — then fail on anything new. That's overfitting: it learned the noise, not the pattern. The defense is the train/test split: train on one slice, evaluate on data the model has never seen. The test set measures generalization — real-world performance — and it's used ONCE, at the end. Reusing it for tuning leaks information and quietly overfits your decisions. In LLM work the same law applies: your golden set from GA-06 is a test set — tune on a dev split, keep the golden set clean."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "✂️", "t": "Train / dev / test", "s": "Train to fit · dev to tune · test to report — three separate buckets" },
+        { "e": "📉", "t": "The signature", "s": "Train score great + test score poor = overfitting → more data, simpler model" },
+        { "e": "🧠", "t": "LLM version: eval contamination", "s": "Benchmarks saturate when models see the test data in pretraining — same disease" }
+      ],
+      "narration": "Practical rules. Three splits, three jobs: train for learning, dev for your tuning loop, test for the final honest number. When train performance crushes test performance, you're overfit — the fixes are more data, simpler models, or regularization. And the LLM echo: benchmark scores inflate when test items leak into pretraining data. Skeptical of a shiny leaderboard? This is why. The eval discipline from GA-06 exists precisely because of this failure mode."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · METRICS",
+      "title": "Accuracy lies when **classes are rare**",
+      "sub": "Precision = trust it. Recall = finds all. F1 = the balance.",
+      "narration": "Now the vocabulary of evaluation. A classifier that flags everything as 'not fraud' is ninety-nine percent accurate — and useless. When classes are imbalanced, you need precision and recall. Precision: of everything I flagged, how much was right — that's user trust. Recall: of everything real, how much did I catch — that's coverage. F1 is their harmonic mean. Choose by cost: false alarms waste time; misses cost money. State which you optimized, always."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🎯", "t": "Precision = TP / (TP + FP)", "s": "Flagged → correct. 'When it says fraud, it's right 90% of the time'" },
+        { "e": "🕸️", "t": "Recall = TP / (TP + FN)", "s": "Actual → caught. 'It finds 95% of real fraud'" },
+        { "e": "⚖️", "t": "F1 = harmonic mean", "s": "One number for imbalance · optimize precision OR recall by business cost" }
+      ],
+      "narration": "The formulas, translated. Precision answers: can I trust a positive? Recall answers: what did I miss? In LLM extraction, precision means the fields it fills are correct; recall means it found everything that was there. In RAG, recall means the retriever surfaced the right chunk at all — you can't answer from evidence you didn't retrieve. When you report evals — and you will — quote precision and recall separately, then the F1, then the business cost you optimized for."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SCIKIT-LEARN",
+      "title": "Classical ML in **five lines**",
+      "sub": "fit / predict / score — the universal API",
+      "narration": "Scikit-learn is the workhorse of classical ML, and its genius is a single consistent API: every model has fit for training, predict for inference, and score for evaluation. Five lines: pick a model, split your data, fit, predict on the test split, score. Logistic regression, random forests, gradient boosting — all same shape. This is the fastest way to build baselines: before any LLM, ask if a fifty-line sklearn model already solves it. Often it does — cheaper, faster, explainable."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🔤", "t": "The universal API", "s": "model.fit(X_train, y_train) · model.predict(X_test) · model.score(...)" },
+        { "e": "🏆", "t": "Baselines before LLMs", "s": "A tf-idf + logistic regression often beats a fine-tuned LLM on classification" },
+        { "e": "🧰", "t": "Pipelines keep preprocessing honest", "s": "Pipeline(vectorizer, model) — no leakage between fit and test" }
+      ],
+      "narration": "Why it matters to YOU: first, the universal API means trying five models is a loop, not a rewrite. Second, the baseline discipline: tf-idf vectors plus logistic regression is a shockingly strong text classifier, and it costs milliseconds per prediction. Reach for an LLM when the baseline genuinely fails — sentiment, nuance, reasoning — not by default. Third, pipelines: preprocessing inside the pipeline prevents the classic leak where test data influences your vectorizer. That leak silently inflates scores exactly like overfitting."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · NEURAL NETS",
+      "title": "Neural nets: **layers of knobs, tuned by error**",
+      "sub": "Weights → prediction → loss → adjust. Repeat a million times.",
+      "narration": "Finally, the intuition behind everything modern. A neural network is layers of simple units: each multiplies inputs by weights, adds a bias, applies a small nonlinearity — and passes the result on. Learning is a loop: run data forward, measure how wrong the output is — the loss — then propagate that error backward and nudge every weight slightly downhill. Repeat over millions of examples. That's gradient descent, and it's the entire secret behind LLMs, embedding models, and image models alike."
+    },
+    {
+      "type": "arch",
+      "chapter": 4,
+      "layers": [
+        { "e": "📥", "t": "Input", "s": "Tokens / pixels / features" },
+        { "e": "🧮", "t": "Hidden layers", "s": "Weighted sums + nonlinearities — patterns emerge level by level" },
+        { "e": "📤", "t": "Output", "s": "Prediction → compared to truth = loss" },
+        { "e": "🔁", "t": "Backprop", "s": "Loss flows backward; every weight nudged downhill. Repeat × millions." }
+      ],
+      "narration": "The picture, top to bottom. Input data flows through hidden layers — each one recombining the previous one's signals, so early layers catch simple patterns, deep layers catch abstractions. The output is compared to the truth, producing loss. Backpropagation computes how each weight contributed and adjusts them all slightly. Iterate across the dataset until the loss stops falling. Transformers — GA-01's attention stack — are this same loop with a particular layer design and a few trillion tokens of training data."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-15",
+      "title": "Tables: the other half of the job",
+      "next": "Reel 18 · pandas — DataFrames, groupby, joins, the SQL you already know"
+    }
+  ],
+  "recap": [
+    "Supervised = labeled prediction; unsupervised = structure discovery — you'll mostly evaluate, not train",
+    "Overfitting = memorized noise; sacred test set, tune on dev — same law as LLM evals",
+    "Precision = trust, recall = coverage; sklearn's fit/predict/score builds cheap baselines before LLMs"
+  ],
+  "quiz": [
+    {
+      "q": "A fraud detector flags 1 of 100 transactions, and that one is fraud. Accuracy vs usefulness?",
+      "opts": [
+        "It's great — 99% accuracy",
+        "Accuracy is misleading here; look at recall — it likely missed most fraud (class imbalance)",
+        "It needs a bigger test set only",
+        "Precision is irrelevant here"
+      ],
+      "a": 1,
+      "why": "With rare classes, 'flag nothing' scores high on accuracy. Recall tells you what fraction of real fraud was caught — that's the number that matters."
+    },
+    {
+      "q": "Why keep a separate dev set and test set?",
+      "opts": [
+        "Dev is faster to compute on",
+        "Tuning on the test set leaks information — your final score stops estimating real-world performance",
+        "The API requires three splits",
+        "Dev sets are for unlabeled data"
+      ],
+      "a": 1,
+      "why": "Every tuning decision made against the test set overfits it. Dev absorbs the tuning; test stays untouched until the final honest measurement."
+    },
+    {
+      "q": "Before reaching for an LLM for ticket classification, what should you try first?",
+      "opts": [
+        "Nothing — LLMs are always best",
+        "A scikit-learn baseline (tf-idf + logistic regression) — often good enough at 1/1000 the cost",
+        "A bigger GPU",
+        "More few-shot examples"
+      ],
+      "a": 1,
+      "why": "Classical ML baselines are cheap, fast, and explainable. Escalate to LLMs when the baseline measurably fails on YOUR eval set."
+    }
+  ],
+  "code": {
+    "title": "Eval vocabulary + a real baseline, runnable",
+    "body": "from sklearn.datasets import fetch_20newsgroups\nfrom sklearn.feature_extraction.text import TfidfVectorizer\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import precision_score, recall_score, f1_score\n\n# --- the honest split ------------------------------------------\n(train, test) = (\n    fetch_20newsgroups(subset=\"train\", categories=[\"sci.space\", \"rec.sport.baseball\"]),\n    fetch_20newsgroups(subset=\"test\",  categories=[\"sci.space\", \"rec.sport.baseball\"]),\n)\n\n# --- baseline before any LLM ------------------------------------\npipe = Pipeline([\n    (\"tfidf\", TfidfVectorizer()),\n    (\"clf\",   LogisticRegression(max_iter=1000)),\n])\npipe.fit(train.data, train.target)\npred = pipe.predict(test.data)\n\n# --- the metrics that matter ------------------------------------\nprint(f\"precision {precision_score(test.target, pred):.3f}\")\nprint(f\"recall    {recall_score(test.target, pred):.3f}\")\nprint(f\"f1        {f1_score(test.target, pred):.3f}\")\n\n# 2 categories, ~1,900 docs — trains in seconds.\n# When THIS baseline fails your eval set, an LLM is justified.\n# Until then, you ship this.",
+    "annot": [
+      "Pipeline prevents leakage: tf-idf is fit only on training data",
+      "Report all three metrics — each answers a different business question",
+      "The same split/metric discipline applies verbatim to LLM evals (GA-06)"
+    ]
+  },
+  "notes": "# ML Basics\n\n## Supervised vs unsupervised\n- **Supervised**: labeled data → classification / regression.\n- **Unsupervised**: clustering, embeddings, topics.\n> Your role: mostly evaluate and consume models.\n\n## Train/test split & overfitting\n- Overfitting = memorized noise → fails on new data.\n- Train / **dev** (tuning) / **test** (report once, sacred).\n- LLM echo: benchmark contamination = same disease.\n\n## Metrics\n| Metric | Answers |\n| --- | --- |\n| Accuracy | overall correct — misleading with rare classes |\n| Precision | of flagged, how many right? (trust) |\n| Recall | of real ones, how many caught? (coverage) |\n| F1 | balance of both |\n- Optimize by business cost: false alarm vs miss.\n\n## scikit-learn\n- Universal API: `fit` / `predict` / `score`.\n- **Baseline first**: tf-idf + logistic regression ≈ strong text classifier.\n- `Pipeline(vectorizer, model)` — no preprocessing leakage.\n\n## Neural network intuition\n- Layers of weighted sums + nonlinearities.\n- Loop: predict → loss → backprop nudges weights downhill → repeat × millions.\n- Transformers are this loop at trillion-token scale."
+}

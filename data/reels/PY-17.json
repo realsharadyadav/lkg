@@ -1,0 +1,182 @@
+{
+  "id": "PY-17",
+  "num": 19,
+  "track": "python",
+  "stage": "3. Python for Data",
+  "topic": "File Formats",
+  "hook": "Formats are **contracts**. CSV lies, JSON flexes, Parquet tells the truth — choose per workload.",
+  "chapters": [
+    "CSV pitfalls",
+    "JSON & JSONL",
+    "Parquet",
+    "Parquet partitioning",
+    "Arrow / PyArrow",
+    "Parquet vs DB vs Vector"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CSV",
+      "title": "CSV: universal, and **full of traps**",
+      "sub": "Encoding, delimiters, and zero types",
+      "narration": "CSV is the cockroach of data formats — everywhere, indestructible, and beloved by Excel users. But it carries no types: everything is a string until parsed, so a date column arrives as text and an amount as text-that-looks-like-a-number until something breaks. Encoding is the classic landmine — files claiming UTF-8 but holding Latin-1, exploding on the first accented name. Delimiters vary by locale — semicolons in Europe. Rule: parse explicitly — dtypes, encoding, delimiter — never trust defaults, and never let pandas infer silently in production."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔤", "t": "encoding=\"utf-8\" (or latin-1 fallback)", "s": "UnicodeDecodeError on read = wrong encoding claim — detect with chardet" },
+        { "e": "🚧", "t": "Embedded commas/newlines need quoting", "s": "Excel exports handle it; hand-edited files break parsers silently" },
+        { "e": "🧬", "t": "No schema, no compression", "s": "Every consumer re-infers types — inconsistent inference = inconsistent data" }
+      ],
+      "narration": "The CSV survival kit. Specify encoding and dtype mapping explicitly — inference is for exploration, not production. Watch embedded commas and newlines inside quoted fields — legit per spec, fatal to naive parsers and hand-edits. And remember what CSV fundamentally is: a printout without a schema. Two teams reading the same file can end up with different types for the same column. For anything you control, graduate to a format that carries its types with it — which is exactly where Parquet comes in."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · JSON",
+      "title": "JSON: the **API dialect**; JSONL: the data-pipeline dialect",
+      "sub": "Nested, flexible, and why bulk workloads go line-delimited",
+      "narration": "JSON is the language of APIs — self-describing, nested, human-readable. Perfect for messages, config, and documents. But for bulk data it has two problems: parsing a giant array needs the whole thing in memory, and a single syntax error kills the entire file. Enter JSONL — JSON Lines: one complete JSON object per line. Each line independent, streamable, appendable, and a corrupt line costs one record, not the dataset. Logs, embeddings exports, eval sets, batch API requests — the pipeline world runs on JSONL."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📦", "t": "Nested objects = flexible schemas", "s": "API payloads with variable shapes — but consumers must handle the variance" },
+        { "e": "🌊", "t": "JSONL: stream line by line", "s": "for line in open(f): json.loads(line) — constant memory over gigabytes" },
+        { "e": "📏", "t": "Big payloads? compress + chunk", "s": "gzip JSONL ( .jsonl.gz ) is the standard bulk interchange" }
+      ],
+      "narration": "Usage rules. JSON for anything a human or an API consumes — messages, configs, single documents. JSONL for anything a pipeline consumes — stream a line, parse, process, discard; memory stays flat regardless of file size. Compress with gzip when files travel or sit still — text compresses enormously. And validate JSONL records with Pydantic at the boundary — Stage 1's discipline applies verbatim to every line that arrives."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · PARQUET",
+      "title": "Parquet: **columnar, typed, compressed**",
+      "sub": "Analytics shape: read 3 of 40 columns, pay for 3",
+      "narration": "Parquet is the analytics format, born at Twitter, now the default for data lakes and ML datasets. Three properties change everything. Columnar: data stored column by column — a query touching three of forty columns reads only those three. Typed: schema rides inside the file — no inference drift, ever. Compressed: columnar storage compresses dramatically — often ten times smaller than CSV. When you see benchmarks claiming pandas-on-Parquet reads a hundred times faster than CSV, this is why: less I/O, less parsing, zero type guessing."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "📄", "t": "CSV — row storage", "s": "Reads every byte for any query · no types · no compression. Universal, lossy." },
+        { "e": "🗂️", "t": "Parquet — column storage", "s": "Reads only needed columns · typed schema · compressed. The analytics default.", "win": true }
+      ],
+      "narration": "The mental model. Row storage — CSV, JSON — reads a file like a book: to find one fact you scan everything. Column storage — Parquet — reads it like a spreadsheet's columns: grab exactly the columns your query names, skip the rest. Add compression that exploits column similarity and types enforced at write time. The trade-off: Parquet isn't human-readable and appends are awkward. Interchange with humans: CSV. Analytics and ML datasets: Parquet, full stop."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · PARTITIONING",
+      "title": "Partitioned Parquet = **folders as an index**",
+      "sub": "year=2026/month=03/ — prune files you don't need",
+      "narration": "Partitioning takes Parquet from good to great: you write a dataset as a folder tree where path segments encode column values — year equals 2026, month equals 03. Query engines read this like an index: ask for March and they open only March's files, skipping everything else. For time-series, logs, and event data this is the difference between reading gigabytes and megabytes. Tools: pandas via pyarrow's partition cols, Polars, DuckDB — they all write and exploit partitioned datasets natively."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🗂️", "t": "s3://bucket/events/year=2026/month=03/day=14/", "s": "Path = index. Engines prune whole folders before reading a single row" },
+        { "e": "⚖️", "t": "Partition by what's FILTERED, not what's stored", "s": "High-cardinality columns (ids) as partitions = thousands of tiny files — avoid" },
+        { "e": "🚫", "t": "The small-files problem", "s": "Target files of 100MB-1GB; compact small files periodically" }
+      ],
+      "narration": "Partitioning rules. One: encode the columns you filter by — date almost always, region often. Two: low cardinality — thousands of partitions each holding three rows is worse than no partitioning; the file-open overhead eats the gains. Three: mind file size — hundreds of megabytes per file is the sweet spot; if your pipeline spawns thousands of tiny files, schedule a compaction. This is data-lake literacy, and it's directly testable with DuckDB, which queries partitioned folders with plain SQL."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · ARROW",
+      "title": "Arrow: the **shared memory** underneath",
+      "sub": "Zero-copy handoffs between pandas, Polars, DuckDB, and ML frameworks",
+      "narration": "A quiet revolution: Apache Arrow defines a standard columnar memory layout. Because pandas, Polars, DuckDB, Spark, and ML frameworks all speak Arrow, data passes between them zero-copy — no serialize-parse round trips. PyArrow is Arrow's Python face, and it powers pandas' Parquet support. Practical effect: read with Polars, analyze with DuckDB, train with PyTorch — the dataframe converts in microseconds, because underneath it's the same bytes in memory. Fewer copies, less RAM, faster pipelines."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🔁", "t": "df.to_arrow() / pa.Table.from_pandas(df)", "s": "Convert in microseconds — shared layout, not serialization" },
+        { "e": "🚀", "t": "pyarrow reads Parquet in parallel", "s": "Multi-threaded, row-group granular — pandas read_parquet is Arrow underneath" },
+        { "e": "🌉", "t": "The polyglot glue", "s": "One in-memory format across Python/R/Spark — exchange without translation" }
+      ],
+      "narration": "Why you care. Conversions that used to cost seconds now cost microseconds because nothing is serialized — it's the same memory layout with different wrappers. Arrow's Parquet reader is parallel and row-group aware; when pandas reads Parquet fast, Arrow is doing the work. And if your world includes Spark or R or any Arrow-speaking system, data interchange stops being a project. Learn the name now — PyArrow appears in every performance conversation in the chapters ahead."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · DECISIONS",
+      "title": "Parquet vs DB vs Vector store — **different jobs**",
+      "sub": "Tables, transactions, and meaning don't share one tool",
+      "narration": "The format decision, architecturally. Parquet excels at bulk analytics over immutable data — cheap, scalable, great for datasets and logs. Databases — Postgres, SQL Server — own transactions, constraints, and concurrent reads-and-writes; if data mutates and must be consistent, a database earns its cost. Vector stores own semantic search — similarity over embeddings at scale. Mature systems use all three, each where it's strongest — and DuckDB, the next reel, is the glue that queries across them."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "🗄️", "t": "Database = truth that mutates", "s": "Transactions, constraints, concurrent writes → Postgres/SQL Server" },
+        { "e": "🧊", "t": "Parquet = bulk analytics", "s": "Immutable datasets, column scans, cheap storage → data lake" },
+        { "e": "🧲", "t": "Vector DB = meaning at scale", "s": "Similarity search over embeddings → FAISS/PGVector/Pinecone (Stage 4)" }
+      ],
+      "narration": "The three-layer picture. Operational truth lives in a database — where money moves, where constraints hold. Analytics and ML datasets live as Parquet — where scans are cheap and schemas travel with the data. Semantic search lives in a vector layer — where meaning is queryable. Your embeddings pipeline will write Parquet for analytics AND sync to a vector store for retrieval — same data, two shapes, each correct for its job. Choosing per workload is the whole lesson."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · PY-18",
+      "title": "Now query it all — without a server",
+      "next": "Reel 20 · DuckDB — SQL over files, in-process analytics"
+    }
+  ],
+  "recap": [
+    "CSV: explicit encoding/dtypes always; JSON for APIs, JSONL for pipelines (streamable, corrupt-line-safe)",
+    "Parquet: columnar + typed + compressed; partition by filtered columns; Arrow = zero-copy memory glue",
+    "Three layers: DB for mutating truth, Parquet for bulk analytics, vector store for meaning"
+  ],
+  "quiz": [
+    {
+      "q": "Why is Parquet faster than CSV for analytics queries?",
+      "opts": [
+        "It uses a better programming language",
+        "Columnar storage reads only the columns a query needs + compression + typed schema",
+        "It stores data on the GPU",
+        "CSV is encrypted by default"
+      ],
+      "a": 1,
+      "why": "Column pruning means a 3-column query over a 40-column file reads ~7.5% of the bytes; compression shrinks further; no type inference needed."
+    },
+    {
+      "q": "Why do pipelines prefer JSONL over a single big JSON array?",
+      "opts": [
+        "It's newer",
+        "Line-delimited records stream with constant memory, and one corrupt line kills one record, not the file",
+        "It compresses better than gzip",
+        "Pandas requires it"
+      ],
+      "a": 1,
+      "why": "Each JSONL line is independent: stream-process gigabytes with flat memory, append safely, and failures are local to one record."
+    },
+    {
+      "q": "You're partitioning Parquet by a column with 2 million distinct values. What happens?",
+      "opts": [
+        "Queries become infinitely fast",
+        "Thousands of tiny files/partitions — file-open overhead swamps the pruning benefit",
+        "Parquet compresses better",
+        "It converts to CSV automatically"
+      ],
+      "a": 1,
+      "why": "Partition on low-cardinality columns you actually filter by; high-cardinality partitioning creates the small-files problem."
+    }
+  ],
+  "code": {
+    "title": "Formats in practice — CSV in, Parquet out, partitioned",
+    "body": "import pandas as pd\nimport pyarrow as pa\nimport pyarrow.parquet as pq\n\n# --- CSV: parse explicitly (no silent inference in prod) ----------\ndtypes = {\"amount\": \"float64\", \"status\": \"category\"}\ndf = pd.read_csv(\"events.csv\", encoding=\"utf-8\", dtype=dtypes,\n                 parse_dates=[\"created\"])\n\n# --- Parquet: typed + compressed -----------------------------------\ndf.to_parquet(\"events.parquet\", index=False, compression=\"snappy\")\n# Typical result: 10x smaller than CSV, schema embedded, 10-50x faster reads\n\n# --- Partitioned dataset: folders as an index -----------------------\ntable = pa.Table.from_pandas(df)\npq.write_to_dataset(\n    table,\n    root_path=\"events_lake\",\n    partition_cols=[\"status\"],       # year/month for time series\n)\n# → events_lake/status=P1/0000.parquet  events_lake/status=P2/...\n# DuckDB/pandas read only the partitions a filter touches\n\n# --- JSONL: the pipeline interchange --------------------------------\nwith open(\"embeddings.jsonl\", \"w\", encoding=\"utf-8\") as f:\n    for row in df.itertuples():\n        f.write(json.dumps({\"id\": row.id, \"text\": row.text}) + \"\\n\")\n# Read back with constant memory:\n# for line in open(\"embeddings.jsonl\"): rec = json.loads(line)",
+    "annot": [
+      "compression=\"snappy\" — fast, moderate ratio; \"zstd\" for archives",
+      "partition_cols on what you FILTER by — not everything stored",
+      "json.dumps per line + streaming reads = flat memory over any file size"
+    ]
+  },
+  "notes": "# File Formats\n\n## CSV pitfalls\n- No types, encoding landmines (utf-8 vs latin-1), delimiter variance, quoting traps.\n- Prod rule: explicit `encoding`, `dtype`, `parse_dates` — never infer silently.\n\n## JSON & JSONL\n- JSON: APIs, config, documents (nested, flexible).\n- **JSONL**: one JSON object per line — streamable, appendable, corrupt-line-safe.\n- Compress text with gzip (`.jsonl.gz`).\n\n## Parquet\n- Columnar + typed schema + compressed (snappy/zstd). ~10x smaller, 10-50x faster analytics vs CSV.\n- `df.to_parquet(...)` / `pd.read_parquet(...)`.\n\n## Partitioning\n- Folder tree encodes column values (`year=2026/month=03/`) → engine prunes folders.\n- Partition by **filtered** low-cardinality columns; avoid the small-files problem (target ~100MB-1GB files).\n\n## Arrow / PyArrow\n- Standard in-memory columnar layout → zero-copy between pandas/Polars/DuckDB/Spark.\n- Powers pandas' Parquet reader; `pa.Table.from_pandas(df)` converts in μs.\n\n## Parquet vs DB vs Vector\n| Job | Tool |\n| --- | --- |\n| Mutating transactional truth | Postgres / SQL Server |\n| Bulk immutable analytics | Parquet (+ DuckDB) |\n| Semantic similarity at scale | Vector store (Stage 4) |"
+}

@@ -1,0 +1,184 @@
+{
+  "id": "PY-18",
+  "num": 20,
+  "track": "python",
+  "stage": "3. Python for Data",
+  "topic": "DuckDB",
+  "hook": "A SQL engine with **no server, no install drama** — that queries your files directly. This one earns its keep daily.",
+  "chapters": [
+    "What is DuckDB",
+    "Query files directly",
+    "Joins across files",
+    "Python integration",
+    "DuckDB vs SQLite vs SQL Server",
+    "Persisting & exporting"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · DUCKDB",
+      "title": "Analytics SQL, **embedded** — like SQLite for analytics",
+      "sub": "In-process, columnar, and ruthless about skipping work",
+      "narration": "DuckDB is an analytics database that runs inside your process — no server, no service, pip install duckdb and you're querying. Think SQLite's embedding model, but built for analytics: columnar storage, vectorized execution, and a query optimizer that prunes columns and partitions before reading. It lives naturally in notebooks, scripts, and data pipelines — wherever you'd reach for pandas but your data got too big, or you'd reach for a database but there's no server to be had."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📦", "t": "pip install duckdb — that's the whole setup", "s": "Single binary, in-process, zero infrastructure" },
+        { "e": "🧠", "t": "PostgreSQL-flavored SQL", "s": "Familiar syntax: CTEs, window functions, joins, GROUP BY sets" },
+        { "e": "⚡", "t": "Columnar + parallel out of the box", "s": "Aggregations over GBs in seconds; scales to datasets beyond RAM" }
+      ],
+      "narration": "Why it lands so well. Installation is one package — no daemon, no credentials file, no container. SQL is the Postgres dialect you mostly know — CTEs, window functions, all of it. And the engine is modern: columnar vectors, multi-threading, late materialization — the tricks big warehouses use, minus the warehouse. For a .NET architect, the right mental model is: an embedded OLAP engine. SQLite taught the world embedded OLTP; DuckDB is the same idea for analytics."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · QUERY FILES",
+      "title": "SELECT * FROM **'file.parquet'** — yes, literally",
+      "sub": "CSV, JSON, Parquet — files are tables",
+      "narration": "Here's the party trick that changes your workflow: DuckDB queries files directly, by path, in SQL. Select star from quote events dot csv quote — the file is the table. Parquet especially shines: only the columns you name get read, and partitioned folder trees are pruned automatically — last chapter's work pays off here. No load step, no import, no staging table. Your data lake becomes queryable the moment the files land."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📄", "t": "FROM 'data/events.csv'", "s": "CSV queried in place — schema inferred on read (verify with DESCRIBE)" },
+        { "e": "🗂️", "t": "FROM 'lake/year=*/month=03/*.parquet'", "s": "Globs over partitioned datasets — automatic partition pruning" },
+        { "e": "📋", "t": "read_csv_auto / read_json_auto", "s": "Explicit readers with options when inference needs steering" }
+      ],
+      "narration": "The mechanics. Any file path in a FROM clause — CSV, Parquet, JSON. Glob patterns work, so partitioned lakes are queried as one logical table while the engine opens only matching files. Inference is good but verify with describe when it matters — CSV types are guesses, and last chapter taught you what guesses are worth. For production pipelines, the read dot functions with explicit options replace inference with specification. Files in, answers out, nothing in between."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · CROSS-FILE JOINS",
+      "title": "Join **CSV to Parquet to DataFrame** — why not?",
+      "sub": "Heterogeneous sources, one query",
+      "narration": "Because files are tables, joins span formats without ceremony: your dimension list as CSV, your facts as partitioned Parquet, your reference data as a JSON file — one SQL joins them all. Even better, DuckDB speaks Arrow natively, so an in-memory pandas DataFrame registers as a table and joins the files. This collapses what used to be an ETL project into a query. The integration pattern of the modern data stack is smaller than you were taught."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🔗", "t": "JOIN across formats", "s": "csv JOIN parquet ON id — zero preprocessing" },
+        { "e": "🐼", "t": "duckdb.register('df_view', my_dataframe)", "s": "Live pandas DataFrame becomes a SQL table — edits reflect instantly" },
+        { "e": "🔄", "t": "Arrow underneath", "s": "Results → .df() / .arrow() / .fetchall() — pick your shape" }
+      ],
+      "narration": "Three integration moves. Cross-file joins with plain SQL — formats stop mattering. Register a DataFrame as a virtual table and SQL sees your live pandas object — perfect for the notebook workflow where some data was computed in Python. And results return in whatever shape you need — dataframe, Arrow table, or plain rows. When your agent needs to answer a question over files, this is the query layer — no database to provision, no data to move."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · IN PYTHON",
+      "title": "duckdb.sql() — SQL as a **Python expression**",
+      "sub": "The whole API surface, honestly",
+      "narration": "The Python API is refreshingly small. DuckDB dot sql runs a query and returns a relation — lazy, chainable, printable. Dot df converts to a DataFrame; dot arrow to Arrow; dot fetchall to rows. Parameters are bound, not concatenated — the injection rules from Reel 7 apply to SQL strings as they do anywhere. And relations chain: filter then aggregate then to dataframe, each step still lazy until you ask for results. That's the whole API — an hour to learn, a career to exploit."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🎯", "t": "rel = duckdb.sql(\"SELECT … WHERE city = ?\", params=[city])", "s": "Parameterized from the start — SQL injection rules still apply" },
+        { "e": "⛓️", "t": "rel.filter(...).aggregate(...).df()", "s": "Lazy relations chain — the optimizer sees the whole pipeline" },
+        { "e": "📦", "t": "duckdb.sql(\"INSTALL httpfs; LOAD httpfs;\")", "s": "Query S3/HTTPS directly — the extension ecosystem is deep" }
+      ],
+      "narration": "The idioms. Parameterize from day one — question marks and params, never f-string SQL. Chain lazy relations when building pipelines — the optimizer fuses steps you'd otherwise materialize. And explore the extensions: httpfs queries files over S3 or HTTP as if local; spatial adds geometry; full-text search is built in. DuckDB's answer to 'can it do X' is usually 'install the extension' — that extensibility is why it's become the Swiss army engine of the data world."
+    },
+    {
+      "type": "compare",
+      "chapter": 4,
+      "cards": [
+        { "e": "🦆", "t": "DuckDB", "s": "Embedded OLAP: analytics over files/Arrow, columnar. Notebooks, pipelines, agents.", "win": true },
+        { "e": "🪶", "t": "SQLite", "s": "Embedded OLTP: row-store, transactions, many small writes. Apps, not analytics." }
+      ],
+      "narration": "The comparison everyone asks about. SQLite: row-oriented, battle-tested for transactional workloads — your app's local database. DuckDB: column-oriented, built for scans and aggregations — your analysis engine. Different shapes of embedded. And SQL Server? That's the enterprise system of record — concurrent transactional workloads, permissions, HA. You don't replace it; you EXPORT from it to Parquet and analyze with DuckDB. Each engine owns its workload."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🗄️", "t": "SQL Server = system of record", "s": "Concurrent transactions, constraints, security — the operational truth" },
+        { "e": "🦆", "t": "DuckDB = analyst's engine", "s": "Exports, files, experiments, notebook exploration — zero ops" },
+        { "e": "🤖", "t": "Agents love it", "s": "Text-to-SQL over your exported files needs no provisioned database" }
+      ],
+      "narration": "Where each lives in your architecture. SQL Server keeps serving the application — you know this world deeply. DuckDB sits beside it for everything analytical: point it at last night's export and ask questions. And note the agent angle — when you build the text-to-SQL agent in later stages, DuckDB means the demo needs zero infrastructure: files plus an in-process engine. That's the kind of dependency decision that makes prototypes demo-able in a day."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · OUTPUT",
+      "title": "Results in, results out — **files again**",
+      "sub": "CREATE TABLE … AS, COPY TO Parquet, in-memory persistence",
+      "narration": "Closing the loop: DuckDB persists when you ask it to. In-memory by default — gone when the process ends. For durability: create a database file, or materialize results back to the lake. Copy to writes query results straight to Parquet — including partitioned output. The round trip is elegant: files in, SQL in the middle, files out. No import jobs, no staging schemas, no server to babysit. Your pipeline is a query and a copy statement."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "💾", "t": "duckdb.connect('warehouse.db')", "s": "Persistent database file — tables survive restarts" },
+        { "e": "📤", "t": "COPY (SELECT …) TO 'out.parquet' (FORMAT PARQUET, PARTITION_BY (month))", "s": "Query results → partitioned Parquet in one statement" },
+        { "e": "🔁", "t": "CREATE VIEW / TABLE … AS", "s": "Compose pipelines as views; materialize only what's expensive" }
+      ],
+      "narration": "The persistence patterns. Default in-memory for exploration — zero cleanup. A connect with a filename when tables must survive — full database semantics, still no server. And copy to for the lake round trip: run the transformation, write partitioned Parquet straight out. Views let you layer logic without materializing each step. This is why DuckDB ends so many architecture debates: the same engine explores interactively, runs the nightly pipeline, and serves the agent's ad-hoc questions — all from files."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · PY-19",
+      "title": "One more data skill — the spreadsheet frontier",
+      "next": "Reel 21 · Excel Automation — reading, writing, and not breaking workbooks"
+    }
+  ],
+  "recap": [
+    "DuckDB = embedded columnar OLAP: pip install, no server, Postgres-flavored SQL",
+    "Files are tables: query CSV/Parquet/partitioned lakes directly; join across formats; pandas DataFrames register as views",
+    "duckdb.sql() with bound params; COPY … TO Parquet closes the loop; vs SQLite (OLTP) vs SQL Server (system of record)"
+  ],
+  "quiz": [
+    {
+      "q": "What makes DuckDB 'SQLite for analytics'?",
+      "opts": [
+        "It stores data in a single file like SQLite",
+        "It's embedded/in-process with zero infrastructure, but columnar and optimized for analytical scans",
+        "It replaces SQLite in mobile apps",
+        "It only runs on Windows"
+      ],
+      "a": 1,
+      "why": "The embedding model (in-process, no server) is SQLite's; the engine is columnar/vectorized for OLAP workloads — the OLTP/OLAP distinction is the point."
+    },
+    {
+      "q": "How do you query only March data from a year=/month= partitioned Parquet lake in DuckDB?",
+      "opts": [
+        "Load all files into pandas first",
+        "Write WHERE month = '03' — the engine prunes partitions and files automatically",
+        "Convert the lake to CSV",
+        "You must create indexes first"
+      ],
+      "a": 1,
+      "why": "Hive-style partitioning + Parquet metadata let DuckDB skip files that can't match — pruning happens before any data is read."
+    },
+    {
+      "q": "When would you choose SQLite over DuckDB?",
+      "opts": [
+        "For faster analytics",
+        "For transactional app storage — many small concurrent reads/writes with ACID guarantees",
+        "For querying Parquet files",
+        "Never — DuckDB is strictly better"
+      ],
+      "a": 1,
+      "why": "Row-store + transaction engine = OLTP workloads (apps). DuckDB's columnar engine shines at scans/aggregations, not concurrent row updates."
+    }
+  ],
+  "code": {
+    "title": "DuckDB — the daily workflow in one script",
+    "body": "import duckdb\n\n# --- explore files directly -------------------------------------\nrel = duckdb.sql(\"\"\"\n    SELECT status, COUNT(*) AS n, SUM(amount) AS total\n    FROM 'data/events.csv'\n    GROUP BY status\n    ORDER BY total DESC\n\"\"\")\nprint(rel)                     # lazy relation — pretty-prints a sample\n\n# --- join CSV to a partitioned Parquet lake ----------------------\nduckdb.sql(\"\"\"\n    CREATE VIEW events AS\n    SELECT e.*, c.team\n    FROM 'data/events.csv' e\n    JOIN 'lake/customers/year=*/month=03/*.parquet' c USING (cust_id)\n\"\"\")\n\n# --- register a live pandas DataFrame ----------------------------\nimport pandas as pd\nflags = pd.DataFrame({\"status\": [\"P1\", \"P2\"], \"sla_h\": [1, 24]})\nduckdb.register(\"flags\", flags)\n\nresult = duckdb.sql(\"\"\"\n    SELECT e.team, f.sla_h, AVG(e.amount) AS avg_amt\n    FROM events e\n    JOIN flags f USING (status)\n    GROUP BY ALL\n    ORDER BY avg_amt DESC\n\"\"\").df()\n\n# --- persist the pipeline -----------------------------------------\nduckdb.sql(\"\"\"\n    COPY (SELECT * FROM events WHERE status = 'P1')\n    TO 'out/p1_cases.parquet' (FORMAT PARQUET, COMPRESSION 'snappy')\n\"\"\")\n\n# Parameterized (the only safe way to mix variables + SQL):\ncity = \"Paris\"\nsafe = duckdb.sql(\"SELECT * FROM events WHERE city = ?\", params=[city])",
+    "annot": [
+      "Globs ('year=*/month=03/*.parquet') — partition pruning is automatic",
+      "duckdb.register — the DataFrame stays live; SQL sees edits instantly",
+      "? params — never f-string SQL; same injection discipline as any database"
+    ]
+  },
+  "notes": "# DuckDB\n\n## What it is\n- Embedded, in-process, columnar OLAP engine. `pip install duckdb` — no server.\n- Postgres-flavored SQL; vectorized + parallel; works beyond RAM.\n\n## Query files directly\n- `FROM 'data.csv' / 'lake/**/*.parquet'` — files are tables.\n- Partitioned folders pruned automatically; globs supported.\n\n## Joins across files\n- csv ⨝ parquet ⨝ JSON in one query.\n- `duckdb.register('name', df)` — live pandas DataFrame as a SQL view.\n- Results: `.df()` / `.arrow()` / `.fetchall()`.\n\n## Python integration\n- `duckdb.sql(\"...\", params=[...])` — lazy relation, chainable.\n- Extensions: `httpfs` (S3/HTTP), spatial, FTS.\n\n## DuckDB vs SQLite vs SQL Server\n| Engine | Job |\n| --- | --- |\n| SQLite | embedded OLTP (app storage, transactions) |\n| DuckDB | embedded OLAP (analytics over files) |\n| SQL Server | enterprise system of record |\n\n## Persisting & exporting\n- In-memory by default; `duckdb.connect('file.db')` persists.\n- `COPY (SELECT …) TO 'out.parquet' (FORMAT PARQUET, PARTITION_BY (col))`.\n- Compose with views; materialize only what's expensive."
+}
