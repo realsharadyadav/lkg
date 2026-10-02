@@ -1,0 +1,253 @@
+{
+  "id": "GA-01",
+  "num": 10,
+  "track": "genai",
+  "stage": "2. LLM Basics + API",
+  "topic": "How LLMs Work",
+  "hook": "You don't need a PhD. You need **six intuitions**. That's genuinely all it takes to use LLMs well.",
+  "chapters": [
+    "What is GenAI",
+    "Transformer & attention intuition",
+    "Tokens & tokenization",
+    "Context window",
+    "Sampling parameters",
+    "Training stages"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · GENERATIVE AI",
+      "title": "Predictive AI **labels**. Generative AI **writes**.",
+      "sub": "Same ML family — different output",
+      "narration": "Predictive AI scores and classifies: will this transaction fraud, is this email spam, what price next quarter. Its output is a number or a label. Generative AI produces new content — text, code, images — that never existed before. Under the hood it's the same machine-learning family, transformers trained on massive data. The difference is the output space: instead of choosing from five categories, the model chooses from a vocabulary of a hundred thousand tokens, one at a time."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        {
+          "e": "🔮",
+          "t": "Predictive",
+          "s": "Input: transaction → Output: 'fraud, 94%'. Classifies existing data."
+        },
+        {
+          "e": "✍️",
+          "t": "Generative",
+          "s": "Input: 'explain RAG' → Output: a paragraph that never existed. Creates new text.",
+          "win": true
+        }
+      ],
+      "narration": "The architectural take: generative is not magic, it's predictive with a huge output alphabet. Each 'prediction' picks the next token — that's why the same infrastructure that classifies can write. And it's why control techniques — schemas, constraints, sampling — work: you're steering a prediction engine, not conversing with a mind. That mental model will carry you through Stage 2."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · ATTENTION",
+      "title": "**Attention**: every word looks at every other word",
+      "sub": "The transformer idea — no math, just the picture",
+      "narration": "The transformer, from the 2017 paper Attention Is All You Need, solved a simple problem: in the sentence 'the animal didn't cross the street because it was too tired' — what does 'it' refer to? Old models processed words one by one and forgot. Attention lets every word look at every other word and decide what matters. Each word gathers context from the whole sentence, so 'it' absorbs meaning from 'animal'. That's the core idea. Everything else is engineering around it."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        {
+          "e": "👀",
+          "t": "Every token attends to every token",
+          "s": "Self-attention: the model builds a weighted view of the whole passage per token"
+        },
+        {
+          "e": "📚",
+          "t": "Learned from examples, not rules",
+          "s": "Nobody taught grammar — patterns emerged from predicting text at scale"
+        },
+        {
+          "e": "🏗️",
+          "t": "Layers stack the understanding",
+          "s": "Dozens of layers: early ones catch syntax, deep ones catch reasoning patterns"
+        }
+      ],
+      "narration": "Three intuitions. One: attention is all-to-all — each token's representation mixes in every other token, weighted by relevance. Two: nothing is programmed. Grammar, facts, reasoning heuristics all emerged from one training task — predict the next token — applied to trillions of words. Three: depth creates understanding. Lower layers handle spelling and syntax; upper layers handle intent and logic. That's why bigger models surprise us: depth buys emergent behavior nobody coded."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · TOKENS",
+      "title": "Models read **tokens**, not words",
+      "sub": "~4 characters each · cost and limits are counted in them",
+      "narration": "An LLM never sees words or letters — it sees tokens: chunks of about four characters. 'Unbelievable' might split into 'un', 'believ', 'able'. Your prompt is converted to tokens, the model predicts the next one, and you pay per token — input and output, separately. This is the meter running on every API call, and it's why prompt engineering is also budget engineering. Rough guide: a token is about three-quarters of a word in English."
+    },
+    {
+      "type": "tokens",
+      "chapter": 2,
+      "words": [
+        "Summarize",
+        "the",
+        "quarterly"
+      ],
+      "cands": [
+        {
+          "w": "report",
+          "p": 64
+        },
+        {
+          "w": "results",
+          "p": 22
+        },
+        {
+          "w": "forecast",
+          "p": 9
+        }
+      ],
+      "narration": "Watch the mechanism. The model reads your tokens, then outputs a probability for every token in its vocabulary — sixty thousand candidates, ranked. 'Report' at sixty-four percent, 'results' at twenty-two, and so on. Then it samples: picks one — usually the top choice — and that token joins the context, and the whole thing repeats. Generation is thousands of next-token guesses, chained. Elegant, mechanical, and completely shapeable."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · CONTEXT WINDOW",
+      "title": "The context window = the model's **desk**",
+      "sub": "Everything on the desk is 'memory'. Nothing off it exists.",
+      "narration": "The context window is how many tokens the model can consider at once — its working desk. Everything in it: your system prompt, the conversation, retrieved documents, your question — all of it competes for the same space. Modern windows range from tens of thousands to a million tokens, but two traps remain. First, cost scales with what's on the desk. Second, models attend best to the beginning and end — details buried in the middle get lost. This is the lost-in-the-middle problem, and it shapes RAG design in Stage 4."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        {
+          "e": "📏",
+          "t": "Window sizes: 32k → 1M+ tokens",
+          "s": "Bigger desks exist — but bigger isn't free: input tokens are billed"
+        },
+        {
+          "e": "🗂️",
+          "t": "It ALL shares one budget",
+          "s": "system prompt + history + docs + question ≤ window — plan the split"
+        },
+        {
+          "e": "🕳️",
+          "t": "Lost in the middle",
+          "s": "Attention fades mid-context: put key instructions first AND last"
+        }
+      ],
+      "narration": "Practical rules. One: the window is a budget line — system prompt, chat history, retrieved chunks, and the question all draw from it. Architect the split deliberately. Two: position matters. Key instructions survive best at the start and end of the context, so repeat critical constraints near the question. Three: when a task needs more than the desk holds, you don't pray — you retrieve, which is exactly what RAG does in Stage 4."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · SAMPLING",
+      "title": "Temperature: **dial creativity, lose precision**",
+      "sub": "The same prompt can be deterministic or wild — your choice",
+      "narration": "Remember the probability list? Sampling parameters decide how that list is used. Temperature zero: always the top token — deterministic, repeatable, best for extraction and code. Temperature one: sample proportionally — diverse, creative, occasionally wrong. Top-p narrows the candidate pool to the smallest set covering p percent of probability. Max tokens simply caps the output length. Three dials, and predictable behavior on the other side of each."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        {
+          "e": "🧊",
+          "t": "temperature=0",
+          "s": "Deterministic — classification, extraction, code. Same input → same output"
+        },
+        {
+          "e": "🎨",
+          "t": "temperature≈0.7–1",
+          "s": "Varied phrasing — drafting, brainstorming. 0 is a number, not a vibe"
+        },
+        {
+          "e": "✂️",
+          "t": "top_p + max_tokens",
+          "s": "top_p 0.9 trims unlikely tails · max_tokens hard-caps cost and length"
+        }
+      ],
+      "narration": "Settings to remember. Zero for anything you'll verify or parse — determinism is a feature when a human or a schema checks the output. Around point seven for creative drafting. Top-p point nine as a cheap quality filter — trim the long tail of nonsense candidates. And always set max tokens: it's your cost ceiling and your guarantee the model can't ramble past the point. These four parameters are the steering wheel of every call."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · TRAINING",
+      "title": "Three stages: **read, specialize, behave**",
+      "sub": "Pretraining → fine-tuning → alignment",
+      "narration": "Where does all this come from? Three stages. Pretraining: the model reads a large fraction of the internet and learns to predict the next token — this is where knowledge and language ability form, and it costs millions of dollars. Fine-tuning: smaller, curated datasets teach specific skills or formats. Alignment: human feedback shapes helpful, safe behavior. You almost never touch stage one — but stages two and three explain why different models have different personalities and why fine-tuning exists as a product."
+    },
+    {
+      "type": "arch",
+      "chapter": 5,
+      "layers": [
+        {
+          "e": "📖",
+          "t": "Pretraining",
+          "s": "Trillions of tokens from the web — knowledge + language. Millions of GPU-hours."
+        },
+        {
+          "e": "🎯",
+          "t": "Fine-tuning",
+          "s": "Curated examples teach domains, formats, tools — thousands to millions of samples"
+        },
+        {
+          "e": "🤝",
+          "t": "Alignment (RLHF)",
+          "s": "Human preference ranking → helpful, harmless, honest behavior"
+        }
+      ],
+      "narration": "The pipeline top to bottom. Pretraining builds the generalist — expensive, done rarely, by labs. Fine-tuning adapts it — teaching a model your tone, your schema, your domain; this is what you might do with an open-weight model. Alignment makes it usable — preference training so it follows instructions instead of just continuing text. When you pick between models in the next reel, you're really comparing the outcomes of these three stages."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · GA-02",
+      "title": "Know the machine? Now pick one",
+      "next": "Reel 11 · Model Landscape — frontier vs open-weight, reasoning, multimodal"
+    }
+  ],
+  "recap": [
+    "Generative = predictive AI with a huge token vocabulary — steer a prediction engine",
+    "Tokens are the meter; context window is the desk — plan its budget, mind lost-in-the-middle",
+    "temperature 0 = deterministic; training = pretrain → fine-tune → align"
+  ],
+  "quiz": [
+    {
+      "q": "What is a token?",
+      "opts": [
+        "A word in the model's vocabulary",
+        "A chunk of ~4 characters — the unit models read, generate, and bill in",
+        "A sentence fragment",
+        "A GPU processing unit"
+      ],
+      "a": 1,
+      "why": "Models process and generate tokens (~¾ of a word), and API cost/limits are counted per token."
+    },
+    {
+      "q": "Why does 'lost in the middle' matter when designing prompts?",
+      "opts": [
+        "Long prompts crash the API",
+        "Attention is strongest at the start and end of context — key facts buried mid-context get missed",
+        "It's only relevant to image models",
+        "It's a myth — large context windows solved it completely"
+      ],
+      "a": 1,
+      "why": "Models attend best to the beginning and end of the context window, so critical instructions should be placed (or repeated) there."
+    },
+    {
+      "q": "Which temperature setting gives deterministic, repeatable output?",
+      "opts": [
+        "0",
+        "0.7",
+        "1.0",
+        "2.0"
+      ],
+      "a": 0,
+      "why": "temperature=0 always picks the top token — same input, same output. Raise it for variety, lower it for reliability."
+    }
+  ],
+  "code": {
+    "title": "Your first LLM call — with eyes open",
+    "body": "from openai import OpenAI\n\nclient = OpenAI()\n\n# The three dials from Chapter 5 — set them ON PURPOSE\nresp = client.chat.completions.create(\n    model=\"gpt-4o-mini\",\n    messages=[\n        {\"role\": \"system\", \"content\": \"You extract keywords. Reply with JSON only.\"},\n        {\"role\": \"user\", \"content\": \"Extract keywords from: 'RAG pipelines need chunking'\"},\n    ],\n    temperature=0,        # deterministic: same input → same JSON\n    max_tokens=60,        # cost ceiling\n    top_p=0.9,            # trim the nonsense tail\n)\n\nprint(resp.usage)         # prompt_tokens / completion_tokens — THE METER\nprint(resp.choices[0].message.content)\n\n# Architect's take: log usage on every call in production.\n# Cost = (prompt_tokens × input price) + (completion_tokens × output price),\n# both quoted per 1M tokens — and output is usually 3-5x pricier.",
+    "annot": [
+      "temperature=0 for anything you parse — determinism beats cleverness",
+      "resp.usage is your billing truth — record it per request, per feature",
+      "output tokens cost more than input: long answers are expensive answers"
+    ]
+  },
+  "notes": "# How LLMs Work\n\n## Generative vs predictive\n- Predictive: input → label/score (fraud? 94%).\n- Generative: input → new text, one token at a time.\n> Architect's take: it's a prediction engine with a ~100k-token output alphabet — steering (schemas, sampling) works because of that.\n\n## Transformer & attention\n- 2017: *Attention Is All You Need*.\n- Self-attention: every token weighs every other token ('it' ← 'animal').\n- Nothing is programmed; grammar/facts emerge from next-token prediction at scale.\n\n## Tokens\n- ~4 chars each (~¾ word). Prompt + output are billed per token.\n- Generation = probability list → sample → append → repeat.\n\n## Context window\n- Everything (system + history + docs + question) shares one token budget.\n- **Lost in the middle**: attention fades mid-context → key instructions first AND last.\n\n## Sampling\n| Param | Effect |\n| --- | --- |\n| temperature=0 | deterministic (extraction, code) |\n| ~0.7–1 | varied phrasing (drafting) |\n| top_p | trims low-probability tail |\n| max_tokens | hard cost/length ceiling |\n\n## Training stages\n1. **Pretraining** — web-scale next-token prediction (the expensive one).\n2. **Fine-tuning** — curated datasets for domains/formats/tools.\n3. **Alignment (RLHF)** — preference ranking → helpful/safe behavior."
+}

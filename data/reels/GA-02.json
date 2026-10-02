@@ -1,0 +1,163 @@
+{
+  "id": "GA-02",
+  "num": 11,
+  "track": "genai",
+  "stage": "2. LLM Basics + API",
+  "topic": "Model Landscape",
+  "hook": "Hundreds of models. **Five questions** to pick the right one — every single time.",
+  "chapters": [
+    "Model families",
+    "Reasoning vs standard",
+    "Multimodal models",
+    "Selection criteria",
+    "Hallucination & limits"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · FAMILIES",
+      "title": "Frontier, open-weight, small — **three families**",
+      "sub": "Not 'which is best' — which is best for THIS",
+      "narration": "The landscape sorts into three families. Frontier models — the flagships from OpenAI, Anthropic, Google — highest capability, API-only, priced per token. Open-weight models — Llama, Mistral, Qwen — downloadable, runnable on your hardware, fine-tunable. Small models — mini and nano variants — cheap, fast, surprisingly capable, and the first choice for high-volume or on-device work. An architect doesn't ask which model is best; they ask which family fits the constraints."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "☁️", "t": "Frontier (API)", "s": "Max capability, zero ops. Data leaves your network; per-token pricing.", "win": true },
+        { "e": "📦", "t": "Open-weight (self-run)", "s": "Control + privacy + fine-tuning. You own the GPU bill and the uptime." }
+      ],
+      "narration": "The eternal trade. Frontier APIs: the model is better and someone else runs it — but your data crosses a boundary and every token costs money at scale. Self-hosted open-weight: privacy, customization, predictable infrastructure cost — but you become an ML ops team. Many real systems use both: frontier for hard reasoning, small open models for bulk work. That hybrid is a legitimate architecture, not indecision."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · REASONING",
+      "title": "Reasoning models **think before they speak**",
+      "sub": "Visible chain-of-thought — slower, pricier, sharper at hard problems",
+      "narration": "A newer family split: reasoning models — OpenAI's o-series, DeepSeek-R1, and similar — generate internal chain-of-thought before answering. They explore, backtrack, verify. Result: dramatically better at math, code, and multi-step logic. Cost: they use far more tokens thinking, so they're slower and more expensive, and their thinking can still go wrong. Standard models answer directly — faster, cheaper, fine for most language tasks."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🧮", "t": "Use reasoning for: multi-step logic", "s": "Math proofs, complex code changes, planning with many constraints" },
+        { "e": "💬", "t": "Use standard for: language at speed", "s": "Classification, summarization, extraction, chat — 90% of production traffic" },
+        { "e": "⚖️", "t": "Route by difficulty", "s": "The emerging pattern: cheap model first, escalate to reasoning on failure" }
+      ],
+      "narration": "Decision rules. Multi-step logic, code architecture, anything you'd whiteboard — reasoning earns its tokens. High-volume language work — classification, extraction, chat — standard models at a tenth of the cost. And the pattern to steal: model routing. Start every request on the cheap model; only escalate to the expensive thinker when the task proves hard. This one pattern halves AI bills in production."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · MULTIMODAL",
+      "title": "Text is just **one input** now",
+      "sub": "Vision-in, audio-in/out, documents — models have senses",
+      "narration": "Multimodal models take more than text. Vision: images, screenshots, charts — describe, extract, answer questions about them. Documents: PDFs go in as pages and come out as understood structure. Audio: speech in and out. For you, the immediate wins are document understanding — invoices, contracts, diagrams — and UI automation from screenshots. One model, several senses, one API shape."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🖼️", "t": "Vision: charts, screenshots, handwriting", "s": "Send a base64 image or URL alongside the text prompt" },
+        { "e": "📄", "t": "PDF understanding", "s": "Layouts, tables, forms — far beyond naive text extraction" },
+        { "e": "🎙️", "t": "Audio in / out", "s": "Transcription and voice responses in the same family of models" }
+      ],
+      "narration": "Practical entry points. Images ride along in the messages array as base64 or a URL. PDFs — drop them in and ask structured questions; this replaces whole OCR pipelines for many use cases. Audio support varies by model and API — check current docs, this moves fast. Architect's take: multimodality collapses point solutions. The 'separate OCR service', the 'chart parser' — often one vision-capable call now."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SELECTION",
+      "title": "Four axes: **quality, cost, latency, privacy**",
+      "sub": "Pick the point on the grid — and write down why",
+      "narration": "Model selection is a four-axis decision. Quality: does it solve THIS task well — benchmark it on YOUR data, not on marketing charts. Cost: price per token times your volume, plus hidden costs like retries and long outputs. Latency: time to first token for interactive, total time for batch. Privacy: does data leave your network, and is that allowed. Score your top two candidates on your own fifty examples. The answer is usually boring — and that's good."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🧪", "t": "Eval on YOUR data", "s": "50–100 real examples, blind comparison, measure accuracy — not vibes" },
+        { "e": "💵", "t": "Cost math per 1M calls", "s": "(prompt+output tokens × price) × volume — small models win bulk work" },
+        { "e": "⏱️", "t": "Latency budget", "s": "Interactive UX needs fast first tokens; batch jobs need cheap totals" }
+      ],
+      "narration": "The playbook. First: build a small eval set from real traffic — fifty examples is enough to rank models for your task. Second: do the multiplication — tokens per call, calls per month, price per million; the cheap model often wins by ten times at equal accuracy. Third: separate interactive from batch workloads; they optimize opposite axes. Write the decision and the reason in an architecture note. Future you will thank present you."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · LIMITS",
+      "title": "Hallucination is a **feature of the design**",
+      "sub": "Confident, fluent, wrong — unless you anchor it",
+      "narration": "Every LLM hallucinates: fluent, confident, plausible — and fabricated. It's not a bug to be fixed in a future version; it's a consequence of how they work. The model predicts plausible text, it doesn't look things up. So the architecture must supply what the model lacks: retrieval for facts, schemas for structure, validators for values, and humans for judgment. Your job as an architect is not to trust the model — it's to design systems where being wrong is caught."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "⚓", "t": "Ground it: retrieval over your data", "s": "RAG (Stage 4) gives the model facts to quote instead of invent" },
+        { "e": "📐", "t": "Constrain it: schemas & validators", "s": "Structured output (GA-04) + Pydantic (PY-09) stop shape AND value errors" },
+        { "e": "👤", "t": "Judge it: humans in the loop", "s": "High-stakes outputs get review — diff-approve UIs, not auto-apply" }
+      ],
+      "narration": "The three-layer defense. Anchor: give the model real documents to work from — hallucination drops sharply when the answer is in the context. Constrain: schemas force structure, validators force values, and 'I don't know' can be a required field. And for anything that spends money or changes records — a human approves. This is why the capstone agent in this course has an approval step. Design for the model being wrong, and it will rarely hurt you."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · GA-03",
+      "title": "Picked a model? Now call it properly",
+      "next": "Reel 12 · API Basics — messages, streaming, tokens, rate limits"
+    }
+  ],
+  "recap": [
+    "Three families: frontier API / open-weight self-run / small cheap — hybrid architectures are normal",
+    "Reasoning models for hard logic, standard for bulk language work; route and escalate",
+    "Hallucination is structural — anchor (retrieval), constrain (schema), judge (humans)"
+  ],
+  "quiz": [
+    {
+      "q": "When should you escalate from a standard model to a reasoning model?",
+      "opts": [
+        "For every request — reasoning is always better",
+        "Only for multi-step logic where the extra thinking tokens pay off",
+        "Never — reasoning models are a gimmick",
+        "Only when privacy requires self-hosting"
+      ],
+      "a": 1,
+      "why": "Reasoning models are slower and costlier (thinking tokens); use them where step-by-step logic matters, not for bulk language work."
+    },
+    {
+      "q": "What's the most reliable way to compare two models for YOUR use case?",
+      "opts": [
+        "Read the benchmark leaderboard",
+        "Check which is newer",
+        "Run both on 50-100 of your own real examples and measure",
+        "Ask the models which is smarter"
+      ],
+      "a": 2,
+      "why": "Public benchmarks measure average behavior on generic tasks; your eval set measures the only thing that matters — accuracy on your workload."
+    },
+    {
+      "q": "Why can't you simply 'fix' hallucination with a better prompt?",
+      "opts": [
+        "Because models are malicious",
+        "Because plausibility is how they're built — the fix is architectural (retrieval, schemas, validators)",
+        "Because prompts can't be longer than 100 words",
+        "You can — hallucination is solved"
+      ],
+      "a": 1,
+      "why": "Models generate plausible text rather than verified facts; only external grounding (RAG), enforced structure, and validation actually reduce wrong output."
+    }
+  ],
+  "code": {
+    "title": "A pragmatic model-selection harness",
+    "body": "import time, json\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# Your real examples — 50 is enough to rank candidates\nEVAL_SET = [\n    {\"input\": \"Extract the total from: 'Invoice total: $1,240.00'\", \"expect\": \"1240.00\"},\n    {\"input\": \"Is this refund request abusive? 'give me my money back now!!!'\", \"expect\": \"no\"},\n]\n\nCANDIDATES = [\"gpt-4o-mini\", \"gpt-4o\"]   # + your open-weight endpoint\n\ndef run(model: str, prompt: str) -> str:\n    t0 = time.time()\n    r = client.chat.completions.create(\n        model=model, temperature=0, max_tokens=80,\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n    )\n    ms = (time.time() - t0) * 1000\n    usage = r.usage\n    return r.choices[0].message.content, ms, usage\n\nfor model in CANDIDATES:\n    correct, cost, lat = 0, 0.0, []\n    for ex in EVAL_SET:\n        out, ms, u = run(model, ex[\"input\"])\n        correct += ex[\"expect\"] in out\n        lat.append(ms)\n        # cost += tokens × model price  (fill from the current pricing page)\n    print(f\"{model}: {correct}/{len(EVAL_SET)}  \"\n          f\"avg {sum(lat)/len(lat):.0f}ms\")\n\n# Architect's take: keep this harness. Re-run it whenever you\n# consider switching models — decisions become data, not debates.",
+    "annot": [
+      "temperature=0 in evals — you measure the model, not the sampling luck",
+      "Track accuracy AND latency AND cost — a model can win two axes and lose the third",
+      "Store results per model version; 'gpt-4o' behavior drifts over time"
+    ]
+  },
+  "notes": "# Model Landscape\n\n## Three families\n| Family | Examples | Strength | Cost shape |\n| --- | --- | --- | --- |\n| Frontier API | GPT/Claude/Gemini flagships | Max capability | per-token |\n| Open-weight | Llama, Mistral, Qwen | privacy, fine-tune, self-run | your GPU |\n| Small | *-mini / *-nano | cheap, fast, bulk work | per-token, tiny |\n\n> Hybrid (frontier for hard + small for bulk) is a legitimate architecture.\n\n## Reasoning vs standard\n- **Reasoning**: visible chain-of-thought → math, code, multi-step planning. Slower + pricier.\n- **Standard**: direct answers → classification, extraction, chat.\n- Pattern: **route** — cheap first, escalate on failure.\n\n## Multimodal\n- Vision (images/screenshots/charts), PDF understanding, audio.\n- Collapses point solutions (OCR, chart parsers) into one call.\n\n## Selection: quality · cost · latency · privacy\n- Eval on **your** 50-100 examples · cost math × volume · latency budget per UX type.\n- Write the decision + reason in an architecture note.\n\n## Hallucination — a structural property\n- Models generate *plausible* text; they don't look things up.\n- Defense in depth: **anchor** (RAG) → **constrain** (schema/validators) → **judge** (human-in-loop)."
+}

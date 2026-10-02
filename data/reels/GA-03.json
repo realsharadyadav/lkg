@@ -1,0 +1,183 @@
+{
+  "id": "GA-03",
+  "num": 12,
+  "track": "genai",
+  "stage": "2. LLM Basics + API",
+  "topic": "API Basics",
+  "hook": "Every LLM app is a **loop**: build messages, call, stream, count, retry. Master the loop — skip the pain.",
+  "chapters": [
+    "Chat API anatomy",
+    "Streaming responses",
+    "Token counting & cost",
+    "Rate limits & retries",
+    "Official SDKs",
+    "Batch API"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · MESSAGES",
+      "title": "Three roles, one conversation",
+      "sub": "system · user · assistant — a list, not a chat object",
+      "narration": "The chat API is beautifully simple: you send a list of messages, each with a role. System — instructions the model treats as its operating manual. User — the human's input. Assistant — the model's previous replies, which you append back in to keep context. The model replies with one more assistant message. There's no server-side conversation object you mutate — state lives in YOUR list. That's the single most-misunderstood fact for newcomers."
+    },
+    {
+      "type": "chat",
+      "chapter": 0,
+      "bubbles": [
+        { "who": "sys", "text": "You are a precise assistant. Answer in one sentence." },
+        { "who": "user", "text": "What is RAG?" },
+        { "who": "ai", "text": "RAG retrieves relevant documents and adds them to the prompt so the model answers from real data." }
+      ],
+      "narration": "Here's the whole pattern. Your system message sets behavior — tone, format, rules. The user asks. The assistant answers. Next turn, you append the user's follow-up to this same list and call again. The API is stateless: it sees exactly the messages you send, every time. That means trimming old turns, injecting retrieved context, and summarizing history are all just list operations in your code — full control, no hidden magic."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · STREAMING",
+      "title": "Don't make users **watch a spinner**",
+      "sub": "stream=True — tokens arrive as they're generated",
+      "narration": "By default the API returns the complete answer after generating all of it — seconds of dead air. Streaming flips it: tokens arrive as they're produced, and your UI renders them live — the typing effect every AI product has. Implementation: set stream to true and read chunks from the response iterator. One nuance: each chunk holds a delta, a piece of the text, and usage stats only come at the end — if you need the token count, capture the final chunk."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🚿", "t": "for chunk in stream:", "s": "delta.choices[0].delta.content holds each new piece of text" },
+        { "e": "⏱️", "t": "Time-to-first-token = UX", "s": "Render the first token in <1s; stream transforms perceived latency" },
+        { "e": "🧾", "t": "usage arrives in the final chunk", "s": "stream_options={\"include_usage\": True} to get token counts while streaming" }
+      ],
+      "narration": "Mechanics. Loop over the stream; each iteration gives you a delta containing the new text — append and render. Two details matter in production: measure time to first token, because that's what users feel; and remember usage accounting — pass the include-usage stream option so the final chunk carries the token counts for your cost logging. In the agent world, streaming also lets you display tool calls as they happen — transparency the user learns to trust."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · COST",
+      "title": "**Count tokens before** you spend them",
+      "sub": "Budget per feature — the architect's discipline",
+      "narration": "Cost equals prompt tokens times the input price plus completion tokens times the output price — per million. Two disciplines follow. First, measure: log usage on every call, broken down by feature. Second, estimate BEFORE building: length of your system prompt, average user input, expected context from retrieval, desired answer length — multiply by volume, and you have a budget line. Most budget blowups are design discoveries made late: context growing unbounded, verbose outputs, retry storms."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🧮", "t": "tiktoken / tokenizer libs", "s": "Count tokens client-side BEFORE the call — validate against budget" },
+        { "e": "🗜️", "t": "Trim what doesn't earn its tokens", "s": "Shorter prompts · smaller retrieved chunks · max_tokens ceilings" },
+        { "e": "📊", "t": "Log usage per feature", "s": "One AI feature quietly costing 10x the others? Data finds it fast" }
+      ],
+      "narration": "Tools of the trade. Tokenizer libraries count prompt tokens before you send — enforce budgets in code, not hope. Trim aggressively: every retrieved document and every instruction line is a recurring cost. And instrument per feature, not just globally — the Pareto distribution here is brutal, one feature usually dominates. This is the same discipline as SQL query review: small inputs, reviewed regularly, prevent large bills."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · RESILIENCE",
+      "title": "429s will happen. **Be ready.**",
+      "sub": "Rate limits, retries with backoff, idempotency",
+      "narration": "Every API rate-limits: requests per minute, tokens per minute. Exceed them and you get a 429 — too many requests. Rule one: never retry instantly in a tight loop — you'll hammer a stressed API and extend your own outage. Rule two: exponential backoff with jitter — wait one second, two, four, randomized — and honor the Retry-After header when given. Rule three: cap total attempts, then fail loudly. Production LLM code is network code: timeouts, retries, and circuit breakers, exactly like any external service you integrate."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "⏳", "t": "Exponential backoff + jitter", "s": "sleep = base × 2^attempt + random jitter — protects you AND the API" },
+        { "e": "🛑", "t": "Respect Retry-After", "s": "The API tells you when to come back — obey it instead of guessing" },
+        { "e": "🔌", "t": "Timeouts + circuit breakers", "s": "A hanging AI call shouldn't hang your whole request pipeline" }
+      ],
+      "narration": "The resilience checklist. Backoff with jitter — jitter matters because synchronized retries from many clients cause retry storms. Honor Retry-After headers — the server is literally telling you the wait. Set per-attempt timeouts, and wrap the whole dependency in a circuit breaker: after repeated failures, fail fast for a cooldown instead of piling on. You already know these patterns from HTTP integration work — apply them unchanged here."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · SDKS",
+      "title": "Use **official SDKs** — skip the raw HTTP",
+      "sub": "OpenAI, Anthropic, Azure OpenAI — all shaped the same",
+      "narration": "You could call these APIs with raw HTTP — but the official SDKs handle auth, retries, types, and streaming for you, and they're the shape every tutorial and teammate will expect. OpenAI's SDK covers OpenAI and Azure OpenAI. Anthropic's SDK mirrors it for their models. The skills transfer: learn one chat-completions shape and you're eighty percent fluent in all of them. Abstract behind your own thin wrapper only when you actually run multiple providers in production."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "🔑", "t": "client = OpenAI(api_key=...)", "s": "Reads OPENAI_API_KEY from env by default — pydantic-settings pairs well" },
+        { "e": "☁️", "t": "Azure OpenAI", "s": "Same SDK, different constructor: endpoint + deployment + api_version" },
+        { "e": "🔀", "t": "One thin wrapper per provider", "s": "Unify behind your interface only when multi-provider is REAL, not imagined" }
+      ],
+      "narration": "Setup reality. The OpenAI client reads the API key from the environment — pair it with your pydantic settings from Reel 9. Azure OpenAI uses the same SDK with a different constructor — endpoint, deployment name, version. And an architectural warning: don't build an abstraction layer for providers you don't use. The adapter pattern costs design time forever; add it when the second provider is actually signed. Premature unification is still premature."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · BATCH",
+      "title": "Not in a hurry? **Pay half.**",
+      "sub": "Batch API: async bulk jobs at a discount",
+      "narration": "Last tool: the Batch API. Send thousands of requests as a single file, get results within up to 24 hours, at a substantial discount — commonly around fifty percent. If you're scoring a dataset, backfilling embeddings, or running offline evals, there's no reason to pay interactive prices. Upload a JSONL file of requests, poll for completion, download results. Architect's take: route by deadline, not by habit — interactive path for users, batch path for bulk."
+    },
+    {
+      "type": "list",
+      "chapter": 5,
+      "items": [
+        { "e": "📦", "t": "JSONL in → JSONL out", "s": "One request object per line; results come back with the same custom_id" },
+        { "e": "💸", "t": "~50% off standard pricing", "s": "The discount for accepting up-to-24-hour turnaround" },
+        { "e": "🧭", "t": "When to choose it", "s": "Dataset scoring, bulk extraction, evals — anything without a user waiting" }
+      ],
+      "narration": "The shape of the workflow. Your requests go in as JSONL — one JSON object per line with a custom ID you choose. Poll the batch status; when done, download the output file and match results by that ID. The discount is steep because the provider schedules your work into spare capacity. Anything without a human staring at a spinner — dataset labeling, content scoring, embedding backfills — belongs here. Most teams find twenty percent of their traffic qualifies."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · GA-04",
+      "title": "Reliability, engineered",
+      "next": "Reel 13 · Structured Output & Tools — schemas, function calling, caching"
+    }
+  ],
+  "recap": [
+    "The API is stateless — YOUR message list is the conversation; system sets behavior",
+    "Stream for UX; count tokens before the call; log usage per feature",
+    "Backoff+jitter on 429s; official SDKs; batch API halves bulk costs"
+  ],
+  "quiz": [
+    {
+      "q": "Where does conversation state live in the chat API?",
+      "opts": [
+        "On the server, keyed by your API key",
+        "In your message list — the API is stateless and sees only what you send",
+        "In a session cookie",
+        "In the model's fine-tuning"
+      ],
+      "a": 1,
+      "why": "Every call sends the full message list; nothing persists server-side. Trimming, retrieval injection, and summarization are list operations in your code."
+    },
+    {
+      "q": "What's the correct response to a 429 rate-limit error?",
+      "opts": [
+        "Retry immediately in a tight loop",
+        "Exponential backoff with jitter, honoring Retry-After, with a capped number of attempts",
+        "Switch API keys on every retry",
+        "Ignore it — it resolves itself"
+      ],
+      "a": 1,
+      "why": "Immediate retries amplify the problem (retry storms). Backoff + jitter + honoring Retry-After is the protocol both sides expect."
+    },
+    {
+      "q": "When should you use the Batch API?",
+      "opts": [
+        "For user-facing chat — it's faster",
+        "For bulk work without a deadline: dataset scoring, backfills, evals",
+        "Only for image generation",
+        "Never — it's deprecated"
+      ],
+      "a": 1,
+      "why": "Batch trades turnaround time (up to 24h) for roughly half price — perfect for bulk offline work, wrong for interactive UX."
+    }
+  ],
+  "code": {
+    "title": "The production call loop — streaming, usage, retry",
+    "body": "import random, time\nfrom openai import OpenAI, RateLimitError\n\nclient = OpenAI()\n\ndef chat(messages, model=\"gpt-4o-mini\", max_retries=4, **kw):\n    \"\"\"Call with retry/backoff + usage logging. The only wrapper you need.\"\"\"\n    for attempt in range(max_retries):\n        try:\n            return client.chat.completions.create(\n                model=model, messages=messages,\n                stream_options={\"include_usage\": True},\n                **kw,\n            )\n        except RateLimitError as e:\n            if attempt == max_retries - 1:\n                raise\n            wait = (2 ** attempt) + random.random()   # backoff + jitter\n            ra = e.response.headers.get(\"Retry-After\")\n            if ra: wait = float(ra)\n            print(f\"429 — retry {attempt + 1} in {wait:.1f}s\")\n            time.sleep(wait)\n\n# --- streaming render ------------------------------------------------\nstream = chat(\n    [{\"role\": \"user\", \"content\": \"Explain chunking in 2 sentences\"}],\n    stream=True, max_tokens=120,\n)\nfull = \"\"\nfor chunk in stream:\n    piece = chunk.choices[0].delta.content or \"\"\n    print(piece, end=\"\", flush=True)   # render live\n    full += piece\n    if chunk.usage:\n        print(f\"\\n[usage] {chunk.usage}\")   # tokens for cost logging\n\n# --- batch for bulk (sketch) -----------------------------------------\n# requests.jsonl: {\"custom_id\":\"row-1\",\"method\":\"POST\",\"url\":\"/v1/chat/completions\",\"body\":{...}}\n# batch = client.batches.create(input_file_id=uploaded.id, endpoint=\"/v1/chat/completions\", completion_window=\"24h\")",
+    "annot": [
+      "stream_options={\"include_usage\": True} — token counts arrive in the final chunk",
+      "Retry-After overrides exponential guess when the server provides it",
+      "One retry wrapper, used everywhere — resilience lives in one reviewed place"
+    ]
+  },
+  "notes": "# API Basics\n\n## Chat API anatomy\n- Stateless: `messages=[...]` in → one assistant message out. **Your list = the conversation.**\n- Roles: `system` (operating manual) · `user` · `assistant` (prior replies, appended by you).\n\n## Streaming\n- `stream=True` → iterate chunks; `delta.content` = new text.\n- Time-to-first-token is the UX metric.\n- `stream_options={\"include_usage\": True}` → token counts in the final chunk.\n\n## Tokens & cost\n- cost = (prompt × input price) + (completion × **output price** — usually higher).\n- Count before the call (tiktoken), trim context, cap `max_tokens`, log per feature.\n\n## Rate limits & retries\n- 429 = too many requests → **exponential backoff + jitter**, honor `Retry-After`, cap attempts.\n- Add timeouts + circuit breakers — this is network code.\n\n## SDKs\n- OpenAI SDK covers OpenAI + Azure OpenAI; Anthropic SDK mirrors the shape.\n- Abstract behind your own interface only when multi-provider is **real**.\n\n## Batch API\n- JSONL of requests → results ≤24h at ~half price.\n- Route by deadline: interactive for users, batch for bulk."
+}

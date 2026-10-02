@@ -1,0 +1,182 @@
+{
+  "id": "GA-05",
+  "num": 14,
+  "track": "genai",
+  "stage": "2. LLM Basics + API",
+  "topic": "Core Techniques",
+  "hook": "Prompts are **code** — versioned, tested, engineered. Six techniques that separate 'it sometimes works' from 'it ships.'",
+  "chapters": [
+    "Clear instructions & role",
+    "Few-shot examples",
+    "Chain-of-thought",
+    "XML / delimiters",
+    "Output format control",
+    "Negative instructions"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CLARITY",
+      "title": "Vague prompts get **vague output**",
+      "sub": "Role + task + format + constraints, every time",
+      "narration": "The single biggest quality lever costs nothing: specificity. A strong prompt has four parts — role: who the model should be, an expert tax analyst; task: what to do, in verbs; format: what the output looks like; constraints: boundaries, length, what to exclude. 'You are a senior DBA. Convert this T-SQL to Postgres. Return SQL only. No explanations.' That prompt will outperform a paragraph of wishful thinking, every single time."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "👤", "t": "Role: anchor expertise", "s": "\"You are a senior performance engineer\" activates relevant patterns" },
+        { "e": "🎯", "t": "Task in verbs, not wishes", "s": "'Extract', 'classify', 'convert' — commands beat descriptions of goals" },
+        { "e": "📦", "t": "Format + constraints close the loop", "s": "'Return JSON with keys a, b. Max 50 words. No preamble.' — nothing left to guess" }
+      ],
+      "narration": "Anatomy of the four parts. The role anchors which knowledge patterns the model recruits — it's cheap and it works. Verbs beat adjectives: 'classify these tickets' outperforms 'I want the tickets nicely organized'. And closing with exact format and hard constraints removes every degree of freedom you didn't mean to grant. When an output surprises you, the prompt almost always left the surprise available."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · FEW-SHOT",
+      "title": "Don't describe it — **show it**",
+      "sub": "2–5 examples teach tone, format, and edge cases",
+      "narration": "Sometimes you can't specify the task in words — tone, style, classification boundaries. Show examples instead. Two to five input-output pairs in the prompt — that's few-shot learning, and it's shockingly effective. The examples define your format better than any description, and they teach edge cases you'd need paragraphs to explain. When zero-shot output looks almost right, don't rewrite the instruction — add an example of the almost-wrong case done correctly."
+    },
+    {
+      "type": "chat",
+      "chapter": 1,
+      "bubbles": [
+        { "who": "user", "text": "Classify support tickets by urgency." },
+        { "who": "user", "text": "EX1: 'app crashes on login' → P1\nEX2: 'dark mode please' → P3\nEX3: 'report export slow' → P2" },
+        { "who": "user", "text": "'payment charged twice' → ?", "tool": "P1 — matches EX1's money-lost pattern" }
+      ],
+      "narration": "The pattern. State the task, then show examples — especially boundary cases: what's P2 versus P3, what tone is 'friendly but firm'. The model generalizes from the pattern, not the prose. Two pro tips: order examples from simple to tricky, and make them perfectly consistent — one inconsistent example teaches inconsistency. Few-shot is also where your golden eval set from GA-02 earns its keep: those examples ARE your test cases."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · CHAIN-OF-THOUGHT",
+      "title": "Ask for the **reasoning**, get better answers",
+      "sub": "'Think step by step' — simple version, huge effect",
+      "narration": "On multi-step problems, asking the model to reason before answering measurably improves accuracy — the model uses its own generated reasoning as working memory. The simple form: 'think step by step, then give your final answer'. The structured form assigns explicit steps: identify facts, consider options, decide. Trade-off: reasoning tokens cost money and latency, and the reasoning itself can be wrong — so verify final answers on high-stakes tasks regardless."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🪜", "t": "Give the steps a scaffold", "s": "'1) List facts 2) Evaluate each option 3) Conclude' — structure beats a blank page" },
+        { "e": "🧮", "t": "Math & logic benefit most", "s": "Arithmetic, SQL, planning — anywhere errors compound across steps" },
+        { "e": "💰", "t": "Budget the thinking", "s": "Reasoning tokens are billed; ask for concise reasoning in production" }
+      ],
+      "narration": "Using it well. Scaffolding the steps — literally numbering them in the prompt — beats the open-ended version because it prevents skipped reasoning. Reserve it for problems where errors compound: calculations, multi-constraint planning, code logic. For simple classification it's wasted spend. And note the connection to Stage 6: explicit reasoning before tool calls is what makes agents debuggable — you can read WHY it chose an action, not just watch what it did."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DELIMITERS",
+      "title": "Separate **data** from **instructions**",
+      "sub": "XML tags — the model's favorite way to see structure",
+      "narration": "When prompts mix instructions with content — documents, code, user input — delimiters keep them from bleeding into each other. The ecosystem's favorite: XML-style tags. Wrap the article in article tags, the code in code tags, the examples in examples tags. The model attends to tag boundaries remarkably well. This matters doubly for safety: anything that arrives from a user or a web page should be wrapped and labeled as untrusted data, which sets up our injection defense later in this stage."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🏷️", "t": "<document>…</document>", "s": "Wrap external content so instructions and data never blur" },
+        { "e": "🧱", "t": "Name tags by MEANING", "s": "<transcript>, <schema>, <examples> — semantic labels guide attention" },
+        { "e": "🛡️", "t": "Untrusted input gets tagged + labeled", "s": "<user_input untrusted=\"true\"> — the first line of injection defense" }
+      ],
+      "narration": "Practical rules. Tag everything that isn't an instruction, and name tags for meaning — transcript, invoice, examples — because semantic labels steer attention better than generic wrappers. Then the security angle: user-supplied or retrieved content is untrusted by definition. Tag it and say so in the system prompt. When someone pastes 'ignore your instructions and...' into the input field, the model that has learned 'instructions outside tags, data inside tags' is far harder to hijack. This is prompt injection's front door — GA-06 covers the full defense."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · OUTPUT CONTROL",
+      "title": "Tell it **exactly** what 'done' looks like",
+      "sub": "Format, length, and field-by-field specs",
+      "narration": "Output control is where vague wishes go to die. Specify the format — JSON with these keys, a markdown table with these columns, bullet points with a hard cap. Specify length in the unit that matters: words, sentences, items — 'max tokens' isn't a style guide. And when quality matters, define done per field: 'summary: one sentence; risks: three bullets; recommendation: one word.' The model fills structure reliably; it improvises when structure is absent."
+    },
+    {
+      "type": "list",
+      "chapter": 4,
+      "items": [
+        { "e": "📐", "t": "Field-by-field specs", "s": "'summary: 1 sentence · risks: 3 bullets · verdict: approve/reject' — no improvisation" },
+        { "e": "📏", "t": "Length in real units", "s": "'Under 80 words', 'exactly 5 items' — not 'be concise'" },
+        { "e": "🔗", "t": "Pair with structured output", "s": "Schema (GA-04) enforces what wording alone merely requests" }
+      ],
+      "narration": "The escalation ladder. Start with explicit field specs in the prompt. Add real units for length — 'concise' means nothing; 'under eighty words' means something. And when the output feeds a machine, stop relying on wording entirely: use structured output with a schema, and let the API enforce your spec. Prompt-level format control is for humans reading the output; schema control is for everything downstream."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 5,
+      "kicker": "CHAPTER 6 · NEGATIVE INSTRUCTIONS",
+      "title": "Say what **NOT** to do — carefully",
+      "sub": "The model hears 'don't X' as an invitation to consider X",
+      "narration": "Last subtlety: negative instructions are weaker than positive ones. 'Don't use jargon' puts jargon in the model's working context — and attention is drawn to what's mentioned, even to reject it. The fix is to pair every prohibition with its positive replacement: not 'don't be verbose' but 'answer in at most three sentences'. And put the positive version last, so it's what the model attends to most. Constraints as desired behavior, phrased forward."
+    },
+    {
+      "type": "compare",
+      "chapter": 5,
+      "cards": [
+        { "e": "🚫", "t": "\"Don't mention competitors\"", "s": "The model still processes 'competitors' — attention is mention-driven. Weaker compliance." },
+        { "e": "✅", "t": "\"Mention only our product. If asked about alternatives, say: 'I focus on X.'\"", "s": "States the desired behavior concretely — and survives the follow-up question.", "win": true }
+      ],
+      "narration": "See the difference. The negative version invites the forbidden topic into context. The positive version gives the model a script it can actually follow — including the adversarial follow-up, which is where negative rules collapse: the user asks 'but what about Competitor Y', and a model trained on 'don't mention competitors' has no answer, while the scripted one does. When you catch yourself writing 'don't', pause and rewrite the desired behavior instead."
+    },
+    {
+      "type": "bridge",
+      "chapter": 5,
+      "kicker": "UP NEXT · GA-06",
+      "title": "Prompts grow up: lifecycle & safety",
+      "next": "Reel 15 · Prompt Lifecycle — templates, versioning, testing, injection"
+    }
+  ],
+  "recap": [
+    "Role + task (verbs) + format + constraints — specificity is the #1 quality lever",
+    "Few-shot examples beat descriptions; chain-of-thought for multi-step problems",
+    "Tag data with XML; spec outputs field-by-field; phrase constraints as positive behavior"
+  ],
+  "quiz": [
+    {
+      "q": "Your classification output is 'almost right' but drifts on edge cases. What's the highest-value fix?",
+      "opts": [
+        "Rewrite the instruction with more adjectives",
+        "Add few-shot examples that include those edge cases, done correctly",
+        "Raise the temperature",
+        "Use a bigger model immediately"
+      ],
+      "a": 1,
+      "why": "Examples define boundaries — especially tricky boundaries — far better than prose. Show the almost-wrong case done right."
+    },
+    {
+      "q": "Why are delimiters/XML tags recommended around external content?",
+      "opts": [
+        "They compress the prompt",
+        "They separate data from instructions — and mark untrusted content for injection defense",
+        "They make prompts run faster",
+        "The API requires them"
+      ],
+      "a": 1,
+      "why": "Tagged boundaries keep instructions and data from blurring, and labeling content as untrusted is the first line of prompt-injection defense."
+    },
+    {
+      "q": "What's wrong with 'Don't be verbose' as an instruction?",
+      "opts": [
+        "Nothing — it's perfectly clear",
+        "Negative mentions draw attention to the forbidden behavior; replace with a positive spec ('max 3 sentences')",
+        "It violates the API terms of service",
+        "It doubles the token cost"
+      ],
+      "a": 1,
+      "why": "Mentioning a behavior (even to forbid it) puts it in context. Positive, concrete specs work better and give the model a followable script."
+    }
+  ],
+  "code": {
+    "title": "A production-grade prompt template",
+    "body": "PROMPT = \"\"\"You are a senior support triage engineer.\n\nClassify each ticket by urgency.\n\n<rules>\n- P1: money lost or service down\n- P2: degraded but usable\n- P3: feature requests and questions\n</rules>\n\n<examples>\nQ: app crashes on login\nA: {\"urgency\": \"P1\", \"reason\": \"service unusable\"}\n\nQ: report export is slow\nA: {\"urgency\": \"P2\", \"reason\": \"degraded, workaround exists\"}\n</examples>\n\nAnswer with JSON only: {\"urgency\": \"...\", \"reason\": \"one sentence\"}.\nReason in at most 2 short steps, then the JSON.\n\n<ticket untrusted=\"true\">\n{ticket}\n</ticket>\n\"\"\"\n\n# Usage — THIS is a prompt template (GA-06 versions it):\nticket = \"charged twice for one order\"\nmessages = [{\"role\": \"system\", \"content\": PROMPT.replace(\"{ticket}\", ticket)}]",
+    "annot": [
+      "Role → rules → examples → format spec → tagged untrusted data: all six techniques in one prompt",
+      "Examples double as eval cases — extract them into your test set (GA-06)",
+      "JSON-only output + schema (GA-04) = the format spec enforced by the API, not by hope"
+    ]
+  },
+  "notes": "# Core Techniques\n\n## Clear instructions & role\n- Structure: **role** → **task (verbs)** → **format** → **constraints**.\n- Vague prompts leave degrees of freedom that become surprises.\n\n## Few-shot\n- 2–5 input→output examples teach tone, format, boundaries.\n- Order simple → tricky; keep examples perfectly consistent.\n- Almost-right output? Add the almost-wrong case done correctly.\n\n## Chain-of-thought\n- 'Think step by step' / scaffolded steps for multi-step problems.\n- Costs tokens + latency; reasoning can still be wrong → verify finals.\n\n## XML / delimiters\n- Wrap external content: `<document>`, `<transcript>`, `<user_input untrusted=\"true\">`.\n- Semantic tag names steer attention; tagged data blurs less into instructions.\n\n## Output format control\n- Field-by-field specs · length in real units (words/items, not 'be concise').\n- Feeding a machine? Use structured output schema (GA-04) to enforce.\n\n## Negative instructions\n- 'Don't X' mentions X. Pair prohibitions with positive, concrete replacements — placed last."
+}

@@ -1,0 +1,161 @@
+{
+  "id": "GA-04",
+  "num": 13,
+  "track": "genai",
+  "stage": "2. LLM Basics + API",
+  "topic": "Structured Output & Tools",
+  "hook": "Free-text is for humans. **Machines need schemas.** This reel turns LLM output from prose into data.",
+  "chapters": [
+    "JSON / structured outputs",
+    "Function / tool calling",
+    "Pydantic + LLM end-to-end",
+    "Prompt caching",
+    "Multimodal inputs"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · STRUCTURED OUTPUT",
+      "title": "Make the API **guarantee** the shape",
+      "sub": "response_format = your JSON Schema",
+      "narration": "Remember Pydantic's JSON Schema export from Reel 9? Here's where it pays off. Modern APIs let you pass a schema as the response format, and they constrain generation so the output literally cannot violate it — missing fields, wrong types, malformed JSON become API-level impossibilities, not runtime surprises. This replaces an entire category of parsing bugs and retry logic. When you need data out of a model, structured output is the default choice, not an advanced one."
+    },
+    {
+      "type": "diagram",
+      "chapter": 0,
+      "nodes": [
+        { "e": "🐍", "t": "Pydantic model", "s": "class Invoice(BaseModel)" },
+        { "e": "📋", "t": "JSON Schema", "s": "model_json_schema()" },
+        { "e": "🧠", "t": "API constraint", "s": "response_format={...}" },
+        { "e": "✅", "t": "Typed object", "s": "Invoice.model_validate_json()" }
+      ],
+      "linkLabel": "guarantees",
+      "narration": "The full loop. Define the model in Pydantic — invoice number, date, total, line items. Export its schema. Send it with the request. The API generates output that conforms — not 'tries to', conforms, because the sampling is constrained to valid schema paths. Parse the reply back into your model. One class is the single source of truth at both ends. The PlaySchool parser, your retry loop, your 'please respond in valid JSON only' pleading — all gone."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · TOOL CALLING",
+      "title": "The LLM calls **your code** — function calling",
+      "sub": "You describe tools; the model requests them; you execute",
+      "narration": "Function calling — also called tool use — lets the model request actions instead of answering directly. You register tools: a name, a description, and a JSON Schema of its parameters. The model, mid-conversation, can output a structured request: call get weather with these arguments. Your code executes the real function, appends the result as a tool message, and the model continues — now with the data it asked for. This is the atomic unit of every agent in Stage 6. Understand this loop and agents stop being magic."
+    },
+    {
+      "type": "loop",
+      "chapter": 1,
+      "chips": ["🔍 search_flights(\"NYC → SFO\")", "🛠️ get_price(\"UA-412\")", "📅 check_dates(\"Mar 10-17\")", "✅ book(\"UA-412\")"],
+      "narration": "Watch the loop. The model thinks, then requests a tool call with arguments. Your code runs the real function — the database query, the API, the calculator — and returns the result. The model observes and either calls another tool or answers the user. Observe, think, act, repeat. Note the discipline: the model proposes, you dispose. It never executes anything itself — your code stays the gatekeeper, which is where auth checks, logging, and approvals live."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · PYDANTIC END-TO-END",
+      "title": "One model class, **four jobs**",
+      "sub": "Schema out · constraint · parse · validate",
+      "narration": "Let's make the Pydantic connection explicit, because this is the pattern you'll type a hundred times. Your BaseModel generates the JSON Schema for the API constraint. The same class parses the response with model validate json. Field validators then check VALUES the schema can't express — totals that must add up, dates that must be in the future. And for tools, the same class describes parameters — meaning your function signatures and the model's view of them never drift apart."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "📤", "t": "Outgoing: model_json_schema()", "s": "Feed structured output AND tool parameter definitions" },
+        { "e": "📥", "t": "Incoming: Model.model_validate_json()", "s": "Typed, validated object — not a dict you hope about" },
+        { "e": "🧪", "t": "Bonus: test fixtures for free", "s": "Model.model_construct / example() build valid test data fast" }
+      ],
+      "narration": "The four jobs on one slide. Outgoing, the schema constrains generation. Incoming, validation rebuilds the typed object — with your value rules from Reel 9 applied on top. And a testing bonus: constructing example instances of your models gives you realistic fixtures for unit tests and eval sets. The theme across this whole course is consolidation — one definition, enforced everywhere. Pydantic is that theme in library form."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · PROMPT CACHING",
+      "title": "Repeated context? **Don't pay twice.**",
+      "sub": "Automatic prefix caching — and explicit cache control",
+      "narration": "Many workloads repeat the same large prefix: a long system prompt, a big set of documents, few-shot examples. Prefix caching means the API recognizes tokens it's seen recently and bills the cached portion at a steep discount — often a fraction of the normal input price — with lower latency too. Some providers do it automatically; others expose explicit cache breakpoints you control. The architectural move: stable content first, changing content last — cache hits live at the boundary."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🧊", "t": "Static first, dynamic last", "s": "System prompt + docs + examples, THEN the user's variable input" },
+        { "e": "💸", "t": "Discount + lower latency", "s": "Cached input tokens are cheaper and skip re-processing" },
+        { "e": "🏗️", "t": "Design for it", "s": "A stable prefix is a cost architecture decision, not an accident" }
+      ],
+      "narration": "How to exploit it. Order messages so everything static sits at the front, in a stable byte-for-byte form — same text, same order, every call. Anything volatile goes last. For RAG systems — Stage 4 — this means your fixed instructions and shared context before the retrieved chunks. When usage logs show cache-hit rates, you see real money. Prompt caching is the closest thing to free lunch in this field; arrange your prompt to deserve it."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "CHAPTER 5 · MULTIMODAL INPUTS",
+      "title": "Documents and images **in the prompt**",
+      "sub": "A PDF page is just another message part",
+      "narration": "Inputs go multimodal the same way outputs went structured: as typed parts of a message. An image travels as a URL or base64 with a content type. A PDF becomes a document part. The model reads layout, tables, and figures — not just embedded text. For you, this means extraction pipelines simplify enormously: invoices, contracts, screenshots of dashboards — ask structured questions, get schema-constrained answers. The pairing of multimodal input with structured output is a genuine superpower for document workflows."
+    },
+    {
+      "type": "chat",
+      "chapter": 4,
+      "bubbles": [
+        { "who": "user", "text": "Extract the invoice — total, date, vendor.", "tool": "📎 invoice_mar.pdf (3 pages)" },
+        { "who": "ai", "text": "{\"vendor\": \"Acme Corp\", \"total\": 1240.00, \"date\": \"2026-03-01\"}" }
+      ],
+      "narration": "See the workflow. Attach the document to the user message — the file rides along as a part. The prompt asks for the schema. Structured output constrains the reply. Parse into Pydantic, validate values, store. What used to be OCR plus regex plus prayers is now one API call with a schema. One honest limit: verify critical numbers against the source for high-stakes documents — vision models are good, not infallible."
+    },
+    {
+      "type": "bridge",
+      "chapter": 4,
+      "kicker": "UP NEXT · GA-05",
+      "title": "Machines handled. Now the human craft.",
+      "next": "Reel 14 · Core Techniques — prompts that actually work"
+    }
+  ],
+  "recap": [
+    "response_format + JSON Schema guarantees shape — Pydantic is the single source of truth",
+    "Tool calling = model proposes, your code disposes — the atomic unit of agents",
+    "Stable prompt prefix earns cache discounts; multimodal input + structured output = document superpowers"
+  ],
+  "quiz": [
+    {
+      "q": "In tool calling, who actually executes the function?",
+      "opts": [
+        "The model executes it directly",
+        "Your code — the model only proposes a call with arguments",
+        "The API provider runs it in a sandbox",
+        "Nobody; tool calls are cosmetic"
+      ],
+      "a": 1,
+      "why": "The model emits a structured request; your code validates, authorizes, executes, and returns the result. You remain the gatekeeper."
+    },
+    {
+      "q": "How do you maximize prompt-cache hits?",
+      "opts": [
+        "Put the user's input first",
+        "Keep a stable, byte-identical static prefix (system + docs) and put variable content last",
+        "Randomize the system prompt each call",
+        "Cache hits depend only on the model version"
+      ],
+      "a": 1,
+      "why": "Prefix caches match from the start; identical static content first → cached tokens; volatile content goes at the end."
+    },
+    {
+      "q": "What does structured output guarantee?",
+      "opts": [
+        "The values are factually correct",
+        "The JSON conforms to your schema — shape, not truth",
+        "The model used the latest data",
+        "The response is free"
+      ],
+      "a": 1,
+      "why": "Schema constraints enforce structure; factual correctness still needs grounding (RAG) and value validation (Pydantic validators)."
+    }
+  ],
+  "code": {
+    "title": "Structured output + tool calling, end to end",
+    "body": "from pydantic import BaseModel, Field\nfrom openai import OpenAI\n\nclient = OpenAI()\n\n# --- 1. Structured output ---------------------------------------\nclass Invoice(BaseModel):\n    vendor: str\n    total: float = Field(ge=0)\n    date: str\n\nresp = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[{\"role\": \"user\", \"content\": \"Extract the invoice from this text: 'Acme Corp — total $1,240.00 — 2026-03-01'\"}],\n    response_format={\n        \"type\": \"json_schema\",\n        \"json_schema\": {\"name\": \"invoice\", \"schema\": Invoice.model_json_schema()},\n    },\n)\ninvoice = Invoice.model_validate_json(resp.choices[0].message.content)\n\n# --- 2. Tool calling ---------------------------------------------\ndef get_weather(city: str) -> str:\n    return f\"Sunny, 22°C in {city}\"          # your real code runs here\n\nweather_tool = {\n    \"type\": \"function\",\n    \"function\": {\n        \"name\": \"get_weather\",\n        \"description\": \"Get current weather for a city\",\n        \"parameters\": {\n            \"type\": \"object\",\n            \"properties\": {\"city\": {\"type\": \"string\"}},\n            \"required\": [\"city\"],\n        },\n    },\n}\n\nr = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[{\"role\": \"user\", \"content\": \"Weather in Paris?\"}],\n    tools=[weather_tool],\n)\ncall = r.choices[0].message.tool_calls[0]\nargs = eval(call.function.arguments)          # in prod: json.loads + validate\nresult = get_weather(**args)\nprint(result)                                  # → 'Sunny, 22°C in Paris'",
+    "annot": [
+      "response_format with json_schema — the API rejects shape violations, not you",
+      "The tool's `parameters` schema mirrors Pydantic: same class, both ends",
+      "Always validate tool arguments (Pydantic!) before executing — never eval in production"
+    ]
+  },
+  "notes": "# Structured Output & Tools\n\n## Structured outputs\n- Pass a JSON Schema as `response_format` → the API **constrains generation** to valid schema.\n- Loop: Pydantic model → `model_json_schema()` → API → `Model.model_validate_json()`.\n- Guarantees **shape**, not truth — value checks still need validators + grounding.\n\n## Function / tool calling\n1. Register tools: name + description + parameter schema.\n2. Model replies with a structured call request (`tool_calls`).\n3. **Your code executes** — validate args (Pydantic), authorize, run.\n4. Append result as a `role: \"tool\"` message; model continues.\n> Model proposes, code disposes. The atomic unit of agents (Stage 6).\n\n## Pydantic end-to-end\n- One class: schema export · constraint · parse · value validation · test fixtures.\n\n## Prompt caching\n- Stable byte-identical prefix (system, docs, examples) → cached at a steep discount.\n- Static first, dynamic last — a deliberate cost architecture.\n\n## Multimodal inputs\n- Images (base64/URL) and PDFs ride along as message parts.\n- Multimodal in + structured out collapses OCR/extraction pipelines into one schema'd call.\n- Verify critical numbers on high-stakes documents."
+}
