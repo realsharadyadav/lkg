@@ -1,0 +1,145 @@
+{
+  "id": "GA-15",
+  "num": 31,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Retrieval Quality",
+  "hook": "Retrieval is a **recall problem wearing a precision costume**. Five techniques — top-k, reranking, rewriting, HyDE, hybrid — that decide whether the right chunk survives.",
+  "chapters": [
+    "Top-k & the recall ceiling",
+    "Reranking",
+    "Query rewriting & HyDE",
+    "Hybrid retrieval"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · TOP-K",
+      "title": "How many chunks is enough? **It depends — measure it**",
+      "sub": "Top-k is the cheapest quality dial you own",
+      "narration": "Top-k means: return the k most similar chunks. Too small — three, five — and recall dies: the answer's chunk sat at rank six, one position past the cutoff, and the model never saw it. Too large — fifty, a hundred — and precision drowns: the prompt fills with near-misses that dilute attention and cost tokens. The fix is embarrassingly simple: build a golden set — fifty to a hundred real questions whose answer-chunks you know — and plot answer-recall against k. Most prose corpora land somewhere between eight and twenty. Then remember top-k is measured on the FIRST pass; later stages will shrink the list, so fetch wide, then narrow."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📉", "t": "k too small → recall dies", "s": "Answer at rank k+1 never reaches the model · the silent failure" },
+        { "e": "🌊", "t": "k too large → precision drowns", "s": "Near-miss chunks dilute attention, burn tokens, invite hallucination" },
+        { "e": "📐", "t": "Measure on golden questions", "s": "Plot answer-recall vs k → most corpora land at k = 8–20 · fetch wide, narrow later" }
+      ],
+      "narration": "Think of retrieval as a funnel. The first pass exists to avoid MISSING anything, so bias toward generosity here — fetch twenty or thirty candidates. The narrowing happens downstream: metadata filters, reranking, and the context budget will cut it to the five or six chunks that actually earn desk space. The classic mistake is tuning k as if the retrieved list were the final context — it isn't. Measure recall at the top of the funnel, measure faithfulness at the bottom, and keep the two jobs separate. When recall is the complaint, k and hybrid search are your first two levers — in that order."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · RERANKING",
+      "title": "Two-stage retrieval: **fast then certain**",
+      "sub": "Bi-encoder recalls, cross-encoder decides",
+      "narration": "Vector search uses a bi-encoder — question and chunks embedded separately, compared by cosine similarity. That independence is what makes it fast, but it caps accuracy: the query encoding can't see the chunk it's scoring. A cross-encoder fixes exactly that: feed the question and chunk JOINTLY through a small transformer that outputs one relevance score. Far more accurate — and far slower, because every pair needs its own forward pass. So you never rerank the corpus — you rerank the candidate list: bi-encoder fetches fifty cheaply, cross-encoder scores those fifty, you keep the top five. Two-stage retrieval: recall at scale, precision at the end."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "⚡", "t": "Stage 1 · vector search", "s": "Question → embedding → top-50 by cosine · milliseconds over millions" },
+        { "e": "🎯", "t": "Stage 2 · cross-encoder", "s": "Each (question, chunk) pair scored jointly · ~50 forward passes" },
+        { "e": "✂️", "t": "Cut", "s": "Keep top-5 by rerank score → only these enter the prompt" }
+      ],
+      "narration": "Why two stages and not one perfect one: because accuracy and latency pull opposite ways, and each stage optimizes one. The bi-encoder pass is a dot-product index lookup — sub-linear, cacheable, fine at corpus scale. The cross-encoder pass is fifty small model calls — independent, parallelizable, fine at candidate scale. Swap them — rerank everything, vector-search fifty — and you've built something too slow to ship and no more accurate. This pattern, retrieve-then-rerank, is the single most common upgrade in mature RAG systems, and it plugs into the GA-13 pipeline without changing any other stage."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · QUERY REWRITING",
+      "title": "Users ask badly. **Fix the query, not the user.**",
+      "sub": "Rewriting, multi-query, and HyDE",
+      "narration": "Real queries are vague: 'what about refunds', 'the new policy', 'how does that work'. Against a clean corpus, vagueness means the embedding averages too many intents and matches nothing well. Three fixes. Query rewriting: an LLM expands the terse question into a precise, standalone search query — with conversation context if it exists. Multi-query: generate three to five paraphrases and search all of them, unioning results — different phrasings surface different chunks. HyDE — Hypothetical Document Embeddings: instead of embedding the question, ask the LLM to write a hypothetical ANSWER, embed that, and search for chunks similar to the answer. A question is short and abstract; an answer is dense with the vocabulary where real chunks live."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "✍️", "t": "Rewrite", "s": "Terse/vague query → precise standalone query · conversation-aware" },
+        { "e": "🔱", "t": "Multi-query", "s": "3–5 paraphrases → union the results · cheap recall multiplier" },
+        { "e": "🪞", "t": "HyDE", "s": "Generate a hypothetical ANSWER → embed it → its vocabulary matches real chunks" }
+      ],
+      "narration": "Notice the shared insight: retrieval fails when the question's embedding lives far from the answer's chunk — different vocabulary, different abstraction. Rewriting bridges it with precision. Multi-query bridges it with diversity. HyDE bridges it by teleporting to the answer's side of embedding space before searching. All three can combine — rewrite first, then HyDE, then multi-query the result — though each adds latency, so stage them: add a technique when golden-set recall shows a specific gap. And log everything: the original question, the rewritten forms, what retrieved — that log is how you diagnose retrieval in production."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · HYBRID",
+      "title": "Keyword search refuses to die — **for good reason**",
+      "sub": "Vector finds meaning; BM25 finds exactness. Fuse them.",
+      "narration": "Vector search is brilliant at semantic similarity and blind to exactness: error codes, product names, people's names, legal citations — tokens where a single character matters. Keyword search — BM25, the decades-old ranking formula — nails exact tokens but can't understand paraphrase. Real corpora need both. Hybrid retrieval runs each and fuses the rankings, typically reciprocal-rank fusion: score each chunk by the sum of inverse ranks across the two lists, no score normalization needed. The result: 'timeout ECONNREFUSED' matches exactly via BM25 while 'why does the connection fail' matches semantically via vectors — and the user gets a correct answer either way. Most production RAG systems that look magically reliable are hybrid under the hood."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "🧭", "t": "Vector (semantic)", "s": "Paraphrase-proof · meaning-level match · weak on exact tokens (codes, names, IDs)", "win": true },
+        { "e": "🔤", "t": "Keyword (BM25)", "s": "Exact-token precision · instant on rare terms · blind to paraphrase", "win": true },
+        { "e": "🤝", "t": "Hybrid + RRF", "s": "Both lists → reciprocal-rank fusion · the production default for messy real corpora", "win": true }
+      ],
+      "narration": "The fusion detail matters: vector similarity scores and BM25 scores live on different scales — you can't just average them. Reciprocal-rank fusion sidesteps the problem entirely: rank one gets one point, rank two a half, rank three a third, summed across both lists. No calibration, no weights to tune on day one. Practical note: run hybrid BEFORE reranking — rerank the fused candidate list once, not two lists separately. Compose the full retrieval stack as: hybrid fetch, rerank, cut — and measure each layer against your golden set so you know which lever to pull when quality drops."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-16",
+      "title": "The right chunks are on the desk. Now compose the answer.",
+      "next": "Reel 32 · Generation & Citations — grounded answers that cite their sources"
+    }
+  ],
+  "recap": [
+    "Tune top-k on golden questions (usually 8–20); fetch wide, narrow later — recall at the top, precision at the bottom",
+    "Rerank: bi-encoder recalls broadly, cross-encoder scores (question, chunk) pairs jointly, keep the top few",
+    "Vague queries → rewrite / multi-query / HyDE; exact tokens → hybrid BM25 + vector with reciprocal-rank fusion"
+  ],
+  "quiz": [
+    {
+      "q": "Why is reranking done on a candidate list instead of the whole corpus?",
+      "opts": [
+        "Cross-encoders can't process long documents",
+        "Cross-encoders are accurate but slow (one forward pass per pair) — score the ~50 bi-encoder candidates, not a million chunks",
+        "Vector databases forbid it",
+        "BM25 already ranks the corpus"
+      ],
+      "a": 1,
+      "why": "Two-stage retrieval assigns each stage its own job: the bi-encoder provides cheap recall at scale, the cross-encoder provides accuracy at candidate scale."
+    },
+    {
+      "q": "What problem does HyDE solve?",
+      "opts": [
+        "Slow vector databases",
+        "Questions and answers use different vocabulary, so question embeddings sit far from answer chunks — embedding a hypothetical ANSWER bridges the gap",
+        "Missing metadata",
+        "Hallucinated citations"
+      ],
+      "a": 1,
+      "why": "A generated answer is dense with the same terminology real chunks use, landing the search query in the right region of embedding space."
+    },
+    {
+      "q": "Why fuse keyword and vector results with reciprocal-rank fusion rather than averaging scores?",
+      "opts": [
+        "RRF is faster to compute",
+        "Vector similarity and BM25 scores live on incompatible scales — RRF uses only ranks, so no calibration is needed",
+        "Averaging is patented",
+        "Fusion happens before scoring"
+      ],
+      "a": 1,
+      "why": "Rank-based fusion is scale-free: rank 1 = 1 point, rank 2 = ½, rank 3 = ⅓, summed across lists — no normalization or weight tuning required."
+    }
+  ],
+  "code": {
+    "title": "Retrieval stack: hybrid fetch → rerank → cut",
+    "body": "from ranx import compare  # golden-set eval\n\ndef retrieve(question: str, k: int = 5) -> list[Chunk]:\n    # 1 · rewrite for precision (cheap LLM call)\n    q = llm(f\"Rewrite as a precise standalone search query: {question}\")\n\n    # 2 · HYBRID fetch — vector + BM25, fused by rank\n    vec_hits = vdb.search(embed(q), k=50)\n    bm25_hits = bm25.search(q, k=50)\n    fused = reciprocal_rank_fusion([vec_hits, bm25_hits])[:50]\n\n    # 3 · RERANK with a cross-encoder\n    pairs = [[question, c.text] for c in fused]   # original q, not rewrite\n    scores = cross_encoder.predict(pairs)\n    ranked = [c for _, c in sorted(zip(scores, fused), reverse=True)]\n\n    return ranked[:k]   # only these enter the prompt\n\n# --- golden-set loop: measure before you tune --------------------\n# for each (question, answer_chunk) in golden_set:\n#     assert answer_chunk in retrieve(question, k=20)\n# recall@20 too low? → hybrid on, rewrite on, raise fetch width\n# recall fine but answers wrong? → that's GA-16's stage, not this one",
+    "annot": [
+      "Rerank pairs use the ORIGINAL question — the user's words, not the rewrite; precision should judge true intent",
+      "Fusion by rank, not score: vector cosine and BM25 scores are on different scales",
+      "The golden-set loop is the whole point: tune retrieval against known answers, never by feel"
+    ]
+  },
+  "notes": "# Retrieval Quality\n\n## Top-k\n- k too small → recall dies (answer at k+1); too large → precision drowns.\n- Golden questions plot recall vs k → typically 8–20.\n- Funnel: fetch wide (20–50) → narrow later.\n\n## Reranking (two-stage)\n- Bi-encoder: fast, independent embeddings → broad candidates.\n- Cross-encoder: (q, chunk) jointly → one score; accurate, slow.\n- Retrieve-then-rerank is the standard production upgrade.\n\n## Query rewriting\n- **Rewrite**: vague → precise standalone query (conversation-aware).\n- **Multi-query**: 3–5 paraphrases, union results.\n- **HyDE**: generate hypothetical answer → embed it → vocabulary matches real chunks.\n\n## Hybrid retrieval\n- Vector: paraphrase-proof, weak on exact tokens (codes, names, IDs).\n- BM25: exact-token precision, blind to paraphrase.\n- **RRF** fuses by rank (1, ½, ⅓…): scale-free, no calibration.\n- Order: hybrid fetch → rerank → cut."
+}

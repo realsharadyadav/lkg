@@ -1,0 +1,147 @@
+{
+  "id": "GA-16",
+  "num": 32,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Generation & Citations",
+  "hook": "Great retrieval, sloppy generation = a confident liar with footnotes. This reel: assembling context, forcing citations, and teaching the model to say **“I don’t know.”**",
+  "chapters": [
+    "Context assembly",
+    "Grounded answers & citations",
+    "The courage to not know",
+    "Conversation-aware RAG"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · ASSEMBLY",
+      "title": "What the model sees is **your design decision**",
+      "sub": "Order, format and budget of retrieved context",
+      "narration": "Retrieval hands you a list of chunks; the prompt is where they become context. Three design decisions. Order: models attend best to the beginning and end of context — lost-in-the-middle from GA-01 — so place the highest-ranked chunks first and last, burying the middle ones. Format: wrap each chunk in clear delimiters with its source label — doc name, section, date — so the model can cite precisely and tell where context ends and question begins. Budget: reranking gave you five strong chunks; resist the urge to stuff twenty. Context beyond what the question needs dilutes attention and invites the model to synthesize across irrelevant material. Curate the desk; don't empty the archive onto it."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📶", "t": "Order by attention", "s": "Best chunks first AND last · the middle is skimmed — design for it" },
+        { "e": "🏷️", "t": "Delimit & label", "s": "<doc src=…> per chunk → precise citations, clean context/question boundary" },
+        { "e": "🧹", "t": "Curate, don't dump", "s": "5 strong chunks beat 20 padded ones · every extra chunk dilutes attention" }
+      ],
+      "narration": "A concrete assembly recipe. Delimiter per chunk with source metadata — that label is what makes citations POSSIBLE. Order: strongest first, second-strongest last, the rest between — because the model's attention is U-shaped. And a budget discipline: if retrieval is confident, five chunks are plenty; if you're adding chunks 'just in case', that's a retrieval-quality problem — go fix GA-15, don't paper over it in assembly. The prompt's system message states the contract: answer only from context, cite every claim, say when information is missing. Assembly is where that contract becomes physically enforceable."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · CITATIONS",
+      "title": "Answers users can **verify** — that's the product",
+      "sub": "Grounded generation and citation mechanics",
+      "narration": "A grounded answer quotes or closely paraphrases the retrieved context — nothing more. The mechanism: instruct the model to make each claim and attach a citation marker pointing at the source label you provided — [Handbook §4.2, updated March]. Two citation styles: inline markers next to each claim, best for verification; or a sources block at the end, cheaper but weaker. Then the crucial UI move: render citations as links back to the original document. This transforms the chatbot from an oracle into a research assistant — users stop trusting and start VERIFYING, which is exactly what you want, because verification is what makes mistakes survivable."
+    },
+    {
+      "type": "chat",
+      "chapter": 1,
+      "messages": [
+        { "who": "user", "text": "What's our remote-work policy for new joiners?" },
+        { "who": "ai", "text": "New joiners work remotely up to 3 days/week after their first 4 weeks, which are fully on-site for onboarding. [People Handbook §7.1 — updated Jun 2026]" },
+        { "who": "user", "text": "And the approval process?" },
+        { "who": "ai", "text": "Your manager approves via the HR portal; no skip-level sign-off needed. [People Handbook §7.1]" }
+      ],
+      "narration": "See how the citation does three jobs at once. Trust: the user can open Handbook section 7.1 and check — no blind faith. Debugging: if the answer is wrong, the citation tells you whether retrieval fetched a stale chunk or the model misread a good one — it separates the two failure families instantly. And compliance: in regulated domains, an answer without a traceable source is unusable regardless of correctness. Notice the second exchange too — the follow-up 'and the approval process' resolved correctly against the same handbook section. That's conversation-awareness, the next chapter: the model inherited context from the first turn instead of treating the follow-up as a brand-new, context-free question."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · HONESTY",
+      "title": "The highest-value sentence: **“I don’t have that information.”**",
+      "sub": "Abstention beats hallucination — every time",
+      "narration": "Without guardrails, a language model answers EVERY question — that's its training, not its knowledge. When retrieval returns nothing relevant, the honest response is abstention, and you have to engineer it in. The prompt contract: 'answer only from the context; if the context doesn't contain the answer, say you don't have that information.' Raise the bar in the pipeline: if the best retrieval score is below a threshold, skip the LLM entirely and say nothing was found — a mechanical abstention the model can't overrule. Then evaluate abstention explicitly: in your golden set, include questions the corpus CANNOT answer, and measure whether the system declines them. A RAG system that never says 'I don't know' is lying on a schedule."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🚫", "t": "Contract in the prompt", "s": "\"ONLY the context below… if missing, say so\" — the behavioral layer" },
+        { "e": "⚙️", "t": "Mechanical abstention", "s": "Best score < threshold → skip the LLM entirely · no model override possible" },
+        { "e": "🧪", "t": "Test the negative", "s": "Golden set MUST include unanswerable questions · measure declines, not just hits" }
+      ],
+      "narration": "Layer the defenses. The prompt contract is necessary but insufficient — models under pressure to be helpful will sometimes invent anyway. The mechanical layer removes the temptation: low retrieval confidence short-circuits to 'not found', and no clever wording can talk past a threshold. Then test the negative cases deliberately, because everything in your eval celebrates answers — unanswerable questions are the only way to measure whether honesty holds. Also give abstention a good user experience: 'I couldn't find this in the handbook — want me to search the wider wiki?' An honest system that offers a next step feels helpful, not broken."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · CONVERSATION",
+      "title": "Follow-ups are the **real** usage pattern",
+      "sub": "Conversation-aware RAG: context isn't just documents",
+      "narration": "Nobody asks one perfect question. Real sessions are chains: 'what's the refund policy' → 'and for enterprise customers' → 'how long does that take'. Each follow-up is unanswerable in isolation — 'that' has no referent. Conversation-aware RAG carries state. The standard recipe: keep the chat history, and before retrieval, use an LLM to rewrite the latest question into a standalone query that incorporates the thread — 'what is the refund processing time for enterprise customers'. That rewritten query goes to retrieval; the full history goes to generation, so the answer can stay consistent with what was already said. Skip the rewrite and follow-ups silently degrade into generic answers from mismatched retrieval."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "💬", "t": "History", "s": "Keep the full thread · it's state, not just log" },
+        { "e": "✍️", "t": "Standalone rewrite", "s": "Latest + history → self-contained query (GA-15's rewriter, now conversation-aware)" },
+        { "e": "🔍", "t": "Retrieve", "s": "Rewritten query → hybrid + rerank → top-k" },
+        { "e": "✍️", "t": "Generate", "s": "History + fresh context → consistent, cited answer" }
+      ],
+      "narration": "The loop, complete. History feeds the rewriter — the same rewriting machinery from GA-15, now with conversation as its context. Retrieval runs on the STANDALONE query, because vague anaphora like 'that' embeds badly and matches nothing. Generation receives BOTH: the fresh retrieved context and the prior turns, so the answer can refer back — 'as mentioned, enterprise tier differs' — without contradicting itself. Two pitfalls to avoid: unbounded history — trim to the last few turns or summarize, or costs and distraction grow; and staleness — if the conversation pivoted topics, the rewriter must let go of old context instead of dragging it into every new query."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-17",
+      "title": "RAG is now solid. Ready to get exotic?",
+      "next": "Reel 33 · Advanced RAG — GraphRAG, agentic retrieval, multi-hop, security"
+    }
+  ],
+  "recap": [
+    "Assembly is design: strong chunks first AND last, delimited and source-labeled, curated — never dumped",
+    "Citations ([Handbook §7.1]) turn an oracle into a verifiable assistant — and make debugging instant",
+    "Abstention is engineered: prompt contract + score threshold + unanswerable questions in the eval; follow-ups need standalone-query rewriting over history"
+  ],
+  "quiz": [
+    {
+      "q": "Why place the strongest retrieved chunk at the START and END of context?",
+      "opts": [
+        "The citation parser requires it",
+        "Models attend best to context boundaries (lost-in-the-middle) — the middle gets skimmed",
+        "It reduces token cost",
+        "Vector databases return them in that order"
+      ],
+      "a": 1,
+      "why": "Attention is U-shaped over long context; assembly order is a free quality dial that exploits it."
+    },
+    {
+      "q": "What does a mechanical abstention threshold add beyond a prompt contract?",
+      "opts": [
+        "Faster responses",
+        "It short-circuits to \"not found\" before the LLM runs — the model physically can't override it",
+        "Better citations",
+        "Lower embedding costs"
+      ],
+      "a": 1,
+      "why": "Prompts are requests; thresholds are gates. Low retrieval confidence → no generation call at all."
+    },
+    {
+      "q": "Why rewrite follow-up questions before retrieval?",
+      "opts": [
+        "To shorten the prompt",
+        "Anaphora like \"that\" embeds badly and matches nothing — the rewrite makes it a standalone query",
+        "To remove citations",
+        "To bypass the reranker"
+      ],
+      "a": 1,
+      "why": "Retrieval needs a self-contained query; the rewrite resolves references against chat history so embedding space contains something to match."
+    }
+  ],
+  "code": {
+    "title": "Generation stage: assembly, citations, abstention, follow-ups",
+    "body": "SYSTEM = \"\"\"You are a helpful assistant. Rules:\n1. Answer ONLY from the <context> below.\n2. Cite every claim as [source-label].\n3. If the context lacks the answer, say exactly:\n   \"I don't have that information.\"\nNever use outside knowledge.\"\"\"\n\ndef ask(history: list[dict], question: str) -> str:\n    # 1 · follow-up → standalone query\n    standalone = llm(\n        \"Rewrite as a self-contained search query.\",\n        history=history, question=question)\n\n    # 2 · retrieve (GA-15 stack)\n    chunks = retrieve(standalone, k=5)\n\n    # 3 · mechanical abstention — before any LLM call\n    if not chunks or chunks[0].score < 0.62:\n        return \"I couldn't find that in the handbook. Search the wider wiki?\"\n\n    # 4 · assemble: best first AND last (U-shaped attention)\n    ordered = [chunks[0], *chunks[1:], chunks[0]] if len(chunks) > 2 else chunks\n    context = \"\\n\".join(\n        f'<doc src=\"{c.source}\">{c.text}</doc>' for c in ordered)\n\n    # 5 · generate with history + grounded context\n    return chat(SYSTEM, history + [\n        {\"role\": \"user\",\n         \"content\": f\"<context>\\n{context}\\n</context>\\n\\n{standalone}\"}])",
+    "annot": [
+      "Abstention gate sits BEFORE the expensive call — cost saving and honesty in one mechanism",
+      "Duplicating the top chunk at the end exploits U-shaped attention; with ≤2 chunks it's a no-op",
+      "History goes to generation, standalone query goes to retrieval — each gets the input it's built for"
+    ]
+  },
+  "notes": "# Generation & Citations\n\n## Context assembly\n- Attention is U-shaped → strongest chunk first AND last.\n- Delimit each chunk: `<doc src=\"label\">…` → enables precise citation.\n- Curate ~5 chunks; padding = retrieval problem, fix GA-15.\n\n## Grounded answers & citations\n- Every claim carries a source marker; UI renders it as a link.\n- Citations = trust + debuggability (retrieval-fail vs read-fail) + compliance.\n\n## “I don't know”\n- Prompt contract + score-threshold gate + unanswerable questions in the golden set.\n- Good UX: abstain + offer a next step.\n\n## Conversation-aware RAG\n- Rewrite follow-up → standalone query (history-aware), retrieve on it.\n- Generation sees history + fresh context → consistent answers.\n- Pitfalls: unbounded history (trim/summarize), stale topics (rewriter must pivot)."
+}

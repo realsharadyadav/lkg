@@ -1,0 +1,145 @@
+{
+  "id": "GA-17",
+  "num": 33,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Advanced RAG",
+  "hook": "When flat chunks stop answering — **graphs, agents, multi-hop, and security**. The frontier toolkit for questions that span documents and permissions.",
+  "chapters": [
+    "GraphRAG",
+    "Agentic RAG",
+    "Multi-hop questions",
+    "Security & caching"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · GRAPHRAG",
+      "title": "Some questions need a **map**, not a pile of chunks",
+      "sub": "Knowledge graphs meet retrieval",
+      "narration": "Flat retrieval has a structural blind spot: it finds chunks similar to the query but can't see RELATIONSHIPS — how entities connect across a whole corpus. 'Which suppliers depend on the same subcomponent as our top product?' is a graph question. GraphRAG's recipe: during ingest, extract entities and relationships from every chunk — product, supplier, component, depends-on — and build a knowledge graph alongside the vector index. At query time, answer in two modes: local questions still go to plain vector search, but global or cross-document questions traverse the graph — or synthesize over graph-derived community summaries. You pay extraction cost and graph upkeep for questions flat RAG structurally cannot answer."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🕸️", "t": "Extract at ingest", "s": "Entities + relations per chunk → graph beside the vector index · extraction LLM pass" },
+        { "e": "🔎", "t": "Local questions → vectors", "s": "\"What's our refund window?\" — flat retrieval still wins on speed & simplicity" },
+        { "e": "🌍", "t": "Global questions → graph", "s": "Cross-doc relationships, dependencies, \"who connects to whom\" → traversal + community summaries" }
+      ],
+      "narration": "The honest decision framework. GraphRAG is not an upgrade you apply everywhere — it's a different index answering a different question class. If your users ask lookup and summarization questions, vectors are simpler, cheaper and better. If they ask relationship and synthesis questions across the corpus — dependency analysis, influence mapping, 'what connects these two projects' — a graph earns its complexity. Start flat; add the graph when question analysis shows the relationship class appearing in your logs. Extraction quality gates everything: a noisy entity extractor builds a noisy graph, and graph errors are harder to spot than bad chunks."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · AGENTIC RAG",
+      "title": "Stop fetching on every question. **Let the model decide.**",
+      "sub": "Retrieval as a tool, invoked when needed",
+      "narration": "Classic RAG retrieves blindly: every question triggers the same pipeline, whether it needs documents or not. 'What's 2 + 2' doesn't need a corpus. Agentic RAG hands the loop to an agent: the LLM sees the question and a retrieval TOOL, plans — do I even need to search? what should I search for? — calls retrieval, reads the result, and decides whether to search again, answer, or ask the user for clarification. Trade-offs, plainly: you get judgment — no wasted retrievals, adaptive multi-step research — but you add latency, non-determinism and a harder eval surface, because each run takes a different path. Use it when questions genuinely vary in retrieval need; keep classic RAG where every question is a document question."
+    },
+    {
+      "type": "chat",
+      "chapter": 1,
+      "messages": [
+        { "who": "user", "text": "Compare our SLA to the vendor's and flag gaps." },
+        { "who": "ai", "text": "I'll need both documents. Searching for our SLA… found §3. Now the vendor agreement… found their §9. Comparing response-time clauses…" },
+        { "who": "ai", "text": "Gap found: we commit to 4h response, the vendor to 24h — and their penalty clause only triggers after 3 breaches." }
+      ],
+      "narration": "Watch the agent's reasoning trace: it DECIDED to retrieve twice, once per document, and each search was informed by the previous result — the second query targeted the vendor's section nine specifically. Classic RAG would have embedded the whole comparison question once, retrieved a blurry average of both documents, and summarized vaguely. The agent version costs two retrieval rounds and an orchestration loop, and buys a specific, verifiable answer. That's the agentic trade in one scene: spend control flow to get precision. Frameworks like LangGraph model this loop explicitly — nodes for retrieve, grade, rewrite, answer — which you'll meet again in the Agentic stages."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · MULTI-HOP",
+      "title": "Chained questions need **chained retrieval**",
+      "sub": "Decompose → retrieve per sub-question → synthesize",
+      "narration": "'How does the team's headcount compare to the project budget?' requires two facts from two places, THEN a comparison. Single-shot retrieval fetches chunks about headcount OR budget — rarely both. Multi-hop pipelines decompose: an LLM splits the compound question into sub-questions, retrieves for each independently, then synthesizes the combined answer. It's the agentic pattern with a fixed plan instead of a free plan — cheaper and more evaluable, less flexible. The debug insight: evaluate each hop separately. If sub-question two retrieves garbage, the final synthesis inherits it — and the failure signature in logs is a good first hop followed by an empty second."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "🧩", "t": "Decompose", "s": "Compound question → 2–4 standalone sub-questions" },
+        { "e": "🔍", "t": "Retrieve per hop", "s": "Each sub-question → its own hybrid + rerank pass" },
+        { "e": "🧵", "t": "Synthesize", "s": "All hop results + original question → one cited answer" }
+      ],
+      "narration": "Three hops, three failure surfaces — which is why multi-hop demands per-hop evaluation. Decompose can mangle the question: 'compare X to Y' split into sub-questions that each lose the comparison intent. Retrieval per hop inherits everything from GA-15 — golden sets per sub-question. Synthesis can drop a hop's evidence or compare unequal units — the check is citations: a multi-hop answer should cite EVERY hop's sources, and a citation count lower than the hop count is a red flag you can assert on programmatically. Start with decomposition for predictable compound questions; graduate to full agentic control when the question shapes stop fitting a fixed template."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SECURITY & CACHE",
+      "title": "The two boring systems that **make RAG shippable**",
+      "sub": "Document-level security & semantic caching",
+      "narration": "Security first: retrieval must respect access control. The pattern: attach ACL metadata to every chunk at ingest — GA-14's metadata lesson — and filter at query time by the ASKING USER's permissions, inside the retrieval call, never after. Post-filtering leaks: the LLM can see chunks it shouldn't, even if the UI hides them. This is non-negotiable in multi-tenant and HR/legal corpora. Then caching: repeated and similar questions dominate real traffic. A semantic cache stores question-embedding → answer pairs; a new question within a similarity threshold of a cached one gets the cached answer instantly — near-zero cost, near-zero latency. Cache below a similarity threshold only; near-duplicates at 0.97, not paraphrases at 0.85, or wrong answers get served fast."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🔐", "t": "ACL filter in retrieval", "s": "Chunk carries permissions · query filters by asking user · NEVER post-filter after the LLM" },
+        { "e": "💾", "t": "Semantic cache", "s": "Similar questions → cached answer · high threshold (≥0.97) · huge cost/latency win on repetitive traffic" },
+        { "e": "⚡", "t": "Cache + security compose", "s": "Cache key includes user/tenant — never serve one user's cached answer to another" }
+      ],
+      "narration": "Details that bite. ACL filtering belongs in the where-clause of the vector search — GA-09 taught you filtered retrieval; this is its production purpose. Post-filtering after generation is not security, it's hope. On caching, the threshold is the whole game: tune it on your own traffic, log cache hits, and include tenant and permission set in the cache key — a shared cache across users is a data-leak machine wearing a performance costume. These two systems are 'boring' the way brakes are boring: nobody demos them, and nothing ships safely without them. Stage 4 closes here — RAG from bytes to production."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker" : "STAGE 4 COMPLETE",
+      "title": "Embeddings → vectors → retrieval → grounded answers. Done.",
+      "next": "Reel 34 · Stage 5: App Building — turning pipelines into products"
+    }
+  ],
+  "recap": [
+    "GraphRAG: entity/relation extraction at ingest; graph traversal for cross-document relationship questions, vectors for local ones",
+    "Agentic RAG = retrieval as a tool under model control (judgment for latency/cost); multi-hop = fixed decompose-retrieve-synthesize for compound questions",
+    "Ship-ready = ACL filters inside retrieval (never post-filter) + semantic cache with high similarity threshold and tenant-scoped keys"
+  ],
+  "quiz": [
+    {
+      "q": "When is GraphRAG worth its added complexity?",
+      "opts": [
+        "Always — it's the modern default",
+        "When questions are relationship/global across the corpus (dependencies, influences) that flat chunk similarity structurally can't answer",
+        "When the corpus is small",
+        "When embeddings are expensive"
+      ],
+      "a": 1,
+      "why": "Graphs index relationships, not text; local lookup and summarization questions remain simpler and better on plain vectors."
+    },
+    {
+      "q": "Why must access-control filtering happen inside the retrieval query rather than after generation?",
+      "opts": [
+        "It's faster",
+        "Post-filtering still shows forbidden chunks to the LLM — the model can leak them even if the UI hides them",
+        "Vector databases require it",
+        "Citations break otherwise"
+      ],
+      "a": 1,
+      "why": "Security lives at the retrieval boundary: chunks the user may not see must never enter the model's context at all."
+    },
+    {
+      "q": "What failure does per-hop evaluation in multi-hop RAG catch?",
+      "opts": [
+        "Slow embeddings",
+        "A later sub-question retrieving garbage that the final synthesis silently inherits — visible as good first hop, empty second",
+        "Too many citations",
+        "Cache misses"
+      ],
+      "a": 1,
+      "why": "Compound answers are only as good as the weakest hop; evaluating only the final answer hides which hop broke."
+    }
+  ],
+  "code": {
+    "title": "Advanced RAG guardrails: ACL filter + semantic cache + decomposition",
+    "body": "from dataclasses import dataclass\n\n# --- security: filter INSIDE retrieval --------------------------------\ndef retrieve(q, user) -> list[Chunk]:\n    return vdb.search(\n        embed(q), k=20,\n        where={\"acl\": {\"$in\": user.permission_groups}},  # GA-09 filters\n    )\n    # NEVER: fetch all → generate → strip disallowed from the answer.\n    # The LLM has already seen what you tried to hide.\n\n# --- semantic cache: high threshold, tenant-scoped key ----------------\n@dataclass\nclass CacheEntry:\n    q_vec: list[float]\n    answer: str\n    tenant: str\n\nCACHE: list[CacheEntry] = []\n\ndef ask_cached(question: str, user) -> str:\n    qv = embed(question)\n    for e in CACHE:                       # small: brute force is fine\n        if e.tenant == user.tenant and cosine(qv, e.q_vec) >= 0.97:\n            return e.answer               # near-duplicate only!\n    answer = generate(history, question, retrieve(question, user))\n    CACHE.append(CacheEntry(qv, answer, user.tenant))\n    return answer\n\n# --- multi-hop: fixed decomposition ------------------------------------\ndef ask_multi_hop(compound: str) -> str:\n    subs = llm(f\"Split into standalone sub-questions: {compound}\")\n    results = [retrieve_and_answer(s) for s in subs]   # eval each hop!\n    return llm(f\"Synthesize with citations to ALL sources: {results}\")",
+    "annot": [
+      "The where-clause is the security boundary — post-filtering is not security, it's hope",
+      "Cache key carries tenant AND uses a high threshold; a loose shared cache leaks data at high speed",
+      "Multi-hop keeps each hop independently retrievable — you can unit-test hop 2 without running hop 1"
+    ]
+  },
+  "notes": "# Advanced RAG\n\n## GraphRAG\n- Ingest: LLM-extract entities + relations → knowledge graph beside vector index.\n- Local questions → vectors; global/relationship questions → graph traversal / community summaries.\n- Start flat; add graph when logs show relationship-class questions.\n\n## Agentic RAG\n- Retrieval becomes a TOOL the agent invokes: decide → search → read → re-search/answer/clarify.\n- Wins: judgment, no wasted retrievals, adaptive depth.\n- Costs: latency, non-determinism, harder eval. Fixed decomposition (multi-hop) is the middle ground.\n\n## Multi-hop\n- Decompose → retrieve per sub-question → synthesize.\n- Evaluate EACH hop; answer must cite every hop's sources (citation count ≥ hop count).\n\n## Security & caching\n- ACL: chunk-level metadata, filtered in the retrieval query by asking user. Never post-filter.\n- Semantic cache: q-embedding → answer, threshold ≥ ~0.97, key includes tenant.\n- Stage 4 complete: ingest → chunk → embed → retrieve → generate → ship."
+}

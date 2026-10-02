@@ -1,0 +1,147 @@
+{
+  "id": "GA-14",
+  "num": 30,
+  "track": "genai",
+  "stage": "4. Embeddings > Vector DB > RAG",
+  "topic": "Ingestion & Chunking",
+  "hook": "**Retrieval can't fix bad chunks.** Ingestion and chunking decide 80% of RAG quality — before any embedding exists. This reel is the craft.",
+  "chapters": [
+    "Document parsing",
+    "Chunking strategies",
+    "Size, overlap & metadata",
+    "Changing documents"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · PARSING",
+      "title": "Every file format is a **liar** in its own way",
+      "sub": "Parsing is where clean-looking documents reveal their true mess",
+      "narration": "Before any chunking, you must extract text — and every format hides traps. PDF is a layout format, not a text format: what looks like a paragraph is positioned glyphs; two columns become one scrambled line unless the parser understands reading order. DOCX and PPTX are structured XML — clean, but tables, text boxes and headers need deliberate extraction. HTML brings navigation junk, scripts and boilerplate that pollute embeddings. And scanned documents? No text at all — just pixels, which means OCR: optical character recognition, an entire accuracy pipeline of its own. Choose parsers per format, never one universal extractor."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📄", "t": "PDF", "s": "Layout ≠ reading order · multi-column scramble · use layout-aware parsers" },
+        { "e": "🧾", "t": "Scanned docs → OCR", "s": "Pixels → text · handwriting & stamps degrade accuracy · tables need special handling" },
+        { "e": "📊", "t": "Tables", "s": "The hardest case: rows/columns lose meaning in linear text → preserve structure or serialize deliberately" }
+      ],
+      "narration": "The parsing horror stories, ranked. PDF multi-column scramble is the classic — text extraction reads left-to-right across the whole page, mashing both columns into nonsense; layout-aware parsers reconstruct the true reading order. Scanned documents need OCR, and OCR accuracy is your ceiling — a five percent character error rate becomes retrieval noise, so quality-check the extraction before you index it. Tables are genuinely hard: a row torn across chunks is unretrievable meaning, so serialize tables with their headers repeated, or chunk them as whole units. Rule of thumb: inspect a hundred random extracted chunks before trusting the pipeline."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · CHUNKING",
+      "title": "How you cut decides **what can be found**",
+      "sub": "Four strategies — from naive to structural",
+      "narration": "Chunking is cutting documents into retrieval-sized pieces. Fixed-size chunking splits every N characters with a small overlap — simple, but it amputates sentences mid-thought and shatters tables and code blocks. Recursive chunking respects structure: split on paragraphs, then sentences, then words — only as small as needed, keeping boundaries natural. Semantic chunking embeds a sliding window and cuts where meaning shifts — expensive, but chunks align with topics. Structural chunking follows the document's own skeleton — sections, headings, chapters — the chunk boundary IS the author's boundary. Start recursive; go structural when your documents have reliable headings."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "📏", "t": "Fixed-size", "s": "Every N chars + overlap · dead simple · mid-sentence amputations, tables shattered", "win": false },
+        { "e": "🌿", "t": "Recursive", "s": "Paragraphs → sentences → words · natural boundaries · the sensible default", "win": true },
+        { "e": "🧠", "t": "Semantic", "s": "Cut where embeddings say meaning shifts · topic-aligned · costs an embedding pass", "win": true },
+        { "e": "🏛️", "t": "Structural", "s": "Follow headings/sections · author's own boundaries · needs well-structured docs", "win": true }
+      ],
+      "narration": "Same document, four fates. Fixed-size is what naive RAG does — and it's why naive RAG's answers feel fragmentary: the sentence that answered the question was split across two chunks, and retrieval found neither. Recursive is the industry default — LangChain and LlamaIndex ship it first because it respects natural boundaries at almost zero cost. Semantic is the precision option — pay one embedding pass to find true topic boundaries. Structural is the enterprise option — policy documents, manuals and wikis already have the right boundaries; follow the author's headings. Match strategy to document shape, and remember: mixed corpora can use different strategies per source."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · SIZE, OVERLAP & METADATA",
+      "title": "Size is a **precision–recall dial**; overlap stitches it",
+      "sub": "And metadata is what makes retrieved chunks usable",
+      "narration": "Chunk size trades two failure modes. Small chunks — a hundred, two hundred tokens — retrieve with high precision: the match is exactly on-topic, but they lack surrounding context, so the model sees fragments. Large chunks — five hundred, a thousand tokens — carry rich context but dilute the embedding: the vector averages many topics, and retrieval match weakens. The working sweet spot for prose is roughly two hundred to five hundred tokens. Overlap — repeating fifty to a hundred tokens at each boundary — stitches what cutting broke, so no sentence exists in only one chunk. Then metadata: attach source, section, date, author, access level to every chunk. Filters, citations, ACLs and freshness all ride on it."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "⚖️", "t": "~200–500 tokens", "s": "The prose sweet spot · small = precise but context-poor · large = rich but diluted match" },
+        { "e": "🔗", "t": "Overlap 50–100 tokens", "s": "Boundaries stitched: no sentence lives in only one chunk · costs some storage duplication" },
+        { "e": "🏷️", "t": "Metadata per chunk", "s": "source · section · date · author · ACL — powers filtering, citations, security, freshness" }
+      ],
+      "narration": "Three settings that decide retrieval quality before retrieval even runs. The size dial: test against your real questions — build a golden set of fifty questions with known answers, then measure which size retrieves the answer's chunk most often. Overlap: fifty to a hundred tokens is enough to keep sentences whole across boundaries; more is just duplicated storage. Metadata is the underrated hero: a chunk tagged with source, section heading, publish date and access level becomes filterable, citable, permission-aware and freshness-aware. Retrieval without metadata is search; retrieval with metadata is an enterprise system."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · CHANGE",
+      "title": "Documents change. Your index must **not lie**.",
+      "sub": "Incremental updates & deletes — the ops everyone forgets",
+      "narration": "The ingestion pipeline runs once in every demo and forever in production. Documents get edited, deprecated, replaced. The naive answer — re-index everything nightly — breaks down at corpus scale: it's slow, expensive, and produces a window where answers mix old and new. The right pattern: track document versions, diff at the document level, and re-embed only what changed. Give every chunk a deterministic ID from document ID plus chunk position — GA-11's upsert lesson — so an updated document replaces its old chunks exactly. Deletes are the silent killer: when a document is withdrawn, its chunks must leave the index immediately, or users retrieve and cite retracted content."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "👁️", "t": "Watch", "s": "Sources polled/webhooked · events: created · updated · deleted" },
+        { "e": "🔀", "t": "Diff", "s": "Version check → only changed docs enter the pipeline" },
+        { "e": "♻️", "t": "Re-process", "s": "Parse → chunk → embed · deterministic IDs → upsert replaces cleanly" },
+        { "e": "🗑️", "t": "Delete", "s": "Withdrawn docs → cascade chunk deletion · no zombie content" }
+      ],
+      "narration": "The incremental pipeline. Watch: sources announce changes — polls, webhooks, event streams. Diff: compare versions; only changed documents pay the embedding cost. Re-process: deterministic IDs make upsert a clean replace — same document, same chunk positions, new vectors. Delete: cascade — a withdrawn document must take every chunk with it, or your system cites content that no longer exists, which in regulated domains is a compliance incident, not a bug. Build this on day one: retro-fitting deletes into a corpus that assumed immutability is miserable."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-15",
+      "title": "Chunks are in. Now: will retrieval FIND them?",
+      "next": "Reel 31 · Retrieval Quality — top-k, reranking, and rewriting vague questions"
+    }
+  ],
+  "recap": [
+    "Parsing is per-format: PDF reading order, OCR for scans, special handling for tables — inspect extractions before indexing",
+    "Chunk strategies: fixed (naive) < recursive (default) < semantic/structural (precision) · sweet spot ~200–500 tokens + 50–100 overlap",
+    "Metadata per chunk (source, section, date, ACL) turns search into an enterprise system; deterministic IDs make updates and deletes clean"
+  ],
+  "quiz": [
+    {
+      "q": "Why does fixed-size chunking hurt retrieval even when embeddings are excellent?",
+      "opts": [
+        "Embeddings can't handle small text",
+        "Mid-sentence splits and shattered tables mean the answering sentence lives in NO retrievable chunk — the evidence is destroyed at cut time",
+        "It makes the vector database slower",
+        "Overlap is impossible with fixed sizes"
+      ],
+      "a": 1,
+      "why": "Retrieval quality is capped by chunk quality: if the evidence was amputated during ingestion, no search strategy can find it."
+    },
+    {
+      "q": "What does chunk overlap buy you?",
+      "opts": [
+        "Smaller storage footprint",
+        "Sentences at boundaries exist in more than one chunk, so cutting doesn't destroy context",
+        "Faster embedding",
+        "Better OCR accuracy"
+      ],
+      "a": 1,
+      "why": "A sentence split across a boundary survives whole in the neighboring chunk — overlap is cheap insurance against cut-time information loss."
+    },
+    {
+      "q": "Why are deletes dangerous in a RAG index?",
+      "opts": [
+        "They slow down vector search",
+        "Withdrawn documents' chunks persist and keep being retrieved/cited — citing retracted content can be a compliance incident",
+        "They require retraining the embedding model",
+        "They break the overlap setting"
+      ],
+      "a": 1,
+      "why": "Zombie chunks make the system state things the organization has formally retracted — deterministic IDs + cascade deletion prevent it."
+    }
+  ],
+  "code": {
+    "title": "Ingestion pipeline: recursive chunks + metadata + incremental upsert",
+    "body": "import hashlib\nfrom langchain_text_splitters import RecursiveCharacterTextSplitter\n\nsplitter = RecursiveCharacterTextSplitter(\n    chunk_size=500,          # tokens ~ size dial: measure on golden Qs\n    chunk_overlap=80,        # stitches boundaries\n    separators=[\"\\n## \", \"\\n# \", \"\\n\\n\", \"\\n\", \". \", \" \"],\n)\n\ndef chunk_id(doc_id: str, pos: int, text: str) -> str:\n    # deterministic → re-ingest of same doc REPLACES its chunks\n    h = hashlib.sha1(text.encode()).hexdigest()[:10]\n    return f\"{doc_id}:{pos}:{h}\"\n\ndef ingest(doc_id: str, text: str, meta: dict):\n    seen = set()\n    for pos, chunk in enumerate(splitter.split_text(text)):\n        cid = chunk_id(doc_id, pos, chunk)\n        seen.add(cid)\n        vec = embed(chunk)\n        store.upsert(id=cid, vector=vec, payload={\n            \"text\": chunk,\n            \"doc_id\": doc_id,\n            \"source\": meta[\"source\"],     # citation\n            \"section\": meta.get(\"section\"),  # structural\n            \"date\": meta[\"date\"],           # freshness filter\n            \"acl\": meta[\"acl\"],             # security filter (GA-17)\n        })\n    # chunks previously stored for this doc but not in `seen` → delete\n    store.delete_where({\"doc_id\": doc_id}, not_ids=seen)\n\n# Same code path handles create, update, AND delete:\n# changed doc → new chunk hashes → old ones purged by the last line.",
+    "annot": [
+      "Separators ordered by structure: headings first → the splitter keeps sections whole when possible",
+      "Hash in the ID means an EDITED chunk gets a new ID (new vector) while unchanged chunks are untouched",
+      "The delete_where cleanup is the part everyone forgets — this is what keeps the index honest"
+    ]
+  },
+  "notes": "# Ingestion & Chunking\n\n## Parsing (per-format traps)\n- **PDF**: layout ≠ reading order; multi-column scramble → layout-aware parser.\n- **DOCX/PPTX/HTML**: structured but noisy (text boxes, nav junk, boilerplate).\n- **Scanned**: OCR only — its accuracy is your ceiling; QC before indexing.\n- **Tables**: hardest — torn rows are unretrievable; serialize with headers or chunk whole.\n\n## Chunking strategies\n| Strategy | How | When |\n|---|---|---|\n| Fixed | every N chars + overlap | demos only |\n| Recursive | paragraphs → sentences → words | **default** |\n| Semantic | cut where embedding distance peaks | precision, costs a pass |\n| Structural | follow headings/sections | well-structured docs |\n\n## Size & overlap\n- ~200–500 tokens prose sweet spot; validate with golden questions.\n- Overlap 50–100 tokens: no sentence lives in only one chunk.\n\n## Metadata per chunk\nsource · section · date · author · ACL → filtering, citations, security, freshness.\n\n## Changing documents\n- Deterministic IDs (doc:pos:hash) → upsert = clean replace.\n- Diff at doc level; re-embed only changed docs.\n- Deletes: cascade chunk removal — no zombie content."
+}
