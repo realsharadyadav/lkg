@@ -63,8 +63,9 @@ def main():
         print(f"[shard {SHARD}] nothing to do", flush=True)
         return
 
+    device = os.environ.get("KOKORO_DEVICE", "mps")
     try:
-        pipe = KPipeline(lang_code="a", device="mps")   # Apple Silicon Metal GPU
+        pipe = KPipeline(lang_code="a", device=device)
     except Exception:
         pipe = KPipeline(lang_code="a")
     enc0 = None
@@ -75,7 +76,7 @@ def main():
         wav = np.concatenate(chunks)
         pcm = (np.clip(wav, -1.0, 1.0) * 32767).astype(np.int16)  # lameenc needs int16 PCM
         enc = lameenc.Encoder()
-        enc.set_bit_rate(48)
+        enc.set_bit_rate(96)
         enc.set_in_sample_rate(24000)
         enc.set_channels(1)
         enc.set_out_sample_rate(24000)
