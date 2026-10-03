@@ -1,0 +1,151 @@
+{
+  "id": "AG-09",
+  "num": 51,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Project: Excel MCP Server",
+  "hook": "The capstone: build a real Excel MCP server — **read tools, SAFE write tools, batch updates, audit trails** — applying every discipline from AG-02 through AG-08.",
+  "chapters": [
+    "Read tools first",
+    "Safe write tools",
+    "Batch operations",
+    "Audit, permissions & recap"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · READ PATH",
+      "title": "Start with eyes: list, read ranges, extract tables",
+      "sub": "openpyxl underneath, MCP on top",
+      "narration": "Every safe system starts read-only. Tool one — list-workbooks: enumerate .xlsx files in the allowed folder with sheet names and dimensions; the model's map of the territory. Tool two — read-range: take a sheet and a cell range — A1:F50 — return values as a structured grid; cap the range size — a million-cell request becomes an actionable error, AG-02 style. Tool three — read-table: find a table by header row and return it as JSON records — column names become keys, rows become objects — the shape models reason about natively. Implementation: openpyxl does the file work — read-only mode, no formula evaluation surprises; formulas come back as formulas, which you DOCUMENT in the tool description so the model isn't surprised by '=SUM(A1:A10)' instead of a number."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "The read tools: structured, capped, documented",
+      "lang": "python",
+      "body": "from mcp.server.fastmcp import FastMCP\nfrom openpyxl import load_workbook\nfrom pathlib import Path\n\nmcp = FastMCP(\"excel\")\nALLOWED = Path(\"/data/spreadsheets\").resolve()   # AG-07 scoping\nMAX_CELLS = 5_000\n\ndef _wb(name: str):\n    p = (ALLOWED / name).resolve()\n    if not str(p).startswith(str(ALLOWED)):\n        raise ValueError(f\"'{name}' outside the allowed folder\")\n    return load_workbook(p, data_only=False)   # formulas visible, documented\n\n@mcp.tool()\ndef list_workbooks() -> list[dict]:\n    \"\"\"List .xlsx files with sheet names and dimensions.\n    Always call this FIRST before reading anything.\n    \"\"\"\n    return [{\"file\": f.name,\n             \"sheets\": [{\"name\": ws.title, \"max_row\": ws.max_row,\n                         \"max_col\": ws.max_column}\n                        for ws in load_workbook(f, read_only=True)]}\n            for f in ALLOWED.glob(\"*.xlsx\")]\n\n@mcp.tool()\ndef read_range(file: str, sheet: str, cell_range: str) -> dict:\n    \"\"\"Read a cell range (e.g. 'A1:F50') as rows of values.\n    Use for structure discovery. For labeled data prefer read_table.\n    Note: formulas return as formula strings, not computed values.\n    Max 5,000 cells per call — read in chunks for big sheets.\n    \"\"\"\n    ws = _wb(file)[sheet]\n    rows = [[c.value for c in row] for row in ws[cell_range]]\n    if sum(len(r) for r in rows) > MAX_CELLS:\n        raise ValueError(f\"range too large (max {MAX_CELLS} cells) — \"\n                         f\"split into smaller ranges\")\n    return {\"range\": cell_range, \"rows\": rows}",
+      "annot": [
+        "list_workbooks is described as the FIRST call — sequencing hints in descriptions shape agent behavior (AG-02)",
+        "data_only=False is a documented choice: seeing '=SUM(...)' beats silently reading a stale cached value",
+        "The same _wb() path-scoping from AG-03 — one check, every tool protected"
+      ],
+      "narration": "Three disciplines visible in fifteen lines. Sequencing: the list tool's description says always-call-first — models follow these hints, so the agent explores before it reads. Honesty about semantics: formula strings versus computed values is exactly the kind of surprise that erodes trust; documenting it in the description means the model can plan around it — 'read values, then evaluate or ask'. Capped reads: the cell limit converts a context bomb into a chunking instruction. Note the openpyxl detail — workbooks loaded per call, no lingering file locks, read-only mode for listing. The read path is safe, legible, and boring — precisely the foundation writes need."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · SAFE WRITES",
+      "title": "Writing is where trust is earned: **backup, dry-run, diff**",
+      "sub": "The three guardrails before any cell changes",
+      "narration": "Now the dangerous tools, made safe by construction. write-cells changes values in a range — but only after three guardrails. ONE: backup — before any mutation, copy the file to a timestamped backup; every write is reversible, forever. TWO: dry-run — a mode where the tool computes EXACTLY what would change and returns it — 'B4: 120 → 145; C4: formula removed' — without touching the file; the model shows the user the plan first. THREE: diff-confirm flow — the actual write requires a diff-token from the dry-run, proving the preview was generated and reviewed; the write tool REFUSES to run without it. Blast-radius limits ride along: max cells per write, protected-sheet detection, no macro-enabled files at all."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "💾", "t": "Automatic backup", "s": "Timestamped copy before EVERY mutation · rollback is a file copy away" },
+        { "e": "🧪", "t": "Dry-run previews", "s": "The plan as data: cell → old value → new value · the model reviews before the user approves" },
+        { "e": "🎫", "t": "Diff-token confirmation", "s": "Writes require the preview's token — no preview, no write · poisoned loops can't skip the human" }
+      ],
+      "narration": "Why the diff-token matters: without it, a poisoned or confused agent could call write-cells directly — AG-07's tool-poisoning scenario, built by your own tool design. With it, the ONLY path to mutation runs through a preview the host renders for a human — the confirmation gate from AG-07 implemented INSIDE the server's semantics. Error design completes the picture: a dry-run that detects a protected sheet, a merged-cell collision, or a formula overwrite returns an actionable error — 'C4 contains a formula that would be replaced; set allow_formula_overwrite=true explicitly or adjust the range'. Every failure names the constraint, the blocking content, and the escape hatch — the AG-02 contract, applied to spreadsheets."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · BATCH",
+      "title": "Batch updates: one change, many files — **the power tool**",
+      "sub": "apply-to-many with per-file results",
+      "narration": "The killer use case: 'update the Q3 rate in all twelve regional workbooks' — a human opens twelve files; an agent calls one tool. batch-update takes a change spec — sheet, range, new values — and a file list, applies it per file with the same backup guardrails, and returns per-file results: applied, skipped-reason, error. Design decisions: partial success is the norm — one locked file shouldn't roll back eleven good ones, so results are per-file and the summary reports counts; idempotency — running the batch twice must be safe, so the tool checks whether the target already matches and reports 'already applied' instead of double-writing; and a batch preview — the dry-run pattern at batch scale, returning the consolidated diff before any execution. This tool is why the audit trail comes next."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Batch update with idempotency + per-file results",
+      "lang": "python",
+      "body": "@mcp.tool()\ndef batch_update(sheet: str, cell_range: str,\n                 values: list[list], files: list[str],\n                 dry_run: bool = True) -> dict:\n    \"\"\"Apply the same cell values across many workbooks.\n\n    Use for cross-file changes (e.g. update a rate in all regions).\n    Always dry_run=true FIRST, review the preview, then call with\n    dry_run=false and the preview's confirm_token.\n    Skips files where the target already matches (idempotent).\n    \"\"\"\n    results = []\n    for name in files:\n        try:\n            wb = _wb(name)\n            current = _read_range(wb, sheet, cell_range)\n            if current == values:\n                results.append({\"file\": name, \"status\": \"already_applied\"})\n                continue\n            if dry_run:\n                results.append({\"file\": name, \"status\": \"would_change\",\n                                \"diff\": _diff(current, values)})\n                continue\n            backup = _backup(name)                 # guardrail 1\n            _write_range(wb, sheet, cell_range, values)\n            results.append({\"file\": name, \"status\": \"applied\",\n                            \"backup\": backup.name})\n        except Exception as e:\n            results.append({\"file\": name,\n                            \"status\": \"error\", \"error\": str(e)})\n    return {\"files\": len(files),\n            \"applied\": sum(r[\"status\"] == \"applied\" for r in results),\n            \"results\": results}   # partial success by design",
+      "annot": [
+        "already_applied check = idempotency: re-running a completed batch is a no-op report, not a rewrite",
+        "dry_run defaults TRUE — the safe path is the short path (defaults are guardrails, AG-02)",
+        "Per-file results: the model can report '10 applied, 1 locked, 1 already done' — honest partial success"
+      ],
+      "narration": "The code reads as a policy document. Dry-run defaults true — an agent must OPT INTO writing, with the confirmation token check omitted here for brevity but required in the real implementation. Idempotency via the current-equals-target check: re-running after a crash mid-batch is safe — applied files report already-applied, the remaining ones apply. Partial success is structured, not exceptional: the per-file results let the model give the user a truthful summary and propose next steps — 'the locked file needs closing in Excel; retry just that one?' And the backup path rides in every applied result, so the audit trail knows where each rollback lives. Twelve files changed in one call, every mutation reversible, every outcome reported — that's the power tool done responsibly."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · AUDIT & PERMISSIONS",
+      "title": "Every edit leaves a trail; every path has a fence",
+      "sub": "Audit logging and folder scoping, completed",
+      "narration": "Close the loop. Audit trail: every mutation — write-cells, batch-update — appends a JSON line to an append-only log: timestamp, user, file, range, old hash, new hash, backup reference, and the dry-run token that authorized it; the log lives OUTSIDE the writable folder — an agent that can edit spreadsheets must not be able to edit its own evidence. Compliance questions — 'who changed the Q3 rate, when, from what' — become a log query. Permissions: the ALLOWED-folder scoping from AG-03 is the whole boundary — everything resolves through it, including the backup directory and the audit log's read path. And folder scope as configuration: deployments declare their folder; a personal instance scopes to ~/Documents, a team server to the shared drive mount — least privilege per deployment, AG-07's rule applied to yourself."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "👁️", "t": "Read tools", "s": "list · read_range · read_table — capped, structured, formula-aware" },
+        { "e": "✍️", "t": "Write tools", "s": "backup → dry-run → diff-token → bounded mutation · batch with idempotency" },
+        { "e": "📜", "t": "Audit & scope", "s": "Append-only log outside the fence · every call through ALLOWED scoping" }
+      ],
+      "narration": "The finished server in three layers — and notice how completely it embodies the stage: AG-02 lives in every docstring and actionable error; AG-03's path-scoping IS the permission model; AG-05's statelessness holds — each tool call independent, handles explicit; AG-06's vetting checklist is what a reviewer would run against THIS server; AG-07's guardrails — backup reversibility, confirmation tokens, audit — are the write path's architecture; AG-08's disciplines — typed signatures, Inspector-tested, deployable over HTTP with OAuth — are the delivery. One spreadsheet server, the whole curriculum. Stage 6 ends here: you can now design tools, wire agents, and ship MCP servers the way the ecosystem's best practices demand — tested, scoped, audited, and honest about what can go wrong."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 6 COMPLETE",
+      "title": "Agents, tools, MCP — built, secured, and shipped.",
+      "next": "Reel 52 · Stage 7: Agent Patterns — ReAct, planning, reflection, human-in-loop"
+    }
+  ],
+  "recap": [
+    "Read path first: list → read_range → read_table, capped and formula-aware, with sequencing hints in descriptions",
+    "Safe writes = backup + dry-run preview + diff-token confirmation; batch updates are idempotent with structured per-file results",
+    "Audit trail append-only and outside the writable fence; folder scoping is the permission model — the stage's disciplines in one server"
+  ],
+  "quiz": [
+    {
+      "q": "Why does write-cells require a diff-token from a dry-run preview?",
+      "opts": [
+        "To speed up writes",
+        "It's the confirmation gate: no previewed diff, no mutation — poisoned or confused agents can't bypass the human",
+        "Excel requires tokens",
+        "To save memory"
+      ],
+      "a": 1,
+      "why": "The token makes 'human reviewed a preview' a precondition enforced in the tool's semantics, not in prompt politeness."
+    },
+    {
+      "q": "What makes batch_update idempotent?",
+      "opts": [
+        "It locks files",
+        "Files whose target already matches are skipped as 'already_applied' — re-running is a no-op report",
+        "It runs once per day",
+        "It uses transactions"
+      ],
+      "a": 1,
+      "why": "Agents retry; idempotency means a retried or partially-completed batch converges to the same end state safely."
+    },
+    {
+      "q": "Why does the audit log live OUTSIDE the writable folder?",
+      "opts": [
+        "For faster writes",
+        "An agent that can edit spreadsheets must not be able to edit its own evidence — the log must survive a compromised write path",
+        "Backups need the space",
+        "openpyxl requires it"
+      ],
+      "a": 1,
+      "why": "Audit integrity equals audit independence: evidence separated from the actions it records."
+    }
+  ],
+  "code": {
+    "title": "The complete tool surface (7 tools, one policy)",
+    "body": "# READS (always allowed, capped)\nlist_workbooks()                     # map first\nread_range(file, sheet, \"A1:F50\")   # ≤5,000 cells\nread_table(file, sheet, header_row)  # JSON records\n\n# WRITES (guarded: backup → preview → token → bounds)\npreview_write(file, sheet, range, values)   # → diff + confirm_token\nwrite_cells(..., confirm_token=...)         # refuses without valid token\nbatch_update(sheet, range, values, files,\n             dry_run=True)                  # idempotent, per-file results\n\n# EVERYWHERE\n#   _wb(): ALLOWED-folder scoping            (AG-03/07)\n#   audit.jsonl: append-only, outside fence  (AG-07)\n#   docstrings: when / when-not / limits     (AG-02)\n#   FastMCP + Inspector-tested               (AG-08)\n#\n# Total: ~300 lines. That's the whole production server.",
+    "annot": [
+      "Seven tools is the whole surface — small and legible beats broad and surprising",
+      "The token flow appears exactly once in the API: preview returns it, write consumes it, audit records it",
+      "Every guardrail references its source discipline — the codebase IS the stage's notes"
+    ]
+  },
+  "notes": "# Project: Excel MCP Server\n\n## Read path\n- list_workbooks (call first) · read_range (≤5k cells) · read_table (JSON records).\n- openpyxl data_only=False — formulas as strings, documented in description.\n\n## Safe writes\n- Guardrails: timestamped backup → dry-run preview → diff-token confirmation → bounds.\n- Actionable errors for protected sheets, merged cells, formula overwrites.\n\n## Batch\n- Same change across files: dry_run default true · idempotent (already_applied) · per-file results, partial success by design.\n\n## Audit & permissions\n- Append-only JSONL log OUTSIDE the writable folder: ts, user, file, range, hashes, backup ref, token.\n- ALLOWED-folder scoping = permission model.\n\n**Capstone: AG-02→AG-08 embodied in ~300 lines.**"
+}

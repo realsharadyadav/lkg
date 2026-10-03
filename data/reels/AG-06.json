@@ -1,0 +1,148 @@
+{
+  "id": "AG-06",
+  "num": 48,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Using Existing MCP Servers",
+  "hook": "Hundreds of MCP servers exist — filesystem, GitHub, databases. Using them well is a **security and governance exercise** wearing a configuration file.",
+  "chapters": [
+    "The reference server zoo",
+    "Connecting from hosts",
+    "Trust: the supply-chain question",
+    "MCP gateways"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE ZOO",
+      "title": "Reference servers: don't build what already exists",
+      "sub": "The maintained menagerie and what each is for",
+      "narration": "Before writing a line of MCP code, know the shelf. The reference implementations cover the everyday cases: filesystem — read, write, and search files under an allowed directory, with the path-scoping guardrails from AG-03 built in; database servers — Postgres, SQLite, running SQL against configured connections with read-only modes; GitHub — issues, pull requests, repository search, letting agents work your repos through curated tools; fetch — retrieving web content for the agent; plus memory, Slack, Google Drive and hundreds of community servers. The point isn't a catalog — it's the strategy: these are MAINTAINED by the community, follow spec updates like AG-05's stateless core, and have been reviewed by more eyes than anything you'll write quickly. Consume first; build only what's missing."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📁", "t": "Filesystem", "s": "Scoped to allowed directories · the AG-03 workspace pattern, standardized" },
+        { "e": "🐘", "t": "Database (Postgres/SQLite)", "s": "Configured connections · read-only modes · GA-18's fences at the server boundary" },
+        { "e": "🐙", "t": "GitHub", "s": "Issues, PRs, code search · agents that triage, summarize and draft — your token, your repos" }
+      ],
+      "narration": "Two usage patterns cover most adoption. Local stdio servers — filesystem, memory — configure in your host's settings file, run as local processes, perfect for personal productivity agents. Remote servers — a team's internal tools, SaaS connectors — run over HTTP with real auth, which is where AG-07's security practices become mandatory. A concrete composed example: an IDE agent with filesystem plus GitHub plus a database server can answer 'which issues mention the payment module and what do the logs say' — three servers, one conversation, zero custom integration code. That's the N-times-M collapse paying rent. The discipline: start from the reference implementation even when building custom — fork, scope down, keep the security defaults."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · CONNECTING",
+      "title": "Configuration is a security surface",
+      "sub": "How hosts load servers — and what each line grants",
+      "narration": "Connecting a stdio server means an entry in the host's config: a command, arguments, environment variables. Understand what you're declaring: the command runs with YOUR user permissions — a server entry is executable code installation, as surely as pip-installing a package; environment variables are secrets in plaintext config — API keys in a config file deserve the same care as .env files; arguments like allowed-directories ARE the security policy for filesystem-type servers — the difference between 'read my project' and 'read my entire home directory including SSH keys'. Remote servers add a URL and an auth flow — and OAuth consent screens are the user's one chance to see what they're granting. Treat config edits as code changes: reviewed, versioned, minimal."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "A host config, read as a policy document",
+      "lang": "json",
+      "body": "{\n  \"mcpServers\": {\n    \"project-files\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\",\n               \"/Users/me/projects/acme\"],   // ← THE security boundary\n      \"env\": {}\n    },\n    \"github\": {\n      \"command\": \"npx\",\n      \"args\": [\"-y\", \"@modelcontextprotocol/server-github\"],\n      \"env\": { \"GITHUB_TOKEN\": \"ghp_…\" }   // ← plaintext secret: scope it!\n    },\n    \"internal-crm\": {\n      \"url\": \"https://mcp.corp.example.com\",\n      \"headers\": { \"Authorization\": \"Bearer ${CRM_TOKEN}\" }\n    }\n  }\n}\n\n// Every line grants something. Review this file like code.",
+      "annot": [
+        "The filesystem path argument IS the sandbox — one directory, not your home folder",
+        "GITHUB_TOKEN: use a fine-grained token scoped to exactly the repos the agent needs",
+        "Remote server: the URL's operator can see every request — internal servers still need TLS + auth (AG-07)"
+      ],
+      "narration": "Read the config as capabilities, not convenience. The filesystem server's path argument is its entire security model — keep it at project scope; the moment it points at your home directory, every prompt-injection in any document the agent reads can reach your SSH keys. The GitHub token deserves fine-grained scoping — a classic full-access PAT in a config file turns a clever prompt into repo-wide damage. The remote entry raises the operator question: who runs mcp-dot-corp, what do they log, is the transport authenticated and encrypted — enterprise answers come next reel via gateways. Rule of thumb: if you wouldn't paste a line into a shell, don't paste it into this config without thinking."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · TRUST",
+      "title": "An MCP server is a supply-chain dependency. **Audit it like one.**",
+      "sub": "Choosing trustworthy servers",
+      "narration": "The uncomfortable math: an MCP server holds credentials and executes actions — a malicious or compromised server is a malicious or compromised employee. So evaluate servers like dependencies. Provenance: prefer official or reference implementations from the ecosystem's known maintainers over random registry entries; a server from the vendor whose API it wraps beats a third party re-implementation. Behavior review: read what it exposes — the tool list is the attack surface; a 'filesystem' server that also shells out to curl is not a filesystem server. Permissions: does it request the minimum scopes for its job — a read-only search server wanting write tokens is a red flag. Update posture: does it track spec revisions — AG-05's deprecations — or is it abandoned? And npx-running servers execute freshly fetched code — pin versions."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🏛️", "t": "Provenance first", "s": "Official/reference implementations · vendor-authored for their own APIs · known maintainers" },
+        { "e": "🔍", "t": "Read the tool surface", "s": "The tool list IS the attack surface · unexpected capabilities = investigate or decline" },
+        { "e": "📌", "t": "Pin & update deliberately", "s": "Version-pinned installs · track spec updates · abandoned servers are liabilities" }
+      ],
+      "narration": "The pin-versions point deserves expansion because npx and pip-style invocations make it invisible: 'npx some-server' fetches and executes the LATEST package at run time — a supply-chain attack on the package becomes an attack on you, automatically. Pin the version, and let updates be a deliberate diff you review. For internal adoption, run a registry review process: a curated allow-list of approved servers, vetted once, versioned, with the vetting recorded — the same discipline as approving open-source libraries, which is exactly what these are. And log what servers are connected where: shadow IT MCP servers — a developer connecting a random calendar server — are the 2026 version of the unauthorized SaaS integration, with the same data-exfiltration shape."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · GATEWAYS",
+      "title": "MCP gateways: the enterprise control plane",
+      "sub": "One front door for every server",
+      "narration": "Individual config files don't scale to an enterprise — that's what MCP gateways solve. A gateway sits between hosts and servers: the organization's servers sit behind it; employees' hosts connect to the gateway, not to servers directly. What the gateway adds: centralized auth — one identity integration, SSO, per-user permissions instead of per-server token sprawl; audit — every tool call logged, attributable, reviewable — the compliance answer to 'what did the AI do?'; policy — which servers and tools each user or group may reach, enforced at the boundary; lifecycle — servers are registered, versioned, and swapped without touching thousands of host configs. The gateway turns a folder of JSON configs into infrastructure: operated, observed, governed."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "🖥️", "t": "Hosts (employees' apps)", "s": "One gateway endpoint · no per-server credentials on endpoints" },
+        { "e": "🚪", "t": "MCP gateway", "s": "AuthN/AuthZ per user · full call audit · policy enforcement · server registry" },
+        { "e": "🧰", "t": "Registered servers", "s": "Internal + vetted third-party · credentials live HERE, not on endpoints" }
+      ],
+      "narration": "The security win in one picture: credentials move from thousands of endpoints into the gateway's vault; employees bring identity, not secrets; every call passes a policy check and lands in an audit log. This is the same pattern as API gateways before it — and it inherits the same operational truths: the gateway is now critical infrastructure — high availability, monitoring, careful rollout of policy changes; governance must stay fast enough not to be routed around — a gateway so slow to approve new servers that developers run local stdio servers in secret has failed its purpose. For a team of five, a gateway is overkill — configs and reviews suffice. For five hundred, it's how MCP stays a platform instead of becoming an incident generator."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-07",
+      "title": "Connected and governed. Now the threat model in detail.",
+      "next": "Reel 49 · MCP Security — poisoning, over-permissioned servers, token handling"
+    }
+  ],
+  "recap": [
+    "Consume before building: reference servers (filesystem, DB, GitHub) are maintained and spec-current — fork and scope, don't start from zero",
+    "Host configs are security policy: the filesystem path argument is the sandbox, tokens deserve fine-grained scopes, remote URLs need an operator you trust",
+    "Servers are supply-chain dependencies: provenance, pinned versions, audited tool surfaces; gateways centralize auth, audit, and policy at enterprise scale"
+  ],
+  "quiz": [
+    {
+      "q": "Why is 'npx -y some-mcp-server' a supply-chain risk?",
+      "opts": [
+        "npx is slow",
+        "It fetches and executes the LATEST package at runtime — a compromised release executes automatically",
+        "Node.js is insecure",
+        "Servers can't run via npx"
+      ],
+      "a": 1,
+      "why": "Unpinned package execution is arbitrary-code delivery from the package registry; pin versions and review updates deliberately."
+    },
+    {
+      "q": "What does an MCP gateway centralize for an enterprise?",
+      "opts": [
+        "Model inference",
+        "AuthN/AuthZ, audit logging, policy enforcement, and the server registry — with credentials off endpoints",
+        "Prompt templates",
+        "Vector storage"
+      ],
+      "a": 1,
+      "why": "One front door replaces per-endpoint credentials and configs with governed, auditable infrastructure."
+    },
+    {
+      "q": "A read-only search MCP server requests a write-scoped API token. What should you do?",
+      "opts": [
+        "Approve it — tokens are interchangeable",
+        "Treat it as a red flag: grant minimum scopes, or decline the server",
+        "Give it an admin token instead",
+        "Ignore token scopes"
+      ],
+      "a": 1,
+      "why": "Permission requests beyond function are a core trust signal — least privilege applies to servers exactly as to users."
+    }
+  ],
+  "code": {
+    "title": "The server-vetting checklist",
+    "body": "# Before adding ANY MCP server to your stack:\n\nprovenance:\n  □ Official/reference impl, or vendor-authored for its own API?\n  □ Known maintainers, public repo, issue responsiveness?\n\nsurface:\n  □ Read the exposed tools — does each match the server's stated job?\n  □ Any unexpected capabilities (shell, network, file writes)?\n\npermissions:\n  □ Minimum scopes? Read-only where possible?\n  □ Credentials scoped to specific repos/paths, not broad?\n\noperations:\n  □ Version pinned (npx pkg@1.2.3 / lockfile), not latest?\n  □ Tracks MCP spec revisions (post-2026-07-28 aware)?\n  □ Logged in the team server registry (no shadow IT)?\n\n# 2 minutes per server. Cheaper than one incident.",
+    "annot": [
+      "The checklist is short on purpose — it has to be usable on every adoption decision",
+      "'Unexpected capabilities' is the highest-signal line: scope creep in a tool list is how benign servers become dangerous",
+      "Registry logging closes the loop: you can't audit what you don't know is connected"
+    ]
+  },
+  "notes": "# Using Existing MCP Servers\n\n## Reference servers\n- Filesystem (scoped dirs) · databases (read-only modes) · GitHub · fetch · hundreds community-maintained.\n- Strategy: consume → fork/scope → build only what's missing.\n\n## Connecting\n- stdio = local config: command + args + env. Config IS security policy.\n- Filesystem path arg = the sandbox. Tokens fine-grained. Remote URLs need trusted operators.\n\n## Trust (supply chain)\n- Provenance (official/vendor) · read the tool surface · minimum scopes · pin versions · track spec updates · registry (no shadow IT).\n\n## Gateways\n- Enterprise control plane: central auth (SSO), full audit, policy, server registry.\n- Credentials off endpoints. Critical infra — but governance must stay fast."
+}

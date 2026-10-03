@@ -1,0 +1,152 @@
+{
+  "id": "AG-08",
+  "num": 50,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "MCP Server Development",
+  "hook": "Time to BUILD: a production MCP server — typed tools, exposed resources, tests, an Inspector, deployment with auth, and observability. **FastMCP makes the first 80% minutes, not weeks.**",
+  "chapters": [
+    "FastMCP: first server",
+    "Resources & typed design",
+    "Testing with the Inspector",
+    "Deployment: HTTP, auth, observability"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · FASTMCP",
+      "title": "FastMCP: decorators turn functions into tools",
+      "sub": "The Python SDK's fast path — and the C# sibling for .NET teams",
+      "narration": "The official Python SDK ships FastMCP: a decorator-driven framework where plain typed functions BECOME MCP tools — annotations become schemas, docstrings become descriptions, type hints become validation. Write a function, decorate it, run — you have a stdio server. That's genuinely the whole getting-started path, and it's why AG-06 said consume-first still leaves room for internal systems: building the custom server your org needs is no longer the hard part. For C-sharp teams, the official C-sharp SDK mirrors the model — attributes on methods, ASP.NET hosting — same protocol, your native stack. The architectural reminder: FastMCP handles the protocol plumbing; YOU still own AG-02's disciplines — good descriptions, validation, actionable errors."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "A complete stdio server in one file",
+      "lang": "python",
+      "body": "from mcp.server.fastmcp import FastMCP\nimport sqlite3\n\nmcp = FastMCP(\"orders\")\nDB = \"orders.db\"   # dedicated read-only role in production!\n\n@mcp.tool()\ndef search_orders(customer: str, limit: int = 5) -> list[dict]:\n    \"\"\"Search orders by customer name fragment.\n\n    Use for order-history questions. Do NOT use for live inventory\n    (use check_inventory). Customer is a name fragment like 'acme'.\n    \"\"\"\n    with sqlite3.connect(DB) as con:\n        rows = con.execute(\n            \"SELECT id, customer, total, status FROM orders \"\n            \"WHERE customer LIKE ? LIMIT ?\",\n            (f\"%{customer}%\", limit)).fetchall()\n    return [{\"id\": r[0], \"customer\": r[1],\n             \"total\": r[2], \"status\": r[3]} for r in rows]\n\n@mcp.resource(\"order://{order_id}\")\ndef get_order(order_id: int) -> str:\n    \"\"\"Full order record as readable markdown.\"\"\"\n    with sqlite3.connect(DB) as con:\n        row = con.execute(\n            \"SELECT * FROM orders WHERE id = ?\", (order_id,)).fetchone()\n    if not row:\n        raise ValueError(f\"no order {order_id} — check the id in search_orders results\")\n    return format_order_markdown(row)\n\nif __name__ == \"__main__\":\n    mcp.run()   # stdio transport, local use",
+      "annot": [
+        "The docstring IS the tool description — AG-02 discipline lives in the docstring, enforced by convention",
+        "Pydantic-typed signature → JSON schema; types + defaults + ranges validate before your code runs",
+        "@mcp.resource exposes DATA (read path) separately from tools (actions) — the protocol's core split"
+      ],
+      "narration": "Twenty-five lines, two capabilities, all the AG-02 properties present: the docstring carries the when/when-not description; type hints make limit an integer with a default; the resource raises an actionable error naming the fix path. That's the FastMCP contract — your Python signature IS the schema, and the docstring IS the documentation the model reads. Note the read-only SQL and parameterized queries — the server is the trust boundary from AG-06, so the database fences from GA-18 apply here verbatim. Run this file and any MCP host can connect over stdio. What's deliberately missing: auth, remote transport, tests, observability — the remaining three chapters."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · DESIGN",
+      "title": "Design for the reader: resources, prompts, and small surfaces",
+      "sub": "Typed inputs, visible state, minimal capability sets",
+      "narration": "Beyond tools, complete the primitive set. Resources: expose your data as addressable URIs — order://123, file paths, report://q3 — the host app attaches them to context deliberately; design URI schemes that mirror how users think about the data. Prompts: if users repeatedly ask the same SHAPES of questions — 'summarize this order's issues' — ship them as prompt templates, user-selected, consistent. Typed everything: Pydantic models for inputs AND outputs — structured returns become renderable tables in hosts, not walls of text. And the sizing rule from AG-02 applies verbatim: keep the server's surface small and legible — five excellent tools beat fifteen overlapping ones; group or split servers rather than bloat one. Your server's tool list is a user interface — design it like one."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🗂️", "t": "Resources mirror mental models", "s": "URIs like order://123 or report://q3 — users and hosts navigate data the way they name it" },
+        { "e": "📦", "t": "Structured outputs", "s": "Return models, not prose → hosts render tables/cards · errors as typed results where recoverable" },
+        { "e": "🗜️", "t": "Small surfaces", "s": "5 legible tools > 15 overlapping · split servers by domain instead of bloating one" }
+      ],
+      "narration": "One more design decision with outsized consequences: state. The 2026-07-28 spec is stateless — your server should be too; if a workflow genuinely needs state across calls — a multi-step transaction, a draft being built — pass explicit handles as arguments, AG-05's pattern: 'apply_changeset' taking the handle returned by 'prepare_changeset'. Explicit handles are visible to the model, survive load balancing, and turn invisible session bugs into reviewable arguments. Versioning belongs here too: servers evolve; keep tool signatures backward-compatible where possible, document breaking changes, and let hosts pin. A server is a published API — the consumers are models and the applications hosting them, and both read your surface literally."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · TESTING",
+      "title": "The MCP Inspector: your server's test bench",
+      "sub": "Interactive debugging, then scripted tests",
+      "narration": "The MCP SDKs ship the Inspector — a visual tool that connects to any server and lets you poke it: list tools, read their schemas, invoke calls with editable JSON, watch requests and responses flow. Development loop: start the Inspector against your server, call each tool with realistic and hostile inputs, read the errors the model would see, fix, repeat. This closes AG-02's feedback loop empirically — you're testing the model's actual experience of your tool, not your intentions for it. Then automate: the SDK provides in-memory client connections, so pytest can drive your server end-to-end — PY-22's suite, now speaking MCP: tool discovery returns the expected schema; validation rejects bad args; error messages are actionable; happy paths return the right shapes. Test the protocol surface AND the logic."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "pytest against a live in-process server",
+      "lang": "python",
+      "body": "import pytest\nfrom mcp import ClientSession, StdioServerParameters\nfrom mcp.client.stdio import stdio_client\n\n@pytest.fixture\nasync def session():\n    params = StdioServerParameters(command=\"python\", args=[\"server.py\"])\n    async with stdio_client(params) as (r, w):\n        async with ClientSession(r, w) as s:\n            await s.initialize()\n            yield s\n\nasync def test_tool_schema_is_documented(session):\n    tools = await session.list_tools()\n    t = next(t for t in tools.tools if t.name == \"search_orders\")\n    assert \"Do NOT use\" in t.description      # AG-02 boundary present\n    assert t.inputSchema[\"properties\"][\"limit\"][\"default\"] == 5\n\nasync def test_bad_args_fail_actionably(session):\n    with pytest.raises(Exception) as e:\n        await session.call_tool(\"search_orders\", {\"limit\": -3})\n    assert \"limit\" in str(e.value).lower()    # actionable, names the fix\n\nasync def test_resource_roundtrip(session):\n    r = await session.read_resource(\"order://1\")\n    assert \"customer\" in r.contents[0].text",
+      "annot": [
+        "The session fixture runs the REAL server process — protocol-level, not function-level",
+        "Testing the DESCRIPTION is deliberate: schema/docs drift is how tool selection silently rots",
+        "Bad-arg tests assert the error QUALITY — the property the model depends on to self-correct"
+      ],
+      "narration": "Three test classes that cover the server's contract with its consumers. Schema tests pin the description discipline — the 'Do NOT use' boundary and defaults stay present as the code evolves; this is where AG-02 becomes regression-protected instead of aspirational. Failure tests verify the actionable-error property with real protocol round-trips — the assertion checks the error names the fix, because that's what the loop needs. Round-trip tests prove resources and tools return what hosts will render. Compose with PY-22's FakeProvider pattern for the LOGIC underneath — the server tests cover the protocol surface; unit tests cover the internals. And add one golden question per tool — 'what would a user ask that should route here' — as living documentation that doubles as a smoke test."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DEPLOYMENT",
+      "title": "From stdio to service: HTTP transport, auth, logs, versions",
+      "sub": "Operating a remote MCP server for real users",
+      "narration": "Shipping a remote server is operating a service. Transport: FastMCP's run command switches to streamable HTTP — now it sits behind normal infrastructure: load balancers, health checks, zero-downtime deploys — the stateless spec's payoff from AG-05. Auth: real OAuth — the hardened model from the 2026-07-28 revision, or a gateway in front — remote servers without auth are public tools with your credentials. Observability: structured logs of every tool call — PY-22's discipline — plus RED metrics and tracing; remember the spec no longer carries protocol-level logging, so YOUR telemetry IS the story. Versioning: pin the spec revision you implement, track deprecations, keep the surface backward-compatible. And compatibility: negotiation means old clients will connect — decide explicitly which revisions you support."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "🌐", "t": "HTTP transport", "s": "streamable HTTP · load-balancer friendly · health checks · stateless" },
+        { "e": "🔐", "t": "Auth boundary", "s": "OAuth per spec · or gateway in front · short-lived tokens" },
+        { "e": "📡", "t": "Observability", "s": "Per-call structured logs · RED metrics · traces · cost per call" },
+        { "e": "🏷️", "t": "Versioning", "s": "Spec revision pinned · deprecation tracking · backward-compat surface" }
+      ],
+      "narration": "The operational checklist, as layers. Hosting: containerize, scale horizontally, exploit statelessness — no session stickiness anywhere. Auth: use the spec's OAuth rather than bespoke headers — interop with hosts is the point of the protocol, and homegrown auth breaks it; an enterprise gateway from AG-06 can absorb this if you have one. Observability specifics for MCP: log tool name, arg hash, latency, result size, and USER — not raw args when they carry sensitive data; alert on anomalies — error-rate spikes, unusual volume — AG-07's monitoring layer is your code now. Cost: remote servers pay per call for their backends; track cost per tool call and set budgets, or one enthusiastic agent loop becomes a five-figure line item. Operated well, a remote MCP server is a small, valuable, boring service — the highest compliment infrastructure gets."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-09",
+      "title": "Every skill assembled. One project to bind them.",
+      "next": "Reel 51 · Project: Excel MCP Server — safe spreadsheet tools, end to end"
+    }
+  ],
+  "recap": [
+    "FastMCP: typed functions + docstrings become tools/resources in minutes — your signature is the schema, your docstring is the model's documentation",
+    "Design small surfaces: resources for data, prompts for repeated shapes, explicit handles for state; test with the Inspector plus scripted protocol tests",
+    "Remote deployment = operating a service: streamable HTTP, spec-aligned OAuth, per-call observability, pinned revisions and deprecation tracking"
+  ],
+  "quiz": [
+    {
+      "q": "In FastMCP, what becomes the MCP tool's description?",
+      "opts": [
+        "A separate YAML config",
+        "The function's docstring — so AG-02's description discipline is written in the docstring",
+        "The function name only",
+        "An annotation argument"
+      ],
+      "a": 1,
+      "why": "The docstring convention makes documentation unavoidable — the model reads what you wrote in the docstring, verbatim."
+    },
+    {
+      "q": "What's the recommended pattern for multi-call state under the stateless spec?",
+      "opts": [
+        "Shared session storage",
+        "Explicit handles passed as tool arguments — state visible to the model, survives load balancing",
+        "Hidden server globals",
+        "Client-side cookies"
+      ],
+      "a": 1,
+      "why": "Stateless servers can't hold per-client state between calls — explicit handles keep state reviewable and infrastructure simple."
+    },
+    {
+      "q": "Why test that tool descriptions contain 'Do NOT use' boundaries?",
+      "opts": [
+        "Boundary text improves SEO",
+        "Description drift silently degrades model tool selection — schema tests make AG-02's discipline regression-protected",
+        "Hosts require it",
+        "It shortens tool lists"
+      ],
+      "a": 1,
+      "why": "The description is behavior: pinning it in tests prevents well-meaning refactors from randomizing the agent's choices."
+    }
+  ],
+  "code": {
+    "title": "The same server, deployed: HTTP + logging + auth hook",
+    "body": "from mcp.server.fastmcp import FastMCP\nimport logging, structlog\n\nlog = structlog.get_logger(\"mcp.orders\")\nmcp = FastMCP(\"orders\")\n\n@mcp.tool()\ndef search_orders(customer: str, limit: int = 5) -> list[dict]:\n    \"\"\"Search orders by customer name fragment … (same docstring!)\"\"\"\n    log.info(\"tool.call\", tool=\"search_orders\",\n             arg_hash=hash((customer, limit)),      # not raw args\n             user=current_user_id())               # auth context from hook\n    ...\n\n# Local:   mcp.run()                          # stdio\n# Remote:  mcp.run(transport=\"http\",\n#                  host=\"0.0.0.0\", port=8080,\n#                  auth=oauth_provider)       # spec-aligned OAuth\n#\n# Ops:  per-call logs · latency histograms · error-rate alerts ·\n#       cost-per-tool dashboards · pinned spec revision in CI",
+    "annot": [
+      "One code base, two transports — local stdio for dev, HTTP for production",
+      "Log arg hashes + user, never raw args — telemetry without a leak surface (AG-07)",
+      "The auth hook is where user identity enters — tools stay user-agnostic, authorization centralizes"
+    ]
+  },
+  "notes": "# MCP Server Development\n\n## FastMCP\n- Decorators: typed function → tool; docstring → description; Pydantic → schema.\n- C# SDK mirrors it (attributes + ASP.NET hosting).\n- You still own AG-02: descriptions, validation, actionable errors.\n\n## Design\n- Resources with mental-model URIs · prompts for repeated shapes · structured outputs.\n- Small surfaces: ~5 legible tools; split by domain.\n- Stateless: explicit handles as arguments for multi-call state.\n\n## Testing\n- MCP Inspector: interactive poke-list-invoke loop — test the model's experience.\n- Scripted: in-process sessions in pytest — schema/docs drift, failure quality, round-trips.\n\n## Deployment\n- streamable HTTP · load balancer friendly · spec-aligned OAuth (or gateway).\n- Observability: per-call structured logs (hash args, log user), RED metrics, cost/call.\n- Pin spec revision · track deprecations · backward-compatible surface."
+}
