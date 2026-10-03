@@ -1,0 +1,145 @@
+{
+  "id": "AG-16",
+  "num": 58,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Framework Selection",
+  "hook": "Framework choice is a two-to-three-year bet. Choose with a **matrix, a bake-off, and an exit plan** — not a demo-day feeling.",
+  "chapters": [
+    "The selection matrix",
+    "Lock-in & portability",
+    "The hands-on bake-off",
+    "Decision discipline"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · MATRIX",
+      "title": "Score what you can't change later — **high weight on the boring axes**",
+      "sub": "Control, ecosystem, language, maturity",
+      "narration": "The selection matrix: axes that actually predict two years of experience. CONTROL — who owns the control flow: explicit graphs — LangGraph — give you determinism, interrupts, audit points; convention-based frameworks — CrewAI — trade control for speed; know which your problem demands — a compliance-shaped workflow and a prototype have opposite needs. ECOSYSTEM — docs quality, example coverage, community answers at 2 a.m., hiring pool; ecosystems compound, and a brilliant lonely framework is a staffing risk. LANGUAGE AND RUNTIME — .NET estates shouldn't contort into Python-only frameworks when MAF speaks both natively; conversely a Python data team gains nothing from a .NET-shaped design. MATURITY — not version number, but pulse: release cadence, maintainer responsiveness, how fast it absorbed the 2026-07-28 MCP spec. Weight the boring axes highest: control, ecosystem, and maturity are hard to change; features are negotiable."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🎛️", "t": "Control", "s": "Graphs/determinism vs convention/speed · audit points · human-in-the-loop placement" },
+        { "e": "🌍", "t": "Ecosystem", "s": "Docs, examples, Stack-overflow-at-midnight answers, hiring pool" },
+        { "e": "💓", "t": "Maturity pulse", "s": "Release cadence · spec absorption speed (2026-07-28) · maintainer responsiveness" }
+      ],
+      "narration": "The weighting error to avoid: feature-list comparison. Frameworks converge on features — they all have memory, streaming, retries, eventually — so today's feature gap is tomorrow's changelog entry. What does NOT converge: a control-flow philosophy — moving a system from graph-explicit to convention-based is a rewrite; an ecosystem — switching means your team re-learns everything; a community's momentum — a framework that absorbed the stateless MCP spec in weeks versus one still catching up tells you about its next two years. Score candidates one-to-five per axis, weight maturity and ecosystem double, and let the arithmetic argue against your enthusiasm. The matrix's real job is making the decision reviewable — a scored document colleagues can challenge beats a defended preference."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · LOCK-IN",
+      "title": "Price the exit before you enter",
+      "sub": "Lock-in & portability: what switching actually costs",
+      "narration": "Every framework sells a beginning; architects price the ending. The lock-in layers, cheapest to most expensive: model bindings — frameworks that assume one vendor's models cost a migration when you go multi-provider; the neutral ones abstract models, so this layer is cheap to switch. Tool integrations — if your tools ride MCP — AG-04 through AG-09 — they port across frameworks nearly free; bespoke framework-native tool formats are a rewrite. State and orchestration logic — the expensive layer: your graph structure, checkpoint formats, interrupt semantics, and all the tacit behavior encoded in framework idioms; this is where real switching cost lives. Portability practices that keep it low: keep business logic in PLAIN functions the framework calls, not in framework-shaped code — your RAG pipeline from Stage 4 should import into any framework unchanged; isolate framework types at the edges; and prefer protocol-based integrations — MCP for tools, A2A for agents — as the default, so the framework becomes a replaceable shell."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "🧱", "t": "Framework-shaped code", "s": "Business logic woven into framework idioms · switching = rewrite · fast start, expensive exit", "win": false },
+        { "e": "🧅", "t": "Plain core + framework shell", "s": "Logic in plain functions · framework at the edges · protocols for integrations · exit = re-shell, not rebuild", "win": true }
+      ],
+      "narration": "The test for framework-shaped code: 'could I call this business function from a script, a test, and a different framework?' If the function imports the framework's types, mutates its state objects, and only runs inside its runtime — the framework has become your application. The shell pattern inverts it: pipeline logic from Stage 4, tool schemas from AG-02, memory stores from AG-12 — all plain, all testable with PY-22's suite, all framework-agnostic — and a thin framework layer for the parts you actually bought: orchestration, checkpoints, observability. Onion architecture, old as software, freshly relevant: the framework is a layer you can peel, not a foundation you pour. Write the exit plan while adopting — 'if we outgrow this, the migration path is…' — because the day you need it, the people who chose the framework may be gone."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · BAKE-OFF",
+      "title": "The bake-off: same task, two frameworks, one afternoon",
+      "sub": "Evidence over enthusiasm — how to run it honestly",
+      "narration": "The single most informative evaluation: implement the SAME representative task in your top two candidates. Design the task FIRST — it must be representative, not trivial: include one tool call, one conditional branch, one failure path, one human checkpoint if your domain needs it — 'trivial demo' bake-offs crown the flashiest framework, not the best. Score the same dimensions in both: time-to-working — hours from zero to passing the happy path; lines of code that are YOURS versus the framework's — the ratio predicts maintenance; debuggability — when you intentionally break a tool, how fast do you find it, and how good is the error; test ergonomics — can PY-22-style tests drive the framework; and observability — can you SEE what happened in a run without adding instrumentation? Run the bake-off yourself — or watch it live — because secondhand impressions hide the friction you'll live with."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "⏱️", "t": "Time-to-working", "s": "Zero → happy path, in hours · includes docs friction and setup surprises" },
+        { "e": "🔍", "t": "Break-it debugging", "s": "Intentionally fail a tool · time-to-diagnosis · error message quality (AG-02 lens)" },
+        { "e": "👁️", "t": "Visibility", "s": "Can you see traces, state, and decisions without writing instrumentation first?" }
+      ],
+      "narration": "What the bake-off reliably reveals that no comparison article can: the framework's failure personality — what its errors look like when YOUR use case breaks, at YOUR skill level, on YOUR deadline. A framework with elegant happy-path docs and cryptic failure modes will tax you forever; the break-it test surfaces that in thirty minutes. Also revealing: the ratio of framework configuration to application code — if forty percent of your bake-off file is ceremony — schemas, boilerplate, incantations — that percentage persists into production. And test ergonomics predict everything else: if you can't drive the framework from pytest in the bake-off, your quality story — PY-22, GA-20 — dies at adoption. Document the bake-off with the actual code and scores; it becomes the decision record and the onboarding artifact for whichever framework wins."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DISCIPLINE",
+      "title": "Decide like it matters — because it does, for years",
+      "sub": "The decision record, the review trigger, the re-evaluation cadence",
+      "narration": "Close with decision discipline. Write the ADR — architecture decision record: the options scored, the bake-off evidence, the weights, the chosen framework, and the EXPLICIT exit conditions — 'we reconsider if the repo goes quiet for six months, if MCP support lags a spec revision, or if our scale exceeds X' — pre-agreeing the tripwires prevents sunk-cost attachment. Set the review cadence: quarterly, fifteen minutes, one question — 'would we choose this again TODAY, knowing what we now know?' — a yes costs little; a no early is cheap, a no after two years of entanglement is expensive. And normalize re-evaluation: frameworks rise and fall on a two-year clock now — the team that treats the original decision as permanent will run a 2024 framework in 2028; the team that treats it as revisable captures each generation's gains. Choose well, document fully, review cheaply, switch bravely. Stage 7's final word: frameworks are tools; the patterns — the loops, the graphs, the protocols — are the craft."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "📋", "t": "Score", "s": "Matrix: control, ecosystem, language, maturity — weighted, reviewable" },
+        { "e": "🔬", "t": "Test", "s": "Bake-off: same task, two frameworks, honest dimensions" },
+        { "e": "🧅", "t": "Structure", "s": "Plain core + framework shell + protocol integrations = cheap exits" },
+        { "e": "🔁", "t": "Review", "s": "ADR + tripwires + quarterly 'would we choose this again?'" }
+      ],
+      "narration": "The four-step discipline as an architecture. Notice it prices everything: scoring prices ignorance, the bake-off prices marketing, shell-structure prices lock-in, and review prices drift. What it deliberately does NOT do: chase the newest framework — adoption timing is its own matrix; being six months late to a winning framework costs far less than being two years early on a losing one. And a closing symmetry with where the LKG journey started: you began by writing a thirty-line agent loop in AG-01; you now hold the full map — patterns, memory, architectures, frameworks, and the judgment to choose among them. The remaining stages turn this craft toward production: operating agents at scale, securing them, and shipping the capstone projects."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 7 COMPLETE",
+      "title": "Patterns, memory, architectures, frameworks — the craft is complete.",
+      "next": "Reel 59 · Stage 8: Production + Security — deploying agents for real"
+    }
+  ],
+  "recap": [
+    "Weight the boring axes: control-flow philosophy, ecosystem, maturity pulse — features converge, these don't",
+    "Keep a plain, testable core with the framework as a shell and protocols (MCP/A2A) as integrations — the exit costs a re-shell, not a rebuild",
+    "Run the same-task bake-off on honest dimensions, record the ADR with tripwires, and re-ask 'would we choose this again?' every quarter"
+  ],
+  "quiz": [
+    {
+      "q": "Why is feature-list comparison the weakest way to choose a framework?",
+      "opts": [
+        "Features don't matter",
+        "Frameworks converge on features over time — control philosophy, ecosystem, and momentum don't converge, and they're what switching costs",
+        "Features are hidden",
+        "Marketing distorts everything"
+      ],
+      "a": 1,
+      "why": "Today's feature gap is tomorrow's changelog; a control-flow philosophy or a flatlined community is a permanent property."
+    },
+    {
+      "q": "What makes a tool integration portable across frameworks?",
+      "opts": [
+        "Rewriting it per framework",
+        "Building it on MCP — protocol-based tools port between frameworks nearly free",
+        "Using JSON",
+        "Avoiding tools"
+      ],
+      "a": 1,
+      "why": "Protocol-based integrations decouple your investment from the framework — the single highest-leverage portability practice."
+    },
+    {
+      "q": "What belongs in the ADR's exit conditions?",
+      "opts": [
+        "Nothing — decisions are final",
+        "Pre-agreed tripwires: repo silence beyond N months, spec-support lag, scale thresholds — triggers for re-evaluation",
+        "Only the winning framework's name",
+        "A promise never to switch"
+      ],
+      "a": 1,
+      "why": "Pre-agreed tripwires detach re-evaluation from sunk-cost attachment — the decision reviews itself on evidence, not mood."
+    }
+  ],
+  "code": {
+    "title": "The bake-off scorecard template",
+    "body": "# Bake-off: LangGraph vs MAF (task: RAG + tool + failure path)\n# Scorer: ____ Date: ____ Versions: __________\n\ndim,                    weight, LG, MAF\ntime_to_working,        1,      _,   _\nmy_code_ratio,          2,      _,   _   # app logic vs ceremony\nbreak_it_debug_min,     2,      _,   _   # intentional tool failure\npytest_ergonomics,      2,      _,   _\nobservability_free,     1,      _,   _   # visibility w/o added instrumentation\nmcp_support_current,    2,      _,   _   # 2026-07-28 spec state\ndocs_at_midnight,       1,      _,   _   # ecosystem gut-check\n# ─────────────────────────────────────────────\n# weighted totals:               _,   _\n# break-it notes:  LG error: …  MAF error: …\n# verdict + exit conditions recorded in ADR-7",
+    "annot": [
+      "Weights encode your context — a regulated team doubles observability; a prototype team doubles time-to-working",
+      "'break_it_debug_min' is the highest-signal cell: it measures the framework's failure personality",
+      "The scorecard attaches to the ADR — future reviewers see the evidence, not just the conclusion"
+    ]
+  },
+  "notes": "# Framework Selection\n\n## Matrix (weight boring axes)\n- Control (who owns flow) · ecosystem (docs, hiring, 2 a.m. answers) · language/runtime fit · maturity pulse (cadence, spec absorption).\n- Features converge — philosophies and momentum don't.\n\n## Lock-in & portability\n- Lock-in layers: model bindings (cheap) · tool integrations (cheap if MCP) · orchestration logic (expensive).\n- Shell pattern: plain tested core + framework at edges + protocol integrations.\n- Write the exit plan at adoption.\n\n## Bake-off\n- Same representative task (tool + branch + failure + checkpoint) in top-2.\n- Dimensions: time-to-working, my-code ratio, break-it debugging, test ergonomics, free observability.\n\n## Discipline\n- ADR + pre-agreed tripwires + quarterly 'would we choose this again?' — switch bravely."
+}

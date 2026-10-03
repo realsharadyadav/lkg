@@ -1,0 +1,144 @@
+{
+  "id": "AG-14",
+  "num": 56,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Architectures",
+  "hook": "Multi-agent is a scaling decision, not a vibe. Supervisors, handoffs, shared blackboards — **and the honest bill for what multi-agent costs you.**",
+  "chapters": [
+    "Supervisor pattern",
+    "Handoffs",
+    "Shared state & blackboard",
+    "When multi-agent hurts · A2A"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SUPERVISOR",
+      "title": "One manager, many workers — **the default topology**",
+      "sub": "The pattern behind most successful multi-agent systems",
+      "narration": "The supervisor pattern: a central orchestrator agent receives the user's task, delegates to specialist workers — research, code, review — collects their outputs, and synthesizes the final result. If AG-10's orchestrator-workers sounded familiar, that's because this IS that pattern with agents as workers: dynamic decomposition, dispatched subtasks, judged completeness. Why it became the default: the control flow is legible — one decision-maker means one place to debug; workers are independently testable — each specialist evals against its own golden set; and skills scale horizontally — adding a new specialist doesn't retrain the system, it extends the roster. The supervisor's design determines the ceiling: its delegation quality, its context discipline — worker outputs compressed on return — and its termination criteria — when is the task ACTUALLY done, not just delegated?"
+    },
+    {
+      "type": "arch",
+      "chapter": 0,
+      "layers": [
+        { "e": "🧭", "t": "Supervisor", "s": "Decomposes · delegates · judges completeness · owns the user conversation" },
+        { "e": "👥", "t": "Specialists", "s": "Research · coder · reviewer · each with own tools, prompts, evals" },
+        { "e": "📦", "t": "Compressed returns", "s": "Workers return summaries + artifact pointers, not raw dumps (AG-13)" }
+      ],
+      "narration": "Two failure modes to engineer against. Supervisor bottleneck: EVERYTHING flows through one context — the supervisor's window becomes the system's capacity limit; the same compaction and budget disciplines from AG-13 apply one level up, plus aggressive output compression from workers. Skill-boundary blur: specialists drift into each other's domains — the coder starts doing research, the reviewer starts rewriting — and quality quietly equalizes at mediocre; sharp system prompts per specialist, and a supervisor that ROUTES rather than lets workers self-select, keep the boundaries real. Framework note: LangGraph's supervisor nodes, CrewAI's crews and Microsoft Agent Framework's orchestration patterns all implement this topology directly — AG-15 compares them."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · HANDOFFS",
+      "title": "Handoffs: passing the conversation — **with its state**",
+      "sub": "Transferring control between agents without losing the plot",
+      "narration": "Not every delegation is subordinate. Sometimes control TRANSFERS: the triage agent realizes this is a billing issue and hands the conversation to the billing agent — which now owns the user thread. A handoff is more than forwarding messages: the receiving agent needs a proper briefing — the user's goal, what's been tried, key facts established, current state — written for a reader with zero shared context, because that's what the receiver has. OpenAI's Agents SDK elevated handoffs to a first-class primitive for exactly this: a typed transfer with an explicit payload, not an implicit chat-history dump. The design rules: brief, don't dump — a distilled handoff summary beats a hundred raw messages; receiver capabilities must cover the case — handoffs fail when the target agent lacks the tools the remaining task needs; and HAND BACK when wrong — a misrouted task should return gracefully, with the miss logged as routing-signal training data."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📨", "t": "Brief, don't dump", "s": "Distilled handoff: goal · tried · facts · state — written for a zero-context reader" },
+        { "e": "🧰", "t": "Capability check", "s": "Receiver must own the tools the remaining task needs — route by capability, not availability" },
+        { "e": "↩️", "t": "Graceful hand-backs", "s": "Misroutes return with the miss logged — routing signal, not failure theater" }
+      ],
+      "narration": "Handoffs versus tool-calls — the distinction that clarifies architecture: a tool-call is a WORKER doing a bounded task for the caller; a handoff is TRANSFER of ownership. Confuse them and you get the anti-pattern: an agent 'hands off' a subtask and then keeps managing it, doubling the coordination cost with none of the control. The routing table underneath deserves care: which agent owns which intents, how overlapping ownership is resolved — usually by making ONE agent the default owner per intent and documenting it. And measure handoff quality directly: golden conversations where the correct route is known; a system that misroutes thirty percent of billing questions has a routing bug, not a staffing problem. Handoffs are cheap to build and expensive to get wrong invisibly — instrument them."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · BLACKBOARD",
+      "title": "Shared state & the blackboard: **agents that leave notes**",
+      "sub": "A common workspace instead of message-passing everything",
+      "narration": "Supervisors pass messages; blackboard architectures share a WORKSPACE: a common structured store — a document, a database, a scratchpad directory — that all agents read and write. Instead of agent A sending agent B a message, A writes a finding to the shared space; B reads what it needs when it needs it. The decoupling is the win: agents don't need to know each other exists — new specialists join by reading the same board; work proceeds asynchronously — no waiting on message round-trips; and the state is INSPECTABLE — a human can open the board and see exactly what the system knows, a debugging superpower message-passing lacks. The costs: concurrency discipline — two agents editing the same section need locks or merge semantics; staleness — readers must know when a section is final versus in-progress, so entries carry status and ownership metadata."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "📨", "t": "Message-passing", "s": "Directed, synchronous, easy to trace · couples agents to each other's protocols · N² wiring as rosters grow", "win": true },
+        { "e": "📋", "t": "Blackboard", "s": "Decoupled, async, inspectable · needs concurrency + staleness discipline · the pattern behind agent coding tools' working files", "win": true }
+      ],
+      "narration": "In practice, systems mix: supervisor uses messages for delegation and control; workers use the blackboard for the ARTIFACTS they're producing — AG-12's scratchpad, shared. This is exactly how agentic coding tools behave: the plan file, the notes, the task list — a blackboard the subagents read and write, while the orchestrator passes instructions directly. Design the board's schema deliberately: sections with owners and status fields — proposed, in-progress, verified — because the schema IS the coordination protocol; a board without status metadata becomes a pile of notes nobody trusts. And version it: when agents overwrite each other's work, diffable state turns he-said-she-said into a reviewable history — the same audit discipline as AG-09's append-only log."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · HONESTY",
+      "title": "When multi-agent hurts — **and the A2A escape hatch**",
+      "sub": "The bill, itemized; interoperability as the hedge",
+      "narration": "The honest bill for multi-agent. COST: each agent boundary is full LLM calls — a supervisor loop over four specialists can spend ten times a single-agent attempt on the same task. LATENCY: sequential delegation chains multiply response times — users wait through every hop. DEBUGGING: a failure in a multi-agent system is a distributed-systems failure — which agent, which message, which shared-state race? — the hardest class of bug to reproduce. And QUALITY: multi-agent doesn't automatically beat one well-prompted agent — for many tasks, a single agent with good tools and reflection outperforms a committee. The decision rule from AG-01, applied again: escalate to multi-agent ONLY when a single context demonstrably fails — different tool sets that can't share one window, genuinely parallel work, independent verification requirements. Otherwise, one agent, well-armed, wins."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "💸", "t": "The bill", "s": "Cost × agents · latency × hops · debugging becomes distributed-systems forensics · quality is NOT automatic" },
+        { "e": "🚦", "t": "Escalation rule", "s": "Multi-agent only on proven single-context failure: separate tool sets, true parallelism, independent verification" },
+        { "e": "🌐", "t": "A2A protocol", "s": "Agent-to-Agent interoperability — the MCP complement: MCP for tools, A2A for agents · 150+ adopting orgs" }
+      ],
+      "narration": "On A2A — Agent2Agent, Google's donated protocol now stewarded with broad industry backing, crossing 150-plus adopting organizations: it standardizes how INDEPENDENT agents discover and talk to each other — agent cards describing capabilities, task-based messaging, status updates. The mental model pairing that stuck in 2026: MCP connects models to TOOLS; A2A connects agents to AGENTS. Your architecture benefits even without cross-company agents: building your specialists as A2A-speaking services keeps them portable across frameworks and vendors — the lock-in hedge AG-16 prices explicitly. Practical status: framework support is growing — Microsoft Agent Framework and CrewAI support it natively, Google ADK leads, LangGraph via adapters — verify current support before committing a design to it, but the direction is clear: agents, like tools before them, are becoming protocol-addressable."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-15",
+      "title": "Topologies in hand. Now the frameworks that implement them.",
+      "next": "Reel 57 · Framework Landscape — LangGraph, MAF, CrewAI, Agents SDK, Claude Agent SDK"
+    }
+  ],
+  "recap": [
+    "Supervisor is the default topology: one legible decision-maker, testable specialists, compressed returns — mind the supervisor's context bottleneck",
+    "Handoffs transfer ownership with distilled briefs and capability-checked routing; blackboards decouple agents via shared, status-annotated state",
+    "Multi-agent's bill is real: cost, latency, distributed debugging; A2A standardizes agent-to-agent interop as MCP did for tools"
+  ],
+  "quiz": [
+    {
+      "q": "Why do worker returns to a supervisor need compression?",
+      "opts": [
+        "Networks are slow",
+        "The supervisor's context window is the system's capacity limit — raw worker dumps exhaust it after a few delegations",
+        "Compression is cheaper",
+        "Workers can't send large messages"
+      ],
+      "a": 1,
+      "why": "Everything flows through the supervisor's window: summaries plus artifact pointers are the only sustainable return format."
+    },
+    {
+      "q": "What distinguishes a handoff from a tool call between agents?",
+      "opts": [
+        "Nothing",
+        "A tool call is a bounded subtask for the caller; a handoff TRANSFERS ownership of the conversation — brief, capability-checked, and able to hand back",
+        "Handoffs are faster",
+        "Tool calls use JSON"
+      ],
+      "a": 1,
+      "why": "Ownership transfer changes everything: the receiver drives, the caller steps back — confusing the two doubles coordination cost."
+    },
+    {
+      "q": "What's the practical value of the A2A protocol for an internal system?",
+      "opts": [
+        "It's faster than MCP",
+        "Specialists built as A2A-speaking services stay portable across frameworks and vendors — a hedge against framework lock-in",
+        "It replaces supervisors",
+        "It eliminates costs"
+      ],
+      "a": 1,
+      "why": "Protocol-addressable agents outlive any single framework choice — the same portability argument that made MCP valuable for tools."
+    }
+  ],
+  "code": {
+    "title": "Supervisor loop with compressed returns and budgets",
+    "body": "async def supervisor(task: str):\n    board = Blackboard(task_id=new_id())        # shared state (ch.3)\n    budget = CostBudget(usd=2.00, wall=timedelta(minutes=10))\n\n    while not budget.exhausted():\n        plan = await llm(DELEGATE_PROMPT, task=task,\n                         board=board.digest(),    # compressed view\n                         roster=specialist_cards())\n        if plan.done:\n            return plan.answer\n\n        results = await asyncio.gather(*[\n            run_specialist(step, board) for step in plan.parallel_batch])\n        for r in results:\n            board.write(r.section,                 # pointer, not payload\n                        summary=r.summary,\n                        artifacts=r.artifact_paths,\n                        status=\"verified\" if r.self_checked else \"proposed\")\n    return escalate(task, board.history())\n\n# Specialists read/write sections; supervisor reads digests.\n# The board — not message history — is the system's memory.",
+    "annot": [
+      "board.digest() is the supervisor's context discipline: summaries + statuses, never raw payloads",
+      "Parallel batches per round: independent subtasks gather() together (PY-10), dependent ones wait",
+      "Budget enforced at the loop: cost AND wall-clock — long autonomy without a meter is a liability"
+    ]
+  },
+  "notes": "# Architectures\n\n## Supervisor\n- Central orchestrator + specialists; legible control flow; independent evals.\n- Bottleneck: supervisor context → compressed returns, digest reads.\n- Keep specialist boundaries sharp: route, don't let workers self-select.\n\n## Handoffs\n- Transfer of ownership: distilled brief (goal/tried/facts/state).\n- Capability-checked routing; graceful hand-backs with logged misses.\n\n## Blackboard\n- Shared workspace: decoupled, async, inspectable.\n- Schema = coordination protocol: sections with owner + status.\n- Mix: messages for control, board for artifacts.\n\n## When multi-agent hurts\n- Bill: cost × agents, latency × hops, distributed debugging, no auto-quality.\n- Escalate only on proven single-context failure.\n- **A2A**: agent-to-agent interop; MCP = tools, A2A = agents; portability hedge."
+}

@@ -1,0 +1,149 @@
+{
+  "id": "AG-13",
+  "num": 55,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Context Management",
+  "hook": "Context is the scarcest resource in every agent system. Four disciplines — **compaction, selective retrieval, budget planning, memory safety** — that keep long runs coherent.",
+  "chapters": [
+    "Context compaction",
+    "Selective retrieval",
+    "Context budget planning",
+    "Memory safety"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · COMPACTION",
+      "title": "Compaction: summarize the past, **keep the present**",
+      "sub": "How long sessions survive finite windows",
+      "narration": "Compaction is the garbage collector of agent memory: as context fills, old turns are REPLACED by a running summary — 'turns one through twenty, compressed: user asked X, we tried Y, found Z, open questions: …'. The detail is gone; the STATE survives. Done well, compaction preserves exactly what future steps need: decisions made, constraints agreed, artifacts produced with their locations, and open threads — the facts that change what the agent should DO next. Done badly — a lazy 'previous work happened' summary — the agent loses the plot while appearing fine. The trigger discipline: compact BEFORE the window is full, on task boundaries or at a usage threshold — seventy percent say — not in a panic at ninety-nine, and keep the last few turns VERBATIM: recent exchanges are the working set, and summarizing them buys amnesia at the exact moment it's most expensive."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "What a good compaction preserves",
+      "lang": "markdown",
+      "body": "# Running Summary (turns 1–20 compressed)\n\n## Decisions\n- User chose DuckDB over pandas for the analytics path (speed, zero-install).\n\n## Constraints\n- All writes must go through the MCP excel server (AG-09 guardrails).\n- Budget: < $5 of API spend for this whole task.\n\n## Artifacts (paths, not contents)\n- research notes: /runs/7/notes.md (scratchpad)\n- competitor list: /runs/7/competitors.csv\n\n## Open threads\n- Q: email the summary to finance? — awaiting user answer\n- The Acme pricing is from a cached page; needs re-fetching\n\n## Do NOT re-derive\n- The 5-report migration order was already validated by the user.",
+      "annot": [
+        "Decisions + constraints are the load-bearing content — losing them changes future behavior",
+        "Artifacts by PATH: contents live in scratchpad files (AG-12); the summary stores pointers, not payloads",
+        "'Do NOT re-derive' stops the post-compaction agent from re-litigating settled questions — the classic compaction bug"
+      ],
+      "narration": "The structure IS the lesson: decisions, constraints, artifact pointers, open threads — four categories, each answering 'what would change my next action?'. What gets dropped by design: intermediate reasoning, failed attempts already learned from, raw tool outputs superseded by their results. A second compaction technique: hierarchical summaries — when the summary itself grows long, summarize the summary, keeping the most recent section detailed — the same rolling structure as GA-14's episode compression. And the verification habit: after compacting, a cheap check — 'state three constraints from your summary' — catches a bad compaction while recovery is still cheap, instead of fifty turns later when the damage is baked into every artifact."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · SELECTIVE RETRIEVAL",
+      "title": "Don't load memory — **query** it",
+      "sub": "Only what's needed, when it's needed",
+      "narration": "The anti-pattern: dumping all long-term memory into every session 'for context'. A thousand memories injected at start buys three things: cost, distraction, and silent relevance failures — the model attends to a vivid-but-wrong memory while the right one sits unretrieved. Selective retrieval is Stage 4's craft applied inward: embed the CURRENT task, search memory for matches, inject the top few WITH their provenance metadata; retrieve at the moment of need, not just at session start — mid-task, when the agent hits the database layer, THAT'S when database-related memories should surface. And support the second recall path from AG-12: situation-based episodic recall — 'tasks like this one' — as a separate search over episode summaries. Memory retrieval quality degrades exactly the way RAG retrieval does: measure it, golden-set it, and distrust it the same way."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🎯", "t": "Task-anchored recall", "s": "Embed the current task/step · inject top-k matches only · provenance attached (recency, confidence)" },
+        { "e": "⏰", "t": "Just-in-time > just-in-case", "s": "Retrieve at the moment of need — database memories surface when touching the database" },
+        { "e": "🚫", "t": "'No memory' is an answer", "s": "Forced recall injects confident noise · abstain when similarity is thin" }
+      ],
+      "narration": "The abstention point transfers directly from GA-16: a memory system that always returns SOMETHING will eventually return the wrong thing confidently, and a wrong memory in context is worse than no memory — it contradicts reality with authority. Set a similarity threshold; below it, the agent proceeds memoryless and notes the gap. Also design for CONFLICT: retrieval may surface two memories that disagree — 'deploys from main' and 'deploys from a release branch' — the injection layer should detect the contradiction and prefer by provenance — recency, confidence — or surface it honestly to the user rather than silently picking. Memory quality is retrieval quality: chunk well, tag well, measure recall against known cases, and version the store like the golden dataset it is."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · BUDGETS",
+      "title": "Context budget planning: **every token has a job**",
+      "sub": "Allocation, not abundance",
+      "narration": "A context window is a budget, and unplanned budgets get spent on trivia. The allocation discipline: reserve the SYSTEM PROMPT first — instructions, tool schemas — it's fixed cost; then a memory allowance — the retrieved top-k, capped; then the working conversation — recent turns verbatim; then tool OUTPUT quotas — the actual budget-buster: a fetch of a hundred-kilobyte page or a five-thousand-row query result can consume a third of the window in one observation. Tool outputs need caps by design — truncation with continuation pointers, 'result stored at path, summary follows' — AG-12's scratchpad pattern as a context-saving device. Plan for the WORST turn: the step where everything is needed at once — if the plan doesn't fit the window at its fullest moment, the plan doesn't fit, period; redesign before the failure, not at it."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "📜", "t": "System prompt + tools", "s": "Fixed cost — know it exactly · counts against every single call" },
+        { "e": "🧷", "t": "Memory allowance", "s": "Capped top-k · provenance attached · abstention below threshold" },
+        { "e": "💬", "t": "Working turns", "s": "Recent verbatim · older compacted (ch. 1) · headroom reserved for the reply" },
+        { "e": "📦", "t": "Tool output quotas", "s": "Per-tool byte caps · summarize-or-store · continuation pointers" }
+      ],
+      "narration": "The four layers, in priority order — and notice the ordering logic: fixed costs first, then the highest-leverage variable costs, then the working set, with output quotas as the shock absorber. Two planning exercises pay off immediately. Instrument FIRST: log tokens per layer per call in development — most teams discover their tool outputs are eating half the window, invisible until measured. And reserve reply headroom: the model's response, including its next tool-call arguments, needs room — systems that fill the window with INPUT leave the model room for a truncated, broken OUTPUT — the malformed JSON tool-call that breaks the loop. Budget planning feels like accounting because it is: the agents that run long aren't the ones with bigger windows — they're the ones spending smaller windows deliberately."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SAFETY",
+      "title": "Memory safety: **some things must never be stored**",
+      "sub": "PII, secrets, and the consent boundary",
+      "narration": "Memory systems are dangerous in a specific way: they PERSIST. A secret typed once in a chat, if written to long-term memory, is a secret stored forever, replicated across backups, retrieved into unknown future contexts. The safety rules. Never store: credentials and secrets — the memory layer should run a secret-scanner at write time — the same redaction discipline as logging; PII — names, emails, health data — without a purpose and consent basis — regulation treats stored personal data seriously regardless of where it's stored, and 'the agent remembered it' is not a defense; and unverified claims marked as facts — the 'unverified' label from AG-12 isn't pedantry; recalled as fact, a rumor becomes policy. Add the secondary boundary: retrieved memories enter the context of FUTURE tasks, including tasks with different users or permissions — memory is a cross-session information flow, and flows need access checks, not just write discipline."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🔐", "t": "Secret scanning at write", "s": "Detect keys/tokens before they persist — memory's write gate is a security boundary" },
+        { "e": "🪪", "t": "PII discipline", "s": "Purpose + consent basis before storing personal data · per-user memory scoping" },
+        { "e": "🔎", "t": "Access-checked recall", "s": "Memories cross sessions — retrieve only what the CURRENT user/task may see" }
+      ],
+      "narration": "The per-user scoping point is the one most personal-agent designs miss: a memory store shared across users must scope retrieval by user the way GA-17 scoped retrieval by ACL — 'what did the user tell us' is per-user information, and one user's memories surfacing in another's session is a privacy incident with a fancy name. Practical pattern: memory namespaces per user per domain, with the retrieval filter mandatory, not optional — the same where-clause discipline as filtered vector search. And audit memory like you audit anything else that persists: what's stored, who can recall it, what was evicted — because the day someone asks 'show me everything the system remembers about me', the only good answer is a query, not a shrug. Memory is the most permanent component of your agent — treat permanence as a risk as well as a feature."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-14",
+      "title": "One agent's context, mastered. Now several agents, orchestrated.",
+      "next": "Reel 56 · Architectures — supervisors, handoffs, blackboards, A2A"
+    }
+  ],
+  "recap": [
+    "Compaction preserves decisions, constraints, artifact pointers and open threads — triggered early, keeping recent turns verbatim",
+    "Retrieve memory just-in-time with task anchors and thresholds; 'no memory' is a valid answer; conflicts resolved by provenance",
+    "Budget every token: instrument layers, cap tool outputs, reserve reply headroom; never persist secrets or unscoped PII"
+  ],
+  "quiz": [
+    {
+      "q": "What must a compaction summary preserve to be useful?",
+      "opts": [
+        "Every tool output verbatim",
+        "Decisions, constraints, artifact paths, open threads — the content that changes future actions",
+        "The full conversation",
+        "Only the last user message"
+      ],
+      "a": 1,
+      "why": "Compaction's test: can the agent continue correctly? Only state-changing facts answer that — payloads belong in files, pointed to."
+    },
+    {
+      "q": "Why is 'dump all memory at session start' an anti-pattern?",
+      "opts": [
+        "It's slow to type",
+        "Cost, distraction, and false confidence — uncurated injection buries the right memory under vivid wrong ones",
+        "Memory stores are small",
+        "Models can't read long contexts"
+      ],
+      "a": 1,
+      "why": "Selective, just-in-time retrieval with thresholds serves relevance; bulk injection serves the illusion of context."
+    },
+    {
+      "q": "Why does memory need access checks at RETRIEVAL time, not just write discipline?",
+      "opts": [
+        "Retrieval is slower",
+        "Memories cross sessions and users — a per-user fact surfacing in another user's session is a privacy incident",
+        "Writes are encrypted",
+        "It's required by JSON"
+      ],
+      "a": 1,
+      "why": "Memory is an information flow across contexts; flows need scoping at both ends — the ACL-filter lesson of GA-17, applied inward."
+    }
+  ],
+  "code": {
+    "title": "The context budget, enforced in one wrapper",
+    "body": "BUDGET = {\n    \"system\":  None,     # measured, fixed\n    \"memory\":  2_000,    # tokens, retrieved top-k cap\n    \"recent\":  8_000,    # verbatim turns\n    \"reserve\": 4_000,    # reply + next tool-call headroom\n}\n\nasync def build_context(state, task, user):\n    ctx = [system_prompt(), tool_schemas()]              # fixed\n\n    mems = memory.search(embed(task), k=4,               # selective\n                         where={\"user\": user.id},        # access-checked\n                         min_score=0.82)                  # abstain below\n    ctx += format_memories(mems)[:BUDGET[\"memory\"]]\n\n    ctx += recent_turns(state, token_cap=BUDGET[\"recent\"])\n    if usage(ctx) > WINDOW - BUDGET[\"reserve\"]:\n        ctx = compact(ctx, keep_recent=3)                # ch.1 discipline\n    return ctx\n\n# Tool outputs are capped INSIDE each tool (AG-02): summarize-or-store,\n# return pointer + summary. The wrapper never sees raw monsters.",
+    "annot": [
+      "The where-clause on memory search is the GA-17 ACL filter — non-negotiable, not a feature flag",
+      "min_score encodes 'no memory is an answer' — thin similarity returns nothing instead of noise",
+      "The reserve is sacred: an input-stuffed window produces truncated, malformed outputs"
+    ]
+  },
+  "notes": "# Context Management\n\n## Compaction\n- Replace old turns with running summary: decisions · constraints · artifact paths · open threads.\n- Trigger early (not at 99%), keep recent verbatim, verify ('state three constraints').\n\n## Selective retrieval\n- Task-anchored, just-in-time, top-k with thresholds; abstain when thin.\n- Detect conflicts by provenance; measure recall like RAG.\n\n## Budget planning\n- Layers: system+tools (fixed) · memory cap · recent verbatim · reply reserve.\n- Tool output quotas: summarize-or-store with pointers.\n- Instrument per layer; plan for the worst turn.\n\n## Memory safety\n- No secrets/PII persisted (secret-scan at write; consent basis).\n- 'Unverified' ≠ fact. Per-user namespacing; retrieval-time access checks."
+}

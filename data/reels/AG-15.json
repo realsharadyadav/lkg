@@ -1,0 +1,145 @@
+{
+  "id": "AG-15",
+  "num": 57,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Framework Landscape",
+  "hook": "2026's framework map was redrawn in eight months — AutoGen and Semantic Kernel merged into **Microsoft Agent Framework**, LangGraph went 1.0, first-party SDKs matured. The tour, honestly given.",
+  "chapters": [
+    "The consolidation",
+    "The main contenders",
+    "Vendor SDKs & the no-framework path",
+    "Status table"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CONSOLIDATION",
+      "title": "What changed: three structural shifts",
+      "sub": "Why last year's map misleads this year's decisions",
+      "narration": "Between October 2025 and mid-2026, the landscape consolidated around three shifts. ONE — vendor consolidation: Microsoft put AutoGen and Semantic Kernel into maintenance mode and merged both into the Microsoft Agent Framework — MAF — which hit 1.0 GA in April 2026 for Python and .NET simultaneously; LangChain and LangGraph reached 1.0 the same October week, making LangGraph the graph-runtime standard. TWO — protocols went open and changed the switching math: MCP moved to Linux Foundation stewardship, A2A crossed 150-plus adopting organizations, and the industry shorthand settled — MCP for tools, A2A for agents; integrations built on MCP port between frameworks almost trivially. THREE — first-party SDKs matured: OpenAI's Agents SDK went GA in March 2026 with sandbox execution; the Claude Agent SDK hardened for long-running autonomous work. The practical consequence: framework choice matters less than it did, because the protocols underneath carry your integrations."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔄", "t": "Microsoft's merge", "s": "AutoGen + Semantic Kernel → Agent Framework 1.0 (Apr 2026) · native MCP + A2A · .NET + Python" },
+        { "e": "🔓", "t": "Protocols went open", "s": "MCP under Linux Foundation · A2A 150+ orgs · 'MCP for tools, A2A for agents'" },
+        { "e": "🧰", "t": "Vendor SDKs matured", "s": "OpenAI Agents SDK GA (Mar 2026) · Claude Agent SDK · Google ADK 2.0 multi-language" }
+      ],
+      "narration": "The maintenance-mode nuance, stated precisely because it decides migrations: 'maintenance mode' means bug and security fixes continue — nothing breaks — but no new features ever; MCP, A2A, and any future protocol work lands only in the successor. So AutoGen and Semantic Kernel keep RUNNING, but building new capability on them means building on a ceiling. Existing deployments deserve a deliberate migration plan, not panic — and the migration target for Microsoft-ecosystem teams is obvious: MAF inherits both lineages, keeps the conversational patterns AutoGen pioneered, adds Semantic Kernel's enterprise plumbing — sessions, telemetry, middleware — and speaks MCP and A2A natively. For .NET shops, this ended the 'which Microsoft framework' confusion permanently."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · CONTENDERS",
+      "title": "LangGraph, MAF, CrewAI: three philosophies",
+      "sub": "Graph runtime vs unified enterprise SDK vs role-based crews",
+      "narration": "LANGGRAPH — the graph runtime: agents and workflows as explicit state machines — nodes, edges, conditional branching, cycles — with the production essentials built in: checkpointing for durable execution and resume, interrupts for human-in-the-loop, streaming, LangSmith observability. Philosophy: YOU own the control flow; the framework executes it precisely. Best fit: complex, stateful, long-running workflows where determinism and debuggability matter — it powers serious production deployments. MICROSOFT AGENT FRAMEWORK — the unified enterprise SDK: AutoGen's orchestration patterns — sequential, concurrent, handoff, group chat — merged with Semantic Kernel's middleware, sessions, and telemetry; genuinely cross-runtime — Python agents coordinate with .NET agents; native MCP and A2A. Best fit: Microsoft-ecosystem teams — Azure, .NET, existing Semantic Kernel investment — wanting one supported path. CREWAI — role-based crews: agents with roles, goals and backstories organized into crews with processes; the fastest time-to-first-agent and the largest standalone community; pluggable memory, knowledge and RAG backends as of mid-2026. Best fit: rapid prototyping and role-shaped multi-agent tasks — a research crew, a content crew — where structure should emerge from convention, not code."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "🔷", "t": "LangGraph", "s": "Explicit graphs · checkpoints + interrupts · you own control flow · pairs with LangSmith", "win": true },
+        { "e": "🪟", "t": "Microsoft Agent Framework", "s": "AutoGen+SK merged · .NET+Python · MCP+A2A native · enterprise telemetry", "win": true },
+        { "e": "🐣", "t": "CrewAI", "s": "Roles + crews · fastest to first agent · largest standalone community · pluggable backends", "win": true }
+      ],
+      "narration": "How to read the three-way choice. If your problem is a WORKFLOW with loops, branches, and mandatory human gates — LangGraph's explicitness is the point: the graph IS the documentation, and interrupts give you audit points that role-based frameworks approximate. If your problem is enterprise fit — .NET estate, Azure deployment, compliance-shaped telemetry — MAF's lineage merge means one SDK to standardize on, with the cross-runtime story as a genuine differentiator for mixed Python/.NET estates. If your problem is speed and shape — 'a research crew that produces a weekly brief' — CrewAI's conventions get you running in an afternoon. None is universally right; all three are actively maintained as of late 2026 — the ecosystem's healthy tier at the top. The bake-off in AG-16 is how you choose among them with evidence."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · VENDOR SDKS & NO-FRAMEWORK",
+      "title": "First-party SDKs — and the framework you already have",
+      "sub": "OpenAI Agents SDK, Claude Agent SDK, and plain Python loops",
+      "narration": "The vendor SDKs deserve their own look. OPENAI AGENTS SDK — GA March 2026, successor to the archived Swarm project: lightweight primitives — agents, handoffs, guardrails, sessions — plus native sandbox execution across providers; the natural fit when you're standardized on OpenAI models and want the fastest native setup. CLAUDE AGENT SDK — Anthropic's toolkit for agentic work, safety-first design, strong at long-running autonomous sessions and hierarchical subagent spawning; speaks MCP natively. GOOGLE ADK 2.0 — the only major framework with Python, TypeScript, Java and Go SDKs at parity; deep Vertex/Gemini integration and cross-framework agent discovery. And the last option — NO framework: a plain loop with tool definitions — AG-01's thirty lines — plus httpx and asyncio. For narrow, well-understood tasks, this outperforms frameworks on debuggability and dependency surface; many production systems are exactly this, and every framework's abstractions are, ultimately, this loop wearing costumes."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "⚡", "t": "OpenAI Agents SDK", "s": "GA Mar 2026 · handoffs/guardrails/sessions · sandbox execution · best on OpenAI models" },
+        { "e": "🛡️", "t": "Claude Agent SDK", "s": "Safety-first · long autonomous sessions · subagent spawning · MCP native" },
+        { "e": "🐍", "t": "No-framework", "s": "Plain loop + tools + httpx · unbeatable debuggability · right size for narrow tasks" }
+      ],
+      "narration": "The no-framework path deserves respect rather than embarrassment: frameworks earn their abstractions — checkpoints, interrupts, observability — when your system needs them; a five-tool agent pipeline with known steps needs none of them, and every abstraction is also a failure mode you didn't choose. The pragmatic pattern many teams land on: start no-framework to learn the loop's real shape — you'll feel exactly where checkpoints and handoffs would help — then adopt a framework for the pieces that hurt, often as a library inside your loop rather than a platform underneath it. On vendor SDKs, one caution: their sweetest features tend to assume their own models; multi-provider needs — and the day you need them arrives — are served better by the neutral frameworks. Verify protocol support — MCP, A2A — per SDK before committing; the support matrix shifted fast this year and continues to."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · STATUS",
+      "title": "The honest status board, late 2026",
+      "sub": "What to build on, what to migrate off",
+      "narration": "Consolidating the verified picture. ACTIVELY MAINTAINED — safe foundations: LangGraph 1.0, Microsoft Agent Framework 1.0, CrewAI, OpenAI Agents SDK, Claude Agent SDK, Google ADK, Pydantic AI — the typed, validation-first Python option worth knowing — and Mastra for the TypeScript world. MAINTENANCE MODE — works, ceilinged: AutoGen — community fork AG2 continues separately under its original creators — and Semantic Kernel; both receive fixes, no features, and their own docs point to MAF. ARCHIVED — do not start: OpenAI Swarm, superseded by the Agents SDK. Two verification habits before any commitment: check the repository's pulse — commit cadence, release recency, maintainer responsiveness — and confirm protocol support — MCP and A2A — for YOUR integration needs, because that matrix is still moving. This space ships weekly; the durable lesson is the evaluation METHOD, not today's winner."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "✅", "t": "Build new on", "s": "LangGraph · MAF · CrewAI · Agents SDK · Claude Agent SDK · ADK · Pydantic AI · Mastra" },
+        { "e": "⚠️", "t": "Plan migration from", "s": "AutoGen → MAF or AG2 · Semantic Kernel → MAF · both maintenance-mode since Oct 2025" },
+        { "e": "🚫", "t": "Never start on", "s": "OpenAI Swarm (archived) · any framework whose repo pulse has flatlined" }
+      ],
+      "narration": "A note on how fast this specific board moves: every entry here was verified against late-2026 sources, and several changed within the year — that's WHY the method matters more than the map. When you evaluate, do it in this order: maintenance pulse first — a framework that stops shipping is a future migration whatever its features; protocol support second — MCP-native matters because your tool investments should outlive the framework; ecosystem third — docs, examples, hiring pool. And record your evaluation — the date, the versions, the findings — because 'we chose X in 2026 for reasons R' is exactly the document your successor thanks you for. Framework choice is a two-to-three-year bet; treat it with the seriousness of one, and keep the escape hatches — protocol-based integrations, clean seams — open the whole time."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-16",
+      "title": "The landscape mapped. Now choose — with evidence.",
+      "next": "Reel 58 · Framework Selection — the matrix, the bake-off, the exit plan"
+    }
+  ],
+  "recap": [
+    "2026 consolidation: AutoGen + Semantic Kernel → Microsoft Agent Framework 1.0 (Apr 2026); LangGraph 1.0; first-party SDKs matured; MCP/A2A open protocols changed the switching math",
+    "Three philosophies: LangGraph = explicit graphs you control · MAF = unified enterprise SDK (.NET+Python, MCP+A2A) · CrewAI = fastest role-based crews",
+    "Verify before committing: repo pulse, protocol support, ecosystem — and start no-framework for narrow tasks; Swarm is archived, AutoGen/SK are maintenance-mode"
+  ],
+  "quiz": [
+    {
+      "q": "What does 'maintenance mode' mean for AutoGen and Semantic Kernel?",
+      "opts": [
+        "They're deleted",
+        "Bug/security fixes continue, but no new features — new capability lands only in Microsoft Agent Framework",
+        "They're commercial now",
+        "They merged with LangGraph"
+      ],
+      "a": 1,
+      "why": "Existing code keeps running, but the ceiling matters for anything you'll maintain past 2027 — plan migration to MAF or AG2."
+    },
+    {
+      "q": "Why does MCP-native support matter when choosing a framework?",
+      "opts": [
+        "MCP is faster",
+        "Tool integrations built on MCP port between frameworks almost trivially — your integration investment outlives the framework choice",
+        "MCP is required by law",
+        "It reduces token costs"
+      ],
+      "a": 1,
+      "why": "Protocol-based integrations are the lock-in hedge: they make the framework a replaceable component rather than a permanent decision."
+    },
+    {
+      "q": "When is the no-framework approach the right choice?",
+      "opts": [
+        "Never",
+        "Narrow, well-understood tasks where the plain loop + tools is more debuggable and carries no dependency surface",
+        "Only for demos",
+        "Only in production"
+      ],
+      "a": 1,
+      "why": "Frameworks earn their abstractions when you need them; a five-step pipeline with known flow needs none — start plain, adopt frameworks where it hurts."
+    }
+  ],
+  "code": {
+    "title": "The same tiny agent, three ways (shape comparison)",
+    "body": "# --- 1 · Plain loop (no framework) -------------------------------\nwhile not done and iters < 10:\n    msg = llm(messages, tools=TOOLS)\n    messages += run_tools(msg)          # ~30 lines total\n\n# --- 2 · LangGraph (explicit graph) -------------------------------\nfrom langgraph.graph import StateGraph\n g = StateGraph(AgentState)\n g.add_node(\"think\", think)\n g.add_node(\"act\", act)\n g.add_conditional_edges(\"think\", route)   # loops visible\n g.add_edge(\"act\", \"think\")\n graph = g.compile(checkpointer=memory)    # durable + resumable\n\n# --- 3 · Microsoft Agent Framework (conversational) ---------------\nfrom agent_framework.azure import AzureOpenAIChatClient\n agent = AzureOpenAIChatClient().create_agent(\n     instructions=\"…\", tools=[…])       # orchestration built-in\n\n# The loop is identical inside all three —\n# frameworks differ in who owns the control flow and what comes\n# built in (checkpoints, telemetry, handoffs), not in kind.",
+    "annot": [
+      "Same agent, three control-flow owners: you, the graph, the framework",
+      "The 30-line loop fitting inside every framework is why no-framework remains legitimate — you can always migrate INTO abstraction",
+      "Try all three shapes in the AG-16 bake-off before committing"
+    ]
+  },
+  "notes": "# Framework Landscape (verified late 2026)\n\n## Consolidation\n- Oct 2025: AutoGen + Semantic Kernel → maintenance mode; LangChain/LangGraph 1.0.\n- Apr 3, 2026: **Microsoft Agent Framework 1.0** (Python + .NET), native MCP + A2A.\n- Mar 2026: OpenAI Agents SDK GA (Swarm archived). Google ADK 2.0 multi-language.\n- MCP → Linux Foundation; A2A 150+ orgs. Shorthand: **MCP = tools, A2A = agents**.\n\n## Contenders\n- **LangGraph**: explicit state graphs, checkpoints, interrupts, LangSmith.\n- **MAF**: unified enterprise; .NET+Python cross-runtime; telemetry, sessions.\n- **CrewAI**: roles/crews, fastest start, largest standalone community.\n- Also: Pydantic AI (typed), Mastra (TS), Claude Agent SDK (safety-first).\n\n## Status board\n- Build on: LangGraph · MAF · CrewAI · Agents SDK · ADK · Pydantic AI · Mastra.\n- Migrate from: AutoGen (→MAF/AG2) · Semantic Kernel (→MAF).\n- Never start: Swarm.\n- Verify: repo pulse, protocol support, ecosystem — record evaluations with dates."
+}

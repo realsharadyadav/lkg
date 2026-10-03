@@ -1,0 +1,147 @@
+{
+  "id": "AG-10",
+  "num": 52,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Workflow Patterns",
+  "hook": "Five composable patterns — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — that cover **most of what production agent systems actually do**.",
+  "chapters": [
+    "Prompt chaining & routing",
+    "Parallelization",
+    "Orchestrator-workers",
+    "Evaluator-optimizer"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CHAINING & ROUTING",
+      "title": "Chains linearize complexity. **Routers specialize it.**",
+      "sub": "The two simplest patterns — and the most underused",
+      "narration": "PROMPT CHAINING: output of step N becomes input of step N-plus-one — extract, then summarize, then translate. Each step is a small, separately-testable prompt; the chain decomposes a hard task into easy ones, and failures localize to a step you can inspect. The discipline: validate BETWEEN steps — if extraction returned nothing, don't let the empty result flow downstream; chains fail loudly at the right step instead of silently at the end. ROUTING: one classifier step sends the input to a specialized handler — billing questions to the billing prompt, technical issues to the technical one. The win: each handler stays small and sharp instead of one mega-prompt being mediocre at everything. Both patterns are workflows in AG-01's sense — code controls the flow — and that's their strength: predictable, testable, cheap."
+    },
+    {
+      "type": "arch",
+      "chapter": 0,
+      "layers": [
+        { "e": "1️⃣", "t": "Extract", "s": "Pull structured facts from raw input · validated before proceeding" },
+        { "e": "2️⃣", "t": "Analyze", "s": "Work only on the extracted facts — smaller context, sharper prompt" },
+        { "e": "3️⃣", "t": "Format", "s": "Render for the audience · each step independently testable" },
+        { "e": "🔀", "t": "Router variant", "s": "Classify first → specialized handler → consistent output contract" }
+      ],
+      "narration": "Two reasons chains outperform mega-prompts. Quality: each step's model concentrates on one job with a clean input — context is smaller, instructions are sharper, and the failure surface per call is a fraction of the monolith's. Operations: when quality drops, you know WHICH step regressed — GA-20's evals run per step, and the fix targets one prompt, not a tangle. The router adds specialization: handlers share an output CONTRACT — same shape regardless of route — so downstream code never cares which expert answered. Warning sign that you need routing: one prompt accumulating ever-more conditional instructions — 'if billing do X, if technical do Y, unless enterprise…' — that's a router begging to exist. Conditional logic in prose is a smell; conditional logic in code is architecture."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · PARALLELIZATION",
+      "title": "Run independent work **concurrently**, then merge",
+      "sub": "Sectioning and voting: two shapes of parallelism",
+      "narration": "Two patterns. SECTIONING: split a big task into independent slices processed concurrently — a hundred documents to summarize: ten workers times ten documents each, results concatenated. The win is throughput — asyncio.gather, PY-10 — the same job at a fraction of wall-clock. VOTING: run the SAME task multiple times — different prompts or temperatures — and aggregate: majority vote for classifications, or 'any yes means yes' for safety checks. Voting trades cost for reliability — three votes at temperature zero-point-seven beat one careful answer for fuzzy judgments. The merge step is where the pattern earns or wastes its cost: sectioning needs trivial concatenation but voting needs a real aggregator — a judge pass or a rule — and an explicit tie-breaking policy, decided before you need it."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "✂️", "t": "Sectioning", "s": "Split → concurrent workers → concat · throughput for divisible work" },
+        { "e": "🗳️", "t": "Voting", "s": "Same task, N runs → aggregate · cost for reliability on fuzzy judgments" },
+        { "e": "🧩", "t": "The merge is the design", "s": "Concat needs order · votes need an aggregator + tie policy — design it first" }
+      ],
+      "narration": "A cost-realism note on voting: three runs means three times the tokens, and it helps MOST where judgment is fuzzy — classifications, safety screens, subjective evaluations. Where an answer is verifiable — code that must compile, math that must reconcile — don't vote: VERIFY mechanically and retry on failure; deterministic checks beat probabilistic consensus. Also compose: section a hundred documents, then vote only on the five the workers flagged as uncertain — parallelism for scale, voting for ambiguity, targeted so the cost lands where it helps. And keep observability per branch: a parallel run that silently dropped one slice produces a confident ninety-percent answer — assert completeness at merge time, with counts, every time."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · ORCHESTRATOR-WORKERS",
+      "title": "A central brain that **dynamically delegates**",
+      "sub": "When the task can't be pre-split",
+      "narration": "Sectioning assumes you can list the slices in advance. Orchestrator-workers handles the cases you can't: the orchestrator — a model — receives the task, breaks it into subtasks ON THE FLY, dispatches each to a worker — which may itself be a model, a tool, a whole chain — collects results, and decides whether the task is done or needs more rounds. Example: 'audit this repository for security issues' — the orchestrator first maps the structure, then spawns workers per module based on what it finds, then synthesizes. The orchestrator is where AG-01's judgment lives: task decomposition quality determines everything downstream. Compared to static sectioning: more flexible, more expensive, harder to test — the orchestrator's choices vary run to run, so eval on OUTCOMES with golden tasks, not on the decomposition."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "🧠", "t": "Orchestrator", "s": "Decomposes dynamically · dispatches · judges completeness" },
+        { "e": "👷", "t": "Workers (N, parallel)", "s": "Specialized per subtask · own context, tools, prompts" },
+        { "e": "🔁", "t": "Feedback loop", "s": "Results return → orchestrator re-plans until done or budget out" }
+      ],
+      "narration": "The orchestrator's context is the bottleneck to design around: every worker result returns to it, and long tasks overflow the window — so results must be COMPRESSED on return — summaries plus pointers to full outputs, not raw dumps. Also cap the loop: max rounds, max workers, max total cost — the same budgets as AG-01, one level up. When does this beat static parallelization? When the decomposition DEPENDS on findings — research across unknown sources, audits, migrations — the slices aren't knowable until you start looking. When the decomposition is knowable — fixed pipeline, known shards — static sectioning is simpler, cheaper and more testable; reach for orchestration only when the task truly can't be pre-planned. Framework support: LangGraph's supervisor nodes and CrewAI's crews both encode this pattern — AG-15 shows where."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · EVALUATOR-OPTIMIZER",
+      "title": "Generate → critique → refine: **quality through iteration**",
+      "sub": "The pattern behind self-improving outputs",
+      "narration": "One model generates; another — or the same in a different hat — EVALUATES against criteria; feedback goes back; the generator refines. Repeat until the evaluator passes the output or the loop budget ends. The pattern shines where quality criteria are checkable but hard to achieve in one shot: structured extraction with a schema, code that must pass tests, documents that must hit a rubric. The evaluator can be a model — 'grade this against these criteria, list deficiencies' — or mechanical — schema validation, unit tests, a linter; mechanical evaluators are cheaper and more honest, so use them whenever the criterion is formal. One evaluator per criterion dimension beats one omnibus judge: 'check completeness', 'check citations', 'check tone' — separate passes, separate fixes, clearer attribution of what's still wrong."
+    },
+    {
+      "type": "loop",
+      "chapter": 3,
+      "steps": [
+        { "e": "✍️", "t": "Generate", "s": "Draft v1 against the full specification" },
+        { "e": "🧐", "t": "Evaluate", "s": "Criteria-based critique: mechanical checks first, model judge second" },
+        { "e": "🔧", "t": "Refine", "s": "Fix ONLY the deficiencies — with the critique attached" },
+        { "e": "✅", "t": "Accept or budget out", "s": "Pass → ship · fail after N rounds → escalate to human with the critique history" }
+      ],
+      "narration": "Two design details make or break this loop. Critique specificity: 'improve this' produces v1 with synonyms; 'section 3 lacks the Q3 numbers from the context; add them' produces v2 that fixes it — the evaluator's output must be actionable AG-02-style feedback, not a grade. And the exit strategy: after the round cap, the loop must hand off — to a human, or to a simpler fallback — WITH the critique history attached; a silently-truncated refinement is just an unpolished draft wearing a finished label. Compose with voting: evaluator-optimizer for depth on one artifact, voting for confidence across attempts — different reliability axes. Note the symmetry with GA-21: the evaluator here is the same muscle as the LLM-as-judge — calibrated, criteria-based, bias-aware."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-11",
+      "title": "Patterns give structure. Reasoning strategies give the model its moves.",
+      "next": "Reel 53 · Agent Reasoning — ReAct, plan-and-execute, reflection"
+    }
+  ],
+  "recap": [
+    "Chaining decomposes hard tasks into testable steps with validation between; routing specializes via classification with a shared output contract",
+    "Parallelization: sectioning for throughput, voting for fuzzy-judgment reliability — with a designed merge and completeness checks",
+    "Orchestrator-workers for tasks that can't be pre-split; evaluator-optimizer for checkable quality — with actionable critiques and honest exits"
+  ],
+  "quiz": [
+    {
+      "q": "Why validate BETWEEN chain steps instead of at the end?",
+      "opts": [
+        "It's faster",
+        "Failures localize to the step that produced them — empty extractions get caught before they corrupt every downstream step",
+        "APIs require it",
+        "It saves tokens"
+      ],
+      "a": 1,
+      "why": "Chains localize errors by construction: each gate stops bad state from propagating, making debugging a step-level exercise."
+    },
+    {
+      "q": "When is mechanical verification better than voting?",
+      "opts": [
+        "Never",
+        "Whenever the criterion is formal — compiling code, valid schema, reconciled math: deterministic checks beat probabilistic consensus",
+        "Always",
+        "Only for large tasks"
+      ],
+      "a": 1,
+      "why": "Voting buys reliability on fuzzy judgments; formal criteria deserve exact checks — spend tokens only where ambiguity genuinely exists."
+    },
+    {
+      "q": "What makes evaluator feedback actionable in the optimizer loop?",
+      "opts": [
+        "A numeric score",
+        "Specific deficiency + what to fix ('section 3 lacks Q3 numbers') — attached to the refine step's input",
+        "Positive tone",
+        "Short length"
+      ],
+      "a": 1,
+      "why": "Refinement quality tracks critique specificity: grades produce synonym-shuffling; directed feedback produces fixes."
+    }
+  ],
+  "code": {
+    "title": "Evaluator-optimizer, implemented",
+    "body": "async def refine_until_pass(spec: str, checks: list[callable],\n                              max_rounds: int = 3) -> Draft:\n    draft = await llm(GEN_PROMPT, spec=spec)\n    history = []\n\n    for round in range(max_rounds):\n        # mechanical checks first — free and honest\n        failures = [c(draft) for c in checks if not c(draft)]\n        if not failures:\n            return draft\n\n        # model judge for the non-mechanical criteria\n        critique = await llm(CRITIQUE_PROMPT, draft=draft,\n                             failures=failures)\n        history.append({\"round\": round, \"critique\": critique})\n        draft = await llm(REFINE_PROMPT, spec=spec, draft=draft,\n                          feedback=critique)          # fix ONLY the gaps\n\n    # budget out → escalate with full history\n    await escalate_to_human(draft, history)\n    return draft   # labeled 'unrefined' — never silently final",
+    "annot": [
+      "checks = [schema_valid, has_citations, within_length] — formal criteria never reach the paid judge",
+      "The refine prompt receives the critique verbatim — directed fixes, not re-rolls",
+      "Escalation carries the critique history: the human starts informed, not from zero"
+    ]
+  },
+  "notes": "# Workflow Patterns\n\n## Chaining & routing\n- Chain: extract → analyze → format; validate BETWEEN steps.\n- Router: classify → specialized handler; shared output contract.\n- Conditional logic in prose = smell; in code = architecture.\n\n## Parallelization\n- Sectioning: split → gather → concat; assert completeness at merge.\n- Voting: N runs → aggregate; for fuzzy judgments; design aggregator + tie policy.\n- Formal criteria → mechanical verification, not votes.\n\n## Orchestrator-workers\n- Dynamic decomposition when slices aren't knowable upfront.\n- Compress worker returns; budget rounds/workers/cost.\n- Prefer static sectioning when the split is knowable.\n\n## Evaluator-optimizer\n- Generate → critique → refine; mechanical checks first.\n- Actionable critiques; per-dimension evaluators; honest exits with history."
+}

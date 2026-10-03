@@ -1,0 +1,147 @@
+{
+  "id": "AG-12",
+  "num": 54,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Memory Types",
+  "hook": "Agents without memory reset to zero every session. Four memory types — **context, long-term, episodic/semantic, scratchpads** — and the discipline of what NOT to remember.",
+  "chapters": [
+    "Short-term: the context window",
+    "Long-term memory",
+    "Episodic vs semantic",
+    "Scratchpads & working files"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SHORT-TERM",
+      "title": "The context window IS short-term memory — **manage it like RAM**",
+      "sub": "Working memory: fast, finite, erased on power-off",
+      "narration": "Everything the model can act on lives in one place: the context window. That's short-term memory — not a metaphor, a literal resource with a hard capacity. Managing it is memory management: not all messages are equal — the system prompt, tool schemas, and recent observations earn their bytes; stale tool outputs and resolved subtasks don't. The failure mode every long session hits: context FILLS — old turns push out the middle, instructions from an hour ago vanish, and the agent quietly degrades from expert to amnesiac MID-TASK. Signs to watch: the agent repeats questions it already asked, forgets constraints stated early, loses the thread of multi-step work. At that point the fix isn't a bigger window — it's the subject of the next reel: compaction, summarization, and selective recall — but the first discipline is awareness: treat context as a budget, not a black hole."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🧠", "t": "Everything actionable lives here", "s": "System prompt, tool schemas, history, observations — the model's entire world" },
+        { "e": "📉", "t": "Amnesia is gradual", "s": "As context fills, early instructions fall out of the middle · degradation is silent" },
+        { "e": "💰", "t": "Context is a budget", "s": "Every token of history competes with instructions and observations · spend deliberately" }
+      ],
+      "narration": "A concrete framing from hardware: context is RAM — fast, volatile, capacity-limited — and long-term memory is disk — slower to access, persistent, cheap per byte. The architecture insight: systems fail when they treat RAM as disk — stuffing everything into context 'because it's simplest' — or disk as RAM — retrieving memory so eagerly that every call drags. The engineering response, coming in AG-13: manage context like a working set — keep what's immediately relevant hot, compact what's recently relevant into summaries, and pull from long-term storage ONLY what's needed, when needed. For now, hold the working metaphor: your job is memory hierarchy design, and the context window is the top — most precious — level of the hierarchy."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · LONG-TERM",
+      "title": "Long-term memory: **persistence across sessions**",
+      "sub": "Facts that survive the power-off",
+      "narration": "Long-term memory is what the agent can recall tomorrow: user preferences — 'Sharad prefers concise answers with citations'; project facts — 'the LKG app deploys from main to GitHub Pages'; accumulated lessons — from AG-11's process reflection. Mechanically it's a store plus a retrieval step: write — decided at reflection points or explicitly, never raw-transcript everything; store — a vector store is the default, and Stage 4 was the prerequisite: embeddings, chunking, retrieval quality all apply verbatim; retrieve — at session start or per-query, the relevant memories enter context as injected notes. The quality bar is curation: memory written carelessly is poison retrieved confidently — stale preferences, wrong 'facts', contradictions from an evolving project. Long-term memory needs the same freshness discipline as a RAG corpus: updates, deletes, and provenance."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "✍️", "t": "Write gates", "s": "Reflection points · explicit user facts · dedupe against existing memory" },
+        { "e": "🗄️", "t": "Store with provenance", "s": "Vector store + metadata: when learned, source, confidence, expiry" },
+        { "e": "🔍", "t": "Retrieve deliberately", "s": "Session start + per-query · only what the current task needs" }
+      ],
+      "narration": "The provenance metadata is what separates memory from mess: every entry tagged with when it was learned, where it came from, and how confident the system is — because memories GO STALE: the deployment branch changes, the preference evolves. Review and eviction must be scheduled the way GA-14 scheduled index updates — memory is a living corpus, not an append-only log. The retrieval discipline mirrors RAG's hardest lesson: relevance-based recall pulls what's SIMILAR, not what's TRUE — a confident-sounding wrong memory outranks a correct one when the embedding matches better; mitigate with the same stack — hybrid search over memory metadata, recency weighting, and the abstention discipline of 'no relevant memory found' over forced recall. And mind the write gate: writing every transcript line to memory creates a haystack; write conclusions, not conversations."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · EPISODIC VS SEMANTIC",
+      "title": "What HAPPENED vs what's KNOWN",
+      "sub": "Two kinds of long-term memory, two different designs",
+      "narration": "Human memory science gives the two types. SEMANTIC memory: facts and concepts — 'DuckDB queries parquet directly', 'the refund window is 30 days' — context-free knowledge, stored once, true everywhere. Shape: small units, heavily deduplicated, versioned when the world changes. EPISODIC memory: events and experiences — 'last Tuesday we debugged the deployment by checking the GitHub Pages branch setting; it was set to a stale branch' — context-RICH records of what happened, when, and what worked. Shape: narrative entries with timestamps, tagged with task and outcome. Why the split matters: they retrieve differently — semantic recall is by meaning — 'what do we know about X' — episodic recall is by situation — 'have we solved something like this before' — and they decay differently: semantic facts update; episodes accumulate, summarized over time as older episodes compress into lessons."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "📚", "t": "Semantic", "s": "Facts · context-free · dedupe + version · recalled by meaning · 'what do we know about X'", "win": true },
+        { "e": "🎬", "t": "Episodic", "s": "Events · context-rich · timestamped, tagged, summarizing with age · recalled by similarity of situation", "win": true }
+      ],
+      "narration": "The episodic side is the under-appreciated one: when a task starts to resemble a past episode — same domain, same error signature — surfacing 'we solved this in March by…' is often worth more than any semantic fact. That retrieval is situation-matching: embed the CURRENT task description and search episode summaries — 'debugging', 'deployment', 'permissions' — for neighbors. The compounding design: raw episodes age into summaries — ten verbose episode logs from a quarter compress into one lesson entry; the raw detail stays in cold storage, retrievable on demand when the summary matches. Semantic memory gets the opposite treatment: aggressive deduplication at write — a fact updated replaces its old version, not appends beside it — and conflict detection, because two contradictory 'facts' retrieved together poison reasoning silently."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SCRATCHPADS",
+      "title": "Scratchpads: thinking with **files**, not just tokens",
+      "sub": "Working files as external working memory",
+      "narration": "The fourth memory type isn't a store — it's a practice: offload working state to FILES. Long tasks generate state that doesn't fit the window AND doesn't deserve long-term memory: intermediate results, running notes, partial plans, TODO lists. A scratchpad — a working file the agent reads and writes across steps — extends effective memory far beyond the context: the full research notes live in the file; the context carries only the summary and the file path. AG-09's audit-adjacent pattern: the agent keeps progress notes — 'step 3 done, step 4 blocked on X' — so interruption and resumption are cheap, and so multi-session tasks resume by READING the scratchpad rather than re-deriving. This is precisely how modern agentic coding tools work — CLAUDE-dot-md style project files are scratchpads that persist — and the discipline transfers: structured notes, dated entries, checked-off task lists."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "The memory layer, four registers",
+      "lang": "python",
+      "body": "# 1 · SHORT-TERM — the context window itself\n#    Managed by compaction (AG-13): keep hot, summarize warm, drop cold.\n\n# 2 · LONG-TERM SEMANTIC — facts\n@memory.on_reflection\ndef save_facts(transcript):\n    facts = llm(\"Extract durable facts (preferences, project truths). \"\n                \"One per line. Skip anything time-sensitive.\", t=transcript)\n    for f in facts:\n        store.upsert(dedupe_key(f), text=f,\n                     meta={\"kind\": \"semantic\", \"learned\": today(),\n                           \"confidence\": f.confidence})\n\n# 3 · LONG-TERM EPISODIC — what happened\n@memory.on_task_end\ndef save_episode(task, outcome, transcript):\n    store.add(text=summarize(transcript),\n              meta={\"kind\": \"episodic\", \"task_type\": task.kind,\n                    \"outcome\": outcome, \"date\": today()})\n    # monthly job: compress old episodes → lesson entries (cold storage raw)\n\n# 4 · SCRATCHPAD — working files for the CURRENT task\npad = Scratchpad(f\"/runs/{task_id}/notes.md\")   # AG-09 workspace\npad.append(f\"## Step {n}\\nResult: …\\nNext: …\")\n# context carries: summary + pad path · pad carries: everything",
+      "annot": [
+        "Write gates live at reflection/task-end points — never per-message; conclusions, not conversations",
+        "dedupe_key() makes semantic memory update-in-place — the new 'fact' replaces the stale one",
+        "The scratchpad pattern: context holds a pointer, the file holds the state — resumption becomes a read"
+      ],
+      "narration": "The four registers side by side. Notice the write triggers differ deliberately: semantic facts at reflection — when conclusions exist; episodes at task end — when outcomes are known; scratchpad continuously — it's the working set. The monthly compression job is the episodic system's garbage collector: without it, episode stores grow linearly and retrieval drowns in old detail. And the dedupe-key pattern for semantic memory is the same deterministic-ID trick as GA-14's chunk IDs — 'user's preferred tone' has ONE entry that updates, not seventeen conflicting ones. Together these four registers give an agent what the context window alone never can: continuity across time, at every scale from this hour to this quarter."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-13",
+      "title": "Four memory types in hand. Now the operating discipline.",
+      "next": "Reel 55 · Context Management — compaction, budgets, memory safety"
+    }
+  ],
+  "recap": [
+    "Short-term memory is the context window — finite, volatile, managed like RAM; degradation is silent",
+    "Long-term memory = curated store + deliberate retrieval, with provenance and freshness discipline; semantic facts (deduped, versioned) differ from episodic events (summarizing with age)",
+    "Scratchpads extend working memory via files — the pattern behind resumable, multi-session agent tasks"
+  ],
+  "quiz": [
+    {
+      "q": "Why does long-term memory need provenance metadata (when learned, source, confidence)?",
+      "opts": [
+        "It compresses better",
+        "Memories go stale — provenance enables freshness review, recency weighting, and targeted eviction",
+        "APIs require it",
+        "It speeds up embedding"
+      ],
+      "a": 1,
+      "why": "A memory store without freshness discipline is a corpus of confident staleness — provenance is what makes review possible."
+    },
+    {
+      "q": "How do episodic and semantic memory retrieval differ?",
+      "opts": [
+        "They don't",
+        "Semantic recalls by meaning ('what do we know about X'); episodic recalls by situation similarity ('have we seen this problem before')",
+        "Semantic uses SQL",
+        "Episodic is faster"
+      ],
+      "a": 1,
+      "why": "Different question shapes need different recall strategies — the reason the two types are stored and searched differently."
+    },
+    {
+      "q": "What belongs in a scratchpad versus long-term memory?",
+      "opts": [
+        "Everything goes to both",
+        "Scratchpad: current task's working state (resumable, disposable) · long-term: durable facts and lessons across tasks",
+        "Scratchpad: secrets · long-term: preferences",
+        "Nothing belongs in either"
+      ],
+      "a": 1,
+      "why": "Working state is task-scoped and disposable; memory is cross-task and curated — confusing them bloats both."
+    }
+  ],
+  "code": {
+    "title": "Write gates: what enters memory, when",
+    "body": "# Gate 1 · REFLECTION POINT (end of meaningful work)\n→ extract semantic facts only: preferences, project truths, decisions\n→ skip: time-sensitive details, one-off context, anything PII-tagged\n\n# Gate 2 · TASK END\n→ summarize episode: goal → approach → outcome → one lesson\n→ tag: task_type, date, outcome (success/failure/abandoned)\n\n# Gate 3 · NEVER (memory safety, AG-13)\n→ raw secrets, API keys, credentials\n→ PII about people without consent basis\n→ unverified claims marked as facts (store as 'unverified' or drop)\n\n# Gate 4 · EVICTION (scheduled)\n→ semantic: superseded facts replaced (keep old version 30d)\n→ episodic: raw → summary after 30d; lessons survive",
+    "annot": [
+      "Gate order matters: extract → tag → safety-filter → evict — each stage shrinks what the store carries",
+      "'Unverified' is a label, not a verdict: it keeps useful hunches recallable without granting them fact-status",
+      "Eviction is scheduled maintenance, same discipline as GA-14's index hygiene"
+    ]
+  },
+  "notes": "# Memory Types\n\n## Short-term = context window\n- Finite, volatile; degradation is silent (early instructions fall out).\n- Metaphor: context is RAM — manage as a working set.\n\n## Long-term memory\n- Write gates (reflection points, conclusions not transcripts) · store with provenance (when/source/confidence) · retrieve deliberately.\n- Freshness discipline like RAG: updates, evictions, conflict detection.\n\n## Episodic vs semantic\n- Semantic: context-free facts · dedupe + version · recall by meaning.\n- Episodic: context-rich events · timestamped/tagged · recall by situation · compress with age.\n\n## Scratchpads\n- Working files extend memory; notes = resumability; context carries the pointer, the file carries the state."
+}

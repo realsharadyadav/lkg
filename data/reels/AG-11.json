@@ -1,0 +1,144 @@
+{
+  "id": "AG-11",
+  "num": 53,
+  "track": "agentic",
+  "stage": "7. Patterns + Frameworks",
+  "topic": "Agent Reasoning",
+  "hook": "Four reasoning strategies — **ReAct, plan-and-execute, reflection, decomposition** — the difference between an agent that lunges and an agent that thinks.",
+  "chapters": [
+    "ReAct",
+    "Plan-and-execute",
+    "Reflection & self-critique",
+    "Task decomposition"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · REACT",
+      "title": "ReAct: reasoning and acting, **interleaved**",
+      "sub": "The pattern you already met — now with its trade-offs",
+      "narration": "ReAct — Reason plus Act — is AG-01's loop made explicit: at every step the model says what it's thinking and what it'll do next, acts, observes, and repeats. The interleaving is the point: reasoning is GROUNDED in fresh observations — no long plan made blind, no action without a stated rationale. ReAct shines for exploratory tasks where the path emerges from what you find — debugging, research, multi-tool investigations. Its weakness is equally clear: reasoning per step costs tokens and latency, and short-horizon bias — the model favors the next visible action over the globally best sequence — can walk into local optima. And reasoning chains drift: ten steps of interleaved thought accumulate the model's own confabulations. ReAct is the right default for open-ended loops; it's not the only strategy."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "🧭", "t": "ReAct wins", "s": "Exploratory paths · observation-driven · errors corrected immediately by what the tool returns", "win": true },
+        { "e": "⚠️", "t": "ReAct struggles", "s": "Long horizons (local optima) · cost per step · reasoning drift over many iterations", "win": false }
+      ],
+      "narration": "The practical read: ReAct's cost is linear in steps — fine for five-step tasks, punishing for fifty-step ones — and its myopia is real: asked to optimize a deployment, a ReAct loop tunes the first thing it sees. The counterweights you'll build: budgets, which cap the damage from drift; and switching strategies for the right phase — plan first when the horizon is long, react when the path is unknown. Also note the observation quality dependency: ReAct is only as grounded as what tools return — terse or misleading observations produce confident, wrong reasoning — AG-02's actionable-error discipline is ReAct's fuel quality. Same pattern, sharper lens: the loop is simple; what you feed it decides everything."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · PLAN-AND-EXECUTE",
+      "title": "Plan first, then execute — **with re-planning on failure**",
+      "sub": "The strategist's answer to short-horizon bias",
+      "narration": "Plan-and-execute splits the work: a PLANNING pass produces an ordered step list — often with dependencies — then EXECUTION runs the steps, typically without re-deliberating each one. The planner sees the whole board: subtasks ordered by dependency, parallelizable steps grouped, risks noted. Execution is cheaper per step — no reasoning narration — and the plan is inspectable: a human can review and EDIT the plan before a single expensive action runs, which is exactly the human-in-the-loop checkpoint production systems want. The catch: plans made blind. When execution reveals reality differs — the API can't do what the plan assumed — a rigid plan fails expensively. The fix is RE-PLANNING: on step failure or unexpected results, feed the state back to the planner for a revised plan, with a re-plan budget."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "📋", "t": "Plan", "s": "Full ordered step list · dependencies · parallel groups · risks — reviewable before execution" },
+        { "e": "🏃", "t": "Execute", "s": "Steps run without per-step deliberation · cheaper, faster, predictable" },
+        { "e": "🔁", "t": "Re-plan trigger", "s": "Step fails or reality diverges → state back to planner → revised plan (budgeted)" }
+      ],
+      "narration": "Choose by horizon: five-ish steps with unknown path — ReAct, the overhead isn't worth it; twenty-plus steps with knowable structure — plan-and-execute, the global view pays. Hybrid is the mature pattern: plan at the top level — the milestones — and ReAct WITHIN each milestone, where the local path is genuinely unknown. The plan format matters: machine-readable steps with explicit dependencies — not prose — because execution engines and re-planners both consume it structurally; a plan that can't be diffed can't be re-planned cleanly. And keep the plan in context during execution: the model's awareness of remaining steps prevents premature 'done' declarations — agents that forget the plan declare victory at step two."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · REFLECTION",
+      "title": "Reflection: the model as its own **critic**",
+      "sub": "Self-critique that improves outputs — and its limits",
+      "narration": "Reflection: after producing output, the model evaluates it — against the task, against criteria, against its own process — then revises. You've seen the machinery in evaluator-optimizer; here it's the reasoning strategy version: a draft, a critique pass, a revision pass. It genuinely improves writing, code, plans — tasks with checkable quality where the first attempt is rarely the best. Two honest limits. First, self-critique finds the flaws the model can SEE — systematic blind spots survive reflection untouched, because the same mind misses them twice; external verification — tests, judges, humans — covers what self-review can't. Second, reflection on PROCESS — 'did my approach to this research work?' — is what turns single runs into learning; captured as notes-to-self for future attempts, it's the seed of memory systems — AG-12's territory."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🪞", "t": "Self-critique pass", "s": "\"List weaknesses in this draft against the criteria\" → revise · real gains for writing, code, plans" },
+        { "e": "🙈", "t": "Blind-spot limit", "s": "Systematic errors survive self-review · pair with external verification (tests, judges, humans)" },
+        { "e": "🌱", "t": "Process reflection", "s": "\"Did my approach work?\" → notes for future runs · the seed of cross-session memory" }
+      ],
+      "narration": "Make reflection STRUCTURED, not vibes: fixed critique dimensions — correctness, completeness, relevance, constraints — scored or listed per dimension, so the revision targets named gaps instead of general unease. And separate the hats: the critic pass reads the draft WITHOUT the draft's own reasoning history when possible — anchoring on 'what I meant' is the classic self-review failure; judging the artifact, not the intention, is the discipline. In agent loops, reflection fits at two altitudes: micro — reflect per step or per artifact, feeding the next iteration; macro — reflect at task end on strategy, writing durable lessons into memory. The micro pass is cheap and frequent; the macro pass is where compound improvement lives — skip it and every run starts from zero, forever."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · DECOMPOSITION",
+      "title": "Decomposition: how big goals become **executable steps**",
+      "sub": "The skill under planning, orchestration, and every long task",
+      "narration": "Every strategy above rests on one skill: breaking a goal down. Good decomposition has a shape: steps are INDEPENDENTLY VERIFIABLE — each produces an artifact or answer checkable on its own — because 'research the market' isn't a step, it's a wish, while 'list the top ten competitors with pricing from their sites' is; steps have EXPLICIT dependencies — a DAG, not a list, so parallelizable branches are visible and ordering is justified; and each step fits ONE context — sized so a single model call can hold its input, instructions, and output. Techniques: MECE thinking — mutually exclusive, collectively exhaustive — so steps neither overlap nor leave gaps; question reformulation — restating the goal from different angles before splitting, which surfaces hidden subtasks; and leverage ordering — do the riskiest, most uncertain step FIRST, when cheapest to change course."
+    },
+    {
+      "type": "arch",
+      "chapter" : 3,
+      "layers": [
+        { "e": "🎯", "t": "Goal", "s": "\"Migrate the reporting stack\"" },
+        { "e": "🧩", "t": "Subgoals (MECE)", "s": "Inventory current reports · Map data sources · Choose target stack · Migrate top-5 reports first" },
+        { "e": "✅", "t": "Verifiable steps", "s": "Each ends with an artifact: list, mapping doc, decision record, working report" }
+      ],
+      "narration": "The example shows the shape: each subgoal ends in an ARTIFACT — inventory, mapping, decision record — not an activity, so completion is decidable rather than a feeling. The dependency DAG decides execution order: inventory enables mapping enables stack choice; 'migrate top-five reports' depends on all three — visible in a graph, invisible in a flat list. And the risk-ordering principle inverts instinct: teams start with the comfortable steps — inventory — while the uncertain one — does the target stack actually handle our biggest report? — carries the project's risk; do THAT first. Decomposition quality is measurable: a plan where every step is verifiable, dependencies explicit, and risks front-loaded will execute smoothly; one that's activities-in-a-list will drift. Judge your plans by these three properties before a single step runs."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-12",
+      "title": "Reasoning strategies need somewhere to put what they learn.",
+      "next": "Reel 54 · Memory Types — short-term, long-term, episodic, scratchpads"
+    }
+  ],
+  "recap": [
+    "ReAct interleaves reasoning and acting — grounded but myopic and costly per step; plan-and-execute sees the whole board and needs budgeted re-planning",
+    "Reflection improves drafts but can't see its own blind spots — pair with external verification; process reflection seeds memory",
+    "Decomposition: verifiable artifacts, explicit dependency DAGs, one-context steps, riskiest-first ordering"
+  ],
+  "quiz": [
+    {
+      "q": "When does plan-and-execute beat pure ReAct?",
+      "opts": [
+        "Always",
+        "Long-horizon tasks with knowable structure — global planning avoids short-sighted local choices; ReAct fits short exploratory loops",
+        "Never",
+        "Only for coding"
+      ],
+      "a": 1,
+      "why": "The trade is overhead versus foresight: planning pays when the horizon is long enough that local decisions compound."
+    },
+    {
+      "q": "Why can't reflection alone guarantee output quality?",
+      "opts": [
+        "It's too slow",
+        "Systematic blind spots survive self-review — the same mind misses the same flaws twice; external verification covers the gap",
+        "It costs too much",
+        "Models refuse to self-critique"
+      ],
+      "a": 1,
+      "why": "Self-critique catches visible flaws; only independent checks (tests, judges, humans) catch what the model systematically can't see."
+    },
+    {
+      "q": "What makes a task step 'verifiable'?",
+      "opts": [
+        "It's short",
+        "It ends in an artifact or answer that can be checked independently — completion is decidable, not a feeling",
+        "It uses tools",
+        "It's first in the list"
+      ],
+      "a": 1,
+      "why": "Verifiable steps turn 'research the market' wishes into checkable deliverables — the property that makes execution and evaluation possible."
+    }
+  ],
+  "code": {
+    "title": "Hybrid reasoning: plan milestones, ReAct within, reflect at the end",
+    "body": "async def run_hybrid(goal: str):\n    # 1 · PLAN — global view, machine-readable steps\n    plan = await llm(PLAN_PROMPT, goal=goal,\n                     schema=\"list[{step, depends_on, verify_by}]\")\n    await human_review(plan)                       # checkpoint\n\n    for step in topological_order(plan):\n        # 2 · EXECUTE — ReAct within the milestone\n        artifact = await react_loop(\n            f\"{goal}\\nCurrent step: {step.step}\",\n            tools=tools_for(step), max_iters=8)\n\n        # 3 · VERIFY per step — the plan's own verification hook\n        if not verify(step.verify_by, artifact):\n            plan = await replan(plan, failed=step, state=artifact)\n\n    # 4 · MACRO-REFLECTION — durable lessons into memory\n    lessons = await llm(\"What worked? What failed? Rules for next time?\",\n                        transcript=full_history())\n    memory.store(goal_domain(goal), lessons)\n    return collect_artifacts(plan)",
+    "annot": [
+      "verify_by rides in the plan: every step carries its own acceptance check — decomposition and verification designed together",
+      "Re-planning replaces failed steps without discarding the plan — global structure survives local surprises",
+      "The macro-reflection write is what makes run N+1 smarter — memory turns episodes into capability"
+    ]
+  },
+  "notes": "# Agent Reasoning\n\n## ReAct\n- Reason ↔ act interleaved; grounded in fresh observations.\n- Weaknesses: per-step cost, short-horizon myopia, reasoning drift.\n\n## Plan-and-execute\n- Plan (ordered, dependency-aware, reviewable) → execute cheaply → re-plan on failure (budgeted).\n- Long horizons; hybrid: plan milestones, ReAct within.\n\n## Reflection\n- Structured critique (dimensions, artifact-not-intention) → revise.\n- Blind spots survive self-review → external verification.\n- Process reflection → durable notes → memory (AG-12).\n\n## Task decomposition\n- Verifiable artifacts · explicit dependency DAG · one-context steps.\n- MECE; reformulate the goal; riskiest step first."
+}
