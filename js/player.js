@@ -134,8 +134,8 @@
       this._syncChap();
       let ended = false;
       const go = () => { if (ended) return; ended = true; this.sceneIdx++; this._scene(); };
-      this.speech = SS.narrator.speak(strip(sc.narration), { onend: go });
-      this._after(SS.narrator.estMs(sc.narration) * 2.2 + 2500, go);
+      this.speech = SS.narrator.speak(strip(sc.narration), { onend: () => this._after(600, go) });
+      this._after(SS.narrator.estMs(sc.narration) * 2.2 + 3100, go);
     }
 
     _recap() {
@@ -273,13 +273,10 @@
 
     /* ---------- helpers ---------- */
     _caption(text) {
-      const words = strip(text).split(/\s+/);
-      this.capText.innerHTML = words.map(w => `<span class="w">${w}</span>`).join(' ');
-      const spans = [...this.capText.querySelectorAll('.w')];
-      if (this.karaokeStop) this.karaokeStop();
-      this.karaokeStop = SS.narrator.karaoke(text, i => {
-        spans.forEach((s, j) => s.classList.toggle('on', j <= i));
-      });
+      // full text, fully readable from the first moment — no word-by-word dimming.
+      // user reads at their own pace; the text area is scrollable for long narrations.
+      if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; }
+      this.capText.innerHTML = '<span class="w on">' + strip(text) + '</span>';
     }
     _say(text, onend) { this.speech = SS.narrator.speak(text, { onend }); }
     _stopSpeech() { if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
