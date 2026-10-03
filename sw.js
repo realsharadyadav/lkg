@@ -1,8 +1,8 @@
 /* LKG service worker — app shell cache-first, reel JSON/audio cached at runtime */
-const SHELL = 'lkg-shell-v3';
+const SHELL = 'lkg-shell-v4';
 const SHELL_FILES = [
   '.', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
-  'js/state.js', 'js/narrator.js', 'js/scenes.js', 'js/data.js', 'js/motion.js', 'js/player.js', 'js/feed.js', 'js/main.js',
+  'js/state.js', 'js/narrator.js', 'js/scenes.js', 'js/data.js', 'js/motion.js', 'js/audio.js', 'js/player.js', 'js/feed.js', 'js/main.js',
   'data/manifest.json'
 ];
 
@@ -17,8 +17,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
-  // reel JSON: cache-first, then network (and store for offline)
-  if (url.pathname.includes('/data/reels/')) {
+  // reel JSON + voiceover audio: cache-first, then network (and store for offline)
+  if (url.pathname.includes('/data/reels/') || url.pathname.includes('/data/audio/')) {
     e.respondWith(caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const copy = res.clone();
       caches.open(SHELL).then(c => c.put(e.request, copy));

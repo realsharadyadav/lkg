@@ -44,7 +44,7 @@
     },
 
     /* ---- list cards ---- */
-    list(mount, sc) {
+    list(mount, sc, ctx) {
       const el = base(mount);
       const card = h('div', 'list-card');
       el.appendChild(card);
@@ -52,7 +52,20 @@
         const d = h('div', 'list-item', `<span class="dot">${it.e || '•'}</span><span><b>${mark(it.t)}</b>${it.s ? `<small>${mark(it.s)}</small>` : ''}</span>`);
         card.appendChild(d); pop(d, Math.min(i, 3));
       });
-      return () => {};
+      // sequential highlight — the narration "walks through" the items one by one
+      let dead = false, iv = null;
+      const kids = [...card.children];
+      const durMs = ctx && ctx.durMs;
+      if (durMs && kids.length > 1) {
+        const stepMs = Math.max(2000, durMs / kids.length);
+        let i = 0;
+        iv = setInterval(() => {
+          if (dead) return;
+          kids.forEach((k, j) => k.classList.toggle('hot', j === i % kids.length));
+          i++;
+        }, stepMs);
+      }
+      return () => { dead = true; clearInterval(iv); };
     },
 
     /* ---- compare two cards ---- */

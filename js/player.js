@@ -103,7 +103,10 @@
       if (SS.motion) this._hookFX = SS.motion.hookFX(this.hookEl);
       const t = this.hookEl.querySelector('.hook-text');
       t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop');
-      this._say(strip(this.data.hook), () => this._startScenes());
+      const say = SS.audio
+        ? SS.audio.speak(this.data.id + '/hook', strip(this.data.hook), { onend: () => this._startScenes() })
+        : this._say(strip(this.data.hook), () => this._startScenes());
+      this.speech = say;
       this._after(3600, () => { if (this.state === 'hook') this._startScenes(); });
     }
     skipHook() { if (this.state === 'hook') this._startScenes(); }
@@ -126,16 +129,24 @@
       const mount = h('div', 'scene');
       this.stage.appendChild(mount);
       const render = SS.scenes[sc.type] || SS.scenes.bigtext;
-      this.sceneCleanup = render(mount, sc, { accent: getComputedStyle(this.root).getPropertyValue('--accent') });
+      this.sceneCleanup = render(mount, sc, { accent: getComputedStyle(this.root).getPropertyValue('--accent'), durMs: sc.narration ? SS.narrator.estMs(sc.narration) * 2.2 : 9000 });
       if (SS.motion) SS.motion.transition(this.stage, olds, mount);
       else olds.forEach(l => l.remove());
-      this._caption(sc.narration);
+      this._caption(sc.narration || sc.title || '');
       this._seg(this.sceneIdx / this.data.scenes.length);
       this._syncChap();
       let ended = false;
       const go = () => { if (ended) return; ended = true; this.sceneIdx++; this._scene(); };
-      this.speech = SS.narrator.speak(strip(sc.narration), { onend: () => this._after(600, go) });
-      this._after(SS.narrator.estMs(sc.narration) * 2.2 + 3100, go);
+      // scenes without narration (e.g. bridges): hold a beat, move on — never crash
+      if (sc.narration) {
+        const key = `${this.data.id}/s${this.sceneIdx}`;
+        this.speech = SS.audio
+          ? SS.audio.speak(key, strip(sc.narration), { onend: () => this._after(600, go) })
+          : SS.narrator.speak(strip(sc.narration), { onend: () => this._after(600, go) });
+        this._after(SS.narrator.estMs(sc.narration) * 2.2 + 3100, go);
+      } else {
+        this._after(4500, go);
+      }
     }
 
     _recap() {
@@ -155,7 +166,9 @@
         '. Also: ' + strip(this.data.recap[1]) +
         (this.data.recap[2] ? '. And finally: ' + strip(this.data.recap[2]) : '') +
         '. Now — a quick check.';
-      this.speech = SS.narrator.speak(say, { onend: () => this._after(700, () => this._quiz()) });
+      this.speech = SS.audio
+        ? SS.audio.speak(this.data.id + '/recap', say, { onend: () => this._after(700, () => this._quiz()) })
+        : SS.narrator.speak(say, { onend: () => this._after(700, () => this._quiz()) });
       this._after(SS.narrator.estMs(say) * 2.2 + 3000, () => this._quiz());
     }
 
@@ -174,7 +187,8 @@
         `<div class="quiz-why">💡 ${mark(q.why)}</div><button class="quiz-next">Continue ➜</button><div class="quiz-done"></div>`);
       layer.appendChild(card);
       this.root.querySelector('.reel-inner').appendChild(layer);
-      SS.narrator.speak(strip(q.q));
+        if (SS.audio) SS.audio.speak(`${this.data.id}/quiz${this.quizIdx}_q`, strip(q.q), {});
+        else SS.narrator.speak(strip(q.q));
       card.querySelectorAll('.quiz-opt').forEach(btn => btn.addEventListener('click', () => {
         if (card.dataset.locked) return;
         card.dataset.locked = '1';
@@ -188,7 +202,14 @@
         const last = this.quizIdx + 1 >= n;
         next.textContent = right ? (last ? 'Finish 🎉' : 'Nice! Next ➜') : (last ? 'Finish 🎉' : 'Got it — Next ➜');
         if (right) SS.fx.confetti(card);
-        SS.narrator.speak(right ? 'Correct! ' + strip(q.why) : 'Not quite. ' + strip(q.why));
+        if (SS.audio) {
+          // shared prefix clip, then the per-quiz explanation — one voice throughout
+          SS.audio.speak(right ? '_fx/correct' : '_fx/notquite', '', {
+            onend: () => SS.audio.speak(`${this.data.id}/quiz${this.quizIdx}_why`, strip(q.why), {})
+          });
+        } else {
+          SS.narrator.speak(right ? 'Correct! ' + strip(q.why) : 'Not quite. ' + strip(q.why));
+        }
         next.addEventListener('click', () => {
           if (last) this._complete(layer);
           else { this.quizIdx++; this._quiz(); }
@@ -242,26 +263,23 @@
       else if (s === 'recap') this._recap();
       else if (s === 'hook') this._hook();
     }
-    pressStart() {
-      if (this.paused || this.state === 'quiz') return;
-      this.speedMult = 2;
-      SS.narrator.setRate(Math.min(2, SS.narrator.baseRate * 2), false);
-      this.speedpill.classList.add('show');
-      if (this.state === 'scene') { const i = this.sceneIdx; this._stopSpeech(); this._clearTimers(); this.sceneIdx = i; this._speakOnly(); }
+    pressStart() {           // long-press: pause (release resumes)
+      if (this.paused || this.state === 'quiz' || this.state === 'done' || this.state === 'idle') return;
+      this._pause();
     }
     pressEnd() {
-      if (this.speedMult === 1) return;
-      this.speedMult = 1;
-      SS.narrator.setRate(SS.narrator.baseRate, false);
-      this.speedpill.classList.remove('show');
-      if (this.state === 'scene' && !this.paused) { const i = this.sceneIdx; this._stopSpeech(); this._clearTimers(); this.sceneIdx = i; this._speakOnly(); }
+      if (!this.paused) return;
+      this._resume();
     }
     _speakOnly() {
       const sc = this.data.scenes[this.sceneIdx];
       if (!sc) return;
       let ended = false;
       const go = () => { if (ended) return; ended = true; this.sceneIdx++; this._scene(); };
-      this.speech = SS.narrator.speak(strip(sc.narration), { onend: go });
+      if (!sc.narration) { this._after(2000, go); return; }
+      this.speech = SS.audio
+        ? SS.audio.speak(`${this.data.id}/s${this.sceneIdx}`, strip(sc.narration), { onend: go })
+        : SS.narrator.speak(strip(sc.narration), { onend: go });
       this._after(SS.narrator.estMs(sc.narration) * 2.2 + 2500, go);
     }
 

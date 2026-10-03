@@ -48,16 +48,25 @@
       return { cancel: () => clearTimeout(t) };
     }
     let cancelled = false, ended = false, cur = null;
+    const t0 = Date.now();
     const offsets = []; let acc = 0;
     sents.forEach(s => { offsets.push(acc); acc += s.split(/\s+/).filter(Boolean).length; });
-    const finish = () => { if (!ended) { ended = true; cb.onend && cb.onend(); } };
+    /* never let spurious end/error events skip ahead of the narration —
+       the earliest we may declare "finished" is 70% of the estimated read time */
+    const minMs = estMs(text) * 0.7;
+    const finish = () => {
+      if (cancelled || ended) return;
+      const wait = minMs - (Date.now() - t0);
+      if (wait > 0) { setTimeout(finish, wait); return; }
+      ended = true; cb.onend && cb.onend();
+    };
     const localWord = (s, charIdx) => {
       let n = 0;
       for (const m of s.matchAll(/\S+/g)) { if (m.index <= charIdx) n++; else break; }
       return Math.max(0, n - 1);
     };
     const pitchAmp = 0.10 * expr, rateAmp = 0.05 * expr;
-    const next = si => {
+    const next = (si, attempt) => {
       if (cancelled || ended) return;
       if (si >= sents.length) return finish();
       const s = sents[si];
@@ -76,11 +85,17 @@
         if (e.charIndex == null || !cb.onword) return;
         cb.onword(offsets[si] + localWord(s, e.charIndex), words.length);
       };
-      u.onend = () => next(si + 1);
-      u.onerror = e => { if (!cancelled && e.error !== 'interrupted' && e.error !== 'canceled') next(si + 1); };
+      u.onend = () => next(si + 1, 0);
+      // engine hiccups (synthesis-failed, network, audio-busy…) must NOT skip
+      // the sentence — retry it up to 3 times before moving on
+      u.onerror = e => {
+        if (cancelled || e.error === 'interrupted' || e.error === 'canceled') return;
+        if ((attempt || 0) < 3) setTimeout(() => next(si, (attempt || 0) + 1), 180);
+        else next(si + 1, 0);
+      };
       speechSynthesis.speak(u);
     };
-    next(0);
+    next(0, 0);
     return { cancel: () => { cancelled = true; try { speechSynthesis.cancel(); } catch (e) {} } };
   }
 
