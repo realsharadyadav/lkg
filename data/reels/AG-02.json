@@ -1,0 +1,147 @@
+{
+  "id": "AG-02",
+  "num": 42,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Tool Design",
+  "hook": "Agents are only as good as their tools. **Descriptions drive selection, validation blocks chaos, errors teach recovery.** Tool design IS agent design.",
+  "chapters": [
+    "Schemas & descriptions",
+    "Validation",
+    "Errors the model can fix",
+    "Idempotency, parallelism & tool overload"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SCHEMAS",
+      "title": "The description IS the API — **to the model**",
+      "sub": "Models choose tools by reading, so write for a reader",
+      "narration": "A model selects tools the way a developer reads documentation: by scanning names and descriptions. The tool name is the headline — search-documents beats tool-1; verb-noun, specific, unambiguous against sibling tools. The description answers three questions: what does it do, when should it be used, when should it NOT be used — that third one prevents the classic failure of the model grabbing a plausible-but-wrong tool. Argument descriptions matter equally: 'query' needs 'a standalone search phrase, not a question' — the model copies patterns from descriptions into its arguments. Sparse descriptions don't just under-document a tool; they randomize the agent's behavior."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "One tool, two descriptions — watch behavior change",
+      "lang": "json",
+      "body": "{\n  \"name\": \"search_documents\",\n  \"description\": \"Search the internal knowledge base. Use for questions about company policy, products, or past decisions. Do NOT use for real-time data (use web_search) or calculations.\",\n  \"parameters\": {\n    \"query\": {\n      \"type\": \"string\",\n      \"description\": \"A standalone keyword search phrase (e.g. 'refund policy enterprise'). Not a full question.\"\n    },\n    \"top_k\": {\n      \"type\": \"integer\",\n      \"description\": \"Number of results, 1-10. Use 3 for narrow fact lookups, 8+ for research tasks.\",\n      \"default\": 5\n    },\n    \"date_after\": {\n      \"type\": \"string\",\n      \"description\": \"Optional ISO date filter, e.g. '2026-01-01'. Only set when the user asks about recent info.\"\n    }\n  }\n}",
+      "annot": [
+        "The 'Do NOT use for…' clause is load-bearing — it's how you steer the model away from plausible-but-wrong choices",
+        "Examples inside argument descriptions get copied — 'refund policy enterprise' will appear in real queries",
+        "Defaults in the schema are behavioral guardrails: most calls will leave top_k at 5 unless reason says otherwise"
+      ],
+      "narration": "Read it as marketing copy aimed at a very literal reader. Every sentence changes behavior: the when-to-use boundary prevents tool confusion; the negative clause prevents the near-miss; the example phrase becomes a template the model imitates; the default nudges most calls to sane values. Now the anti-pattern: forty tools with one-line descriptions — the model's tool choice becomes a coin flip, and every flip is a potential wasted loop. Quality-in, quality-out applies with unusual directness here: the model literally receives your documentation as its only interface to the world. Write tool docs the way you'd write a public API's docs — because to the agent, that's exactly what they are."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · VALIDATION",
+      "title": "Never trust LLM-generated arguments — **validate everything**",
+      "sub": "The model proposes; your code disposes",
+      "narration": "Tool arguments come from a language model — an eloquent guesser, not a guarantee. Treat every call like user input from an untrusted source, because functionally it is. Schema validation is the floor: types, required fields, enums, ranges — Pydantic models mirroring the JSON schema, applied before ANY execution. Business validation is the real gate: can this user access this record? Is this amount within limits? Does this file path escape the allowed directory? A validated argument can still be a catastrophic action — 'delete_file' with a perfectly typed, fully validated path to the production database. Validation stops malformed calls; AUTHORIZATION stops malicious or catastrophic ones. The model proposes, your code disposes."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📐", "t": "Schema validation", "s": "Pydantic types, ranges, enums — malformed args rejected before execution" },
+        { "e": "🛡️", "t": "Business rules & authz", "s": "Ownership, limits, allow-listed paths — validated shape ≠ permitted action" },
+        { "e": "🚫", "t": "Fail closed", "s": "Invalid args → error observation back to the model, NOT silent coercion" }
+      ],
+      "narration": "Fail-closed deserves emphasis: when validation rejects arguments, return the error to the model as an observation — 'amount must be positive, got -500' — because AG-01's loop can then self-correct. What's forbidden is SILENT coercion — auto-fixing a bad argument and executing anyway; you lose the audit trail and teach the model its sloppiness is free. Layer the checks: schema first — cheap, mechanical; authorization second — user-scoped, policy-driven; rate and blast-radius limits third — 'no single agent run may modify more than N records'. Each layer is one line of defense the model cannot talk its way past, because none of them reads the model's reasoning — they only see its proposed action."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · ERRORS",
+      "title": "Write errors the model can **act on**",
+      "sub": "An error message is an API to the agent's next decision",
+      "narration": "In agent systems, an error message isn't written for a human on-call — it's written for the model that will read it in the next loop iteration and decide what to do. 'Error: invalid input' is a dead end: the model has nothing to work with and will guess — usually by retrying identically, forever. An actionable error says: what went wrong, what would make it right. Compare: 'HTTP 404' versus 'No document found for id DOC-123 — check the id format: DOC-<year>-<seq> like DOC-2026-0041'. The second turns a failure into a fixable observation; the agent corrects the id format and succeeds on the next loop. Error design is the difference between an agent that recovers and one that loops."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "💀", "t": "Dead-end error", "s": "\"Error: invalid input\" · model has zero information → retries identically or hallucinates a fix", "win": false },
+        { "e": "🛠️", "t": "Actionable error", "s": "\"user_id must be UUID, got '42'. Example: 9f2c…\" · model self-corrects next loop", "win": true }
+      ],
+      "narration": "Test your error messages with one question: 'if I were the model reading this, would I know what to try next?' That reframe produces a style guide: state the constraint that was violated, show the received value, give a correct example, and suggest the nearest alternative when one exists — 'no results for X; the closest matches are Y and Z'. Also distinguish RETRYABLE from terminal in the message itself: 'rate limited, retry in 30s' invites a retry; 'permission denied for user U on record R' should stop the loop, and saying so prevents doomed attempts. Errors are the feedback channel of the agent loop — design them with the same care as the happy path."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · CRAFT",
+      "title": "Idempotent tools, parallel calls, and the **too-many-tools** wall",
+      "sub": "The advanced mechanics that separate demo agents from durable ones",
+      "narration": "Three mechanics that decide whether tools survive production. IDEMPOTENCY: agents retry — after errors, after confusion — so tools must be safe to repeat: prefer create-with-client-id over blind create; delete-checking-existence over delete-assuming. An agent that retries a non-idempotent 'charge_customer' twice is an incident. PARALLELISM: independent tool calls should run concurrently — asyncio.gather, PY-10 — not sequentially; agents that fetch five sources one at a time waste fivefold latency. TOO MANY TOOLS: beyond roughly a dozen, selection accuracy degrades — group tools, merge related ones, or let the agent discover tools in layers rather than seeing all forty at once. Tool count is a context problem as much as a selection problem."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🔁", "t": "Idempotent by design", "s": "Same call twice = same end state · retries become free" },
+        { "e": "⚡", "t": "Parallel independent calls", "s": "gather() over independent tools · never serialize what doesn't depend" },
+        { "e": "🗜️", "t": "Cap the tool set", "s": "~12+ tools → group/merge/layer discovery · selection accuracy and context both degrade" }
+      ],
+      "narration": "The unifying principle: design for the agent's actual runtime conditions — retries, parallelism budgets, limited attention — not for the clean demo path. Idempotency check: run every tool twice in tests; if the second run throws or duplicates, redesign the semantics — upsert, ensure-exists, delete-if-present. Parallelism check: when you see the model emit several independent calls in one turn, execute them concurrently and return all results — most modern APIs support parallel tool calls natively. Tool-count strategy when you genuinely have many capabilities: tool groups exposed progressively — 'search tools' first, deeper tools unlocked by context — mirrors how you'd onboard a human. Tools are the agent's organs; keep them few, safe, fast, and legible."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-03",
+      "title": "Custom tools done. What about the powers models bring built-in?",
+      "next": "Reel 43 · Built-in Capabilities — code execution, web search, computer use"
+    }
+  ],
+  "recap": [
+    "Tool selection is reading: names, when/when-not descriptions, and argument examples directly shape agent behavior",
+    "Validate like untrusted input: schema + authorization + blast-radius limits; fail closed with actionable errors returned to the loop",
+    "Idempotent tools make retries safe; parallelize independent calls; keep the tool set small or layer its discovery"
+  ],
+  "quiz": [
+    {
+      "q": "Why does a tool description need a 'when NOT to use' clause?",
+      "opts": [
+        "It saves tokens",
+        "Without it, the model can't distinguish similar tools and picks plausible-but-wrong ones — negative boundaries steer selection",
+        "It's required by JSON schema",
+        "It improves latency"
+      ],
+      "a": 1,
+      "why": "Models disambiguate tools by reading boundaries; a description that only says what a tool does leaves the choice to similarity luck."
+    },
+    {
+      "q": "What makes an error message 'actionable' for an agent loop?",
+      "opts": [
+        "It's short",
+        "It says what failed, what constraint was violated, and what a correct attempt looks like — so the model can fix it next iteration",
+        "It's written in uppercase",
+        "It includes a stack trace"
+      ],
+      "a": 1,
+      "why": "The error is the feedback channel: with a constraint, the received value, and an example, self-correction replaces blind retrying."
+    },
+    {
+      "q": "Why must agent-facing tools be idempotent?",
+      "opts": [
+        "APIs require it",
+        "Agents retry after errors and confusion — a tool that isn't safe to repeat can execute a dangerous action twice",
+        "It reduces token usage",
+        "It speeds up parallel calls"
+      ],
+      "a": 1,
+      "why": "Retries are intrinsic to agent loops; idempotency converts 'the agent got confused' from an incident into a non-event."
+    }
+  ],
+  "code": {
+    "title": "A production-grade tool: validated, idempotent, self-explaining errors",
+    "body": "from pydantic import BaseModel, Field\nfrom typing import Literal\n\nclass SearchDocs(BaseModel):\n    query: str = Field(min_length=2, max_length=200,\n                       description=\"standalone keywords, not a question\")\n    top_k: int = Field(default=5, ge=1, le=10)\n    date_after: str | None = Field(\n        default=None, pattern=r\"^\\d{4}-\\d{2}-\\d{2}$\")\n\ndef search_documents(args: SearchDocs, user: User):\n    if not user.can_search:\n        raise ToolError(\"permission denied: search requires the 'kb' role\")\n    try:\n        hits = vdb.search(embed(args.query), k=args.top_k,\n                          where={\"acl\": {\"$in\": user.groups}})\n    except IndexUnavailable:\n        raise ToolError(\"search index temporarily unavailable — \"\n                        \"retry in ~30s or answer from general knowledge\")\n    if not hits:\n        raise ToolError(\n            f\"no results for '{args.query}'. Try broader keywords \"\n            \"(e.g. drop qualifiers) or a date filter reset.\")\n    return [{\"id\": h.id, \"snippet\": h.text[:300]} for h in hits]\n\n# Note: ToolError messages are written FOR THE MODEL — constraints,\n# received values, next steps. They are the loop's feedback signal.",
+    "annot": [
+      "Pydantic IS the schema gate — the same model serializes to the function-calling schema the model sees",
+      "Every failure path raises ToolError with a next action — no dead ends anywhere in this function",
+      "The ACL filter rides INSIDE the retrieval — the model never sees chunks the user can't (GA-17's rule)"
+    ]
+  },
+  "notes": "# Tool Design\n\n## Schemas & descriptions\n- Name = verb_noun, unambiguous. Description answers: what / when / when NOT.\n- Argument descriptions carry examples — models imitate them.\n- Defaults are behavioral guardrails.\n\n## Validation\n- LLM args = untrusted input: Pydantic schema + authorization + blast-radius limits.\n- Fail closed: invalid → actionable ToolError back to the loop; never silently coerce.\n\n## Errors the model can fix\n- Constraint + received value + correct example (+ nearest alternatives).\n- Distinguish retryable vs terminal in the message.\n\n## Craft\n- Idempotent tools → retries safe (upsert/ensure/delete-if-present).\n- Parallelize independent calls (gather).\n- ~12+ tools → group/merge/layer discovery."
+}

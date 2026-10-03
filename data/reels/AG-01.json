@@ -1,0 +1,147 @@
+{
+  "id": "AG-01",
+  "num": 41,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "What is an Agent",
+  "hook": "Chatbot answers. Workflow follows. **Agent decides.** The autonomy spectrum — and the honest guide to when NOT to use agents.",
+  "chapters": [
+    "The autonomy spectrum",
+    "The agent loop",
+    "Anatomy of an agent",
+    "When NOT to use agents"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SPECTRUM",
+      "title": "Chatbot → workflow → agent: **who decides what happens next?**",
+      "sub": "Autonomy is the whole difference",
+      "narration": "Three systems people confuse constantly. A chatbot: the model responds, the human acts — one turn, no side effects, no initiative. A workflow: code decides — a fixed pipeline where the model is a STEP — summarize this, then classify that — and the control flow is written by a programmer in advance. An agent: the MODEL decides — given a goal, it chooses which tools to call, in what order, when to stop. The litmus test is one question: when this step finishes, who picks the next step? If the answer is a programmer, it's a workflow. If it's the model, it's an agent. Neither is 'better' — they trade control for flexibility, and that trade should be deliberate, not fashionable."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "💬", "t": "Chatbot", "s": "Responds, human acts · no tools, no side effects · simplest", "win": true },
+        { "e": "🔀", "t": "Workflow", "s": "Code controls flow, model is a step · predictable, testable · rigid", "win": true },
+        { "e": "🤖", "t": "Agent", "s": "Model controls flow via tools · flexible, adaptive · costly, harder to test", "win": true }
+      ],
+      "narration": "Place your features on this spectrum honestly. Support FAQ bot — chatbot, stop there. Nightly 'summarize new tickets and file them by topic' — a workflow; the steps never change, so why pay for judgment? Research assistant that must search, read, notice the answer needs another source, and adapt — THAT's an agent, because the path can't be written in advance. The expensive mistake of this era is agentifying workflows: taking a deterministic five-step pipeline and re-implementing it as an agent loop — you lose testability, add latency and token cost, and gain nothing, because there was no decision to delegate. Autonomy is a budget: spend it only where the path is genuinely unknown."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · THE LOOP",
+      "title": "Think → act → observe → repeat: **one loop, entire agents**",
+      "sub": "The ReAct pattern that powers everything",
+      "narration": "Every agent, from the simplest tool-caller to multi-day research systems, is one loop. THINK: the model receives the goal plus everything observed so far, and reasons about what to do next. ACT: it emits a structured tool call — name plus arguments — rather than prose. OBSERVE: the system executes the tool and returns the result — a search result, a database row, an error — as a new message. REPEAT: the model sees the result and decides again — another tool, or a final answer. This is the ReAct pattern — reasoning and acting interleaved — and the loop stops when the model produces an answer instead of a tool call, or when you stop it with a budget: max iterations, wall-clock limit, or cost ceiling."
+    },
+    {
+      "type": "loop",
+      "chapter": 1,
+      "steps": [
+        { "e": "🧠", "t": "Think", "s": "Goal + observations so far → next action" },
+        { "e": "🔧", "t": "Act", "s": "Emit tool call: {name, args} — not prose" },
+        { "e": "👁️", "t": "Observe", "s": "Tool result (or error) returns as a message" },
+        { "e": "🔁", "t": "Repeat", "s": "Model decides again → tool or final answer" }
+      ],
+      "narration": "Watch what the loop buys: the model isn't executing a plan — it's RE-planning after every observation. Search found nothing useful? The next think can change strategy entirely. A tool errored? The model can read the error, fix its arguments, and retry. This adaptive re-planning is precisely what workflows cannot do, because their flow was frozen at deploy time. But notice the flip side in the same picture: every iteration is another full LLM call — latency and cost accumulate per loop — and each think is a fresh chance to go wrong. That's why the loop needs guardrails you'll build in AG-02: budgets, validation, and structured stop conditions. The loop is simple; the engineering is all in what wraps it."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · ANATOMY",
+      "title": "Four parts: model, instructions, tools, memory",
+      "sub": "An agent is a system, not a magic model mode",
+      "narration": "Strip any agent to components. The MODEL: any capable LLM — the brain, but not the system. INSTRUCTIONS: the system prompt defining the goal, the rules, the tone — the cheapest quality lever you have; most 'agent failures' are instruction failures. TOOLS: typed functions the model may call — search, database, code execution; the tool set is the agent's hands, and tool quality dominates agent quality — AG-02's whole subject. MEMORY: what persists between turns — short-term: the conversation and observations so far, which IS the context window; long-term: stored facts or summaries that get re-injected. The humble truth: an agent is an LLM in a loop with a system prompt and function definitions. The magic is in the engineering around that, not in the word 'agent'."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🧠", "t": "Model", "s": "Any strong LLM · 'agentic' is not a model mode — it's a system pattern around a model" },
+        { "e": "📜", "t": "Instructions", "s": "Goal + rules + stop conditions in the system prompt · cheapest quality lever" },
+        { "e": "🔧", "t": "Tools", "s": "Typed, described, validated functions · tool design IS agent design (AG-02)" },
+        { "e": "🧷", "t": "Memory", "s": "Short-term = context window · long-term = stored state re-injected · trimming is architecture" }
+      ],
+      "narration": "Two components deserve extra attention. Instructions: write them as a contract — goal, available tools, when to use each, what to do on errors, when to stop and ask a human. Vague instructions plus capable tools equals an expensive improviser. Memory: the context window is the agent's working memory, and it fills up — long sessions need trimming strategies: summarize older turns, drop stale observations, keep tool results only while relevant. Long-term memory — facts written to a store and re-injected — is powerful but adds retrieval quality problems you now know how to handle: Stage 4 was the prerequisite. Weak memory management is the commonest cause of agents that start strong and degrade within a session."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · HONESTY",
+      "title": "The counter-essay: **workflows usually win**",
+      "sub": "When NOT to use agents — the mark of a real architect",
+      "narration": "A field guide to restraint. Use a WORKFLOW when: the steps are known in advance — approval chains, ETL, ticket routing; correctness is critical — compliance, finance, anything auditable, because workflows are testable and agents are probabilistic; latency or cost matter — agents multiply both per decision. Use an AGENT when: the path genuinely can't be pre-written — open research, debugging, multi-source investigation; the input space is too wide for explicit branches; the task rewards adaptation more than it punishes variance. And start SINGLE-agent: multi-agent systems — orchestrators, specialists, debates — add coordination failure modes that dwarf their benefits at small scale. Escalate autonomy only when the simpler thing demonstrably fails."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "✅", "t": "Agent when", "s": "Path unknown · open-ended research/debugging · wide input space · adaptation beats variance" },
+        { "e": "⛔", "t": "Workflow when", "s": "Steps known · auditability required · latency/cost sensitive · determinism is a feature" },
+        { "e": "🐣", "t": "Start single-agent", "s": "One capable loop beats three coordinating loops · escalate to multi-agent only on proven need" }
+      ],
+      "narration": "The credibility check for any agent proposal: 'show me the decision the model must make that we cannot write code for.' If the answer is vague — 'it needs to be smart' — build a workflow and improve the prompts inside it. If the answer is concrete — 'we can't predict which of forty sources will matter, or how many hops the question needs' — you have a genuine agent case. Also price the difference honestly: an agent run costs orders of magnitude more in tokens and latency than a workflow step, and its failure modes are open-ended — hallucinated tool args, infinite loops, scope creep. The architects who ship reliable AI systems are the ones who can argue AGAINST the agent as fluently as for it."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-02",
+      "title": "Agent decided. Now the make-or-break component: tools.",
+      "next": "Reel 42 · Tool Design — schemas, validation, errors the model can fix"
+    }
+  ],
+  "recap": [
+    "The litmus test: who picks the next step — programmer (workflow) or model (agent)?",
+    "The agent loop = think → act → observe → repeat, bounded by budgets; agents re-plan, workflows replay",
+    "Anatomy: model + instructions + tools + memory; use workflows for known paths and auditability, start single-agent"
+  ],
+  "quiz": [
+    {
+      "q": "What distinguishes an agent from a workflow?",
+      "opts": [
+        "Agents use bigger models",
+        "In a workflow, code decides the next step; in an agent, the model decides after each observation",
+        "Workflows can't call LLMs",
+        "Agents run in the cloud"
+      ],
+      "a": 1,
+      "why": "Autonomy of control flow is the definition — the model re-plans per iteration; a workflow's path was frozen at deploy time."
+    },
+    {
+      "q": "Why does every agent loop need an iteration/cost budget?",
+      "opts": [
+        "To save memory",
+        "Each loop is another full LLM call — without a cap, a confused agent can loop (and spend) indefinitely",
+        "APIs require it",
+        "It makes tools faster"
+      ],
+      "a": 1,
+      "why": "The loop's flexibility is also its risk: unbounded re-planning. Budgets turn 'agent hung' from a possibility into an impossibility."
+    },
+    {
+      "q": "When is a workflow clearly the better choice over an agent?",
+      "opts": [
+        "Never — agents are the modern way",
+        "Steps known in advance + auditability/cost/latency constraints — workflows are testable and cheap",
+        "When the input space is wide",
+        "When tools are available"
+      ],
+      "a": 1,
+      "why": "Deterministic paths should be coded, not re-derived at token cost per run — reserve judgment for genuinely unknown paths."
+    }
+  ],
+  "code": {
+    "title": "The agent loop in ~30 lines",
+    "body": "from dataclasses import dataclass\n\n@dataclass\nclass Agent:\n    model: LLM\n    instructions: str\n    tools: dict[str, callable]      # name -> function\n    max_iters: int = 10             # the budget\n\n    def run(self, goal: str) -> str:\n        messages = [\n            {\"role\": \"system\", \"content\": self.instructions},\n            {\"role\": \"user\", \"content\": goal},\n        ]\n        for _ in range(self.max_iters):        # hard stop\n            resp = self.model.chat(\n                messages, tools=schema(self.tools))\n            msg = resp.choices[0].message\n            messages.append(msg)\n\n            if not msg.tool_calls:               # done: final answer\n                return msg.content\n\n            for call in msg.tool_calls:          # act + observe\n                try:\n                    result = self.tools[call.name](**call.args)\n                except Exception as e:\n                    result = f\"ERROR: {e}\"      # errors go back as observations\n                messages.append({\"role\": \"tool\",\n                                 \"content\": str(result)})\n        return \"Stopped: iteration budget exhausted.\"",
+    "annot": [
+      "max_iters is non-negotiable — the single line separating an agent from an infinite bill",
+      "Tool errors are returned as observations, not raised — the model reads them and can self-correct (AG-02)",
+      "When the loop exits WITHOUT an answer, say so honestly — a silent truncation is a wrong answer"
+    ]
+  },
+  "notes": "# What is an Agent\n\n## Autonomy spectrum\n- **Chatbot**: responds, human acts.\n- **Workflow**: code controls flow; model is a step. Testable, cheap, rigid.\n- **Agent**: model picks next step via tools. Flexible, adaptive, costly.\n- Litmus: who decides the next step?\n\n## The loop (ReAct)\n- Think → act (tool call) → observe (result as message) → repeat.\n- Stops on: final answer / budgets (iterations, time, cost).\n- The power: re-planning after every observation. The cost: LLM call per decision.\n\n## Anatomy\n- Model · instructions (cheapest quality lever) · tools (AG-02) · memory (context = short-term; store = long-term).\n\n## When NOT to use agents\n- Steps known · auditability required · latency/cost sensitive → workflow.\n- Start single-agent; escalate to multi-agent only on proven need.\n- Credibility check: name the decision the model must make that code cannot."
+}

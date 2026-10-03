@@ -1,0 +1,148 @@
+{
+  "id": "AG-03",
+  "num": 43,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Built-in Capabilities",
+  "hook": "Before building custom tools, know the powers models bring in the box: **code execution, live web access, computer use, file systems** — each a superpower with a sharp edge.",
+  "chapters": [
+    "Code execution",
+    "Web search & fetch",
+    "Computer & browser use",
+    "File system access"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CODE EXECUTION",
+      "title": "Let the model write code; **never let it run free**",
+      "sub": "The code-interpreter sandbox pattern",
+      "narration": "The most transformative built-in capability: the model writes code — Python, usually — and a sandbox executes it and returns stdout. Suddenly the model can compute precisely instead of approximating: statistics over a CSV, plots, file conversions, anything code does better than language. This is the pattern behind data-analysis assistants and the code-interpreter mode you met in GA-19. The non-negotiable: the sandbox. Model-generated code is arbitrary code — it can read secrets, delete files, exfiltrate data over the network. Production sandboxes: no network access, a read-only allow-listed file area, CPU and memory limits, a timeout, and an ephemeral filesystem that dies with the session. Treat generated code as hostile; the sandbox is the moat."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🏖️", "t": "The sandbox contract", "s": "No network · allow-listed read paths · CPU/mem/time limits · ephemeral disk" },
+        { "e": "📦", "t": "Pre-installed batteries", "s": "pandas, NumPy, matplotlib ready → model writes analysis, not plumbing" },
+        { "e": "🧾", "t": "Results, not just output", "s": "stdout + artifacts (charts, files) return as observations the model can describe" }
+      ],
+      "narration": "Why this capability changes agent design: precision tasks leave the language domain entirely — 'average revenue by quarter, plotted' is a five-line pandas script, not a paragraph of reasoning where arithmetic drifts. The loop becomes: model writes code → sandbox runs → model reads stdout and decides next step — AG-01's loop with execution as the tool. Mature setups add: artifact handling — generated charts and files stored and linkable; a persistent working directory per conversation so multi-step analysis accumulates state; and output truncation discipline — ten thousand rows of stdout is a context bomb, so summarize in-code and return aggregates. Sandboxed code execution is the highest-leverage built-in — and the most dangerous without the sandbox."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · WEB",
+      "title": "The model's training data ends; **the web doesn't**",
+      "sub": "Search and fetch as built-in tools",
+      "narration": "Two complementary tools. Web search: a query goes to a search API — results return as titles, snippets and URLs; the model reads the landscape and picks what to open. Fetch: a URL is retrieved and converted to clean text — HTML stripped to readable content — and returned as an observation. Together they close the freshness gap from GA-13: stock prices, today's documentation, this week's breaking change, all reachable at query time. The engineering realities: fetch needs care — paywalls, JavaScript-heavy pages, cookie walls and bot detection return garbage; prefer pages with clean markup and provide the model error signals like AG-02 taught. Rate limits apply to your search API. And robots and terms-of-service are legal constraints, not technical ones."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🔍", "t": "search(query)", "s": "Landscape scan · snippets + URLs · the model picks candidates" },
+        { "e": "📥", "t": "fetch(url)", "s": "Clean-text extraction · paywalls/JS = noise → actionable errors back" },
+        { "e": "🧠", "t": "Synthesize with dates", "s": "\"As of <date>, …\" · sources cited · stale pages flagged by the model" }
+      ],
+      "narration": "The research loop this enables: search broadly, fetch the three most promising, synthesize with explicit as-of dates and source links. Two quality disciplines. Source triage: the model should weigh source authority — official documentation beats a random blog — and cross-check single-source claims, because the web confidently repeats itself; one original error becomes fifty copies. Freshness labeling: always state the as-of date in answers built from web data; 'as of October 2026' protects the answer from silently aging. Cost note: search-plus-fetch chains consume tokens fast — fetched pages enter the context window, so truncate aggressively — summary-first, full text only when the summary warrants it. Built-in web tools make agents current; discipline makes them trustworthy."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · COMPUTER USE",
+      "title": "The last UI: **the model operates a computer**",
+      "sub": "Screenshots in, clicks and keys out",
+      "narration": "The frontier capability: computer use — the agent receives screenshots and emits low-level actions: click at coordinates, type text, press keys, scroll. Same idea one level up as browser use — drive a web page's DOM: navigate, fill forms, click buttons, read results. Why this matters: it automates systems that have NO API — legacy admin panels, third-party dashboards, internal tools built in 2010. The model perceives the screen visually, plans the next action, acts, screenshots again — AG-01's loop with pixels as observations. The honest caveats: it's slow — seconds per action, so a thirty-step task takes minutes; brittle — a redesigned button or an unexpected popup derails it; and risky — it's literally operating a logged-in session with your credentials."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🖥️", "t": "Use when there's no API", "s": "Legacy panels, third-party UIs · the API-less integration path of last (and sometimes only) resort" },
+        { "e": "🐌", "t": "Slow & brittle", "s": "Seconds per action · UI changes break flows · expect retries and confirmation loops" },
+        { "e": "🚨", "t": "Guard the session", "s": "Dedicated accounts · least privilege · human confirmation before irreversible actions" }
+      ],
+      "narration": "The decision ladder: prefer a real API, then an MCP server or tool, then structured automation — and only then computer use, because per-action cost and fragility are an order of magnitude worse. When you do deploy it, the safety pattern mirrors AG-02: a dedicated low-privilege account — the agent should never hold YOUR admin session; scoped scope — read-only browsing flows freely, purchases and deletions require human confirmation; and step budgets with screenshots logged for audit. Browser-use variants that drive the DOM are faster and less brittle than pixel-clicking, but share the brittleness — a CSS class rename is a broken tool. Computer use is a genuine superpower for the long tail of un-API-able software — wield it with the respect its power demands."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · FILE SYSTEM",
+      "title": "Files as the agent's workspace — **with guardrails bolted on**",
+      "sub": "Read/write tools and the path-scoping rule",
+      "narration": "File system tools — list, read, write, append — turn an agent from a talker into a worker that produces artifacts: reports, cleaned datasets, generated code, project scaffolding. The workspace pattern: give the agent a DEDICATED working directory; every read and write resolves against it; paths that escape it — dot-dot tricks, absolute paths outside the root — are rejected. That's the whole security story, and it's non-negotiable: an agent with unrestricted write access and a confused moment is a data-loss incident. Add: extension allow-lists for writes — .md, .csv, .py in the workspace — and size caps on reads so a 'read this file' call can't context-bomb the loop with a gigabyte log."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Path-scoped file tools (the guardrails are the code)",
+      "lang": "python",
+      "body": "from pathlib import Path\n\nWORKSPACE = Path(\"/data/agent_workspace\").resolve()\nALLOWED_WRITE = {\".md\", \".csv\", \".py\", \".txt\"}\nMAX_READ_BYTES = 200_000\n\ndef _safe(path: str) -> Path:\n    p = (WORKSPACE / path).resolve()\n    if not str(p).startswith(str(WORKSPACE)):\n        raise ToolError(f\"path '{path}' escapes the workspace — \"\n                        \"use paths relative to the working directory\")\n    return p\n\ndef read_file(path: str) -> str:\n    p = _safe(path)\n    if p.stat().st_size > MAX_READ_BYTES:\n        raise ToolError(f\"{p.name} is {p.stat().st_size:,} bytes (max \"\n                        f\"{MAX_READ_BYTES:,}) — ask for a specific section\")\n    return p.read_text()\n\ndef write_file(path: str, content: str) -> str:\n    p = _safe(path)\n    if p.suffix not in ALLOWED_WRITE:\n        raise ToolError(f\"writes allowed only for {sorted(ALLOWED_WRITE)}\")\n    p.write_text(content)\n    return f\"wrote {len(content)} bytes to {p.name}\"",
+      "annot": [
+        "resolve() + prefix check defeats ../ escapes — the one check that makes file tools safe",
+        "Read caps turn 'oops read the 2GB log' from a context bomb into an actionable error",
+        "Write allow-lists limit blast radius even when the agent is confidently wrong"
+      ],
+      "narration": "Fifty lines, and every safety property of the file tool lives in _safe: resolve the candidate path to its absolute form, then verify it's still inside the workspace — this single prefix check defeats dot-dot escapes, symlinks and absolute-path tricks in one move. The size cap converts a context disaster into an AG-02-style actionable error: 'ask for a specific section'. The write allow-list means even a fully convinced, completely wrong agent can only create markdown, CSVs and Python in a sandbox directory. Compose these with sandboxed code execution from chapter one and the agent gains a full workshop — write code, run it in the sandbox, read results, iterate — the workspace pattern underlying every serious agentic coding and analysis product."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-18",
+      "title": "Agent powers assembled. Now aim them at a classic target: databases.",
+      "next": "Reel 44 · Text-to-SQL — question in, safe SQL out"
+    }
+  ],
+  "recap": [
+    "Sandboxed code execution gives agents precision — no network, allow-listed reads, resource limits, ephemeral disk",
+    "Search + fetch close the freshness gap; synthesize with as-of dates and source triage",
+    "Computer/browser use is the no-API last resort — slow, brittle, and guarded by dedicated accounts + human confirmation; file tools live behind path-scoping"
+  ],
+  "quiz": [
+    {
+      "q": "What defines a safe code-execution sandbox for agents?",
+      "opts": [
+        "A fast CPU",
+        "No network access, allow-listed read paths, CPU/memory/time limits, ephemeral storage",
+        "A large language model nearby",
+        "Encrypted disk"
+      ],
+      "a": 1,
+      "why": "Model-generated code is arbitrary code; only environmental isolation makes executing it acceptable."
+    },
+    {
+      "q": "Why must synthesized web answers carry 'as of' dates?",
+      "opts": [
+        "Search APIs require it",
+        "Web content changes — a dated claim ages visibly; an undated one silently becomes wrong",
+        "It improves SEO",
+        "It reduces tokens"
+      ],
+      "a": 1,
+      "why": "Freshness is the whole point of web access; dates keep that freshness legible to the reader."
+    },
+    {
+      "q": "What is the key defensive check in path-scoped file tools?",
+      "opts": [
+        "File-extension allow-lists",
+        "resolve() the path and verify it's inside the workspace — defeats ../ escapes, symlinks and absolute paths",
+        "Reading file size first",
+        "Write-only access"
+      ],
+      "a": 1,
+      "why": "Canonicalization plus a prefix check is the single guard that makes arbitrary read/write paths safe."
+    }
+  ],
+  "code": {
+    "title": "Capability stack: what to enable, in order of caution",
+    "body": "# Enable in this order — each step adds power AND guardrail work:\n\n# 1 · SANDBOXED CODE EXECUTION   (start here)\n#    e2b / daytona / local container\n#    no-net, read-only mounts, 30s timeout, 512MB RAM\n\n# 2 · FILE TOOLS on a workspace  (add when artifacts matter)\n#    path-scope (slide 4), ext allow-list, size caps\n\n# 3 · WEB SEARCH + FETCH         (add for freshness)\n#    search API w/ quota · fetch w/ truncation + ToS care\n\n# 4 · BROWSER/COMPUTER USE       (last resort, most guarded)\n#    dedicated account · human-confirm irreversibles · step budgets\n\n# Anti-pattern: enabling 2-4 BEFORE 1's sandbox exists.\n# Generated code + unrestricted files = exfiltration path.",
+    "annot": [
+      "The order is a risk ladder: execution sandbox first because everything else composes with it",
+      "Each capability ships with its own guardrail checklist — power without the checklist is an incident report",
+      "Audit log every action across all four: built-in capabilities touch the outside world"
+    ]
+  },
+  "notes": "# Built-in Capabilities\n\n## Code execution sandbox\n- Model writes code → sandbox runs → stdout/artifacts as observations.\n- Sandbox: no network, allow-listed reads, CPU/mem/time limits, ephemeral disk.\n- Working dir per session; truncate outputs; artifacts stored + linkable.\n\n## Web search & fetch\n- search: landscape; fetch: clean-text page → observation.\n- Discipline: source triage, as-of dates, truncation (summary-first), ToS.\n\n## Computer / browser use\n- For systems with NO API. Screenshots→actions (computer) or DOM (browser).\n- Slow, brittle; dedicated accounts, least privilege, human-confirm irreversibles.\n\n## File system tools\n- Workspace pattern: resolve()+prefix check, ext allow-list, read caps.\n- Composes with sandbox → full agent workshop (write/run/read/iterate)."
+}

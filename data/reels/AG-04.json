@@ -1,0 +1,145 @@
+{
+  "id": "AG-04",
+  "num": 46,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "MCP Concepts",
+  "hook": "Every AI app re-invents tool connections. MCP — the Model Context Protocol — ends that: **one open standard to plug models into tools and data. USB-C for AI.**",
+  "chapters": [
+    "What & why",
+    "Host, client, server",
+    "Primitives: tools, resources, prompts",
+    "Transports & vs function calling"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · WHAT & WHY",
+      "title": "The N×M problem: N apps × M tools, hand-wired forever",
+      "sub": "MCP standardizes the connection layer",
+      "narration": "Before MCP, every integration was bespoke: your app talked to Slack one way, to Jira another, to your database a third — and every OTHER AI app repeated the same work. N applications times M tools equals N-times-M custom integrations, each with its own auth, schema drift, and maintenance burden. MCP — Model Context Protocol, open-sourced by Anthropic in late 2024 — solves it the way USB-C solved chargers: a single protocol defining how an AI application DISCOVERS and CALLS capabilities exposed by a server. Build an MCP server for your system once, and every MCP-speaking host — Claude Desktop, IDEs, agent frameworks, your own apps — can use it. The ecosystem bet: write tools as MCP servers, plug them anywhere."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔌", "t": "One protocol", "s": "Discovery, schemas, calls, results — standardized; no bespoke per-app wiring" },
+        { "e": "🌍", "t": "Ecosystem reuse", "s": "Filesystem, GitHub, database servers exist — your app consumes them without custom code" },
+        { "e": "🛡️", "t": "Boundary of trust", "s": "Servers expose curated capabilities — the app never gets raw database credentials" }
+      ],
+      "narration": "The third point is architecturally underrated. Without MCP, giving an agent database access often means handing over a connection string — the agent can run ANY query. An MCP server sits in between: it exposes 'search-customers' and 'get-order' as named, described, validated tools — AG-02's discipline enforced at a protocol boundary. The app sees tools; the credentials stay inside the server. That's a security architecture, not just a convenience. And the reuse compounds: reference servers for filesystem, GitHub, Postgres, Slack ship maintained; you configure, not build. The pragmatic mental model: MCP is to tools what REST was to HTTP services — a convention that made integration composable."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · ROLES",
+      "title": "Three roles: **host, client, server**",
+      "sub": "Who asks, who connects, who serves",
+      "narration": "MCP splits the world into three roles. The HOST is the AI application the user interacts with — Claude Desktop, an IDE, your agent. The SERVER is the thing that OWNS capabilities: it wraps a database, a SaaS API, a filesystem, and exposes tools, resources, and prompts. Between them sits the CLIENT — one per server, created and owned BY the host; the host speaks MCP to each server through its client. The rule that keeps it clean: hosts initiate; servers never call the host unprompted. One host can hold many clients — your IDE might simultaneously connect to a filesystem server, a GitHub server and a database server — each an independent MCP connection with its own capabilities and permissions."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🖥️", "t": "Host", "s": "The AI app · owns the LLM, the conversation, the UX · creates clients" },
+        { "e": "🔗", "t": "Clients (one per server)", "s": "Carry the MCP protocol · capability discovery · call routing" },
+        { "e": "🧰", "t": "Servers", "s": "Filesystem · GitHub · database · your internal systems · expose curated capabilities" }
+      ],
+      "narration": "Read the arrows' direction: host initiates everything; servers respond. The host asks each server at connect time: 'what do you offer?' — the server returns its capability lists: tool names with schemas, resource URIs, prompt templates. The host presents these to the model — the tool list becomes the function-calling schema — and when the model chooses a tool, the host's client routes the call. This discovery step is the protocol's quiet superpower: capabilities are declared, not hard-coded — a server upgrade adding a tool appears in the model's menu without any host-side change. AG-02's lesson applies verbatim: those discovered descriptions are what the model reads when choosing."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · PRIMITIVES",
+      "title": "Three primitives: **tools, resources, prompts**",
+      "sub": "Model-controlled, app-controlled, user-controlled",
+      "narration": "MCP standardizes three capability types, distinguished by who controls them. TOOLS: model-controlled actions — callable functions with schemas; the model decides to invoke them mid-conversation. RESOURCES: app-controlled data — addressable content identified by URI: files, database records, API responses; the APPLICATION decides which resources enter context — often with the user's selection — not the model; resources are data, not actions. PROMPTS: user-controlled templates — reusable prompt patterns the server offers; the user picks them, typically from a menu. The clean mental model: tools DO things, resources ARE things, prompts SAY things — keep the three roles separate and the protocol stays predictable."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "🔧", "t": "Tools", "s": "Actions, model-invoked · schemas + descriptions · \"do something\"", "win": true },
+        { "e": "📄", "t": "Resources", "s": "Data, app-curated · URIs like file:///docs/a.md · \"here is context\"", "win": true },
+        { "e": "💬", "t": "Prompts", "s": "Templates, user-selected · reusable workflows · \"say it this way\"", "win": true }
+      ],
+      "narration": "A filesystem server illustrates all three: tools — read-file, write-file — model-invoked actions; resources — the file tree, each file a URI the app can attach to context; prompts — 'summarize this directory', a template the user triggers. The control split matters for safety: if MODELS could pull arbitrary resources, every data exfiltration worry of agents would apply to reading too; app-controlled means a human or host policy decides what data enters the window — you saw this pattern in AG-03's file tools, now standardized. When designing your own server: default to resources for anything read-only and data-shaped, tools for anything with side effects, and resist making data-fetching a tool — that's what resources are for."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · TRANSPORTS & VALUE",
+      "title": "stdio vs HTTP — and what MCP adds over plain function calling",
+      "sub": "The plumbing and the pitch",
+      "narration": "Two transports carry MCP. STDIO: server runs as a local subprocess; the host speaks JSON-RPC over standard input and output — the default for local tools on your machine, simple and fast. HTTP — streamable HTTP: the server runs remotely, reachable over the network, enabling shared team servers and SaaS capabilities — this replaced the earlier HTTP-plus-SSE design as the spec matured. Now the fair question: models already have function calling — what does MCP ADD? Function calling is a MODEL-level mechanism: you define schemas per request. MCP is an APPLICATION-level protocol: standardized discovery — hosts learn a server's capabilities at connect time, standardized lifecycle, multi-server composition, and an ecosystem of reusable servers. Function calling is the assembly language inside; MCP is the plugin standard around it."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🏠", "t": "stdio (local)", "s": "Subprocess, stdin/stdout JSON-RPC · personal tools, zero deployment" },
+        { "e": "🌐", "t": "HTTP (remote)", "s": "Network-reachable servers · shared team/enterprise capabilities, needs auth (AG-07)" },
+        { "e": "➕", "t": "Beyond function calling", "s": "Discovery, lifecycle, multi-server composition, reusable ecosystem — the protocol AROUND the calls" }
+      ],
+      "narration": "When to choose which transport: personal, machine-local capabilities — filesystem helpers, local scripts — stdio, because zero deployment beats everything for solo tooling. Team-shared or cloud capabilities — a CRM bridge, an internal search server — HTTP, because one deployed server serves every host in the organization, and now you're operating a real service: authentication, versioning, observability — AG-07 and AG-08 cover that operational life. The composition point deserves a last word: because servers are uniform, the host can merge tool menus from many servers, handle name collisions, and apply consistent permission policy across all of them — cross-cutting concerns solved once at the protocol layer instead of per integration. That's the N-times-M collapse in action."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-05",
+      "title": "Concepts in hand. The spec itself is evolving — catch up.",
+      "next": "Reel 47 · MCP Spec Evolution — the 2026 stateless core and newer extensions"
+    }
+  ],
+  "recap": [
+    "MCP = open standard replacing N×M bespoke integrations; servers expose curated capabilities behind a trust boundary",
+    "Three roles: host (initiates), client (per-server connection), server (owns capabilities, discovered at connect time)",
+    "Primitives: tools (model-invoked actions), resources (app-curated data), prompts (user-selected templates); stdio for local, HTTP for shared"
+  ],
+  "quiz": [
+    {
+      "q": "In MCP, who initiates connections and calls?",
+      "opts": [
+        "Servers push to hosts",
+        "The host always initiates; servers respond — servers never call the host unprompted",
+        "Clients initiate to other clients",
+        "Anyone, bidirectionally"
+      ],
+      "a": 1,
+      "why": "Host-initiation keeps control flow predictable and is foundational to the protocol's security posture."
+    },
+    {
+      "q": "What's the key difference between an MCP tool and an MCP resource?",
+      "opts": [
+        "Tools are faster",
+        "Tools are model-invoked ACTIONS; resources are app-curated DATA the model doesn't pull directly",
+        "Resources can have side effects",
+        "Tools use HTTP, resources use stdio"
+      ],
+      "a": 1,
+      "why": "Splitting actions from data — with different controllers — is the protocol's core safety and predictability property."
+    },
+    {
+      "q": "What does MCP add on top of model function calling?",
+      "opts": [
+        "Better models",
+        "An application-level protocol: capability discovery, lifecycle, multi-server composition, reusable servers",
+        "Lower token costs",
+        "Faster inference"
+      ],
+      "a": 1,
+      "why": "Function calling is per-request schema plumbing; MCP standardizes discovery, composition and reuse across the whole app."
+    }
+  ],
+  "code": {
+    "title": "Capability discovery: what a server announces",
+    "body": "// What a server exposes at connect time (simplified):\n{\n  \"tools\": [\n    { \"name\": \"search_tickets\",\n      \"description\": \"Search support tickets by keyword. Use for customer-history questions; NOT for live account data (use get_account).\",\n      \"inputSchema\": { \"type\": \"object\",\n        \"properties\": { \"query\": {\"type\": \"string\"}, \"limit\": {\"type\": \"integer\", \"default\": 5} },\n        \"required\": [\"query\"] } }\n  ],\n  \"resources\": [\n    { \"uri\": \"ticket://recent\",  \"name\": \"Recent tickets\",\n      \"description\": \"Last 50 tickets as markdown\" },\n    { \"uri\": \"kb://article/41\",  \"name\": \"Refund policy\" }\n  ],\n  \"prompts\": [\n    { \"name\": \"ticket_summary\",\n      \"description\": \"Summarize a ticket thread with sentiment\" }\n  ]\n}\n\n// The host turns tools[] into the model's function-calling schema —\n// AG-02's description discipline, now riding a standard wire format.",
+    "annot": [
+      "Discovery is declarative: the host needs zero prior knowledge of a server's capabilities",
+      "Note the 'NOT for…' clause — description discipline from AG-02 applies verbatim to MCP tools",
+      "Resource URIs are just addressing — the host/app decides which ever enter the context window"
+    ]
+  },
+  "notes": "# MCP Concepts\n\n## What & why\n- N apps × M tools = N×M bespoke integrations. MCP = one open protocol (Anthropic, late 2024).\n- Server = trust boundary: curated tools, credentials stay inside.\n\n## Roles\n- **Host**: AI app, owns LLM + UX, initiates everything.\n- **Client**: one per server, host-owned, carries the protocol.\n- **Server**: owns capabilities; announced via discovery at connect.\n\n## Primitives\n- **Tools**: model-invoked actions (schemas).\n- **Resources**: app-curated data (URIs) — model doesn't pull directly.\n- **Prompts**: user-selected templates.\n\n## Transports & comparison\n- stdio (local subprocess) vs HTTP (remote/shared, needs auth).\n- MCP ≠ function calling: protocol AROUND the calls (discovery, lifecycle, composition, ecosystem)."
+}

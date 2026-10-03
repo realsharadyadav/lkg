@@ -1,0 +1,148 @@
+{
+  "id": "GA-19",
+  "num": 45,
+  "track": "genai",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Files as Data Source",
+  "hook": "\"Chat with your spreadsheet\" is the #1 demo in GenAI — and a minefield of silent wrong answers. Four patterns, from naive to production-grade.",
+  "chapters": [
+    "Chat with CSV/Excel",
+    "DuckDB + LLM",
+    "Code-interpreter pattern",
+    "Tabular RAG"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE DEMO AND THE MINEFIELD",
+      "title": "The most seductive demo in GenAI — **and its traps**",
+      "sub": "Why 'chat with CSV' goes wrong quietly",
+      "narration": "Upload a spreadsheet, ask a question, get an answer — it demos like magic and fails like this: the file is too big for the context window, so the app silently samples rows or drops columns; the answer is an AVERAGE computed over a column that means three different things in different rows; merged cells and multi-header layouts get flattened into nonsense; dates parse in the wrong format. The result LOOKS like an answer. Tabular data punishes the LLM's weaknesses — arithmetic drift, context limits, no inherent schema understanding — which is why every production pattern routes the work AWAY from pure language: to SQL engines, to code execution, to retrieval. The file is data; the language model is the interpreter of last resort."
+    },
+    {
+      "type": "list",
+      "chapter" : 0,
+      "items": [
+        { "e": "📉", "t": "Silent sampling", "s": "Big file → rows dropped without telling the user → 'answers' computed on a fraction" },
+        { "e": "🧮", "t": "Arithmetic drift", "s": "LLMs approximate math in language · exact aggregation needs an engine, not a paragraph" },
+        { "e": "🧱", "t": "Messy structure", "s": "Merged cells, multi-row headers, totals baked into columns → flattened chaos" }
+      ],
+      "narration": "The failure trio, all shareable in one sentence each: a fifty-thousand-row file silently truncated to what fits the window, averages computed over a sample the user thinks is the whole; arithmetic done in token-land where nine-digit sums drift; spreadsheets built for human eyes — totals rows, section banners, merged headers — shredding into meaningless rows when serialized. The design principle all four patterns share: NEVER let the model see raw tabular data at scale and hope. Route to engines. State coverage explicitly — 'analyzed 48,211 rows' — so users know what was and wasn't included. And treat header/structure parsing as its own engineering task: table-detection libraries exist precisely because this is harder than it looks."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · DUCKDB",
+      "title": "DuckDB: give the file a SQL engine, **give the model a steering wheel**",
+      "sub": "SQL over CSV/Parquet, zero servers",
+      "narration": "The highest-leverage pattern: DuckDB — an in-process analytical database that queries CSV, Parquet and JSON directly, no server, no import step. The architecture: the LLM never reads the data — it writes SQL against the file, DuckDB executes it exactly, results return as the observation. 'Average order value by month, excluding refunds' becomes a real GROUP BY over real rows, arithmetic-perfect at any scale, with the model only steering. This is GA-18's guarded Text-to-SQL pattern with the database built in — same fences apply: schema descriptions injected, read-only execution, LIMIT wrapping. For spreadsheet-shaped inputs, a conversion step — openpyxl or similar — normalizes sheets into tables first, because DuckDB speaks data, not presentation."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "DuckDB + LLM: the file becomes a queryable database",
+      "lang": "python",
+      "body": "import duckdb\n\ncon = duckdb.connect()   # in-process, ephemeral\n\n# Files ARE tables — no import, no server:\ncon.execute(\"\"\"\n    CREATE VIEW orders AS\n    SELECT * FROM 'sales_2026.parquet'\n\"\"\")\n\nschema = con.execute(\"DESCRIBE orders\").fetchall()\n# → inject column names + types + sampled values into the prompt\n\n# The loop (same fence pattern as GA-18):\nsql = llm(\"Write DuckDB SQL for the question. Schema: {schema}\",\n          question=user_question)\nresult = con.execute(\n    f\"SELECT * FROM ({sql}) AS _q LIMIT 500\").fetchdf()\n\nanswer = llm(\"Answer the question from these exact results: {result}\")",
+      "annot": [
+        "CREATE VIEW over the file: zero-copy — the data never moves, the engine reads it in place",
+        "DESCRIBE + sampled values give the model real schema grounding instead of guessing column meanings",
+        "Arithmetic is DuckDB's job, language is the model's job — each does what it can't drift at"
+      ],
+      "narration": "Five lines of setup and the file is a database. The DESCRIBE call deserves attention: inject not just column names and types but two or three sampled values per column — 'status: SHIPPED, REFUNDED, PENDING' — because column names lie and values don't. The division of labor is the whole design: aggregation, filtering, joins — anything countable — belongs to the engine; explanation, phrasing, insight — anything semantic — belongs to the model. When the question is exploratory — 'is anything odd about March?' — let the model plan multiple queries iteratively: profile the column, then drill in. DuckDB also composes with code execution — AG-03's sandbox can run it — which is exactly how the next pattern is built."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · CODE INTERPRETER",
+      "title": "Let the model write pandas. **The sandbox runs it.**",
+      "sub": "The code-interpreter pattern for unstructured analysis",
+      "narration": "Sometimes SQL can't express the question: 'plot the trend and flag outliers', 'merge these three sheets and reconcile differences', 'forecast next quarter'. The code-interpreter pattern: the model writes Python — pandas, matplotlib, scipy — against the file; a sandbox executes it; stdout, charts and files return as observations. Versus DuckDB: code execution handles arbitrary logic, visualization and multi-file reconciliation; SQL handles scale and simplicity better. In practice, mature systems CHOOSE per question — classification first: aggregation questions route to SQL, everything else to code. Same non-negotiables as AG-03: sandboxed, no network, resource-capped, ephemeral workspace. The file lands in the workspace; the model's code reads it there."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "🦆", "t": "DuckDB / SQL route", "s": "Aggregations, filters, joins · exact at scale · simple to fence · no visuals", "win": true },
+        { "e": "🐍", "t": "Code-interpreter route", "s": "Plots, multi-file logic, transforms, forecasts · arbitrary power · heavier sandbox needs", "win": true },
+        { "e": "🧭", "t": "Router decides", "s": "Classify the question first: 'how many/sum/compare' → SQL · 'show/plot/combine' → code", "win": true }
+      ],
+      "narration": "The router is usually a cheap classifier — a small model call or even keyword matching — and it pays for itself immediately by sending each question to the engine that answers it best. Code route details: pre-load the workspace with the file and a matplotlib-friendly default; return charts as stored artifacts with links, not base64 blobs in context; cap execution time — a runaway groupby on a million rows is a denial-of-wallet. When the two routes disagree — SQL says one number, code says another — that flag is itself valuable: it usually means the QUESTION was ambiguous in ways the user should clarify. Surfacing that beats quietly picking one."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · TABULAR RAG",
+      "title": "When the answer is TEXT, not numbers: **tabular RAG**",
+      "sub": "Retrieval for table-heavy documents",
+      "narration": "The fourth pattern, for a different question class: documents whose VALUE is prose wrapped in tables — financial reports, spec sheets, compliance matrices, lab results. 'What did the report say about Q3 risks' needs the TEXT of the right table rows, not an aggregation. Plain chunking fails here — GA-14's warning: splitting a table across chunks destroys rows. Tabular RAG strategies: serialize each table whole with its title and section context into one chunk — row-level splitting only for genuinely huge tables; or structure-aware retrieval — index tables by caption and headers, retrieve the whole table when its caption matches; or hybrid: table goes to the vector store as text, its KEY COLUMNS also go to DuckDB, and the router picks per question. The test: can the retrieved chunk answer the question COMPLETE? A partial row can't."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🗂️", "t": "Table-as-chunk", "s": "Whole table + caption + section in one chunk · never split rows · sized for retrieval" },
+        { "e": "🏷️", "t": "Caption-first indexing", "s": "Tables retrievable by title/context — 'Table 4: Q3 risk factors' matches risk questions" },
+        { "e": "🔀", "t": "Dual-route", "s": "Table text → RAG · key columns → DuckDB · question router picks retrieval or aggregation" }
+      ],
+      "narration": "The pattern selection heuristic: aggregation questions — numbers over the data — DuckDB; semantic questions — what the document SAYS — tabular RAG; transformation questions — reshape, merge, visualize — code interpreter. Many real systems run all three on the same uploaded file simultaneously: the file becomes a database, a chartable dataset, and a chunked document, and the router sends each question down the right road. One closing principle ties all four patterns: the LLM is the universal interface, never the computation engine. Every time the answer depends on exact arithmetic, exact coverage, or exact structure, an engine does the work and the model does the talking. That single separation is the difference between a demo and a product."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-04",
+      "title": "Agents, tools, data — all hand-wired so far. Time to standardize.",
+      "next": "Reel 46 · MCP Concepts — the USB-C for AI tools and data"
+    }
+  ],
+  "recap": [
+    "Never let the model compute or read raw tabular data at scale — engines compute, models interpret",
+    "DuckDB turns files into queryable tables with zero import; code-interpreter covers plots/transforms; route per question",
+    "Tabular RAG keeps whole tables (with captions) as chunks — split rows are unretrievable meaning"
+  ],
+  "quiz": [
+    {
+      "q": "Why is 'the model reads the CSV directly' the worst of the four patterns?",
+      "opts": [
+        "It's slow to upload",
+        "Context limits force silent sampling, arithmetic drifts, and structure flattens — failures that LOOK like answers",
+        "CSV files are unsafe",
+        "It uses too many tokens"
+      ],
+      "a": 1,
+      "why": "Language models approximate math and truncate context — the two properties tabular data punishes hardest."
+    },
+    {
+      "q": "When does the code-interpreter route beat the DuckDB route?",
+      "opts": [
+        "Always",
+        "When the question needs plots, multi-file transforms, or logic SQL can't express — aggregation belongs to SQL",
+        "When the file is small",
+        "Never — SQL does everything"
+      ],
+      "a": 1,
+      "why": "Different engines for different question classes — the router exists because neither route is universal."
+    },
+    {
+      "q": "What's the core rule of tabular RAG chunking?",
+      "opts": [
+        "Split tables row by row for precision",
+        "Keep whole tables (with caption and section context) as single chunks — a split row can't answer anything",
+        "Convert everything to prose",
+        "Index only the numbers"
+      ],
+      "a": 1,
+      "why": "A partial row retrieved is meaning destroyed — GA-14's structural chunking applied to tables."
+    }
+  ],
+  "code": {
+    "title": "The tri-router: one file, three engines",
+    "body": "async def answer_over_file(question: str, file_path: str) -> Answer:\n    # 0 · one-time setup: file becomes all three things\n    con = duckdb.connect()\n    con.execute(f\"CREATE VIEW data AS SELECT * FROM '{file_path}'\")\n    workspace = sandbox.put(file_path)          # code-interpreter\n    chunks = index_tables_with_captions(file_path)  # tabular RAG\n\n    # 1 · cheap router classifies the question\n    route = classify(question, classes=[\"aggregate\", \"transform\", \"semantic\"])\n\n    if route == \"aggregate\":                    # DuckDB\n        sql = llm(SQL_PROMPT, schema=describe(con), q=question)\n        rows = con.execute(f\"SELECT * FROM ({sql}) _q LIMIT 500\").fetchdf()\n        return llm(ANSWER_PROMPT, q=question, exact_results=rows)\n\n    if route == \"transform\":                    # code interpreter\n        code = llm(CODE_PROMPT, q=question, files=[workspace.name])\n        out = await sandbox.run(code, timeout=60)\n        return Answer(text=out.stdout, artifacts=out.files)\n\n    return rag_answer(question, store=chunks)   # semantic → tabular RAG\n\n# Rule of the whole reel: models interpret, engines compute.",
+    "annot": [
+      "One setup, three indexes — the file pays its indexing cost once and serves every question class",
+      "The router is deliberately cheap: a wrong route costs one retry, an expensive router costs every question",
+      "aggregate route returns exact_results — the model phrases, but cannot alter, the numbers"
+    ]
+  },
+  "notes": "# Files as Data Source\n\n## Why naive chat-with-CSV fails\n- Silent sampling (context limits) · arithmetic drift · structure flattening (merged cells, totals rows).\n- State coverage explicitly: 'analyzed 48,211 rows'.\n\n## DuckDB + LLM\n- `CREATE VIEW ... SELECT * FROM 'file.parquet'` — zero-copy, in-process.\n- DESCRIBE + sampled values into the prompt; model writes SQL, engine executes (GA-18 fences).\n\n## Code-interpreter pattern\n- For plots/transforms/multi-file logic SQL can't express.\n- Same sandbox rules as AG-03; charts as linked artifacts.\n- Router per question: 'how many/sum' → SQL · 'show/plot/combine' → code.\n\n## Tabular RAG\n- Whole table + caption + section per chunk; caption-first indexing; key columns optionally mirrored to DuckDB.\n\n**Principle: models interpret, engines compute.**"
+}

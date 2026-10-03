@@ -1,0 +1,144 @@
+{
+  "id": "AG-05",
+  "num": 47,
+  "track": "agentic",
+  "stage": "6. Agents Core + MCP",
+  "topic": "MCP Spec Evolution",
+  "hook": "July 28, 2026: MCP's biggest revision ever — **the protocol went stateless**. Sessions, the handshake, and server-initiated callbacks are gone. Here's what changed and why it matters.",
+  "chapters": [
+    "Versioned specs",
+    "The stateless core",
+    "What replaced the old features",
+    "Extensions, auth & lifecycle"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · VERSIONING",
+      "title": "Date-stamped specs, negotiated per connection",
+      "sub": "MCP versions itself like a standard, not like software",
+      "narration": "MCP versions its specification by release date — 2025-03-26, 2025-06-18, 2025-11-25, then 2026-07-28 — and clients and servers NEGOTIATE which revision they speak during connection. Why dates and not semver: the protocol is a contract between independently shipped pieces — your server and someone else's host, built months apart — and the negotiation handshake exists precisely so a 2026 host can talk to a 2025 server while both stay honest about which rules apply. The 2026-07-28 revision — the fifth, published under the Linux Foundation's Agentic AI Foundation — is the largest since authorization was added, and it's the one that changed the protocol's shape. Everything in this reel is about that revision."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "📅", "t": "Date-based revisions", "s": "Spec = living document · each revision names its rules explicitly" },
+        { "e": "🤝", "t": "Negotiated connections", "s": "Client and server agree which revision to speak — mixed-era fleets interoperate deliberately" },
+        { "e": "🚀", "t": "2026-07-28 = the big one", "s": "Fifth revision · maintainers called it a rebuild of the data-transfer mechanism" }
+      ],
+      "narration": "The negotiation detail matters for migration planning: because revisions are negotiated, a fleet can migrate incrementally — new servers speak the new revision to new clients and the old one to old clients, with no big-bang cutover. That design choice is what makes the breaking changes in 2026-07-28 survivable. Also worth noting the governance shift: MCP now lives under the Agentic AI Foundation — a neutral home, multi-vendor governance — which is why the spec can make breaking moves like this at all: the process, not one vendor's roadmap, now defines the protocol's future. Keep the negotiation model in mind; it's the frame for everything that follows."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · STATELESS CORE",
+      "title": "Sessions are gone. **Every request carries everything.**",
+      "sub": "The headline change and the reason behind it",
+      "narration": "Old MCP was stateful: an initialize handshake opened a session, the server issued a Mcp-Session-Id, and every subsequent request referenced that session — the server REMEMBERED negotiated state between calls. That broke at scale: load balancers needed sticky sessions or shared session stores — the most expensive part of running MCP servers at any real traffic. The 2026-07-28 core is stateless: the handshake and the session header are REMOVED outright, and every request is self-contained — it carries its own protocol version, client identity, and capability declarations in a metadata block. Any request can land on any server instance behind a plain round-robin load balancer. State didn't vanish; it moved from the transport into tool arguments, as explicit handles the model can see and manage."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "🕰️", "t": "Before (stateful)", "s": "initialize handshake → session id → server remembers · sticky routing · shared session store", "win": false },
+        { "e": "🌊", "t": "2026-07-28 (stateless)", "s": "No handshake, no session header · request carries its own metadata · round-robin scales", "win": true }
+      ],
+      "narration": "The architectural trade, stated fairly: the old model was friendlier to interactive servers — state persisted invisibly between calls, so an editor-automation server could hold selection and viewport context without burdening the model. The new model sacrifices that convenience for operability: stateless servers scale like normal REST services — no affinity, no shared store. And the 'explicit handles' pattern — state passed as ordinary tool arguments — has a hidden benefit the game-engine community noticed first: state becomes VISIBLE to the model, so the agent reasons about it instead of it hiding in a session the model can't see. Arguably better for agent cognition, definitely more migration work for stateful servers."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · DEPRECATIONS & MRTR",
+      "title": "Server-initiated callbacks died — **MRTR is the replacement**",
+      "sub": "The one pattern that replaced elicitation, sampling, and roots",
+      "narration": "The old spec let servers initiate requests BACK to the client mid-conversation: elicitation — 'ask the user to confirm this destructive action'; sampling — 'have the model generate text for me'; roots — 'tell me which directories you expose'. All three required a held-open, bidirectional stream — impossible for a stateless server behind a load balancer. Enter Multi Round-Trip Requests — MRTR: the server returns an interim result marked input-required, carrying the questions it needs; the client gathers the answers — from the user, or by running a model completion — and RE-ISSUES the original request with the answers attached. A human approval step becomes a plain request-and-response pattern that survives load balancers and serverless runtimes. One round-trip pattern replaces three bespoke channels."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "🔧", "t": "Tool call pauses", "s": "Server returns resultType: input_required + inputRequests[]" },
+        { "e": "👤", "t": "Client gathers input", "s": "User answers, or client runs a completion (the old 'sampling')" },
+        { "e": "🔁", "t": "Client retries original call", "s": "Same request re-issued with inputResponses attached (continuation state included)" }
+      ],
+      "narration": "Walk the MRTR flow once and you'll never fear it again. Server: 'I need approval to delete record 42' — input-required, with the question structured. Client — the host — surfaces the question to the user, collects the answer, and re-sends the original tool call with the answer attached; servers that need to correlate the two attempts encode their own identifier in request state. Note how each old feature maps: elicitation becomes an input-required asking the user; sampling becomes an input-required asking for a model completion; roots become explicit arguments instead of a server query. And note the deprecation status precisely: roots, sampling, and logging are DEPRECATED with a twelve-month minimum runway — they still work, but new implementations must not adopt them. Sessions and the handshake, by contrast, were REMOVED — no grace period, because the old revisions still exist for old clients."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · THE REST OF THE RELEASE",
+      "title": "Extensions, hardened auth, and a formal lifecycle",
+      "sub": "What grew alongside the removals",
+      "narration": "Beyond the stateless core, the revision shipped structure. Extensions framework: new capabilities now live as versioned extensions with reverse-DNS identifiers — Tasks — durable long-running work with poll-based result retrieval, contributed by AWS — and MCP Apps — servers shipping interactive, sandboxed UI alongside tool results. Both were officially folded in under this framework, keeping the core lean. Authorization hardened: OAuth aligned with real-world standards — RFC 9207 issuer validation, credentials bound to their issuer, and Dynamic Client Registration deprecated in favor of Client ID Metadata Documents. And a formal feature lifecycle: Active, Deprecated, Removed — with a minimum twelve-month window — plus cacheable capability catalogs with TTLs, modeled on HTTP caching. Tier 1 SDKs — TypeScript, Python, Go, C-sharp — shipped support at launch."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "🧩", "t": "Extensions framework", "s": "Reverse-DNS identifiers · independent versioning · Tasks (poll-based) + MCP Apps (sandboxed UI) graduated first" },
+        { "e": "🔐", "t": "Auth alignment", "s": "RFC 9207 issuer validation · Client ID Metadata Documents replace Dynamic Client Registration" },
+        { "e": "♻️", "t": "Lifecycle policy", "s": "Active → Deprecated (≥12 months) → Removed · cacheable catalogs with ttlMs" }
+      ],
+      "narration": "The architect's takeaway list. Migration posture: if you run MCP servers, the stateless core plus MRTR is real work — the twelve-month deprecation window is for roots, sampling, and logging, but session reliance is a code change with no window, since old clients just negotiate old revisions. Check any server you depend on for migration activity — continued reliance on deprecated primitives after mid-2026 reads as a maintenance red flag. On extensions: the reverse-DNS, independently-versioned design means capabilities can evolve without bloating the core — watch Tasks for long-running agent work and MCP Apps for rich interactive results. And the catalog TTLs are a quiet cost win: clients cache capability lists instead of re-fetching per request. This is what a maturing protocol looks like: fewer features in the core, more discipline around them."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-06",
+      "title": "Spec understood. Let's USE the ecosystem instead of building it.",
+      "next": "Reel 48 · Using Existing MCP Servers — reference servers, trust, gateways"
+    }
+  ],
+  "recap": [
+    "2026-07-28: stateless core — handshake and sessions removed; every request self-contained with its own metadata; round-robin scaling",
+    "MRTR replaces all server-initiated callbacks: interim input_required result → client gathers answers → original call re-issued with responses",
+    "Roots, Sampling, Logging + HTTP+SSE deprecated (12-month floor); Tasks and MCP Apps graduated into a reverse-DNS extensions framework; OAuth hardened"
+  ],
+  "quiz": [
+    {
+      "q": "Why did MCP remove protocol-level sessions?",
+      "opts": [
+        "To reduce token usage",
+        "Sticky sessions and shared session stores were the most expensive part of operating MCP at scale — stateless requests scale behind plain load balancers",
+        "Sessions were a security breach",
+        "Browsers don't support them"
+      ],
+      "a": 1,
+      "why": "Operability drove the change: any request on any instance, no affinity, no shared store — MCP scales like a normal HTTP service."
+    },
+    {
+      "q": "How does MRTR replace sampling (server asks model to generate text)?",
+      "opts": [
+        "Sampling still works unchanged",
+        "The tool returns input_required; the client runs the model completion and re-issues the original call with the result attached",
+        "Servers now call the LLM directly",
+        "It's replaced by logging"
+      ],
+      "a": 1,
+      "why": "One round-trip pattern — pause, gather, retry — replaces every held-open bidirectional channel."
+    },
+    {
+      "q": "What's the difference between REMOVED and DEPRECATED in this revision?",
+      "opts": [
+        "No difference",
+        "Sessions/handshake were removed outright (old revisions still serve old clients); Roots/Sampling/Logging were deprecated with a 12-month minimum window",
+        "Deprecated means already gone",
+        "Removed features return next year"
+      ],
+      "a": 1,
+      "why": "Two different lifecycle outcomes in one release — and migration plans differ accordingly: session reliance has no grace period."
+    }
+  ],
+  "code": {
+    "title": "The migration checklist for a 2025-era server",
+    "body": "# From 2025-11-25 → 2026-07-28 — check your servers against this:\n\n# REMOVED (no grace period):\n#  □ Mcp-Session-Id header + any server-side session store\n#  □ initialize/initialized handshake → send version/caps per-request in _meta\n#  □ notifications/initialized, ping, logging/setLevel\n#  □ HTTP GET endpoint + resources/subscribe → subscriptions/listen\n\n# DEPRECATED (≥12 months, do NOT adopt in new code):\n#  □ roots/list            → explicit path arguments\n#  □ sampling/createMessage → MRTR input_required\n#  □ elicitation           → MRTR input_required\n#  □ logging               → server-side observability (AG-08)\n#  □ HTTP+SSE transport    → Streamable HTTP\n#  □ OAuth Dynamic Client Registration → Client ID Metadata Documents\n\n# NEW (adopt):\n#  □ Mcp-Method / Mcp-Name headers for gateway routing\n#  □ ttlMs/cacheScope on capability catalogs\n#  □ Long-running work → io.modelcontextprotocol/tasks (poll tasks/get)\n#  □ Rich UI results → MCP Apps extension (sandboxed iframe)",
+    "annot": [
+      "The checklist IS the reel: migration is mostly finding which of these your server touches",
+      "Tier 1 SDKs (TS/Python/Go/C#) support the new revision — often an SDK upgrade covers the mechanical parts",
+      "Stateful servers (editor automation, multi-call transactions) need the explicit-handle redesign — the real engineering"
+    ]
+  },
+  "notes": "# MCP Spec Evolution\n\n## Versioning\n- Date-stamped revisions (2025-03-26 … 2025-11-25 → **2026-07-28**), negotiated per connection.\n- Fifth revision; largest since auth; Linux Foundation (Agentic AI Foundation) governance.\n\n## Stateless core\n- REMOVED: sessions, `Mcp-Session-Id`, initialize/initialized handshake, ping, SSE resumability.\n- Every request self-contained: version + identity + capabilities in `_meta`.\n- Round-robin scaling; state → explicit handles in tool args (visible to the model).\n\n## MRTR replaces server-initiated callbacks\n- elicitation / sampling / roots → one pattern: `resultType: input_required` → client gathers → retry with `inputResponses`.\n\n## Deprecated (12-month floor)\n- Roots, Sampling, Logging, HTTP+SSE transport, OAuth DCR (→ Client ID Metadata Documents).\n\n## New structure\n- Extensions framework (reverse-DNS, versioned): Tasks (poll `tasks/get`), MCP Apps (sandboxed UI), Enterprise Managed Auth.\n- Hardened OAuth (RFC 9207 issuer binding) · cacheable catalogs (ttlMs/cacheScope) · Mcp-Method/Name header routing.\n- Tier 1 SDKs: TypeScript, Python, Go, C# (Rust beta)."
+}

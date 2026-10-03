@@ -1,0 +1,150 @@
+{
+  "id": "GA-18",
+  "num": 44,
+  "track": "genai",
+  "stage": "6. Agents Core + MCP",
+  "topic": "Text-to-SQL",
+  "hook": "\"Just ask your database in English.\" Text-to-SQL makes it real — and it's a masterclass in **LLM + guardrails engineering**.",
+  "chapters": [
+    "How it works",
+    "Schema linking & semantic layer",
+    "SQL safety",
+    "Validation & self-correction"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · THE PIPELINE",
+      "title": "Question → schema → SQL → **checked answer**",
+      "sub": "Four stages, each a quality gate",
+      "narration": "Text-to-SQL looks like one trick but it's a pipeline. Stage one: the question arrives — 'which region had the most churn last quarter' — ambiguous in a dozen ways. Stage two: SCHEMA LINKING — the system identifies which tables and columns the question touches and hands the model only that slice; a 400-table warehouse shown in full would drown the answer. Stage three: GENERATION — the model writes SQL with the schema, column descriptions, and a few example pairs as guidance. Stage four: VALIDATION — the SQL is checked, executed read-only, the RESULT is verified against the question, and only then shown to the user. Stages two and four are where production systems live or die."
+    },
+    {
+      "type": "arch",
+      "chapter": 0,
+      "layers": [
+        { "e": "❓", "t": "Question", "s": "Natural language, ambiguous by nature" },
+        { "e": "🧭", "t": "Schema linking", "s": "Find relevant tables/columns · prune the 400-table warehouse to the 5 that matter" },
+        { "e": "✍️", "t": "SQL generation", "s": "Model writes SQL: schema + descriptions + example pairs in context" },
+        { "e": "✅", "t": "Validate → execute → verify", "s": "Syntax check, read-only run, result sanity, self-correct on failure" }
+      ],
+      "narration": "The architecture insight: the model is only stage three of four. The boring stages around it carry the reliability. Schema linking — stage two — has two implementations: retrieval-based, embed the question and match against table/column descriptions, or pattern-based, a curated mapping of common business terms to tables. Validation — stage four — is mechanical and non-negotiable: parse the SQL, confirm it parses and is read-only, run it with limits, sanity-check the result shape against the question. When any check fails, the error returns to the model for a fix — the AG-02 loop applied to SQL. Systems that skip stage four ship confident, wrong queries."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · MEANING",
+      "title": "The model doesn't know what `churn` means. **Tell it.**",
+      "sub": "Schema descriptions & the semantic layer",
+      "narration": "Raw schema is column names and types — `cust_status_cd`, `amt_usd`, `dte`. The model can guess, but guessing is how 'revenue' becomes a dozen subtly different column choices. Schema descriptions fix this: annotate every relevant column in the prompt — `amt_usd: gross transaction amount in USD, pre-refund`. The semantic layer goes further: a curated store of BUSINESS definitions — 'churned = no transaction in 90 days; MRR = monthly recurring from subscriptions only; region = customer's billing country' — injected with the schema so the model writes YOUR organization's SQL, not plausible generic SQL. This layer is usually the difference between a demo that impresses and a system analysts actually trust with real questions."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🏷️", "t": "Column annotations", "s": "Name + type + meaning + units + caveats: 'pre-refund', 'billing country', 'last 90d'" },
+        { "e": "📖", "t": "Semantic layer", "s": "Business definitions: churn, MRR, active user — one definition, injected everywhere" },
+        { "e": "💡", "t": "Example pairs (gold SQL)", "s": "3–5 question→SQL pairs per domain teach dialect, joins & house style better than any instruction" }
+      ],
+      "narration": "Why examples out-teach instructions: SQL generation errors are stylistic and structural — which tables join through which key, your date conventions, your aggregate patterns. Instructions describe these abstractly; examples DEMONSTRATE them, and models are demonstration-driven learners. Curate gold pairs from your analysts' best queries — the same people who'd otherwise be answering these questions manually. The semantic layer deserves investment beyond the prompt: version it, review changes like code, because a changed definition silently changes every past and future answer — the same freshness discipline as GA-14's living documents. And keep the injected context tight: five annotated tables plus three examples beats forty bare tables every time — context quality beats context quantity, again."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · SAFETY",
+      "title": "Generated SQL touches production. **Put fences up first.**",
+      "sub": "Read-only, allow-lists, limits",
+      "narration": "Generated SQL is model output — treat it with AG-02's rule: untrusted input. The fences. Read-only execution: a dedicated database user with SELECT-only grants; no GRANT, no DDL, no writes — the database itself enforces this, so even a jailbroken model can't drop tables. Second fence, the allow-list: verify the generated SQL parses, then inspect its AST — abstract syntax tree — and REJECT anything beyond plain SELECTs — multiple statements, INTO clauses, functions you haven't vetted. Third fence, limits: wrap execution with statement timeouts and row caps — a cartesian join the model didn't intend shouldn't run for an hour. Fourth fence, the data layer: run against a replica or a masked dataset when possible, so PII never reaches the model or the user by accident."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "The safety gate: parse, allow-list, wrap, execute",
+      "lang": "python",
+      "body": "import sqlglot\n\nALLOWED = {sqlglot.exp.Select}\n\ndef safe_execute(sql: str, conn) -> list[dict]:\n    # 1 · parse (catches syntax junk before it touches the DB)\n    tree = sqlglot.parse_one(sql, read=\"postgres\")\n\n    # 2 · AST allow-list: reject anything that isn't a plain SELECT\n    for node in tree.walk():\n        if type(node) not in ALLOWED | sqlglot.exp.COLUMN_TYPES:\n            raise SqlRejected(\n                f\"only plain SELECTs allowed — found {type(node).__name__}\")\n\n    # 3 · mechanical caps, injected — model can't override\n    wrapped = f\"SELECT * FROM ({tree.sql()}) AS _q LIMIT 500\"\n\n    # 4 · execute as the READ-ONLY user, with statement timeout\n    with conn.cursor() as cur:\n        cur.execute(\"SET statement_timeout = '10s'\")\n        cur.execute(wrapped)\n        cols = [d[0] for d in cur.description]\n        return [dict(zip(cols, row)) for row in cur.fetchall()]\n    # conn = role with SELECT-only grants → 4 fences deep",
+      "annot": [
+        "sqlglot parses to an AST — string matching on keywords is bypassable, tree inspection is not",
+        "LIMIT injection caps blast radius even when the model forgets its own limit clause",
+        "The read-only DB role is the deepest fence: even if all checks fail, the database says no"
+      ],
+      "narration": "Four independent fences, each alone sufficient to stop a class of disaster. Parsing catches garbage before it reaches the database; the AST walk rejects multi-statements and non-SELECT constructs that string matching would miss — a comment can hide 'drop table' from a regex, not from a parser. The LIMIT wrapper caps rows regardless of what the model wrote. And the read-only role is the trust anchor: database-enforced, immune to prompt tricks, the final no. Notice the error style — SqlRejected messages name the offending construct, which flows back to the model as an actionable observation: 'only plain SELECTs allowed — found Drop' tells the model exactly what to fix. Safety here isn't a feature on top; it's half the system."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · SELF-CORRECTION",
+      "title": "Run it, check it, retry it: **the execution feedback loop**",
+      "sub": "Validation & self-correction mechanics",
+      "narration": "The loop that makes Text-to-SQL reliable: generate → execute → EVALUATE the result → correct or answer. Execution errors are the easy case — the database says 'column does not exist', that message goes back, the model fixes the SQL, retry. Ambiguity is the harder case: the SQL runs fine but answers the wrong question — 'most churn' ranked by customer COUNT instead of revenue IMPACT. Result verification catches this: check the result non-empty, columns match the question's ask, numbers are plausible against history. Some systems add a second model pass — 'does this result answer the question?' — before displaying. Cap retries at two or three; beyond that the question itself is probably under-specified, and the right move is asking the user a clarifying question — GA-16's abstention discipline, applied to SQL."
+    },
+    {
+      "type": "chat",
+      "chapter": 3,
+      "messages": [
+        { "who": "user", "text": "Churn last quarter by region?" },
+        { "who": "ai", "text": "Trying: SELECT region, COUNT(*) FROM customers WHERE status='churned' AND … — ERROR: column \"status\" does not exist" },
+        { "who": "ai", "text": "Schema says status lives in subscriptions. Retrying…" },
+        { "who": "ai", "text": "Done. Top churn: APAC (34 accounts, $210k ARR). Want the full table?" }
+      ],
+      "narration": "The self-correction loop in miniature: first attempt failed with an exact database error — 'column status does not exist' — which names the fix; the model used the schema annotations from chapter two to locate the right table, and the second attempt succeeded with a result that includes BOTH counts and revenue — because the semantic layer defined churn and the examples taught showing impact, not just raw counts. Note the final turn: the answer leads with the insight, offers the table. Also note what didn't happen: no silent wrong answer — the failure surfaced loudly, inside the loop, where it's cheap. Every element here — schema annotations, gold examples, read-only execution, capped retries — was built in the previous chapters. Text-to-SQL is where the whole curriculum composes."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-19",
+      "title": "Databases mastered. What about the humble spreadsheet?",
+      "next": "Reel 45 · Files as Data Source — chat with CSV/Excel, DuckDB, code-interpreter pattern"
+    }
+  ],
+  "recap": [
+    "Text-to-SQL = pipeline: schema linking prunes the warehouse, generation writes SQL, validation gates execution — the model is one stage of four",
+    "Semantic layer + column annotations + 3–5 gold example pairs beat any amount of instruction",
+    "Safety = read-only role + AST allow-list + LIMIT/timeout wrapping + capped self-correction loop with actionable errors"
+  ],
+  "quiz": [
+    {
+      "q": "Why is schema linking a separate stage instead of showing the model all tables?",
+      "opts": [
+        "It's faster to type",
+        "A 400-table schema drowns the relevant context — pruning to the ~5 relevant tables is what makes generation accurate",
+        "Databases forbid full schemas",
+        "It saves tokens only"
+      ],
+      "a": 1,
+      "why": "Context quality beats quantity: the model writes better SQL when only relevant, annotated tables compete for its attention."
+    },
+    {
+      "q": "Why inspect the parsed AST rather than regex-scan the SQL string for forbidden keywords?",
+      "opts": [
+        "ASTs are faster",
+        "String scanning is bypassable — comments and encoding tricks hide keywords; a parsed tree can't be fooled",
+        "Regex is deprecated",
+        "ASTs produce prettier errors"
+      ],
+      "a": 1,
+      "why": "Security checks must run on structure, not text — parsing turns untrusted text into verifiable structure."
+    },
+    {
+      "q": "When should the self-correction loop stop retrying and ask the user instead?",
+      "opts": [
+        "After 10 attempts",
+        "After 2–3 failed attempts — persistent failure usually means the QUESTION is under-specified, not the SQL",
+        "Never — always retry",
+        "Only on syntax errors"
+      ],
+      "a": 1,
+      "why": "Bounded retries convert hallucination spirals into clarifying conversations — abstention discipline again."
+    }
+  ],
+  "code": {
+    "title": "Text-to-SQL, the full guarded pipeline",
+    "body": "SEMANTIC_LAYER = \"\"\"\nchurned: no transaction in 90 days\nmrr: recurring revenue from subscriptions only\nregion: customer's billing country\n\"\"\"\n\nasync def ask_db(question: str) -> str:\n    # 1 · schema linking: embed question → match table/column descriptions\n    schema = link_schema(question, catalog)          # ~5 relevant tables\n\n    for attempt in range(3):\n        # 2 · generate with meaning + examples\n        sql = llm(GEN_PROMPT, schema=schema,\n                  semantics=SEMANTIC_LAYER,\n                  examples=gold_pairs_for(question))\n        try:\n            rows = safe_execute(sql, readonly_conn)   # fenced (slide 4)\n        except (SqlRejected, DbError) as e:\n            history.append((sql, str(e)))             # actionable error → retry\n            continue\n        if not rows or not plausible(question, rows):\n            history.append((sql, \"result empty/implausible\"))\n            continue\n        return render_answer(question, rows, sql)      # answer + SQL shown\n\n    return \"I couldn't answer that reliably — can you clarify the timeframe or metric?\"",
+    "annot": [
+      "gold_pairs_for: retrieve examples SIMILAR to the question — example selection is itself retrieval (Stage 4 pays off again)",
+      "plausible(): non-empty + right shape + sane magnitudes — the cheapest result-verification layer",
+      "The final line is the product feature: an honest clarifying question beats a confident wrong table"
+    ]
+  },
+  "notes": "# Text-to-SQL\n\n## Pipeline\n1. Question (ambiguous NL)\n2. **Schema linking** — prune to relevant tables/columns\n3. Generation — schema + annotations + examples\n4. **Validate → execute read-only → verify result**\n\n## Schema linking & semantic layer\n- Annotate: meaning, units, caveats per column.\n- Semantic layer: versioned business definitions (churn, MRR, region).\n- 3–5 gold question→SQL pairs per domain (demonstration > instruction).\n\n## SQL safety\n- Read-only DB role (deep fence) · AST allow-list (sqlglot) · LIMIT/timeout wrap · replica/masked data.\n\n## Validation & self-correction\n- DB errors back to model as actionable observations; retry ≤3.\n- Result checks: non-empty, shape, plausibility.\n- Persistent failure → ask a clarifying question (abstention)."
+}
