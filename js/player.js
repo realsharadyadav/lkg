@@ -83,6 +83,7 @@
     kick() { if (this._pending) { this._pending = false; this.bigplay.classList.remove('show'); this._begin(); } }
     stop() {
       this._clearTimers(); this._stopSpeech(); this._clearScene();
+      if (this._hookFX) { this._hookFX(); this._hookFX = null; }
       this.hookEl.style.display = 'none';
       this.bigplay.classList.remove('show');
       this.speedpill.classList.remove('show');
@@ -98,6 +99,8 @@
     _hook() {
       this.state = 'hook';
       this.hookEl.style.display = 'flex';
+      if (this._hookFX) { this._hookFX(); this._hookFX = null; }
+      if (SS.motion) this._hookFX = SS.motion.hookFX(this.hookEl);
       const t = this.hookEl.querySelector('.hook-text');
       t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop');
       this._say(strip(this.data.hook), () => this._startScenes());
@@ -117,13 +120,15 @@
       const sc = this.data.scenes[this.sceneIdx];
       if (!sc) return this._recap();
       this.state = 'scene';
-      this._clearScene();
-      const layers = this.root.querySelectorAll('.scene');
-      layers.forEach(l => l.remove());
+      // run scene cleanup only — old DOM is handed to the exit transition
+      const olds = [...this.stage.querySelectorAll('.scene')];
+      if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; }
       const mount = h('div', 'scene');
       this.stage.appendChild(mount);
       const render = SS.scenes[sc.type] || SS.scenes.bigtext;
       this.sceneCleanup = render(mount, sc, { accent: getComputedStyle(this.root).getPropertyValue('--accent') });
+      if (SS.motion) SS.motion.transition(this.stage, olds, mount);
+      else olds.forEach(l => l.remove());
       this._caption(sc.narration);
       this._seg(this.sceneIdx / this.data.scenes.length);
       this._syncChap();

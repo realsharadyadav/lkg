@@ -29,6 +29,7 @@
     const segRow = segsRow(order, item.id);
     const curSeg = [...segRow.children].find(s => s.classList.contains('cur'));
     el.appendChild(h('div', 'reel-bg'));
+    if (SS.motion) SS.motion.attachBg(el);
     el.appendChild(h('div', 'reel-inner',
       `<div class="segs">${segRow.innerHTML}</div>` +
       `<div class="stage"></div>` +

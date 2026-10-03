@@ -382,3 +382,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @media (prefers-reduced-motion:reduce){
   .loop-ring,.model-node .orbit{animation:none}
 }
+
+/* ---------- motion upgrade (canvas bg + lottie) ---------- */
+.bg-fx{position:absolute;inset:0;width:100%;height:100%;opacity:.7;pointer-events:none}
+.hook-lottie{position:absolute;top:10%;left:50%;transform:translateX(-50%);width:116px;height:116px;pointer-events:none;opacity:.95}
+.hook-lottie svg{width:100%!important;height:100%!important}
