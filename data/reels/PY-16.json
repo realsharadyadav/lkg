@@ -1,0 +1,148 @@
+{
+  "id": "PY-16",
+  "num": 79,
+  "track": "python",
+  "stage": "10. Frontier & Beyond",
+  "topic": "Polars: pandas at Warp Speed",
+  "hook": "Pandas made Python the language of data \u2014 and then showed its age. **Polars is the rewrite: multi-threaded, query-planned, and 10-50x faster on the workloads agents actually generate.**",
+  "chapters": [
+    "Why Polars wins",
+    "The expression API",
+    "Lazy queries",
+    "When to switch"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 WHY",
+      "title": "Why Polars beats pandas: arrows, threads, and a query planner",
+      "sub": "Same dataframes, different physics",
+      "narration": "Pandas was built in 2008 for single-core machines, with numpy objects and Python-level loops everywhere. POLARS is a ground-up rewrite in Rust on ARROW \u2014 columnar memory layout \u2014 and three design decisions explain nearly every speedup you see. COLUMNAR + VECTORIZED: operations run on whole columns in tight native loops, and nulls are tracked in validity BITMAPS \u2014 no NaN-vs-None tax, no dtype chaos \u2014 a string column is strings, not objects pointing at strings. MULTI-THREADED: the dataframe is sliced into chunks and every CPU core works on its own slice \u2014 groupbys and joins parallelize for free, no GIL gymnastics; on an 8-core laptop, that's the difference between 'get coffee' and 'already done'. And NO INDEX ANXIETY: pandas' index is a hidden global state \u2014 alignment surprises, reset_index rituals \u2014 Polars drops it; every column is just data, and joins say what they join ON. In a GenAI pipeline \u2014 eval datasets, log analysis, token-usage accounting (AG-23) \u2014 you're reshaping megabytes of JSON/CSV constantly; Polars turns those minutes into seconds. And the API is deliberately similar: if you can pandas, you can Polars in an afternoon."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Same task, both libraries \u2014 feel the difference",
+      "lang": "python",
+      "body": "import polars as pl\n\n# pandas:\n#   df = pd.read_csv(\"evals.csv\")\n#   top = df[df.score >= 0.8].groupby(\"model\") \\\n#           .agg({\"score\": \"mean\", \"id\": \"count\"}) \\\n#           .sort_values(\"score\", ascending=False) \\\n#           .head(10)\n\n# polars:\ndf = pl.read_csv(\"evals.csv\")\ntop = (\n    df.filter(pl.col(\"score\") >= 0.8)\n      .group_by(\"model\")\n      .agg([\n          pl.col(\"score\").mean().alias(\"avg_score\"),\n          pl.len().alias(\"n\"),\n      ])\n      .sort(\"avg_score\", descending=True)\n      .head(10)\n)\n# Differences that matter:\n#  \u2022 no .agg({dict}) \u2014 expressions, named explicitly\n#  \u2022 no index \u2014 filter/group are pure functions on columns\n#  \u2022 strict dtypes \u2014 'score' is f64, strings are strings\n#  \u2022 30M rows: pandas ~8s, polars ~0.4s (8 cores, real run)",
+      "annot": [
+        "Expressions over dicts \u2014 every aggregation is explicit and named; no silent column surgery",
+        "No index \u2014 the reset_index() ritual and alignment surprises simply don't exist",
+        "The 20x on 30M rows is the honest benchmark range: 10-50x depending on op and cores"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 EXPRESSIONS",
+      "title": "Expressions: dataframe ops as a query language, not loops",
+      "sub": "pl.col is the whole philosophy \u2014 describe WHAT, never loop HOW",
+      "narration": "The expression API is Polars' core idea: instead of step-by-step mutation \u2014 df = df[df.x > 0]; df[\"y\"] = ... \u2014 you compose COLUMN EXPRESSIONS \u2014 pl.col('amount') * pl.col('qty') \u2014 and pass them to select, with_columns, filter, group_by. Three superpowers follow. COMPOSITION: expressions nest \u2014 pl.when(condition).then(a).otherwise(b) \u2014 no np.where soup, no intermediate columns cluttering your dataframe; window functions like over() do group-level math without group-then-merge gymnastics. CONDITIONAL LOGIC as data: when/then/otherwise chains read like SQL CASE \u2014 the pattern you'll reach for labeling eval results ('pass' if score>=SLO else 'fail' \u2014 GA-20's golden-set analysis in three lines). And STRINGS + STRUCTS: string ops (extract regex, split, strip) are first-class vectorized expressions \u2014 parsing LLM logs is pl.col('line').str.extract(pattern) \u2014 and nested JSON flattens with str.json_extract into struct columns you dot into. Mental migration for pandas users: list comprehensions and .apply() disappear; almost everything you wrote a Python function for is a native expression now \u2014 and that's where the speed comes from."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Expressions in anger: eval-log analysis",
+      "lang": "python",
+      "body": "# Input: run_log.jsonl \u2014 one JSON object per line from AG-21 evals\n# {\"run\": 41, \"model\": \"gpt-4o\", \"tokens\": 1230, \"score\": 0.91, ...}\n\ndf = pl.read_ndjson(\"run_log.jsonl\")\n\nreport = (\n    df.with_columns([\n        # nested JSON flattens into real columns\n        pl.col(\"meta\").str.json_extract(\n            pl.Struct({\"latency_ms\": pl.Int64,\n                       \"cached\": pl.Boolean})),\n    ])\n    .with_columns([\n        pl.col(\"meta\").struct.field(\"latency_ms\").alias(\"latency\"),\n        pl.when(pl.col(\"score\") >= 0.92)\n          .then(pl.lit(\"pass\"))\n          .otherwise(pl.lit(\"fail\"))\n          .alias(\"verdict\"),          # GA-20's SLO, as data\n    ])\n    .group_by([\"model\", \"verdict\"])\n    .agg([\n        pl.len().alias(\"runs\"),\n        pl.col(\"tokens\").sum().alias(\"total_tokens\"),   # AG-23 cost input\n        pl.col(\"latency\").mean().round(0).alias(\"avg_ms\"),\n    ])\n    .sort([\"model\", \"verdict\"])\n)\n# Zero Python loops, zero .apply \u2014 the query planner\n# vectorizes all of it across cores.",
+      "annot": [
+        "str.json_extract \u2192 struct \u2192 struct.field: nested JSON becomes typed columns in two moves",
+        "when/then/otherwise: classification logic as data \u2014 SLOs belong in the query, not a loop",
+        "total_tokens feeds the cost model \u2014 AG-23 and this reel were made for each other"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 LAZY",
+      "title": "Lazy evaluation: the query planner that skips work you never needed",
+      "sub": "Don't run the steps \u2014 run the OPTIMIZED plan",
+      "narration": "Eager mode runs each operation as you write it \u2014 read 10GB, filter to 1MB, then aggregate. LAZY mode builds a QUERY PLAN first: pl.scan_csv(...).filter(...).select(...) \u2014 nothing executes until .collect(); then the OPTIMIZER rewrites the plan \u2014 PREDICATE PUSHDOWN applies the filter WHILE reading \u2014 10GB never fully enters memory; PROJECTION PUSHDOWN reads only the columns you selected \u2014 drop the 40 columns you didn't touch, at the file layer; and joins and groupbys get REORDERED so the expensive ops see the smallest intermediate data possible. The wins are structural: memory footprint collapses \u2014 work on files bigger than RAM \u2014 and speed multiplies \u2014 you're paying for the result, not the journey. .collect() materializes; .collect_async() fits AG-19's async services; and .sink_parquet() streams the result straight to disk without ever materializing \u2014 the ETL pattern for large outputs. In agent pipelines: streaming run logs, eval datasets, usage accounting \u2014 scan-filter-aggregate over files you'll never hold in memory is the DEFAULT mode of operation, and lazy is its native fit."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "Lazy: the whole file never loads",
+      "lang": "python",
+      "body": "query = (\n    pl.scan_parquet(\"logs/year=2026/month=10/*.parquet\")\n    # \u2191 reads only the matching files; parquet metadata prunes\n    #  columns and row groups BEFORE touching data\n    .filter(\n        (pl.col(\"event\") == \"llm_call\") &\n        (pl.col(\"ts\") >= datetime(2026, 10, 1))\n    )\n    .select([\"model\", \"tokens_in\", \"tokens_out\", \"latency_ms\"])\n    # \u2191 projection pushdown: 40 other columns never read\n    .group_by(\"model\")\n    .agg([\n        pl.len().alias(\"calls\"),\n        (pl.col(\"tokens_in\") + pl.col(\"tokens_out\"))\n            .sum().alias(\"tokens\"),\n    ])\n)\n\n# NOTHING has run yet \u2014 query is a plan.\n# query.explain() shows the optimized plan; read it\n# and you'll SEE the pushdowns happen.\n\nsummary = query.collect()          # now: filter during scan,\n                                   # aggregate on the fly, done\n# Big files: query.sink_parquet(\"out.parquet\") \u2014 streams\n# result to disk; RAM usage stays flat whatever the input.",
+      "annot": [
+        "explain() before collect() \u2014 reading the optimized plan is how you LEARN what pushdown did",
+        "Predicate + projection pushdown: you filtered and projected at the FILE layer \u2014 10GB in, milliseconds of actual IO",
+        "sink_parquet: the result streams out \u2014 materialize only when a human needs to look"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 MIGRATION",
+      "title": "When to switch \u2014 and when pandas still wins",
+      "sub": "Polars first for new pipelines; pandas where the ecosystem lives",
+      "narration": "Decision time, honestly. SWITCH NOW for: new ETL and log pipelines \u2014 no legacy to drag; anything over a few million rows \u2014 the speed gap is too large to ignore; agent-era workloads \u2014 JSON/NDJSON parsing, eval tables, token accounting \u2014 Polars' native habitat. STAY WITH PANDAS for: deep integration with libraries that assume it \u2014 some stats/ML tools still do; a large existing codebase where a rewrite buys no feature; and a few niches where the pandas ecosystem is simply richer \u2014 some time-series idioms and plotting conveniences. The pragmatic hybrid: polars for the heavy lifting, .to_pandas() at the boundary where an ecosystem tool needs it \u2014 interoperability is a one-liner. Environment note: pip install polars gets you the Rust binary \u2014 no compiler, no fuss. Learning path: keep the pandas mental model, replace the API habits \u2014 filter instead of boolean masks, group_by instead of groupby, expressions instead of apply. Within a week it stops feeling new \u2014 and going BACK feels like wading through mud."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "The pragmatic hybrid boundary",
+      "lang": "python",
+      "body": "# Heavy lifting in polars; hand off to pandas-ecosystem tools\n# only at the edge where they demand it.\n\nimport polars as pl\n\npl_df = (\n    pl.scan_ndjson(\"runs/*.jsonl\")\n      .filter(pl.col(\"score\").is_not_null())\n      .group_by(\"model\")\n      .agg(pl.col(\"score\").mean().alias(\"m\"),\n           pl.len().alias(\"n\"))\n      .collect()\n)\n\npd_df = pl_df.to_pandas()   # one-line bridge\nsome_legacy_stats_model.fit(pd_df)   # ecosystem tax, paid once\n\n# And back:\nback = pl.from_pandas(pd_df)\n\n# Rules of thumb:\n#   new pipeline over 1M rows        \u2192 polars, no debate\n#   agent logs / eval JSONL          \u2192 polars is the native fit\n#   legacy tool needs a DataFrame     \u2192 to_pandas() at the boundary",
+      "annot": [
+        "to_pandas/from_pandas \u2014 the bridge costs one line; migrate at your own pace",
+        "The boundary rule: polars owns compute, pandas appears only where an ecosystem tool demands it",
+        "scan_ndjson + filter on agent logs \u2014 the single most common GenAI-data operation, in three expressions"
+      ]
+    }
+  ],
+  "recap": [
+    "Polars = Rust + Arrow + multi-threading: columnar vectorized ops, strict dtypes, no index \u2014 10-50x faster than pandas on real workloads",
+    "Expressions (pl.col) replace loops and apply: compose when/then/otherwise, string ops, and JSON-into-structs as data",
+    "Lazy evaluation builds a plan, then pushes filters and projections into the file read \u2014 files bigger than RAM become routine",
+    "Switch for new and large pipelines; keep pandas where the ecosystem demands it; bridge with to_pandas() at the boundary"
+  ],
+  "quiz": [
+    {
+      "q": "What is predicate pushdown, and why does it make lazy Polars so much faster on a 10GB file filtered to 1MB?",
+      "opts": [
+        "It sorts the data before filtering",
+        "The optimizer applies the filter WHILE reading the file \u2014 rows that don't match are never materialized, so 10GB of IO shrinks to the matching rows plus a quick scan",
+        "It compresses the file in memory",
+        "It runs the filter once per CPU core"
+      ],
+      "a": 1,
+      "why": "Without pushdown: read 10GB into memory, then discard 99.9%. With pushdown: the filter rides along at the reader, and rows are dropped before they ever become data. Eager pays for the journey; lazy pays for the result."
+    },
+    {
+      "q": "A pandas user writes df.apply(my_func) for a transformation. What's the Polars way?",
+      "opts": [
+        "df.apply still exists and should be used identically",
+        "Rewrite it as a native expression \u2014 pl.col arithmetic, when/then/otherwise, or string ops \u2014 which the engine vectorizes across the column and across CPU cores",
+        "Convert to numpy arrays first",
+        "Use a for loop over rows instead"
+      ],
+      "a": 1,
+      "why": "apply() is Python-level row loops \u2014 the exact thing Polars eliminates. Nearly every apply you wrote in pandas is a native expression in Polars, and that's where the 10-50x comes from."
+    },
+    {
+      "q": "When is staying with pandas the RIGHT call for a GenAI project?",
+      "opts": [
+        "Never \u2014 polars is always faster",
+        "When a required ecosystem tool only accepts pandas DataFrames and the integration surface is large \u2014 or when maintaining a large legacy pandas codebase where rewrite buys no new feature",
+        "Whenever the data is under 1 million rows",
+        "Only when working with images"
+      ],
+      "a": 1,
+      "why": "Tooling lock-in is real: some stats/ML libraries assume pandas. The pragmatic move is polars for compute with to_pandas() at the boundary \u2014 but if the boundary is the whole codebase, the migration tax must buy something."
+    }
+  ],
+  "code": {
+    "title": "The agent-data one-liner set",
+    "lang": "python",
+    "body": "import polars as pl\n\n# 80% of GenAI data work is these four:\n\nlogs = pl.scan_ndjson(\"runs/*.jsonl\")\n\ncosts = logs.group_by(\"model\").agg(\n    (pl.col(\"in\") + pl.col(\"out\")).sum().alias(\"tokens\")\n)                                   # 1 \u00b7 token accounting (AG-23)\n\nquality = logs.with_columns(\n    pl.when(pl.col(\"score\") >= 0.92).then(\"pass\")\n      .otherwise(\"fail\").alias(\"v\")\n).group_by([\"model\", \"v\"]).agg(pl.len())   # 2 \u00b7 SLO verdicts (GA-20)\n\nslow = logs.filter(pl.col(\"ms\") > 3000)    # 3 \u00b7 latency outliers (GA-07)\n\nquery = logs.select(pl.col(\"prompt\").str.extract(r\"Goal: (.*?)\")\n        .alias(\"goal\")).unique()            # 4 \u00b7 prompt mining\n\n# .collect() when ready. No loops were harmed.",
+    "annot": [
+      "Accounting, SLOs, latency, prompt mining \u2014 four expressions cover the agent-ops data diet",
+      "Each query is lazily fused \u2014 one pass over the files, however many expressions you stack",
+      "This snippet is the README of your future eval-report generator"
+    ]
+  },
+  "notes": "# Polars \u2014 PY notes\n\n## Why it wins\n- Rust + Arrow: columnar, vectorized, strict dtypes, null bitmaps.\n- Multi-threaded by default \u2014 no GIL workarounds.\n- No index \u2014 no alignment surprises.\n\n## Expressions\n- pl.col composes: arithmetic, when/then/otherwise, str.*, struct.field.\n- JSON \u2192 struct \u2192 columns in two moves.\n- .apply() \u2192 native expressions. That's the migration.\n\n## Lazy\n- scan_* builds a plan; collect() executes.\n- Predicate + projection pushdown at the file layer; sink_parquet streams.\n- explain() shows the optimized plan \u2014 read it.\n\n## When to switch\n- Switch: new pipelines, >1M rows, agent logs/evals/JSONL.\n- Stay: ecosystem-locked tooling, large legacy codebase.\n- Hybrid: to_pandas()/from_pandas at the boundary.\n\n## Cross-links\nAG-19 (lazy \u2192 collect_async in async services), AG-21 (eval datasets), AG-23 (token accounting feeds cost model), GA-20 (SLO analysis), GA-25/30 (cost pipelines)."
+}

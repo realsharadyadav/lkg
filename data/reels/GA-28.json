@@ -1,0 +1,148 @@
+{
+  "id": "GA-28",
+  "num": 77,
+  "track": "genai",
+  "stage": "10. Frontier & Beyond",
+  "topic": "Beyond Text",
+  "hook": "Language was the doorway \u2014 not the house. **Vision, speech, and images make GenAI a full-sense system**, and every pipeline you built gains a pair of eyes and a voice.",
+  "chapters": [
+    "Vision & OCR",
+    "Speech in and out",
+    "Realtime voice agents",
+    "Image generation"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 VISION",
+      "title": "Vision & OCR: the model that can look at your screenshots",
+      "sub": "Multimodal input \u2014 one API call reads charts, scans, and whiteboards",
+      "narration": "Multimodal models accept IMAGES alongside text in the same chat call \u2014 the API shape you know from GA-03 gains an image_url content block, nothing more. The architecture-relevant capabilities: DOCUMENT UNDERSTANDING \u2014 pass a PDF page or scan; the model reads tables, forms, handwriting \u2014 for messy real-world documents pair it with a layout-aware extractor (GA-29's Document Intelligence) \u2014 the service gives clean structure, the model gives judgment; CHARTS & DIAGRAMS \u2014 screenshots of dashboards, ER diagrams, error dialogs \u2014 'why is this chart spiking' becomes a question you can ASK; and OCR-adjacent tasks \u2014 transcription of signs, labels, receipts \u2014 a vision call beats a classic OCR pipeline whenever context matters, because the model reads MEANING ('total including tax') not just characters. Architecturally: images consume tokens \u2014 a page photo is worth hundreds to thousands of tokens (AG-13's context budget), so downscale, crop to the region of interest, and batch pages deliberately. Cost and latency both scale with resolution \u2014 treat pixels like the scarce resource they are."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Vision call: read a chart, ask a question",
+      "lang": "python",
+      "body": "import base64\nfrom openai import OpenAI\nclient = OpenAI()\n\nimg = base64.b64encode(open(\"dashboard.png\", \"rb\").read()).decode()\n\nresp = client.chat.completions.create(\n    model=\"gpt-4o\",\n    messages=[{\n        \"role\": \"user\",\n        \"content\": [\n            {\"type\": \"text\",\n             \"text\": \"This is a Grafana dashboard. (1) Which panel \"\n                     \"spiked at 14:20? (2) What changed 5 minutes \"\n                     \"before? Answer from the image only.\"},\n            {\"type\": \"image_url\",\n             \"image_url\": {\"url\": f\"data:image/png;base64,{img}\",\n                           \"detail\": \"high\"}},   # low|high \u2192 token cost\n        ],\n    }],\n)\n# Same shape as every chat call in this course \u2014 the\n# content array just grew a second block type.\n# detail:'low' \u2192 ~85 tokens per tile; 'high' \u2192 ~30x more.",
+      "annot": [
+        "The call shape is GA-03's \u2014 multimodal is an input-format change, not a new paradigm",
+        "detail:'low' vs 'high' is a cost dial \u2014 charts need high; signature detection needs low",
+        "'from the image only' is groundedness discipline \u2014 the same anti-hallucination instinct as GA-10's citations"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 SPEECH",
+      "title": "Speech-to-text and text-to-speech: the telephony stack, rebuilt",
+      "sub": "Whisper-class STT and neural TTS \u2014 transcription is a solved commodity",
+      "narration": "Speech is two APIs wearing one UX. SPEECH-TO-TEXT \u2014 Whisper-class models transcribe audio with punctuation, speaker awareness, and code-switching between languages \u2014 operationally it's a solved commodity: send audio, get text, handle it with the WHOLE pipeline you've built \u2014 transcribe then retrieve (GA-10), then answer with guardrails (AG-09). Engineering notes: chunk long audio with overlap, timestamp output when you need alignment with video or recordings, and post-process with an LLM pass for domain terms \u2014 'Kubernetes' never survives raw transcription. TEXT-TO-SPEECH \u2014 neural voices are now indistinguishable from studio recordings, with per-sentence style control \u2014 the pipeline: agent's text answer \u2192 TTS \u2192 audio to user. TTS latency is real-time-bound \u2014 you can't precompute a conversation, so per-sentence streaming (sentence \u2192 synthesize \u2192 play while next sentence generates) is the standard mitigation, the same perceived-latency trick as LLM token streaming (GA-07). And VOICE SELECTION is a product decision \u2014 the earlier user feedback about voice preference applies to every shipped product: give users a choice, default to unobtrusive."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "STT in, TTS out \u2014 a voice sandwich around your agent",
+      "lang": "python",
+      "body": "import asyncio\n\nasync def voice_session(audio_stream):\n    # 1 \u00b7 STT: stream audio chunks, stream text back\n    text_stream = stt.transcribe_stream(audio_stream)\n\n    # 2 \u00b7 your ENTIRE existing pipeline, unchanged:\n    async for user_text in text_stream:\n        reply = await agent.answer(      # RAG + guardrails + tools\n            user_text, session_id=...)\n\n        # 3 \u00b7 TTS: sentence-by-sentence streaming\n        async for sentence in split_sentences(reply):\n            audio = await tts.synthesize(sentence, voice=\"nova\")\n            yield audio          # play now; next sentence synthesizes\n                                 # while this one plays\n\n# Latency budget (target \u2264 1.2s from end-of-speech):\n#   STT finalization   ~250ms\n#   agent first token  ~400ms  (GA-07 streaming)\n#   TTS first sentence ~300ms\n#   \u2014 each stage streams into the next; totals overlap.",
+      "annot": [
+        "The agent in the middle is unchanged \u2014 voice is an adapter layer, not a rewrite",
+        "Sentence-level TTS streaming hides synthesis behind playback \u2014 GA-07's perceived-latency principle, audio edition",
+        "The latency budget table is what you put in the NFR section GA-30 taught you to write"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 REALTIME",
+      "title": "Realtime voice agents: the conversation becomes the interface",
+      "sub": "Speech-to-speech models erase the text layer \u2014 and change the architecture",
+      "narration": "The newest capability tier is SPEECH-TO-SPEECH: models that listen to audio and respond in audio directly, keeping tone, pace, and emotion in the loop \u2014 sub-second response, natural interruption handling \u2014 the phone call with a machine finally stops feeling like a phone call with a machine. Architecturally it's a different topology from the STT\u2192LLM\u2192TTS sandwich: a PERSISTENT BIDIRECTIONAL STREAM replaces request/response \u2014 the client streams audio up, audio flows down \u2014 WebSocket infrastructure (PY-14's territory) carries it, with the realtime API handling the session: turn detection, interruption, voice selection. What changes in your system design: STATEFUL SESSIONS \u2014 a call is a long-lived connection with mid-call context \u2014 memory scoping from AG-17 applies per-call; INTERRUPTION SEMANTICS \u2014 barge-in means the model must handle half-finished thoughts \u2014 treat it as a cancellation event (AG-19's abort discipline); and LATENCY BUDGETS collapse \u2014 the whole loop \u2014 hear, think, speak \u2014 now targets ~1 second, which rules out naive chains. Design pattern: keep the realtime model as the conversational FRONT DOOR, and hand structured work \u2014 lookups, transactions \u2014 to the text pipeline as TOOL CALLS \u2014 best of both topologies."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "Realtime session: one stream, both directions",
+      "lang": "python",
+      "body": "from openai import AsyncOpenAI\nclient = AsyncOpenAI()\n\nasync with client.beta.realtime.connect(\n        model=\"gpt-4o-realtime\") as conn:\n    await conn.session.update(\n        voice=\"alloy\",\n        instructions=\"You are LKG's study concierge. Keep answers \"\n                     \"under 30 seconds of speech. If a learner asks \"\n                     \"about progress, call get_progress.\",\n        tools=[get_progress_schema],        # tools: SAME AG-16 contracts\n    )\n\n    async for event in conn:               # one loop, both directions\n        if event.type == \"response.audio.delta\":\n            speaker.play(event.delta)      # stream audio out\n        elif event.type == \"response.function_call\":\n            # structured work still goes through the text pipeline\n            result = await handle_tool(event)   # RAG, guardrails, all\n            await conn.conversation.item.create(result)\n        elif event.type == \"input_audio_buffer.speech_started\":\n            speaker.flush()                # barge-in \u2192 cancel playback\n            # AG-19's abort discipline, conversational edition",
+      "annot": [
+        "Tools ride along inside the realtime session \u2014 AG-16's registry pattern doesn't change",
+        "speech_started \u2192 flush playback: interruption is a first-class event, not an error",
+        "Instructions are a system prompt (GA-03) \u2014 plus a new constraint: answers sized in SECONDS of speech"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 IMAGES",
+      "title": "Image generation: from prompt to pixels, and the architect's cautions",
+      "sub": "Diffusion models draw; engineers decide where drawing belongs",
+      "narration": "Image GENERATION \u2014 diffusion models turning prompts into pictures \u2014 is the most visually dramatic capability and the one needing the most architectural restraint. USE IT WHERE THE IMAGE IS THE PRODUCT: marketing variants, design drafts, synthetic data for training, illustrations from your own content pipeline. BE CAREFUL WHERE THE IMAGE CARRIES TRUTH: anything presented as evidence \u2014 the model invents plausible detail confidently, and a generated chart looks like DATA while being fiction \u2014 treat generated media like unvetted user input, watermark and label it (EU AI Act transparency duties), and never let it flow into your retrieval corpus unmarked (AG-22's injection lesson applies: an image full of text is an injection surface too). OPERATIONALLY: generation is slow and expensive relative to text \u2014 seconds per image, so ASYNC job patterns (AG-19) fit best; aspect/size parameters matter to downstream layouts; and editing modes \u2014 inpainting, variation \u2014 often serve products better than raw generation: the user's uploaded photo plus a small edit beats a full hallucinated scene. The architect's summary: text models REASON, image models RENDER \u2014 pipeline them in that order."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "Generation as an async job \u2014 with labeling discipline",
+      "lang": "python",
+      "body": "async def generate_illustration(prompt: str, job_id: str):\n    job = jobs.create(job_id)                # AG-19 async pattern\n    img = await images.generate(\n        model=\"dall-e-3\",                    # or SDXL/Flux, self-hosted\n        prompt=f\"Flat vector style, brand palette: {prompt}\",\n        size=\"1792x1024\",                    # downstream layout decides\n        quality=\"hd\",\n    )\n    stored = await storage.put(img, {\n        \"provenance\": \"ai-generated\",        # label it \u2014 EU AI Act\n        \"watermark\": \"c2pa\",                 # content credentials\n        \"prompt_hash\": hash(prompt),\n    })\n    job.complete(stored.url)                 # webhook/PY-14 notifies UI\n\n# Governance rules baked in:\n#  \u2022 provenance metadata at birth \u2014 retro-labeling never happens\n#  \u2022 generated media marked unsearchable until human review\n#    (AG-22: an image of text is an injection vector)",
+      "annot": [
+        "Async job pattern \u2014 seconds-long generation doesn't belong on a request thread (AG-19)",
+        "Provenance metadata at creation \u2014 the label is part of the artifact, not an afterthought",
+        "Mark generated media out of the RAG corpus until reviewed \u2014 injection defense from AG-22, media edition"
+      ]
+    }
+  ],
+  "recap": [
+    "Vision is an input-format change: image_url content blocks in the same chat API \u2014 manage token cost with detail levels and cropping",
+    "Speech is a solved commodity \u2014 STT/TTS wrap your existing text pipeline; sentence-level TTS streaming hides latency behind playback",
+    "Realtime speech-to-speech replaces request/response with a persistent bidirectional stream \u2014 keep it as the conversational front door, route structured work through tool calls",
+    "Image generation renders but doesn't reason \u2014 pipeline text-first, run generation async, and label provenance at birth"
+  ],
+  "quiz": [
+    {
+      "q": "Why does the STT \u2192 LLM \u2192 TTS sandwich architecture hide latency better than waiting for the full reply before synthesizing?",
+      "opts": [
+        "TTS is faster on short sentences than long paragraphs",
+        "Sentence-by-sentence synthesis pipelines playback with generation \u2014 the user hears speech while later sentences are still being synthesized, so perceived latency is only first-sentence time",
+        "The network transfers audio faster than text",
+        "It doesn't \u2014 full-reply synthesis is always lower latency"
+      ],
+      "a": 1,
+      "why": "Same principle as LLM token streaming (GA-07): time-to-first-signal dominates perceived latency. Playback of sentence N overlaps synthesis of sentence N+1 \u2014 total latency drops from 'synthesize everything' to 'synthesize first sentence'."
+    },
+    {
+      "q": "In a realtime speech-to-speech agent, what should happen when the user interrupts (barge-in)?",
+      "opts": [
+        "Ignore it \u2014 the model should finish its current response",
+        "Treat it as a cancellation event: stop playback, flush the buffer, and let the new input start a fresh turn \u2014 interruption is a first-class event, not an error",
+        "Disconnect and reconnect the session",
+        "Transcribe both audio streams simultaneously"
+      ],
+      "a": 1,
+      "why": "AG-19's abort discipline, conversational edition: speech_started means cancel in-flight playback and generation, then process the new input. Latency budget ~1s total makes 'wait for politeness' impossible."
+    },
+    {
+      "q": "Why must AI-generated images be labeled with provenance metadata at creation time?",
+      "opts": [
+        "It improves image quality",
+        "An image can look like evidence while being fiction \u2014 labeling at birth satisfies transparency duties, prevents generated media from polluting retrieval corpora, and retro-labeling never actually happens",
+        "Labels make images smaller to store",
+        "It's only required for commercial use"
+      ],
+      "a": 1,
+      "why": "Generated media presented as truth is a hallucination with pixels. Provenance (C2PA/watermark) at creation is the only reliable point to attach it \u2014 plus AG-22's angle: unlabeled generated images entering a RAG corpus are injection surfaces."
+    }
+  ],
+  "code": {
+    "title": "The multimodal pipeline, end to end",
+    "lang": "python",
+    "body": "# ONE pipeline, every sense:\nasync def handle(user_msg):\n    # eyes: screenshots/charts/doc scans  (vision blocks)\n    # ears:  audio \u2192 STT \u2192 text\n    # brain: text + retrieved facts \u2192 answer   [UNCHANGED CORE]\n    # voice: answer \u2192 sentence-TTS \u2192 stream\n    # hands: tool calls for structured work\n    # guardrails: screen every surface (AG-09)\n\n    return pipeline.run(user_msg)\n\n# The core you built in 76 reels didn't change.\n# It just learned to see, hear, and speak.",
+    "annot": [
+      "The brain is the text pipeline \u2014 multimodal layers are adapters around it",
+      "Every surface passes guardrails \u2014 image input, audio output, all of it (AG-09)",
+      "'Adapters around an unchanged core' \u2014 the sentence to remember in every architecture review"
+    ]
+  },
+  "notes": "# Beyond Text \u2014 GA notes\n\n## Vision & OCR\n- image_url content blocks; detail low/high is the token-cost dial.\n- Clean structure from Document Intelligence (GA-29) + judgment from the model.\n- Ask 'from the image only' \u2014 groundedness discipline.\n\n## Speech\n- STT: commodity. Chunk long audio, timestamp, LLM post-pass for domain terms.\n- TTS: per-sentence streaming hides latency behind playback.\n- Voice is a product choice \u2014 offer options, default unobtrusive.\n\n## Realtime voice agents\n- Speech-to-speech, persistent bidirectional stream (WebSocket \u2014 PY-14).\n- ~1s loop budget; interruption = cancellation event (AG-19).\n- Pattern: realtime model as front door; structured work via tool calls (AG-16).\n\n## Image generation\n- Render, not reason \u2014 pipeline text-first.\n- Async job pattern (AG-19); editing beats raw generation for products.\n- Provenance at birth (C2PA, watermark); generated media out of RAG corpora until reviewed (AG-22); transparency duties under EU AI Act.\n\n## Cross-links\nGA-03 (chat API shape), GA-07 (latency), GA-10/29 (retrieval, ingestion), AG-09 (guardrails), AG-13 (context budget), AG-16 (tool contracts), AG-17 (session memory), AG-19 (async/abort), AG-22 (injection), PY-14 (websockets for realtime)."
+}

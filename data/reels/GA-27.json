@@ -1,0 +1,148 @@
+{
+  "id": "GA-27",
+  "num": 76,
+  "track": "genai",
+  "stage": "10. Frontier & Beyond",
+  "topic": "RAG vs Fine-tune vs Prompt",
+  "hook": "Three levers change model behavior: what you SAY, what it KNOWS, and what it IS. **Choosing wrong wastes weeks \u2014 this reel is the decision framework architects actually use.**",
+  "chapters": [
+    "The decision framework",
+    "Fine-tuning, SFT, LoRA",
+    "Distillation & small models",
+    "Local & open models"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 DECISIONS",
+      "title": "Prompt vs RAG vs fine-tune: the three-question decision",
+      "sub": "Answer in order \u2014 most projects never need the third lever",
+      "narration": "The three levers operate at different layers. PROMPTING changes behavior through instructions \u2014 cheapest, instant, reversible: new skill formats, tone, output schemas (GA-03/GA-04) \u2014 it cannot add knowledge the model doesn't have, and every instruction competes for the same context window (AG-13). RAG changes knowledge through retrieval \u2014 inject current, private, citable facts at query time (GA-09/GA-10) \u2014 it updates instantly when documents change, but facts ride along every call and consume context. FINE-TUNING changes the model's WEIGHTS \u2014 permanent behavior and style baked in, no per-call cost, but it needs hundreds of curated examples, a training pipeline, and every update means retraining. The decision, in order: FIRST ask 'is the knowledge current/private/changing?' \u2192 RAG. 'Does the behavior fail even with good prompts and retrieved facts?' \u2192 fine-tune. Everything else \u2192 prompt. A golden rule from the field: RAG and fine-tuning are complements, not rivals \u2014 fine-tune STYLE and FORMAT, RAG the FACTS."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "The decision flow, as a function",
+      "lang": "python",
+      "body": "def choose_lever(problem) -> str:\n    # Q1 \u00b7 knowledge \u2014 current, private, or frequently changing?\n    if problem.knowledge_is_private_or_changing:\n        return \"RAG\"        # GA-09/GA-10 \u2014 facts injected at query time\n\n    # Q2 \u00b7 behavior \u2014 does it still fail with a great prompt\n    #        AND the facts in context?\n    if fails_despite_prompt_and_facts(problem):\n        if problem.style_or_format_issue:\n            return \"FINE-TUNE\"     # teach the SHAPE it can't follow\n        return \"prompt harder\"     # GA-03 \u2014 the lever is underused\n\n    # Q3 \u00b7 always true, whatever else you chose:\n    return \"prompt (base) + RAG (facts)\"\n\n# Field rules:\n#  \u2022 Default stack: good prompt + RAG. Fine-tune LAST.\n#  \u2022 Facts change? Fine-tune can't help \u2014 weights freeze at training.\n#  \u2022 Fine-tune style, RAG facts \u2014 complements, not rivals.",
+      "annot": [
+        "Q1 before Q2: adding knowledge is RAG's job \u2014 no amount of weight-tuning makes a model know this morning's prices",
+        "Fine-tune only after prompt+RAG demonstrably fail \u2014 otherwise you're paying to fix what wasn't broken",
+        "The default stack line is the answer you'll give in 80% of architecture reviews"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 FINE-TUNING",
+      "title": "SFT, LoRA, PEFT: what fine-tuning actually costs",
+      "sub": "You are not retraining GPT \u2014 you're steering it with curated examples",
+      "narration": "FINE-TUNING means continued training on task-specific examples so the model internalizes behavior \u2014 hundreds to thousands of curated input/output pairs, not millions of documents. SFT \u2014 supervised fine-tuning \u2014 is the base case: show the model prompt + ideal response pairs, adjust weights to raise the probability of those responses \u2014 quality beats quantity \u2014 500 excellent examples outperform 5,000 noisy ones, and DATA CURATION is 80% of the project: every mislabeled example teaches the wrong lesson permanently. The engineering breakthrough that made fine-tuning cheap is LoRA \u2014 low-rank adaptation: freeze the base model's billions of weights and train tiny adapter matrices \u2014 the adapter might be 0.1% of the model's size, trainable on one GPU, swappable at runtime \u2014 one base model, many task adapters, selected per request. PEFT is the umbrella \u2014 parameter-efficient fine-tuning \u2014 LoRA plus siblings (prefix tuning, adapters). The honest trade-offs: training needs GPUs and an eval harness (GA-20) to prove it worked; a fine-tuned model can FORGET base skills; and you now own model versions \u2014 the drift and deployment discipline of GA-26 applies to you too."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "LoRA fine-tune with a few lines",
+      "lang": "python",
+      "body": "from datasets import load_dataset\nfrom transformers import (AutoModelForCausalLM, AutoTokenizer)\nfrom peft import LoraConfig, get_peft_model\nfrom trl import SFTTrainer\n\nmodel = AutoModelForCausalLM.from_pretrained(\"meta-llama/Meta-Llama-3-8B\")\nmodel = get_peft_model(model, LoraConfig(\n    r=16,                 # rank \u2014 adapter size; bigger = more capacity\n    lora_alpha=32,        # scaling \u2014 how hard adapters steer output\n    target_modules=[\"q_proj\", \"v_proj\"],   # attention layers to adapt\n))\n\n# 1,000 rows: {prompt, ideal_response} pairs \u2014 CURATED.\ndataset = load_dataset(\"json\", data_files=\"support-tone.jsonl\")\n\nSFTTrainer(model=model, train_dataset=dataset[\"train\"],\n           max_seq_length=2048).train()     # \u2248 one GPU, hours not weeks\n\nmodel.save_pretrained(\"adapters/support-tone-v3\")\n# Base model untouched \u2014 adapters ship separately (MBs, not GBs)\n# and hot-swap per request: same weights, different behavior.",
+      "annot": [
+        "r=16 is the steering wheel \u2014 tiny matrices (0.1% of weights) changing behavior dramatically",
+        "The dataset line is the real work \u2014 curation is 80% of a fine-tune project; garbage teaches garbage",
+        "Adapters hot-swap \u2014 one base model serves many behaviors, chosen per request at runtime"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 DISTILLATION",
+      "title": "Distillation & small models: teacher knowledge, student price",
+      "sub": "Why the smartest move in GenAI economics is often a smaller model",
+      "narration": "DISTILLATION transfers capability from a large TEACHER to a smaller STUDENT: run the teacher on many examples, keep its outputs (or its probability distributions), and train the student to match \u2014 the student learns the teacher's reasoning style at a fraction of the parameter count. The economics (GA-25, GA-30) drive everything here: a distilled 8B model served locally can cost 100x less per token than a frontier API model \u2014 for the 80% of tasks that are classification, extraction, routing, and formatting, a small model is not a compromise, it's the RIGHT TOOL. Routing architectures exploit this: a cheap classifier decides which queries need the frontier model and which the local one handles \u2014 GA-25's cost-model optimizer made structural. The trade-offs are real: students inherit the teacher's blind spots, distilled reasoning chains can be shallow \u2014 'the student copies the answer's shape, not always its depth' \u2014 and eval discipline (GA-20) decides whether the student is good ENOUGH per task class. Architect's rule: benchmark a 7-8B open model on YOUR tasks before reaching for the frontier API \u2014 you'd be surprised how often it's enough."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "Distillation + routing \u2014 the economics combo",
+      "lang": "python",
+      "body": "# STEP 1 \u00b7 distill: teacher answers, student learns\n#   teacher = frontier API model on 10k unlabeled tasks\n#   student  = Llama-3-8B trained on those outputs (SFT, like above)\n#   eval gate: student must match teacher \u2265 92% on golden set\n#              before it earns traffic (GA-20)\n\n# STEP 2 \u00b7 route: frontier model only where it earns its price\nasync def answer(query: str):\n    needs_frontier = await router_classify(query)   # cheap, local, ms\n\n    if needs_frontier:                       # ~15% of traffic\n        return await frontier_api(query)     # hard reasoning\n\n    return await local_model(query)          # ~85% \u2014 100x cheaper\n\n# Measured outcome (support-triage example):\n#   cost/task:  $0.046 \u2192 $0.011   (\u224876% saving)\n#   quality:    task-success 94.1% \u2192 93.4%  (within SLO)\n# The 0.7 point you traded was priced into the model.",
+      "annot": [
+        "The eval GATE before traffic \u2014 distillation without measurement is hope, not engineering",
+        "Routing classifier is itself a small model \u2014 the cheap brain decides when to hire the expensive one",
+        "Quality drop within SLO at 4x saving \u2014 GA-30's triangle: you optimized cost, budgeted accuracy, consciously"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 LOCAL",
+      "title": "Local & open models: Ollama, vLLM, and when your laptop is enough",
+      "sub": "Open weights change the build-vs-buy math \u2014 and the privacy math",
+      "narration": "OPEN-WEIGHT models \u2014 Llama, Mistral, Qwen, Phi \u2014 let you run capable models on YOUR hardware, and two tools define the practice. OLLAMA is the developer path: one command pulls and serves a model locally \u2014 'ollama run llama3.1' \u2014 an OpenAI-compatible endpoint appears on localhost, so EVERYTHING from GA-03 onward \u2014 the SDK calls, the prompt patterns, structured output \u2014 works unchanged against your laptop; it's the default for prototyping, offline work, and privacy-sensitive experiments. VLLM is the production path: a serving engine built around PAGED ATTENTION \u2014 it batches many requests against one model copy with far better GPU utilization \u2014 when you self-host at scale, throughput per GPU is the entire economics, and vLLM's continuous batching is the industry answer. The architect's 'when local' checklist: data cannot leave your boundary (health, legal, defense) \u2014 local wins outright; predictable high volume \u2014 capex + ops can beat per-token pricing past a threshold; regulatory residency \u2014 GA-29's private endpoints vs self-host is a real comparison. When NOT: you need frontier reasoning that open models haven't matched yet \u2014 check benchmarks on YOUR eval set, not vibes, because the gap closes quarterly."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "One API, three backends \u2014 prompt once, run anywhere",
+      "lang": "python",
+      "body": "from openai import OpenAI\n\n# The SAME client code against three backends \u2014 the lever\n# is the base_url, nothing else. This is why the OpenAI\n# API shape became the industry's universal socket.\n\nbackends = {\n    # 1 \u00b7 local laptop (Ollama)\n    \"local\":   OpenAI(base_url=\"http://localhost:11434/v1\",\n                      api_key=\"ollama\"),\n    # 2 \u00b7 self-hosted fleet (vLLM, OpenAI-compatible)\n    \"selfhost\": OpenAI(base_url=\"https://llm.internal.example.com/v1\",\n                       api_key=service_token),\n    # 3 \u00b7 frontier API\n    \"frontier\": OpenAI(api_key=os.environ[\"OPENAI_KEY\"]),\n}\n\nresp = backends[\"local\"].chat.completions.create(\n    model=\"llama3.1\",                     # or \"my-gpt4o\" (GA-29)\n    messages=[{\"role\": \"user\", \"content\": question}],\n)\n# Swap backends per tenant, per task class, per cost curve \u2014\n# GA-30's cost model and AG-25's compliance matrix both fit here.",
+      "annot": [
+        "localhost:11434 is Ollama's OpenAI-compatible port \u2014 zero SDK changes to go offline",
+        "vLLM speaks the same protocol \u2014 dev on Ollama, prod on vLLM, same code",
+        "Backend selection becomes CONFIGURATION \u2014 the AG-25 agent-definition pattern applied to model routing"
+      ]
+    }
+  ],
+  "recap": [
+    "Three levers: prompt (behavior, free), RAG (facts, instant updates), fine-tune (weights, permanent) \u2014 decide in that order; default stack is prompt + RAG",
+    "SFT teaches with curated examples (quality over quantity); LoRA/PEFT trains tiny adapters \u2014 0.1% of weights, one GPU, hot-swappable per request",
+    "Distillation moves a teacher's capability into a cheap student; pair it with routing and the frontier model only sees the traffic that pays for it",
+    "Open weights + Ollama (dev) / vLLM (prod, paged attention) give you an OpenAI-compatible socket you own \u2014 swap backends via base_url alone"
+  ],
+  "quiz": [
+    {
+      "q": "A customer-support bot gives structurally wrong answers despite good prompts and correct retrieved documents \u2014 the right FORMAT, wrong STYLE/behavior. Best lever?",
+      "opts": [
+        "Add more documents to the vector store",
+        "Fine-tune on curated examples of ideal responses \u2014 the behavior lives in the weights, not the facts",
+        "Switch to a bigger frontier model",
+        "Lower the temperature"
+      ],
+      "a": 1,
+      "why": "Facts are already right (documents retrieved), instructions already good (prompts tuned) \u2014 what remains is behavior the model can't reliably follow. That's exactly what SFT/LoRA fixes: bake the style and format into the weights."
+    },
+    {
+      "q": "Why can't fine-tuning keep a model current on facts that change daily?",
+      "opts": [
+        "Fine-tuning is too expensive to run daily",
+        "Weights freeze at training time \u2014 a fact learned in fine-tuning is frozen in the weights, while RAG injects fresh facts at every query",
+        "Models forget how to do math if fine-tuned too often",
+        "It can \u2014 you just need more GPUs"
+      ],
+      "a": 1,
+      "why": "The knowledge-lever distinction: RAG reads current documents at query time (update the store, everything is fresh); fine-tune writes knowledge into weights at train time (fresh only until tomorrow's data arrives). Changing facts \u2192 RAG, always."
+    },
+    {
+      "q": "Your evals show an 8B open model matches the frontier API at 92% task-success on your golden set, comfortably above SLO. Architecturally, what does that unlock?",
+      "opts": [
+        "Nothing \u2014 bigger models are always safer choices",
+        "A routing architecture: the cheap local model takes most traffic (or all of it), the frontier model only gets the hard remainder \u2014 roughly 4-100x cost reduction with quality inside SLO",
+        "You must fine-tune the 8B model to close the last 8%",
+        "You should switch entirely to the frontier model for reliability"
+      ],
+      "a": 1,
+      "why": "Within-SLO is within-SLO \u2014 GA-30's cost triangle says optimize cost and consciously budget the quality margin. Routing (or full local deployment via vLLM) converts the eval result directly into unit economics."
+    }
+  ],
+  "code": {
+    "title": "The lever ladder",
+    "lang": "text",
+    "body": "LEVER          CHANGES       COST         REVERSIBLE?   UPDATES\nprompt         behavior      ~0           instant       per call\nRAG            knowledge     retrieval    instant       update docs\nfine-tune      weights       $ + GPUs     retrain       per release\n\ndef choose(p):\n    if p.knowledge_is_private_or_changing: return \"RAG\"\n    if fails_despite_prompt_and_facts(p):\n        return \"FINE-TUNE (LoRA) on curated examples\"\n    return \"prompt + RAG  \u2190 80% of production answers",
+    "annot": [
+      "The table is the whole reel \u2014 everything else is mechanics and judgment calls",
+      "Reversibility column is underrated: prompts and RAG roll back in minutes; weights need a retrain or adapter swap",
+      "'80%' is experience, not law \u2014 but default to the cheap levers and earn the expensive one"
+    ]
+  },
+  "notes": "# RAG vs Fine-tune vs Prompt \u2014 GA notes\n\n## The framework\n1. Knowledge current/private/changing? \u2192 **RAG** (GA-09/GA-10).\n2. Behavior still failing with good prompt + facts? \u2192 **fine-tune**.\n3. Otherwise \u2192 **prompt harder** \u2014 the underused lever.\nGolden rule: fine-tune style/format, RAG facts. Complements.\n\n## Fine-tuning mechanics\n- SFT on hundreds\u2013thousands of CURATED pairs; data curation = 80% of the project.\n- LoRA/PEFT: freeze base, train tiny adapters (r=16 typical). MBs, one GPU, hot-swap per request.\n- Risks: catastrophic forgetting, you now own versions/deployment (GA-26), needs eval harness (GA-20).\n\n## Distillation\nTeacher outputs \u2192 student training data. Gate student on golden set before traffic. Pair with routing: cheap classifier sends ~15% to frontier.\n\n## Local & open\n- Ollama: dev/prototype, OpenAI-compatible on localhost:11434.\n- vLLM: production serving, paged attention + continuous batching \u2192 throughput per GPU.\n- When local: data-boundary rules, predictable volume capex, residency.\n- When not: frontier-reasoning gap \u2014 measure on YOUR evals; the gap closes quarterly.\n\n## Cross-links\nGA-03/04 (prompting, structured output), GA-09/10 (RAG), GA-20 (evals), GA-25/30 (cost), GA-26 (deployment), GA-29 (managed alternatives), AG-13 (context budget)."
+}

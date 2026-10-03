@@ -1,0 +1,148 @@
+{
+  "id": "GA-30",
+  "num": 74,
+  "track": "genai",
+  "stage": "9. Cloud & Azure",
+  "topic": "Architect Toolkit",
+  "hook": "GenAI architecture isn't a technology problem \u2014 it's a judgment problem. **This reel hands you the working architect's kit: selection matrices, NFR checklists, cost models, and the gates between POC and production.**",
+  "chapters": [
+    "Choosing & justifying",
+    "Architecture patterns",
+    "NFRs & cost model",
+    "POC to production"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 SELECTION",
+      "title": "Use-case selection & ROI: kill weak use-cases early",
+      "sub": "The 2x2 that decides what gets built \u2014 before anyone writes a prompt",
+      "narration": "Most GenAI programs drown in use-cases \u2014 every department has ten. The architect's first job is selection, and it has two axes. VALUE: revenue gained, cost removed, risk reduced, experience improved \u2014 insist on a measurable baseline, because 'faster' without a number is a vibe; and FEASIBILITY: is the output verifiable, is the tolerance for error high, is the data available, is a human in the loop acceptable \u2014 GA-01's truth: LLMs are probabilistic, so the best first use-cases have LOW error cost and EASY verification. Score every candidate on both; the quadrant you want first is high-value + high-feasibility \u2014 document summarization with citations, support-triage with human escalation. The trap quadrant is high-value + LOW feasibility \u2014 fully automated legal advice, unsupervised medical triage \u2014 that's where POCs go to die; either add a human checkpoint and move it right, or defer it. Kill the low-value ones in the meeting, on the record \u2014 an architect who says 'no' early builds trust for the 'yes' that matters."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "A use-case scorecard you can defend",
+      "lang": "text",
+      "body": "USE-CASE SCORECARD (score 1\u20135 each, justify in one line)\n\n  VALUE\n    v1  Measurable baseline exists?        3  \"5 hrs/wk manual triage\"\n    v2  Who feels the pain? (CXO > team)   4  \"VP Support owns the KPI\"\n    v3  Annualized impact ($ or hrs)       4  \"~260 hrs/yr \u2192 ~$40k\"\n\n  FEASIBILITY\n    f1  Output verifiable / has citations? 5  \"citations checked by agent\"\n    f2  Error tolerance + human in loop?   4  \"human sends final reply\"\n    f3  Data access + quality ready?       3  \"tickets OK, KB needs cleanup\"\n    f4  Latency/shape fits LLM strengths?  5  \"async batch, not realtime\"\n\n  Gate: VALUE \u2265 12 AND FEASIBILITY \u2265 16  \u2192  POC candidate\n        High value + low feasibility    \u2192  add human checkpoint first\n        Anything below                \u2192  kill in the meeting, on record",
+      "annot": [
+        "The one-line justification is the point \u2014 scores without reasons are politics",
+        "Feasibility weights verification \u2014 GA-01's probabilistic nature made concrete",
+        "A written kill decision saves three months of zombie POC later"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 PATTERNS",
+      "title": "Reference architectures & the build-vs-buy decision",
+      "sub": "Every GenAI system is a composition of five blocks \u2014 buy or build each one",
+      "narration": "Underneath the variety, nearly every GenAI system composes the same five blocks: a MODEL endpoint, a RETRIEVAL layer, an ORCHESTRATION loop, a GUARDRAIL boundary, and an OBSERVABILITY plane \u2014 GA-10 through GA-29 taught you each one by hand; a reference architecture is the map of which parts your system needs and how they connect. Then the oldest question in architecture: build vs buy. BUILD when the thing is your differentiator \u2014 nobody wins on their embedding store, so buy that; maybe your orchestration IS the product \u2014 a coding-agent company builds its loop, a bank configures one. BUY the commodity: model endpoints (GA-29), vector search, content safety. The framework for each block: if it's standard and undifferentiated \u2192 buy; if it's standard but needs assembly \u2192 configure (open-source + your glue); if it's where you win \u2192 build. Write the decision down per block, with the reason \u2014 a year from now, someone will ask 'why not just...' and your past self should answer."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "The five-block reference architecture",
+      "lang": "text",
+      "body": "                 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n   user \u2500\u2500\u25b6 \u2502  GUARDRAILS (screen in/out)  \u2502 \u2500\u2500 AG-09/GA-29\n                 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                          \u2502\n                 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n                 \u2502  ORCHESTRATION (agent loop)  \u2502 \u2500\u2500 AG-14/AG-15\n                 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                   \u2502            \u2502\n        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2510          \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n        \u2502 MODEL endpoint \u2502          \u2502 RETRIEVAL (RAG)  \u2502\n        \u2502  GA-03 / GA-29  \u2502          \u2502   GA-09 / GA-10  \u2502\n        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                          \u2502\n                 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n                 \u2502  OBSERVABILITY plane       \u2502 \u2500\u2500 AG-20/AG-21\n                 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\nEvery system you've built this course: same five blocks.\nBuy undifferentiated blocks; build the one you win on.",
+      "annot": [
+        "The map makes build-vs-buy a per-block decision \u2014 not a religious platform war",
+        "Guardrails wrap BOTH sides of the orchestration \u2014 AG-09's boundary is architectural",
+        "Observability is a plane, not an afterthought \u2014 AG-20/21 saw everything the loop did"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 NFRs",
+      "title": "NFRs for GenAI: latency, accuracy, cost \u2014 the triangle that rules everything",
+      "sub": "The non-functional requirements checklist nobody hands you",
+      "narration": "Classic NFRs \u2014 availability, scalability, security \u2014 carry over unchanged; GenAI adds three that dominate. ACCURACY as an SLO: define it measurably \u2014 task success rate on a golden eval set (AG-21), citation faithfulness, groundedness scores \u2014 and set the target per release with evals in CI; 'it feels better' is not an SLO. LATENCY: token-level truth from GA-07 \u2014 time-to-first-token and tokens-per-second are user-visible; streaming is the standard mitigation; know your budget per interaction type \u2014 a coding agent tolerates 30 seconds, a chat widget dies at 3. COST: token economics from AG-23 \u2014 measure cost PER COMPLETED TASK, not per token, and model it: (tokens-in x price + tokens-out x price + retrieval + infra) x volume, with cache hit-rates and prompt-trimming included. These three form a triangle \u2014 improve one, budget the other two explicitly. And write NFRs BEFORE the POC: 'accurate enough' defined after the demo is how production incidents happen."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "A cost model you can put in a spreadsheet",
+      "lang": "text",
+      "body": "MONTHLY COST = TASKS \u00d7 COST-PER-TASK\n\nCOST-PER-TASK =\n    (tokens_in  \u00d7 $in  +  tokens_out \u00d7 $out)   \u2190 LLM calls/task\n  + retrieval_per_task                          \u2190 search + embedding\n  + guardrail_per_task                          \u2190 safety screening\n  + infra_share                                 \u2190 compute, storage, observability\n\nWorked example (support-triage agent, per task):\n  2 LLM calls \u00d7 (6k in @ $2.50/M + 800 out @ $10/M)\n    = 2 \u00d7 ($0.0150 + $0.0080)   = $0.046\n  retrieval + guardrail + infra share          = $0.014\n  COST-PER-TASK                                \u2248 $0.06\n  40k tasks/mo                                 \u2248 $2,400/mo\n  vs baseline: 260 human-hours \u00d7 $150         = $39,000/mo\n\nOptimizers: cache (AG-23) \u2192 trim context (AG-13)\n             \u2192 smaller model for easy steps (GA-27)",
+      "annot": [
+        "Cost per COMPLETED task \u2014 AG-23's rule; failed retries multiply the LLM line silently",
+        "The human-baseline column is what makes the ROI conversation honest",
+        "Every optimizer cross-references a reel you already own \u2014 the toolkit compounds"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 GATES",
+      "title": "POC to production: gates, risk register, client communication",
+      "sub": "The last mile is process, not technology \u2014 and it's where most GenAI projects die",
+      "narration": "A POC proves the technology CAN work; production proves it works RELIABLY, SAFELY, and CHEAPLY \u2014 those are different projects, and the bridge is a set of explicit gates. GATE 1 \u2014 EVAL: golden-set accuracy meets the SLO across adversarial cases (AG-21), not just the happy path; GATE 2 \u2014 SAFETY: red-team results (AG-22), guardrails tested, incident runbook written; GATE 3 \u2014 SCALE: load test at 2x expected peak, cost per task within budget, latency within SLO; GATE 4 \u2014 OPERATE: dashboards live, alerts tuned, rollback rehearsed, on-call knows what this thing does. Keep a RISK REGISTER \u2014 hallucination, prompt injection, data leakage, vendor drift, cost spike \u2014 each with likelihood, impact, and a MITIGATION that names a reel you built. Finally, CLIENT COMMUNICATION: demo the failure modes on purpose \u2014 showing the eval results and the guardrails earns more trust than a perfect demo, because your audience has already seen a perfect demo fail in production. The architect's product isn't the system \u2014 it's the confidence."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "Gates and risk register \u2014 as living documents",
+      "lang": "text",
+      "body": "POC \u2192 PRODUCTION GATES\n  G1 EVAL      golden-set pass \u2265 SLO + adversarial suite   [owner: ML]\n  G2 SAFETY    red-team closed, guardrails tested, runbook  [owner: Sec]\n  G3 SCALE     2\u00d7 peak load, cost/task in budget, SLO met   [owner: Eng]\n  G4 OPERATE   dashboards, alerts, rollback rehearsed       [owner: SRE]\n\nRISK REGISTER (likelihood \u00d7 impact \u2192 mitigation \u2192 reel)\n  hallucinated fact      M\u00d7H  \u2192 citations + eval gating     GA-10/AG-21\n  prompt injection       M\u00d7H  \u2192 input/output screening     AG-09/AG-22\n  data leakage via RAG   L\u00d7H  \u2192 ACL-aware retrieval        GA-10/GA-29\n  vendor model drift     M\u00d7M  \u2192 pinned deployments        GA-29\n  cost spike             M\u00d7M  \u2192 per-task budget alerts    AG-23\n\nRule: a gate without an owner is a wish.\nRule: a risk without a named mitigation is a hope.",
+      "annot": [
+        "Owner per gate \u2014 the difference between a checklist and an audit trail",
+        "Each mitigation cites the reel that teaches it \u2014 your learning IS the mitigation library",
+        "Demo the failures on purpose \u2014 confidence is the deliverable, not the demo"
+      ]
+    }
+  ],
+  "recap": [
+    "Select use-cases on value x feasibility \u2014 kill weak ones in the meeting; high-value + low-feasibility needs a human checkpoint first",
+    "Every GenAI system composes five blocks \u2014 model, retrieval, orchestration, guardrails, observability; buy undifferentiated blocks, build the one you win on",
+    "GenAI's NFR triangle: accuracy SLO (evals in CI), latency (TTFT + streaming), cost per completed task \u2014 optimize one, budget the other two",
+    "POC to production runs through gates \u2014 eval, safety, scale, operate \u2014 each with an owner; demo failure modes on purpose to earn trust"
+  ],
+  "quiz": [
+    {
+      "q": "A use-case scores high on value but low on feasibility (output hard to verify, high error cost). What's the architect's move?",
+      "opts": [
+        "Kill it immediately \u2014 low feasibility is a permanent disqualifier",
+        "Add a human-in-the-loop checkpoint so error cost drops, then reassess feasibility",
+        "Build the POC anyway and let the results decide",
+        "Switch to a smaller model to make it feasible"
+      ],
+      "a": 1,
+      "why": "Feasibility is often a function of system design, not the problem. A human checkpoint converts 'unsupervised legal advice' (fatal) into 'lawyer-reviewed drafting' (shippable) \u2014 you move the use-case right on the matrix instead of killing value."
+    },
+    {
+      "q": "Which five blocks make up nearly every GenAI reference architecture?",
+      "opts": [
+        "Frontend, backend, database, cache, queue",
+        "Model endpoint, retrieval layer, orchestration loop, guardrail boundary, observability plane",
+        "Prompt, chain, agent, tool, memory",
+        "Data lake, feature store, training pipeline, serving layer, monitor"
+      ],
+      "a": 1,
+      "why": "That's the pattern map built across the course \u2014 GA-03/29 (model), GA-09/10 (retrieval), AG-14/15 (orchestration), AG-09 (guardrails), AG-20/21 (observability). Build-vs-buy is decided block by block."
+    },
+    {
+      "q": "Why is 'cost per completed task' the right cost metric \u2014 not cost per token?",
+      "opts": [
+        "Token prices change too often to budget against",
+        "Users experience tasks, not tokens \u2014 and failed retries silently multiply token spend, so per-task cost with a human-baseline comparison is the only honest ROI number",
+        "Per-token pricing is only available on Azure",
+        "Per-task cost is easier to log"
+      ],
+      "a": 1,
+      "why": "A task that takes 4 LLM calls and 2 retries costs very different tokens than one call with no retries. Per-task cost folds in retries, retrieval, guardrails, and infra \u2014 and comparing it to the human baseline is what makes the business case real (AG-23's discipline)."
+    }
+  ],
+  "code": {
+    "title": "The architect's one-page scorecard",
+    "lang": "text",
+    "body": "USE-CASE      value  feas.  decision   owner\nsupport-triage  11     17     POC \u2713      VP Support\ncontract-draft  14     11     +human HITL Legal\nauto-approvals  13      6     KILL       (recorded)\n\nGATES:  G1 eval \u2713  G2 safety \u2713  G3 scale \u2713  G4 operate \u2713\nNFRs:   accuracy \u2265 92% on golden set (CI-gated)\n        TTFT < 800ms, streaming on\n        cost/task \u2264 $0.08 @ 40k tasks/mo\nRISKS:  5 open, 4 mitigated \u2014 each cites a reel\n\nOne page. Defensible. Signed.",
+    "annot": [
+      "Everything on one page \u2014 if the decision needs a deck, it isn't decided",
+      "The kill decision recorded next to the wins \u2014 that's what makes the next 'yes' credible",
+      "NFR targets written BEFORE the POC \u2014 'accurate enough' is defined before the demo, not after the incident"
+    ]
+  },
+  "notes": "# Architect Toolkit \u2014 GA notes\n\n## Use-case selection\n- Axes: **value** (measurable baseline, owner, annualized impact) x **feasibility** (verifiability, error tolerance + human loop, data readiness, latency fit).\n- High value + low feasibility \u2192 don't kill, add a human checkpoint and re-score.\n- Kill low-value on the record \u2014 it buys credibility for the real 'yes'.\n\n## Reference architecture\nFive blocks: model endpoint \u00b7 retrieval \u00b7 orchestration \u00b7 guardrails \u00b7 observability.\nBuild-vs-buy per block: undifferentiated \u2192 buy; standard-needs-assembly \u2192 configure; differentiating \u2192 build. Record reasons.\n\n## NFRs (GenAI-specific)\n- **Accuracy**: SLO on a golden eval set (AG-21); evals in CI.\n- **Latency**: TTFT + tokens/sec are user-visible (GA-07); streaming is standard; budget per interaction type.\n- **Cost**: per completed task = LLM calls + retrieval + guardrails + infra; compare to human baseline.\n- Triangle: improve one, budget the other two explicitly.\n\n## POC \u2192 production gates\nG1 eval \u00b7 G2 safety \u00b7 G3 scale \u00b7 G4 operate \u2014 each with an OWNER.\nRisk register: likelihood x impact \u2192 named mitigation \u2192 cites the reel that teaches it.\nClient communication: demo the failure modes on purpose. Confidence is the deliverable.\n\n## Cross-links\nGA-01 (probabilistic nature \u2192 feasibility), GA-07 (latency anatomy), GA-09/10 (guardrails + RAG), GA-29 (buy options), AG-21/22 (evals, red-team), AG-23 (cost discipline). AG-25 reuses this whole kit for agents."
+}

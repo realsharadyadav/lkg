@@ -1,0 +1,148 @@
+{
+  "id": "AG-25",
+  "num": 75,
+  "track": "agentic",
+  "stage": "9. Hands-on Projects",
+  "topic": "Architect Toolkit",
+  "hook": "Agents are systems that act \u2014 which means agent architecture is architecture where **a mistake becomes an action**. This reel adapts GA-30's toolkit for the agentic era: platform design, tenancy, budgets, and adoption.",
+  "chapters": [
+    "Agent reference architecture",
+    "Agent platform design",
+    "Tenancy & cost",
+    "Adoption, risk & sourcing"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 BLUEPRINT",
+      "title": "The agent reference architecture: six layers, every production agent",
+      "sub": "Gateway \u00b7 orchestrator \u00b7 tools \u00b7 memory \u00b7 guardrails \u00b7 observability",
+      "narration": "GA-30 gave GenAI systems five blocks; agents add agency, so the reference architecture gains a layer and sharpens three. The GATEWAY is where requests enter: authentication, rate limiting, per-tenant quotas, request normalization \u2014 everything AG-19 learned about APIs, now the agent's front door. The ORCHESTRATOR runs the loop \u2014 plan, act, observe \u2014 and it's where AG-14's control design and AG-18's human-in-the-loop checkpoints live; treat it as stateless where possible \u2014 loop state goes to memory, so orchestrator instances scale horizontally. TOOLS are the action surface: each one a scoped capability with an explicit contract, and AG-16's registry discipline \u2014 the tool list IS your attack surface. MEMORY is scoped per user/tenant with TTLs (AG-17) \u2014 and in a multi-agent org, memory stores carry ACLs just like documents do. GUARDRAILS wrap input, output, and tool calls (AG-09) \u2014 for agents the third one matters most: screen the ACTION, not just the text. And OBSERVABILITY (AG-20/21) must trace every loop iteration, every tool call, every token \u2014 an agent you can't trace is an agent you can't ship."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Six layers, one diagram",
+      "lang": "text",
+      "body": "  client \u2500\u25b6 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n         \u2502 1 GATEWAY     auth \u00b7 quotas \u00b7 rate limits  \u2502 AG-19\n         \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                          \u2502\n         \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n         \u2502 2 ORCHESTRATOR (loop)         \u2502 \u2500\u2500\u2500\u2502 3 MEMORY scoped+TTL \u2502\n         \u2502 plan \u00b7 act \u00b7 observe \u00b7 HITL   \u2502 AG-14/18\u2502 per-user \u00b7 ACL'd   \u2502 AG-17\n         \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518     \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                   \u2502\n         \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n         \u2502 4 TOOL RUNTIME   contracts \u00b7 sandbox \u00b7 audit \u2502 AG-16\n         \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n        \u2502                    \u2502\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510           \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502 5 GUARDRAILS in/out/ \u2502           \u2502 6 OBSERVABILITY       \u2502\n  \u2502 ACTION screening     \u2502           \u2502 full loop tracing      \u2502 AG-20/21\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518           \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518",
+      "annot": [
+        "Gateway quotas before the loop \u2014 an unauthenticated request must never reach the orchestrator",
+        "Orchestrator stateless, state in memory \u2014 horizontal scaling without sticky sessions",
+        "Guardrails have THREE surfaces for agents: input, output, and the action itself"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 PLATFORM",
+      "title": "Agent platform design: one platform, many agents",
+      "sub": "When the second agent ships, you're not building agents \u2014 you're building a platform",
+      "narration": "The first agent is a project; by the third, patterns repeat and the smart move is a PLATFORM \u2014 shared infrastructure that individual agents configure, not rebuild. The platform provides: the gateway \u2014 one front door with auth and quotas for every agent; the tool registry \u2014 tools built once, permissioned per agent (AG-16); memory stores \u2014 shared infra, tenant-scoped data (AG-17); the observability plane \u2014 one trace format across all agents (AG-20); and eval harnesses \u2014 golden sets and CI gates as a service (AG-21). Individual agents then become CONFIGURATION: which tools, which memory scopes, which guardrail policies, which budget \u2014 an agent definition file, versioned in git, reviewed like code. This is the moment build-vs-buy-configure gets real: a platform for internal productivity agents is configure-heavy \u2014 open-source framework plus your gateway and policies; but if agents ARE your product, the orchestrator and eval harness may be exactly where you build. The platform question to ask early: how does a NEW agent go from idea to production? If the answer is 'three teams and two months', you have projects, not a platform."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "An agent definition file \u2014 an agent as configuration",
+      "lang": "yaml",
+      "body": "# agents/support-triage.yaml \u2014 versioned, reviewed, deployed like code\nname: support-triage\nversion: 3.2.0\n\nmodel: { deployment: my-gpt4o, temperature: 0.2 }\n\ntools:                      # from the platform registry (AG-16)\n  - ticket.search          { scope: read }\n  - ticket.reply           { scope: draft, hitl: required }   # AG-18\n  - kb.lookup              { scope: read }\n  - refund.issue           { scope: none }                    # not granted\n\nmemory:                     # platform stores, agent-scoped (AG-17)\n  - store: conversation     { scope: per-user, ttl: 90d }\n  - store: user-profile     { scope: per-user, ttl: none, pii: masked }\n\nguardrails:                 # platform policies + agent overrides\n  input_screen:  standard\n  output_screen: standard\n  action_screen: strict     # screen tool ARGS, not just text (AG-09)\n\nbudget:                     # per-run guardrails (AG-23)\n  max_steps: 12\n  max_cost_usd: 0.35\n  deadline_seconds: 240\n\nevals:                      # CI gates (AG-21)\n  golden_set: evals/triage-golden.jsonl\n  min_task_success: 0.92",
+      "annot": [
+        "The whole agent is data \u2014 code review, version history, and rollback come free",
+        "refund.issue with scope 'none' \u2014 the tool list is the permission model; deny by default",
+        "budget block is AG-23's circuit breaker as policy \u2014 every agent gets one before production"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 MULTI-TENANCY",
+      "title": "Multi-tenant concerns: the blast radius question",
+      "sub": "Isolation isn't optional when one mistake hits every customer at once",
+      "narration": "Multi-tenancy is where agent architecture stops being diagram work and becomes liability work. ISOLATION has three rings: DATA \u2014 every memory store, cache entry, and retrieval index carries a tenant key, enforced at the store's ACL layer, not by convention in prompts \u2014 a prompt that says 'only use this tenant's data' is not a security boundary, it's a suggestion; EXECUTION \u2014 decide per tool whether tenants share runtime or get sandboxes \u2014 a shared code-interpreter is a cross-tenant exfiltration channel (AG-22), so tenants get isolated sandboxes or the tool is read-only; and QUOTA \u2014 per-tenant budgets at the gateway \u2014 one tenant's runaway loop must starve alone (AG-23). Then COST MODELING: tenants multiply everything \u2014 cost per completed task (GA-30) becomes cost per tenant per task class, and pricing must map to the budget block: max steps, token ceilings, tool-call rates per tier. NOISY NEIGHBOR effects are agent-specific: loops amplify \u2014 a tenant with pathological inputs can burn 100x quota \u2014 so hard per-tenant circuit breakers, not alerts. And COMPLIANCE MATRIX: which tenants' data may which models see? A matrix of tenant x data-class x model-providers, maintained as code, becomes your GDPR/hipaa answer."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "Tenant isolation \u2014 enforced in the stores, not the prompts",
+      "lang": "python",
+      "body": "# The rule: tenant_id is a SYSTEM field, never model-provided.\n\nasync def retrieve(query: str, tenant_id: str):\n    # ACL enforced by the store's filter \u2014 unforgeable,\n    # unlike a prompt instruction the model could ignore.\n    return vector_store.search(\n        query,\n        filter={\"tenant_id\": tenant_id},   # \u2190 the boundary\n        top_k=8,\n    )\n\nasync def run_sandboxed(code: str, tenant_id: str):\n    # Shared interpreter = cross-tenant exfiltration (AG-22).\n    # Per-tenant ephemeral sandbox, network egress denied.\n    async with sandbox.for_tenant(tenant_id) as sb:\n        return await sb.exec(code, network=\"deny\")\n\n# Gateway-level per-tenant circuit breaker (AG-23):\n#   budget: 500 steps / 10 min sliding window\n#   on breach: shed load for THAT tenant only, 503 + Retry-After",
+      "annot": [
+        "filter={tenant_id} at the store layer \u2014 a prompt can be jailbroken; an ACL filter cannot",
+        "Sandbox per tenant with egress denied \u2014 the shared-interpreter lesson from AG-22, priced in",
+        "Circuit breaker sheds ONE tenant \u2014 everyone else's agents keep running"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 ADOPTION",
+      "title": "Adoption roadmap, risk & compliance matrix, build-buy-configure",
+      "sub": "Shipping the platform is 30% \u2014 the other 70% is the org around it",
+      "narration": "The ADOPTION ROADMAP runs in three horizons: PILOT \u2014 one use-case, one team, human-in-the-loop mandatory, weekly eval reviews \u2014 success is measured in trust earned, not tasks automated; EXPAND \u2014 three to five use-cases on the shared platform, first self-serve agent definitions, publish the internal catalog so teams discover instead of rebuild; and PLATFORM \u2014 agent definitions as a paved road: template, evals, guardrails, and budget pre-wired \u2014 new agents deploy in days. The RISK & COMPLIANCE MATRIX tracks: data residency per tenant, model provider approvals, action-class approvals (read-only vs write vs money-moving), audit retention \u2014 each row has an owner and an expiry review date, because compliance answers rot. Finally, sourcing: BUILD the orchestrator if agents are your product; CONFIGURE a framework plus your gateway/policies if they're internal leverage; BUY turnkey copilots for commodity tasks \u2014 and revisit the decision twice a year, because the line between 'commodity' and 'differentiator' moves fast in this field. The architect's job at this altitude is deciding what NOT to build."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "Risk & compliance matrix \u2014 as code",
+      "lang": "yaml",
+      "body": "# compliance/tenants.yaml \u2014 reviewed quarterly, expiring answers die\n- tenant: acme-corp\n  residency: eu-west\n  models_allowed: [azure-openai-eu, llama-selfhost]   # GDPR path\n  action_classes:\n    read:      auto\n    write:     hitl_required                       # AG-18\n    financial: forbidden\n  audit_retention_days: 730\n  review_by: 2026-Q1\n\n- tenant: internal-ops\n  residency: any\n  models_allowed: [any-approved]\n  action_classes: { read: auto, write: auto, financial: hitl_required }\n  audit_retention_days: 90\n  review_by: 2026-Q1\n\n# CI check: an agent definition may only reference\n# tools/models/action_classes its tenants' rows allow.\n# Violations fail the build \u2014 compliance as a test, not a meeting.",
+      "annot": [
+        "Action classes per tenant \u2014 'write' auto-approved for internal ops, human-required for customers",
+        "review_by dates \u2014 stale compliance answers are worse than none; they look authoritative",
+        "Enforced in CI \u2014 the matrix is executable, so it can't drift into a spreadsheet fiction"
+      ]
+    }
+  ],
+  "recap": [
+    "Agent reference architecture: gateway, orchestrator, tools, memory, guardrails, observability \u2014 with guardrails screening actions and the orchestrator kept stateless",
+    "By the third agent, build a platform: shared gateway, tool registry, memory stores, observability, eval harnesses \u2014 agents become versioned configuration files",
+    "Multi-tenancy: tenant keys enforced at the store ACL (never in prompts), per-tenant sandboxes, and circuit breakers that shed one tenant, not all",
+    "Adoption runs pilot \u2192 expand \u2192 platform; keep the risk & compliance matrix as code with owners and expiry dates \u2014 and revisit build-vs-buy twice a year"
+  ],
+  "quiz": [
+    {
+      "q": "Why must tenant isolation be enforced at the vector store's ACL filter instead of via prompt instructions?",
+      "opts": [
+        "Prompts are slower than filters",
+        "A prompt instruction can be ignored or jailbroken by the model \u2014 a store-level filter is a system boundary the model cannot override",
+        "ACL filters are cheaper than prompt tokens",
+        "Prompts cannot contain tenant IDs"
+      ],
+      "a": 1,
+      "why": "Anything in the prompt is advisory \u2014 AG-09/AG-22 showed models can be steered around instructions. Isolation must live in a layer the model has no influence over: the data store's filter, sandbox, or gateway quota."
+    },
+    {
+      "q": "What turns individual agent projects into an agent PLATFORM?",
+      "opts": [
+        "Using a bigger orchestration framework",
+        "Centralizing shared infrastructure \u2014 gateway, tool registry, memory stores, observability, eval harnesses \u2014 so each new agent is a versioned configuration file, not a rebuild",
+        "Moving all agents onto managed cloud services",
+        "Writing more documentation about the agents"
+      ],
+      "a": 1,
+      "why": "The platform test: how long does a NEW agent take from idea to production? If shared layers exist and an agent is config, it's days. If every agent rebuilds auth, tools, memory, and observability, you have projects \u2014 regardless of what the org chart says."
+    },
+    {
+      "q": "For agents, guardrails gain a third screening surface beyond input and output. What is it?",
+      "opts": [
+        "The system prompt",
+        "The tool-call arguments \u2014 the ACTION itself must be screened, because an agent's mistake is an executed action, not just harmful text",
+        "The user's login history",
+        "The memory store contents"
+      ],
+      "a": 1,
+      "why": "Text screening stops harmful content; action screening stops harmful DEEDS \u2014 refund.issue(to: attacker) is perfectly polite text. Agents need input, output, AND action screening (AG-09's boundary applied to the tool surface)."
+    }
+  ],
+  "code": {
+    "title": "The platform contract",
+    "lang": "yaml",
+    "body": "# Every agent, in one file, on one platform:\n#   shared gateway \u00b7 registry tools \u00b7 scoped memory\n#   three-surface guardrails \u00b7 full tracing \u00b7 CI evals\nname: support-triage\nversion: 3.2.0\nmodel:   { deployment: my-gpt4o, temperature: 0.2 }\ntools:   [ticket.search, ticket.reply{hitl}, kb.lookup]\nmemory:  [conversation{ttl:90d}, user-profile{pii:masked}]\nguardrails: { input: standard, output: standard, action: strict }\nbudget:  { max_steps: 12, max_cost_usd: 0.35, deadline_s: 240 }\nevals:   { golden_set: evals/triage.jsonl, min_success: 0.92 }\n\n# New agents: copy, diff, review, deploy \u2014 days, not months.",
+    "annot": [
+      "One file per agent \u2014 reviewable, versioned, rollback-able",
+      "Deny-by-default tools \u2014 the registry grants; the definition cannot exceed",
+      "Budget + evals are pre-wired \u2014 the paved road IS the platform"
+    ]
+  },
+  "notes": "# Agent Architect Toolkit \u2014 AG notes\n\n## Reference architecture (6 layers)\nGateway (auth/quota) \u2192 Orchestrator (loop, stateless; state in memory) \u2192 Tool runtime (contracts, sandbox, audit) \u2192 Memory (scoped, TTL'd, ACL'd) \u00b7 Guardrails (input + output + ACTION) \u00b7 Observability (full loop tracing).\n\n## Platform design\nBy agent #3, centralize: gateway, tool registry, memory infra, observability plane, eval harness. Agents become YAML definitions: model, tools, memory, guardrails, budget, evals \u2014 versioned in git, reviewed like code.\n\n## Multi-tenancy\n- Isolation rings: data (store-level ACL filter \u2014 never prompts), execution (per-tenant sandboxes, deny egress), quota (per-tenant circuit breakers).\n- Noisy-neighbor math: loops amplify \u2014 hard breakers, not alerts.\n- Cost model: per tenant per task class; map to budget blocks per pricing tier.\n- Compliance matrix: tenant x data-class x model-provider x action-class, as code with owners and review-by dates.\n\n## Adoption roadmap\nPilot (1 use-case, HITL, trust metrics) \u2192 Expand (3\u20135 use-cases, self-serve definitions, internal catalog) \u2192 Platform (paved road: template + evals + guardrails + budget).\n\n## Build vs buy vs configure\nAgents = your product \u2192 build orchestrator + evals. Internal leverage \u2192 configure framework + your gateway/policies. Commodity tasks \u2192 buy. Revisit twice a year.\n\n## Cross-links\nAG-09 (guardrails), AG-14 (loop), AG-16 (registry), AG-17 (memory), AG-18 (HITL), AG-20/21 (observability/evals), AG-22 (sandbox exfiltration), AG-23 (budgets/circuit breakers), GA-30 (base toolkit: selection, NFRs, gates, cost)."
+}

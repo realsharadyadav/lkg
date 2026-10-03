@@ -1,0 +1,148 @@
+{
+  "id": "GA-29",
+  "num": 73,
+  "track": "genai",
+  "stage": "9. Cloud & Azure",
+  "topic": "Azure AI Services",
+  "hook": "Your GenAI system is built \u2014 now run it where the enterprise already lives. **Azure's AI stack is the most complete commercial offering on earth** \u2014 and this reel is the architect's map of it.",
+  "chapters": [
+    "Azure OpenAI & Foundry",
+    "AI Search & documents",
+    "Safety & the boundary",
+    "Identity, network & Copilots"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 MODELS",
+      "title": "Azure OpenAI Service: GPT behind your enterprise boundary",
+      "sub": "The same OpenAI models \u2014 with your tenancy, your keys, your compliance",
+      "narration": "Azure OpenAI Service serves OpenAI's models \u2014 GPT-4o, o-series reasoning models, embeddings \u2014 through YOUR Azure subscription. The differences from the public API matter architecturally: DATA \u2014 prompts and completions don't train OpenAI models and live within your compliance boundary \u2014 the deal-breaker question for most enterprises is answered by tenancy alone; DEPLOYMENTS \u2014 you provision named deployments of specific model versions \u2014 'my-gpt4o' pins a version, so an OpenAI model update never silently changes your app's behavior \u2014 the drift problem GA-04 warned about, solved at the platform level; and SCALE \u2014 tokens-per-minute quotas per deployment, not per account \u2014 you size quota like compute. The 2025 story is **Azure AI Foundry**: the portal around the models \u2014 model catalog (OpenAI, Llama, Mistral, Phi), prompt playgrounds, evaluation tools, tracing \u2014 one control plane for everything this reel covers. Architects pick Azure OpenAI for one reason: it's the fastest path from 'works in a notebook' to 'signed off by InfoSec'."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Calling your deployment \u2014 the SDK is nearly identical",
+      "lang": "python",
+      "body": "from openai import AzureOpenAI\n\nclient = AzureOpenAI(\n    azure_endpoint=\"https://my-resource.openai.azure.com/\",\n    api_key=os.environ[\"AZURE_OPENAI_KEY\"],   # or DefaultAzureCredential\n    api_version=\"2024-12-01-preview\",\n)\n\nresp = client.chat.completions.create(\n    model=\"my-gpt4o\",          # your DEPLOYMENT name, not the model name\n    messages=[{\"role\": \"user\",\n               \"content\": \"Summarize this incident report: ...\"}],\n    temperature=0.2,\n)\nprint(resp.choices[0].message.content)\n\n# Same SDK, same shape as the public API \u2014 swap the client\n# and the prompt-engineering work from GA-03/GA-04 carries over.",
+      "annot": [
+        "model= is your deployment name \u2014 the indirection that lets you version-swap without touching app code",
+        "api_version is explicit: Azure versions the REST contract \u2014 pin it, upgrade deliberately",
+        "Everything from GA-03 (prompting) and GA-04 (structured output) works unchanged \u2014 that's the point"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 SEARCH",
+      "title": "Azure AI Search: RAG's missing half, as a managed service",
+      "sub": "Vectors, hybrid, semantic ranker \u2014 GA-10's stack without the plumbing",
+      "narration": "GA-10 built RAG retrieval by hand \u2014 embeddings, a vector store, a retriever. Azure AI Search offers the same as a service with three architecturally significant features. VECTORS \u2014 native vector fields with HNSW indexing \u2014 same pgvector mechanics GA-10 taught, minus the database ops; HYBRID \u2014 vector + full-text BM25 in ONE query \u2014 production truth from GA-10: pure vector search misses exact terms (IDs, error codes, names) and pure keyword misses semantics \u2014 hybrid gets both, and Search fuses the scores for you; and SEMANTANTIC RANKER \u2014 an LLM-based re-ranking pass over the top-N results \u2014 the reranker pattern GA-10 sketched, as a checkbox. Add integration: Azure OpenAI embeddings can be computed inside the ingestion pipeline, and the whole service is the retriever Azure's RAG templates assume. The architect's question isn't 'is it good' \u2014 it's 'do I want to operate pgvector myself, or buy retrieval as a service with a SLA'."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Hybrid retrieval in one query",
+      "lang": "python",
+      "body": "from azure.search.documents import SearchClient\n\nresults = search_client.search(\n    search_text=query,                 # BM25 branch\n    vector_queries=[VectorizedQuery(\n        vector=embed(query), fields=\"content_vector\")],\n    query_type=\"semantic\",             # LLM re-ranking pass\n    top=5,\n)\n\n# One round-trip, three retrieval strategies fused:\n#  1. keyword   \u2014 exact terms, IDs, error codes\n#  2. vector    \u2014 semantic neighbors\n#  3. semantic ranker \u2014 re-scores top 50 by meaning\n# GA-10's hand-rolled pipeline, expressed as configuration.",
+      "annot": [
+        "search_text + vector_queries = hybrid \u2014 the default choice, confirmed by GA-10's failure stories",
+        "query_type='semantic' is the reranker \u2014 expensive per call, applied only to the top candidates",
+        "top=5 then lands in the context window GA-10 sized \u2014 retrieval count is a context-budget decision"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 SAFETY",
+      "title": "Document Intelligence & Content Safety: data in, harm out",
+      "sub": "The two services guarding RAG's front door and the app's last line",
+      "narration": "Two services bracket every production GenAI pipeline. DOCUMENT INTELLIGENCE \u2014 the ingestion side: PDFs, scans, forms, tables \u2014 layout-aware extraction that knows a table is a table \u2014 GA-09/GA-10's chunking quality is decided HERE: garbage extraction produces garbage chunks, and no retrieval tuning recovers it \u2014 read order, section headers, table structure preserved \u2014 it turns the messiest enterprise input \u2014 20-year-old scanned PDFs \u2014 into clean structured text. CONTENT SAFETY \u2014 the output side: a screening service that classifies text and images across harm categories \u2014 hate, self-harm, sexual, violence \u2014 plus jailbreak and indirect-attack detection \u2014 it's AG-09's guardrail layer as a managed API: send the user input AND the model output, get severity scores and block/annotate decisions. Position it exactly where AG-09 drew the boundary: input screen before the LLM call, output screen before the user sees anything. Neither service replaces your guardrails logic \u2014 they replace you operating your own classifier fleet."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "Dual screening with Content Safety",
+      "lang": "python",
+      "body": "from azure.ai.contentsafety import ContentSafetyClient\n\nsafety = ContentSafetyClient(endpoint, credential)\n\ndef screen(text: str) -> bool:\n    r = safety.analyze_text(\n        {\"text\": text},\n        categories=[\"Hate\", \"SelfHarm\", \"Sexual\", \"Violence\"],\n    )\n    return any(c.severity >= 2 for c in r.categories)\n\n# AG-09's boundary, as a service call:\nif screen(user_input):            # INPUT side\n    return polite_refusal()\n\nanswer = llm_call(user_input)     # the agent work\n\nif screen(answer):                # OUTPUT side \u2014 never skip\n    return fallback_message()\nreturn answer",
+      "annot": [
+        "Screen BOTH sides \u2014 AG-09's rule: input screening stops attacks, output screening stops harm",
+        "severity >= 2 is a tuning dial \u2014 like AG-09's thresholds, per-app and per-audience",
+        "Indirect prompt injection (AG-22) gets its own detector \u2014 screen retrieved documents too"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 ENTERPRISE",
+      "title": "Managed identity, private endpoints & the Copilot ecosystem",
+      "sub": "The three answers InfoSec asks for \u2014 and where all this plugs into M365",
+      "narration": "Three enterprise mechanics make Azure the default choice for .NET shops. MANAGED IDENTITY \u2014 your app proves WHO it is via the platform, not a secret in a config file \u2014 no API keys in app settings, no rotation runbooks \u2014 every call to Azure OpenAI, Search, or Storage rides the app's identity \u2014 AG-23's secrets discipline, enforced by the platform; PRIVATE ENDPOINTS \u2014 traffic from your VNet to Azure services never touches the public internet \u2014 the network diagram InfoSec wants is a closed loop; and the COPILOT ECOSYSTEM \u2014 Microsoft 365 Copilot is built on this same stack \u2014 which matters strategically: the data your app processes lives in SharePoint, Teams, Outlook \u2014 Microsoft's retrieval and grounding story for Copilot (Graph connectors) means YOUR RAG app and THEIR Copilot can share one search index and one compliance boundary. Architect takeaway: pick Azure when the enterprise already lives there \u2014 the integration tax of going elsewhere often exceeds the model premium."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "Managed identity \u2014 no keys, anywhere",
+      "lang": "python",
+      "body": "from azure.identity import DefaultAzureCredential\nfrom openai import AzureOpenAI\n\n# The app proves its identity to Azure \u2014 nothing to leak,\n# nothing to rotate. The endpoint URL isn't a secret.\ncredential = DefaultAzureCredential()\n\nclient = AzureOpenAI(\n    azure_endpoint=\"https://my-resource.openai.azure.com/\",\n    azure_ad_token_provider=lambda: credential.get_token(\n        \"https://cognitiveservices.azure.com/.default\"\n    ).token,\n    api_version=\"2024-12-01-preview\",\n)\n\n# RBAC completes the picture: the app's identity gets\n# 'Cognitive Services OpenAI User' on THIS deployment only\n# \u2014 blast radius measured in one deployment, not one key.",
+      "annot": [
+        "DefaultAzureCredential works locally (VS, az CLI) and in Azure (managed identity) \u2014 zero code difference",
+        "RBAC per deployment: a compromised app can only spend quota on what it was granted \u2014 AG-23's least privilege",
+        "The token provider pattern is the same shape as AG-23's credential helpers \u2014 secrets hygiene scales up"
+      ]
+    }
+  ],
+  "recap": [
+    "Azure OpenAI = OpenAI models inside YOUR tenancy: version-pinned deployments, quota per deployment, data out of training \u2014 the InfoSec fast-track",
+    "Azure AI Search gives GA-10's whole retrieval stack as a service: vectors, hybrid BM25+vector fusion, and an LLM semantic ranker",
+    "Document Intelligence decides RAG quality at ingestion; Content Safety is AG-09's guardrail as an API \u2014 screen input AND output",
+    "Managed identity + private endpoints answer the three security questions before they're asked \u2014 and M365 Copilot shares the same stack"
+  ],
+  "quiz": [
+    {
+      "q": "Why does the model parameter in an Azure OpenAI call take your deployment NAME (e.g. 'my-gpt4o') rather than the model name (e.g. 'gpt-4o')?",
+      "opts": [
+        "Deployment names are required because Azure doesn't expose model names at all",
+        "The indirection pins a specific model version \u2014 you upgrade deployments deliberately instead of OpenAI silently changing your app's behavior",
+        "It's just a naming convention with no behavioral effect",
+        "The model name is a secret and must never appear in code"
+      ],
+      "a": 1,
+      "why": "A named deployment is version-pinned. OpenAI can retire or update 'gpt-4o', but 'my-gpt4o' stays on what you deployed until YOU change it \u2014 GA-04's drift problem solved at the platform level."
+    },
+    {
+      "q": "In Azure AI Search, what does query_type='semantic' add on top of hybrid (text + vector) search?",
+      "opts": [
+        "It converts the query to embeddings before searching",
+        "It encrypts the query for compliance",
+        "An LLM-based reranker pass that re-scores the top candidates by meaning \u2014 the reranker pattern GA-10 sketched, as configuration",
+        "It forces the search to use only the vector index"
+      ],
+      "a": 2,
+      "why": "Semantic ranking is a second-stage reranker. Hybrid first-stage retrieval gets good candidates; the semantic ranker reorders them by deeper meaning \u2014 applied to top-N only because it's expensive per call."
+    },
+    {
+      "q": "Where do Document Intelligence and Content Safety sit in a production RAG pipeline?",
+      "opts": [
+        "Both run after the LLM call, on the final answer only",
+        "Document Intelligence on the ingestion side (clean extraction before chunking); Content Safety screens both user input before the LLM and output before the user sees it",
+        "Document Intelligence is for output formatting; Content Safety is for input parsing",
+        "They are alternatives \u2014 you use one or the other, never both"
+      ],
+      "a": 1,
+      "why": "Garbage extraction produces garbage chunks \u2014 no retrieval tuning fixes bad ingestion. And AG-09's boundary rule holds as a service: screen input to stop attacks, screen output to stop harm."
+    }
+  ],
+  "code": {
+    "title": "The Azure GenAI reference call",
+    "lang": "python",
+    "body": "from azure.identity import DefaultAzureCredential\nfrom openai import AzureOpenAI\n\n# Identity: managed identity \u2014 no keys in config\n# Model: version-pinned deployment\n# Data: inside your tenancy, never training\nclient = AzureOpenAI(\n    azure_endpoint=\"https://my-resource.openai.azure.com/\",\n    azure_ad_token_provider=lambda: DefaultAzureCredential()\n        .get_token(\"https://cognitiveservices.azure.com/.default\").token,\n    api_version=\"2024-12-01-preview\",\n)\n\nresp = client.chat.completions.create(\n    model=\"my-gpt4o\",\n    messages=[{\"role\": \"user\", \"content\": question}],\n)\n# Retrieval, safety, documents: sibling services on the\n# same identity \u2014 one boundary, one compliance story.",
+    "annot": [
+      "Three lines of identity plumbing replace an entire secrets-management runbook",
+      "Everything prompt-engineering from GA-03 onward ports unchanged \u2014 the SDK is the public one",
+      "This call is the 'hello world' GA-30's cost model prices"
+    ]
+  },
+  "notes": "# Azure AI Services \u2014 architect's map\n\n## The stack in one view\n| Layer | Service | Replaces (our hand-built) |\n|---|---|---|\n| Models | Azure OpenAI / AI Foundry | public OpenAI API + model management |\n| Retrieval | Azure AI Search | pgvector + retriever (GA-10) |\n| Ingestion | Document Intelligence | PDF parsing, layout, tables |\n| Safety | Content Safety | guardrail classifiers (AG-09) |\n| Identity | Managed Identity + RBAC | API keys in config (AG-23) |\n| Network | Private Endpoints | public API surface |\n\n## Azure OpenAI vs public OpenAI API\n- **Tenancy**: prompts/completions stay in your boundary; never train OpenAI models.\n- **Deployments**: named, version-pinned; upgrades are deliberate.\n- **Quota**: tokens-per-minute per deployment \u2014 size it like compute.\n- **AI Foundry**: portal + SDK control plane \u2014 model catalog, playgrounds, eval, tracing.\n\n## Azure AI Search\n- Vectors (HNSW), hybrid text+vector with score fusion, semantic ranker (LLM re-rank top-N).\n- Rule from GA-10 holds: hybrid is the production default; exact terms need BM25.\n\n## Document Intelligence & Content Safety\n- Extraction quality decides RAG quality. Scan \u2192 layout \u2192 tables \u2192 clean text.\n- Screen input AND output (AG-09's boundary as an API). Indirect-injection detector for retrieved docs (AG-22).\n\n## Enterprise mechanics\n- Managed identity: no keys, no rotation; RBAC scoped per deployment.\n- Private endpoints: no public traffic.\n- M365 Copilot shares the stack \u2014 Graph connectors let your app and Copilot share indexes.\n\n## Decision heuristic\nPick Azure when the enterprise already lives there. The integration tax of a separate vendor stack (identity, network, compliance sign-off) usually exceeds any model-price difference."
+}

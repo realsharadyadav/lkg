@@ -1,0 +1,148 @@
+{
+  "id": "PY-14",
+  "num": 78,
+  "track": "python",
+  "stage": "10. Frontier & Beyond",
+  "topic": "Real-time & WebSockets",
+  "hook": "Request/response is a letter; realtime is a phone call. **WebSockets give your FastAPI apps a live wire \u2014 streaming LLM tokens, chat, dashboards \u2014 and webhooks give the outside world a way to call YOU.**",
+  "chapters": [
+    "WebSockets: the live wire",
+    "Building realtime apps",
+    "Webhooks: inbound events",
+    "Production hardening"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 THE WIRE",
+      "title": "WebSockets: one TCP connection, both directions, forever",
+      "sub": "HTTP asks and answers; WebSocket converses",
+      "narration": "HTTP's limitation for live apps is structural: the client must ASK for everything \u2014 polling wastes bandwidth and freshness; long-polling hacks the gap. WebSockets upgrade the same HTTP connection \u2014 literally: the client sends an Upgrade request, the server answers 101 Switching Protocols, and from that moment the connection is a full-duplex pipe \u2014 either side pushes anytime, for as long as it lives. Key mechanics: MESSAGES not requests \u2014 the wire is frames, not HTTP envelopes; order is guaranteed but delivery is NOT \u2014 a dropped connection means lost messages unless your protocol acknowledges (you build that layer); and state is per-CONNECTION \u2014 the server keeps an in-memory object per client \u2014 which is why WebSocket servers scale by connection count, not request count. In FastAPI, an endpoint becomes a websocket endpoint with one decorator, and you send/receive with two calls \u2014 the entire API surface. The mental model from earlier reels: HTTP is AG-19's job queue (discrete, retriable tasks); WebSocket is the agent's live phone line (GA-28's realtime voice)."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "The WebSocket handshake and echo",
+      "lang": "python",
+      "body": "from fastapi import FastAPI, WebSocket, WebSocketDisconnect\n\napp = FastAPI()\n\n@app.websocket(\"/ws\")\nasync def ws(websocket: WebSocket):\n    await websocket.accept()          # completes the 101 upgrade\n    try:\n        while True:\n            msg = await websocket.receive_text()\n            await websocket.send_text(f\"echo: {msg}\")\n    except WebSocketDisconnect:\n        pass                          # client went away \u2014 normal\n\n# The handshake, decoded:\n#   client \u2192 GET /ws  Upgrade: websocket   (asks to switch)\n#   server \u2192 101 Switching Protocols       (pipe is open)\n# after that: NO more HTTP. frames both ways.\n#\n# Python client:\n#   async with websockets.connect(\"ws://host/ws\") as ws:\n#       await ws.send(\"hello\")\n#       reply = await ws.recv()",
+      "annot": [
+        "accept() completes the upgrade \u2014 before it, the connection is still pretending to be HTTP",
+        "receive_text blocks forever \u2014 the while-True loop IS the connection's lifetime",
+        "WebSocketDisconnect is the normal exit path \u2014 close happens, plan for it"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 BUILDING",
+      "title": "Connection managers, rooms, and the killer app: token streaming",
+      "sub": "The two patterns every realtime backend is made of",
+      "narration": "Pattern one: the CONNECTION MANAGER \u2014 because everything interesting involves MORE than two parties. A manager tracks live sockets \u2014 usually keyed by user or session ID in a dict \u2014 and provides broadcast: send to one, send to a room, send to all. Rooms are just key \u2192 set-of-sockets maps; chat channels, document collab, live dashboards are all the same shape underneath. Pattern two \u2014 and the reason this reel exists in a GenAI course: TOKEN STREAMING. LLM answers arrive token-by-token (GA-07); piping them straight to a WebSocket gives users text that appears as it's THOUGHT \u2014 the single biggest perceived-latency win in GenAI UI. The wiring: POST endpoint starts the job \u2192 the LLM's async stream is forwarded to the client's socket \u2192 done sentinel closes the stream (not the socket). Async is load-bearing here: while one client's LLM call streams over seconds, the same process must serve every other client \u2014 never block the event loop on a slow generation; each connection is an independent async task, and asyncio.gather runs them all on one thread."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Connection manager + LLM token streaming",
+      "lang": "python",
+      "body": "class ConnectionManager:\n    def __init__(self):\n        self.rooms: dict[str, set[WebSocket]] = {}\n\n    async def join(self, room: str, ws: WebSocket):\n        await ws.accept()\n        self.rooms.setdefault(room, set()).add(ws)\n\n    async def send_to(self, room: str, message: str):\n        for ws in list(self.rooms.get(room, ())):\n            try:\n                await ws.send_text(message)\n            except Exception:\n                self.rooms[room].discard(ws)     # dead socket \u2192 prune\n\nmanager = ConnectionManager()\n\n@app.websocket(\"/chat/{room}\")\nasync def chat(ws: WebSocket, room: str):\n    await manager.join(room, ws)\n    try:\n        while True:\n            prompt = await ws.receive_text()\n            # forward tokens AS THEY ARRIVE \u2014 GA-07's streaming,\n            # straight into the socket. await each send: the\n            # event loop interleaves all rooms on one thread.\n            async for token in llm.stream(prompt):\n                await ws.send_text(token)\n            await ws.send_text(\"[DONE]\")       # sentinel, socket stays open\n    except WebSocketDisconnect:\n        pass",
+      "annot": [
+        "rooms: dict[str, set] \u2014 broadcast is a loop over a set; that's the whole pattern",
+        "Prune dead sockets on send-failure \u2014 silent disconnects otherwise leak memory",
+        "'[DONE]' sentinel vs closing the socket \u2014 protocol on top of the wire: you define it"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 \u00b7 WEBHOOKS",
+      "title": "Webhooks: the outside world's way of calling your app",
+      "sub": "HTTP inverted \u2014 events arrive as POSTs; trust nothing",
+      "narration": "WebSockets push YOUR server \u2192 YOUR client; WEBHOOKS push SOMEONE ELSE's server \u2192 yours: Stripe posts charge.succeeded, GitHub posts push events, the LLM provider posts a completed job \u2014 any time an external system must tell you something happened. Architecturally it's an endpoint plus a contract: the provider documents the payload shape and a SIGNING SECRET; your endpoint MUST verify every delivery \u2014 recompute the HMAC signature over the raw body with the secret, compare in constant time, reject mismatches \u2014 an unverified webhook endpoint is an open door where anyone POSTs 'payment received' (AG-23's trust-nothing discipline, inbound edition). Reliability mechanics, the same trio as AG-19: IDEMPOTENCY \u2014 providers REDELIVER on timeout, so dedupe by event ID; FAST ACK \u2014 return 200 in milliseconds and process async via a queue \u2014 your handler's slowness must never timeout the provider's retry logic; and ORDERING \u2014 deliveries can arrive out of order \u2014 version or timestamp your events if order matters. WebSocket and webhook are complements: webhook ingests the world's events; WebSocket fans them out to live clients."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "A verified, idempotent webhook endpoint",
+      "lang": "python",
+      "body": "import hmac, hashlib\n\n@app.post(\"/webhooks/stripe\")\nasync def stripe_webhook(request: Request):\n    raw = await request.body()\n    sig = request.headers.get(\"stripe-signature\", \"\")\n\n    # 1 \u00b7 VERIFY \u2014 recompute HMAC over the RAW body.\n    expected = hmac.new(WEBHOOK_SECRET.encode(), raw,\n                        hashlib.sha256).hexdigest()\n    if not hmac.compare_digest(expected, sig):   # constant time!\n        raise HTTPException(403, \"bad signature\")\n\n    event = json.loads(raw)\n    event_id = event[\"id\"]\n\n    # 2 \u00b7 IDEMPOTENT \u2014 providers REDELIVER on timeout.\n    if seen(event_id):                    # dedupe store (PY-21 Redis)\n        return {\"ok\": True}               # cheap ACK, already handled\n\n    # 3 \u00b7 FAST ACK \u2014 queue the work, return 200 in ms.\n    queue.push({\"type\": event[\"type\"], \"data\": event[\"data\"]})\n    return {\"ok\": True}\n\n# Handler (worker side): process queued events, mark event_id done.\n# Out-of-order note: event['data']['created'] timestamps let\n# you drop stale deliveries when order matters.",
+      "annot": [
+        "HMAC over the RAW body \u2014 parse JSON after verifying, never before",
+        "compare_digest, not == \u2014 timing attacks are real on string compare",
+        "Return 200 fast, process async \u2014 the provider's retry timer is not your SLA"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 PRODUCTION",
+      "title": "Hardening: heartbeats, backpressure, horizontal scale",
+      "sub": "Demo sockets die quietly; production ones need a pulse",
+      "narration": "Three production concerns separate toys from systems. LIVENESS: proxies silently kill idle connections \u2014 so the server pings (protocol-level PING frames or app-level heartbeat messages) every ~30 seconds and terminates sockets that miss two \u2014 without this, half your 'connected' clients are zombies. BACKPRESSURE: a slow client with a fast producer \u2014 broadcasting stock ticks to a phone on a train \u2014 buffers unboundedly in memory until the server dies; the fix is a bounded outbound queue per socket: full \u2192 drop, close, or degrade \u2014 never grow forever. And SCALE-OUT: an in-memory connection manager lives in ONE process \u2014 two replicas don't share sockets. Scaling options in order of complexity: STICKY sessions per replica (fine to ~10k connections); a PUB/SUB BACKBONE \u2014 replicas publish events to Redis (PY-21); subscribers forward to their local sockets \u2014 the standard at scale; or dedicated realtime infra (managed socket services) when that's not your differentiator. Design rule from AG-25: if sockets are your product's core, the pub/sub backbone is where you build; if chat is a feature, buy the last option and keep your team on the agent."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "Heartbeat + bounded queue, the two survival patterns",
+      "lang": "python",
+      "body": "import asyncio\n\nasync def heartbeat(ws: WebSocket):\n    \"\"\"Kill zombies: proxies drop idle pipes silently.\"\"\"\n    try:\n        while True:\n            await asyncio.sleep(30)\n            await ws.send_json({\"type\": \"ping\"})\n    except (WebSocketDisconnect, RuntimeError):\n        raise asyncio.CancelledError()\n\nasync def guarded_send(ws: WebSocket, queue: asyncio.Queue):\n    \"\"\"Backpressure: bounded queue, drop-oldest under pressure.\"\"\"\n    try:\n        queue.put_nowait(message)              # never blocks\n    except asyncio.QueueFull:\n        queue.get_nowait()                     # drop the STALE one\n        queue.put_nowait(message)              # freshness > completeness\n\n# Horizontal scale \u2014 the Redis backbone:\n#   replica A: event arrives \u2192 redis.publish(\"room:42\", msg)\n#   every replica: pubsub listener \u2192 forward to LOCAL sockets\n# Connection state stays in-process; only EVENTS cross the wire.\n# (PY-21 builds the Redis half of this picture.)",
+      "annot": [
+        "Zombie connections are invisible until broadcast silently fails \u2014 heartbeats make liveness observable",
+        "put_nowait + drop-oldest: for live data, fresh beats complete \u2014 a 30-second-old tick is worse than none",
+        "Only events cross replicas; sockets never move \u2014 pub/sub decouples what processes own"
+      ]
+    }
+  ],
+  "recap": [
+    "WebSocket upgrades HTTP into a full-duplex frame pipe \u2014 either side pushes anytime; delivery isn't guaranteed, so acks are your protocol's job",
+    "Connection manager (rooms/broadcast) + token streaming are the two patterns \u2014 async lets one thread interleave thousands of live connections",
+    "Webhooks invert HTTP: verify HMAC signatures on raw bodies, dedupe by event ID, ACK in milliseconds and process via queue",
+    "Production needs heartbeats (zombie detection), bounded queues (backpressure), and a pub/sub backbone (Redis) to scale past one replica"
+  ],
+  "quiz": [
+    {
+      "q": "Why is constant-time comparison (hmac.compare_digest) used when verifying webhook signatures?",
+      "opts": [
+        "It runs faster than normal string comparison",
+        "Regular == leaks timing information \u2014 an attacker can measure response times to guess the correct signature byte by byte; constant-time comparison removes the signal",
+        "It's required by the JSON spec",
+        "Normal comparison corrupts unicode signatures"
+      ],
+      "a": 1,
+      "why": "== short-circuits at the first differing byte, so response time reveals how much of the signature was right. compare_digest always takes the same time \u2014 classic timing-attack defense (AG-23's security mindset applied to inbound traffic)."
+    },
+    {
+      "q": "An LLM streaming endpoint takes 20 seconds to finish. Why must token streaming go over WebSocket (or SSE) rather than a single HTTP response?",
+      "opts": [
+        "HTTP responses cannot exceed 10 seconds",
+        "Chunked streaming exists, but WebSocket/SSE let tokens render progressively as they arrive \u2014 perceived latency drops from 20 seconds to first-token time, and the connection stays open for multi-turn interaction",
+        "WebSockets compress the tokens",
+        "LLM providers only support WebSocket"
+      ],
+      "a": 1,
+      "why": "GA-07's perceived-latency principle: users experience time-to-first-token, not total time. WebSocket (or SSE) streams partial results live; a plain response makes users wait for the whole answer. Plus the socket persists for follow-ups."
+    },
+    {
+      "q": "Your socket server runs two replicas behind a load balancer. A client connected to replica A needs an event produced on replica B. What's the standard fix?",
+      "opts": [
+        "Make clients reconnect to whichever replica has the data",
+        "Store all sockets in a shared database",
+        "A pub/sub backbone (e.g., Redis): replica B publishes the event; every replica forwards published events to its own locally-connected sockets \u2014 sockets stay in-process, only events cross replicas",
+        "Disable the load balancer so all clients land on one replica"
+      ],
+      "a": 2,
+      "why": "Sockets can't be shared across processes. The standard pattern: local connection manager + cross-replica event fanout via Redis pub/sub. (Sticky sessions work only until one replica holds too many connections.)"
+    }
+  ],
+  "code": {
+    "title": "Realtime, end to end",
+    "lang": "python",
+    "body": "# The live pipeline:\n#   browser \u2194 WebSocket \u2194 FastAPI \u2194 LLM stream\n#   world   \u2192 webhook  \u2192 FastAPI \u2192 queue \u2192 broadcast\n\n@app.websocket(\"/live/{room}\")\nasync def live(ws: WebSocket, room: str):\n    await manager.join(room, ws)\n    beat = asyncio.create_task(heartbeat(ws))\n    try:\n        async for token in llm.stream(await ws.receive_text()):\n            await ws.send_text(token)          # tokens as they're born\n        await ws.send_text(\"[DONE]\")\n    except WebSocketDisconnect:\n        pass\n    finally:\n        beat.cancel()\n\n# Heartbeat in the background, tokens in the foreground,\n# disconnects handled in the finally \u2014 a socket that\n# survives production is a socket with all three.",
+    "annot": [
+      "create_task(heartbeat) \u2014 liveness runs concurrently with the message loop",
+      "finally: beat.cancel() \u2014 no leaked tasks when clients vanish",
+      "This 15-line handler is the skeleton of every realtime GenAI app"
+    ]
+  },
+  "notes": "# Real-time & WebSockets \u2014 PY notes\n\n## WebSockets\n- Upgrade handshake (101); full-duplex frames; delivery NOT guaranteed \u2014 acks live in your protocol.\n- FastAPI: @app.websocket; accept/receive_text/send_text; WebSocketDisconnect is normal exit.\n- Scale unit: connections, not requests.\n\n## Patterns\n- ConnectionManager: rooms \u2192 set of sockets; broadcast loops; prune on send failure.\n- Token streaming: LLM async stream \u2192 socket; '[DONE]' sentinel; never block the loop.\n\n## Webhooks\n- Verify HMAC over raw body, compare_digest; reject bad signatures.\n- Idempotent by event ID (providers redeliver); fast ACK then queue; watch out-of-order.\n- Webhook ingests the world; WebSocket fans out to clients \u2014 complements.\n\n## Production\n- Heartbeat ~30s; two missed \u2192 close.\n- Bounded outbound queues; drop-oldest for live data.\n- Multi-replica: local sockets + Redis pub/sub fanout (PY-21).\n\n## Cross-links\nGA-07 (streaming latency), AG-19 (async jobs, idempotency \u2014 the same trio), AG-23 (secrets/trust), GA-28 (realtime voice rides these wires), PY-21 (Redis for the backbone and dedupe store)."
+}

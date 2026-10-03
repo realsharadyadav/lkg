@@ -1,0 +1,156 @@
+{
+  "id": "PY-21",
+  "num": 80,
+  "track": "python",
+  "stage": "10. Frontier & Beyond",
+  "topic": "NoSQL & Cache",
+  "hook": "Every system in this course leans on one truth: **the fastest query is the one you never run**. Redis makes state fast; document databases make state flexible. The last two tools in the belt.",
+  "chapters": [
+    "Redis: memory-speed state",
+    "Redis as infrastructure",
+    "Document databases",
+    "Choosing your store"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 \u00b7 REDIS",
+      "title": "Redis: a data structure server living in RAM",
+      "sub": "Strings, hashes, sets, sorted sets \u2014 with TTLs on everything",
+      "narration": "Redis is best understood not as a database but as a REMOTE DATA-STRUCTURE SERVER: everything lives in memory, everything is one of a handful of structures, and every key can carry a TTL. The four structures cover most of systems programming: STRINGS for caching \u2014 get/set with EX seconds \u2014 the canonical pattern: check Redis, return on hit, compute on miss, store with a TTL; HASHES for objects \u2014 HSET session:user:42 field value \u2014 update one field without rewriting the blob; SETS for membership and dedupe \u2014 SADD seen:event:123 returns 0 if it was already there \u2014 this ONE command is your webhook idempotency (PY-14) and job-dedupe (AG-19) in a single round trip; and SORTED SETS for leaderboards, rate limits, and priority queues \u2014 ZADD + ZRANGEBYSCORE is a sliding-window rate limiter in three commands. Two properties shape everything: SPEED \u2014 sub-millisecond reads \u2014 Redis is where 'fast enough' actually lives; and VOLATILITY \u2014 memory is not disk \u2014 treat Redis as an accelerator and a scratchpad, never as the only copy of anything that matters."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Cache-aside, the pattern everything else builds on",
+      "lang": "python",
+      "body": "import redis.asyncio as redis\n\nr = redis.from_url(\"redis://localhost:6379\")\n\nasync def get_report(user_id: int) -> Report:\n    key = f\"report:{user_id}\"\n\n    # 1 \u00b7 look in the fast place first\n    cached = await r.get(key)\n    if cached:\n        return Report.parse(cached)      # hit: ~0.5ms, done\n\n    # 2 \u00b7 miss: do the real work (DB query, LLM call, anything)\n    report = await build_report(user_id)\n\n    # 3 \u00b7 store with a TTL \u2014 always a TTL:\n    #    caches without expiry become distributed lies\n    await r.set(key, report.to_json(), ex=300)   # 5 minutes\n    return report\n\n# Hit-rate math that justifies the pattern:\n#   build_report cost: 400ms + LLM tokens\n#   Redis hit:         0.5ms, zero tokens\n#   hit-rate 95% \u2192 avg latency ~20ms, cost cut ~20x",
+      "annot": [
+        "Cache-aside: check \u2192 compute \u2192 store \u2014 the app controls the cache, the database stays ignorant",
+        "ex=300 always \u2014 stale-forever caches serve yesterday's truth with today's confidence",
+        "The SADD/ZADD variants of this pattern power dedupe and rate limiting identically (PY-14's webhook replay guard)"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 \u00b7 INFRASTRUCTURE",
+      "title": "Redis as infrastructure: locks, queues, pub/sub, and circuit breakers",
+      "sub": "The Swiss army knife behind AG-19, PY-14, and AG-23",
+      "narration": "Revisit the course through Redis-colored glasses and it appears everywhere. QUEUES: LPUSH + BRPOP is a battle-tested work queue \u2014 AG-19's job queues can start here before graduating to a broker; the pattern \u2014 enqueue fast, workers pop blocking \u2014 needs no extra service. DEDUPE and IDEMPOTENCY: SADD with the job ID as member \u2014 atomic, single round trip \u2014 the webhook idempotency from PY-14 and exactly-once-ish processing from AG-19 share this one command. PUB/SUB: publish event, N subscribers react \u2014 the horizontal-scale backbone for WebSockets from PY-14 (replica A publishes, replica B forwards to its sockets); a caveat \u2014 pub/sub is FIRE-AND-FORGET \u2014 a subscriber that's down misses the message \u2014 so it carries signals, not state. RATE LIMITING: ZADD/ZREMRANGEBYSCORE/ZCARD implements a sliding window \u2014 the per-tenant circuit breaker AG-25 and AG-23 demand. And LOCKS: SET key NX EX is a distributed lock \u2014 the NX (not-exists) makes acquisition atomic, the EX prevents dead locks when a holder crashes \u2014 use for 'only one worker rebuilds the cache' \u2014 but keep the critical section tiny and never hold a lock across a network call you don't control."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "Sliding-window rate limit + distributed lock",
+      "lang": "python",
+      "body": "# 1 \u00b7 Sliding-window rate limit \u2014 AG-25's per-tenant breaker\nasync def allow(tenant: str, limit: int = 500) -> bool:\n    key = f\"rl:{tenant}\"\n    now = time.time()\n    async with r.pipeline() as p:              # atomic batch\n        p.zremrangebyscore(key, 0, now - 600)  # drop window \u2010 10min\n        p.zadd(key, {f\"{now}-{uuid4()}\": now})\n        p.zcard(key)\n        p.expire(key, 600)\n        _, _, count, _ = await p.execute()\n    return count <= limit\n\n# 2 \u00b7 Distributed lock \u2014 one worker rebuilds the cache\nasync def with_lock(name: str, ttl: int = 30):\n    token = uuid4().hex\n    got = await r.set(f\"lock:{name}\", token, nx=True, ex=ttl)\n    if not got:\n        return                                # someone else is rebuilding\n    try:\n        yield\n    finally:\n        # release only if it's still OURS (token check \u2014\n        # the lock may have expired and been re-acquired)\n        if await r.get(f\"lock:{name}\") == token:\n            await r.delete(f\"lock:{name}\")",
+      "annot": [
+        "pipeline() batches the four commands into one atomic round trip \u2014 no race between count and expiry",
+        "The token check on release is the subtle correctness bit \u2014 naive delete can free someone else's lock",
+        "limit per TENANT, window sliding \u2014 AG-25's noisy-neighbor defense, expressed in 10 lines"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 \u00b7 DOCUMENT DBs",
+      "title": "Cosmos DB and MongoDB: documents where the shape is the schema",
+      "sub": "JSON in, JSON out \u2014 schema flexibility with real query power",
+      "narration": "Document databases store JSON-like documents in collections \u2014 no migrations for shape changes, nested structures kept whole \u2014 the fit for the schema-thrash era of rapid product iteration and for the agent world, where a memory record (AG-17) or an agent definition (AG-25) IS a JSON document with evolving fields. MONGODB is the category's open-source standard: rich query language \u2014 match on nested fields, arrays, aggregation pipelines \u2014 horizontal sharding built in; COSMOS DB is Azure's globally-distributed managed document store: MongoDB API compatibility as one of several APIs, turnkey multi-region replication with conflict resolution \u2014 the managed choice when GA-29's Azure stack is already the platform. The query model, once: find filters by fields; aggregation pipelines transform \u2014 match, group, project, the same vocabulary as Polars (PY-16) wearing JSON; and indexes still matter \u2014 'flexible schema' is not 'no indexes' \u2014 index what you filter on or every query is a collection scan. Where they fit in YOUR stack: user profiles, session state that outlives a TTL, event history, agent memory stores, content catalogs \u2014 anywhere the shape varies per record and joins are rare."
+    },
+    {
+      "type": "code",
+      "chapter": 2,
+      "title": "MongoDB: the 20% that covers 80%",
+      "lang": "python",
+      "body": "from motor.motor_asyncio import AsyncIOMotorClient\n\nclient = AsyncIOMotorClient(\"mongodb://localhost:27017\")\ndb = client[\"lkg\"]\nmem = db[\"agent_memory\"]          # AG-17's store, document edition\n\n# 1 \u00b7 write: a memory record IS the JSON you already have\nawait mem.update_one(\n    {\"user_id\": uid, \"kind\": \"preference\"},\n    {\"$set\": {\"voice\": \"nova\", \"updated\": now}},\n    upsert=True,                   # create if missing \u2014 no migrations\n)\n\n# 2 \u00b7 read with nested filters\nasync for doc in mem.find({\"user_id\": uid,\n                           \"updated\": {\"$gte\": cutoff}}):\n    ...\n\n# 3 \u00b7 aggregation pipeline \u2014 Polars vocabulary in JSON\npipeline = [\n    {\"$match\": {\"kind\": \"session\"}},\n    {\"$group\": {\"_id\": \"$user_id\", \"n\": {\"$sum\": 1}}},\n    {\"$sort\": {\"n\": -1}}, {\"$limit\": 10},\n]\ntop_users = await mem.aggregate(pipeline).to_list(length=None)",
+      "annot": [
+        "upsert=True \u2014 the write-once shape of agent memory; new fields appear without a migration",
+        "Nested filters read like the document shape \u2014 dot paths match the JSON you stored",
+        "match/group/sort/limit \u2014 if you just learned Polars expressions (PY-16), aggregation pipelines are the same brain"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 \u00b7 CHOOSING",
+      "title": "Choosing your store: the decision that quietly decides your architecture",
+      "sub": "Postgres, Redis, documents \u2014 a one-paragraph policy",
+      "narration": "The course has now handed you four storage tools \u2014 Postgres (GA-10's relational + vector workhorse), Redis, and document databases \u2014 and the final architectural skill is a DEFAULT POLICY you can state in one breath. RELATIONAL (Postgres) is the system of record: structured data, transactions, relations, vectors via pgvector \u2014 start EVERY project here until a need proves otherwise \u2014 the moment you have two stores, consistency questions multiply; REDIS is the accelerator on top: cache, locks, rate limits, pub/sub, lightweight queues \u2014 anything rebuildable, anything needing sub-millisecond speed \u2014 never the system of record; DOCUMENT DB is the escape hatch for genuinely shape-varying data at scale \u2014 profiles, catalogs, event streams \u2014 or when global distribution is the requirement (Cosmos). The failure mode to avoid is store sprawl \u2014 each new database is a new operational lifeform: backups, versions, dashboards, on-call knowledge \u2014 AG-25's platform discipline applies to storage too. When torn between two options: pick the one your team can operate in their sleep, and let the exotic one earn its place with a measured benchmark. That's the whole craft \u2014 and with that, the toolkit is complete."
+    },
+    {
+      "type": "code",
+      "chapter": 3,
+      "title": "The storage policy, as a comment block",
+      "lang": "text",
+      "body": "# STORAGE POLICY (one breath, memorized):\n#\n#   Postgres   \u2192 system of record. Everything starts here.\n#                Relations, transactions, pgvector \u2014 GA-10.\n#   Redis      \u2192 accelerator. Cache, locks, limits, pub/sub,\n#                queues \u2014 anything rebuildable, sub-ms (this reel).\n#   Documents  \u2192 escape hatch. Shape-varying data at scale,\n#                global distribution \u2014 Cosmos/MongoDB.\n#\n# Anti-pattern: store sprawl \u2014 every new DB is a new lifeform\n# to feed (backups, dashboards, on-call). AG-25's platform\n# discipline applies to storage FIRST.\n#\n# Tie-breaker: choose what your team operates in their sleep;\n# make the exotic option EARN its place with a benchmark.",
+      "annot": [
+        "'Everything starts in Postgres' \u2014 the sentence that prevents most over-engineering",
+        "Rebuildable data only in Redis \u2014 volatility is a feature for caches, a bug for ledgers",
+        "Benchmarks arbitrate \u2014 GA-20's eval discipline applied to infrastructure choices"
+      ]
+    },
+    {
+      "type": "bigtext",
+      "chapter": 4,
+      "kicker": "STAGE 10 COMPLETE \u00b7 COURSE COMPLETE",
+      "title": "LKG complete: 80 reels, three tracks, one architect",
+      "sub": "You arrived knowing C#/.NET. You leave speaking GenAI, agents, and Python \u2014 with the judgment layer on top.",
+      "narration": "Take the full measure of what was built. THREE TRACKS: Python \u2014 from PY-01's foundations through async, APIs, data, and realtime to the storage craft in this reel; GenAI \u2014 from GA-01's what-and-why through prompting, RAG, evals, security, and the Azure stack to the architect's toolkit; Agentic \u2014 from AG-01's mental models through planning, memory, tools, guardrails, MCP, production engineering, and multi-agent platforms. EIGHTY REELS, one idea repeated until it's instinct: MODELS ARE PROBABILISTIC, so systems earn trust through EVALS (GA-20), guardrails (AG-09), budgets (AG-23), and honest gates (GA-30). The course arc mirrors a real engagement: learn the tools, build pipelines, ship to production, then architect for others. What remains is practice \u2014 rebuild one project from each stage without looking, then design one agent platform for a domain you know deeply (AG-25's definition file is a fine starting skeleton). The reels stay here as a reference \u2014 80 answers, cross-linked, searchable. COURSE COMPLETE \u2014 but for an architect, every shipped system is just the next system's requirements document. Go build."
+    }
+  ],
+  "recap": [
+    "Redis is a remote data-structure server: strings for cache (always with TTL), sets for dedupe, sorted sets for rate limits \u2014 sub-millisecond, volatile by design",
+    "Cache-aside (check \u2192 compute \u2192 store) plus pipelines, locks with token-checked release, and sliding-window limiters cover Redis's 80%",
+    "Document databases (MongoDB / Cosmos DB) keep JSON whole \u2014 flexible schema, aggregation pipelines share Polars' vocabulary, indexes still mandatory",
+    "Storage policy in one breath: Postgres is the record, Redis the accelerator, documents the escape hatch \u2014 store sprawl is the enemy"
+  ],
+  "quiz": [
+    {
+      "q": "Why does every cached value need a TTL \u2014 what failure does it prevent?",
+      "opts": [
+        "Redis runs out of memory immediately without one",
+        "A cache entry without expiry can serve stale data forever \u2014 quietly turning your fast path into a source of yesterday's truth; TTL bounds staleness by construction",
+        "TTLs make cache hits faster",
+        "It's required for the SET command to work"
+      ],
+      "a": 1,
+      "why": "Unexpired caches are distributed lies: upstream data changes, the cache keeps serving the old value with full confidence. A TTL makes staleness a bounded, designed property instead of an accident."
+    },
+    {
+      "q": "What makes SET key value NX EX the correct primitive for a distributed lock?",
+      "opts": [
+        "NX makes acquisition atomic (only one client wins) and EX bounds the hold \u2014 a crashed holder's lock self-releases instead of deadlocking everyone",
+        "NX encrypts the lock value",
+        "EX forces other clients to wait politely",
+        "It's the only command Redis supports for locking"
+      ],
+      "a": 0,
+      "why": "Two correctness properties in one command: atomic acquire (NX = set only if not exists) and automatic expiry (EX) so a dead worker can't hold the lock forever. The token check on release closes the last gap (expired-and-reacquired)."
+    },
+    {
+      "q": "Your team debates adding MongoDB for a new feature. What's the policy from this reel?",
+      "opts": [
+        "Always add it \u2014 document databases are modern",
+        "Start in Postgres as the system of record; only adopt a document DB when data shape genuinely varies per record or global distribution is the requirement \u2014 and make it earn its place with a benchmark",
+        "Never use anything but Postgres",
+        "Add it if the developers prefer its syntax"
+      ],
+      "a": 1,
+      "why": "Store sprawl is real operational cost. The policy: Postgres until proven otherwise, Redis for rebuildable speed, documents for shape-varying/global data \u2014 and the exotic option earns its slot with measurements, not preference."
+    }
+  ],
+  "code": {
+    "title": "The last snippet of the course",
+    "lang": "python",
+    "body": "# Reel 80 of 80 \u2014 the pattern that ties the course together:\n# every fast system in these reels has the same skeleton.\n\nasync def serve(request):\n    await guardrails.check(request)              # AG-09\n    if not await rate_limit.allow(request.tenant):   # this reel\n        return slow_down()\n\n    cached = await redis.get(key(request))       # this reel\n    if cached:\n        return cached\n\n    async with lock(\"rebuild\"):                  # this reel\n        result = await agent.answer(             # AG-14\n            request.text,\n            memory=await mongo.load(request.user),   # AG-17\n            eval_log=True,                       # AG-21\n        )\n    await redis.set(key(request), result, ex=300)\n    return result\n# COURSE COMPLETE. Now go build the one only you can build.",
+    "annot": [
+      "Guardrails \u2192 limit \u2192 cache \u2192 lock \u2192 agent \u2192 eval \u2014 six reels in six lines",
+      "Every layer cites its reel \u2014 the cross-links ARE the course's final lesson",
+      "Reel 80 of 80 \u2014 the feed ends; the practice begins"
+    ]
+  },
+  "notes": "# NoSQL & Cache \u2014 PY notes\n\n## Redis\n- Data-structure server in RAM: strings, hashes, sets, sorted sets.\n- Cache-aside: get \u2192 compute \u2192 set EX. TTLs always.\n- SADD = idempotency/dedupe (PY-14, AG-19). ZADD pipeline = sliding-window rate limit (AG-25, AG-23).\n- SET NX EX = distributed lock; release with token check.\n- Pub/sub = WebSocket fanout backbone (PY-14); fire-and-forget \u2014 signals, not state.\n- Never the system of record.\n\n## Document DBs (MongoDB / Cosmos DB)\n- JSON whole; flexible schema; upsert without migrations.\n- Aggregation pipelines = match/group/sort \u2014 Polars vocabulary (PY-16) in JSON.\n- Index what you filter on \u2014 flexible schema \u2260 no indexes.\n- Cosmos: MongoDB API + turnkey multi-region on the GA-29 stack.\n\n## Storage policy\nPostgres = record (start here) \u00b7 Redis = accelerator \u00b7 Documents = escape hatch. Store sprawl is the enemy; exotic options earn their slot via benchmark (GA-20 discipline).\n\n## Course close\n80 reels: PY (01-25), GA (01-30), AG (01-25). Core idea: probabilistic models \u2192 trust through evals, guardrails, budgets, gates. Keep the reels as a cross-linked reference; practice by rebuilding without looking.\n\n## Cross-links\nGA-10 (Postgres/pgvector), GA-29 (Cosmos on Azure), AG-09 (guardrails), AG-14 (agent loop), AG-17 (memory), AG-19 (queues/dedupe), AG-21 (eval logs), AG-23 (rate limits/budgets), AG-25 (platform), PY-14 (pub/sub fanout, webhook dedupe), PY-16 (aggregation kinship)."
+}
