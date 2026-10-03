@@ -1,0 +1,149 @@
+{
+  "id": "AG-23",
+  "num": 71,
+  "track": "agentic",
+  "stage": "9. Hands-on Projects",
+  "topic": "Project: Document Processing Agent",
+  "hook": "Capstone three: PDFs in, structured fields out, low-confidence cases to humans, results into your systems — **extraction at scale with honesty built in**.",
+  "chapters": [
+    "Field extraction",
+    "Validation & exception queue",
+    "Integration writes",
+    "The whole loop"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · EXTRACT",
+      "title": "Extraction as a typed contract: **fields, not prose**",
+      "sub": "From invoices, forms, reports — to structured records",
+      "narration": "The job: invoices arrive as PDFs; the system must produce records — vendor, invoice number, dates, line items, total, tax. The agent's extraction is CONTRACT-DRIVEN: a Pydantic schema per document type defines every field — name, type, and validation rule — 'total must equal sum of line items within rounding; dates parse and fall within the last year; invoice numbers match the vendor's format.' The model extracts against the schema — GA-18's response-model discipline — receiving the parsed page text, not raw PDF: a parsing layer — pdfplumber for digital PDFs, OCR for scans, with GA-14's warnings about tables and layout — converts to clean text upstream, so extraction reasons over words, not glyph positions. Two-pass for quality: a first extraction, then a VERIFICATION pass — 'check this record against the source text; list any field whose value isn't literally supported by the text' — evaluator-optimizer in miniature, catching hallucinated fields before they propagate."
+    },
+    {
+      "type": "code",
+      "chapter" : 0,
+      "title": "The extraction contract, with self-verification",
+      "lang": "python",
+      "body": "class InvoiceLine(BaseModel):\n    description: str\n    quantity: Decimal\n    unit_price: Decimal\n    line_total: Decimal\n\nclass Invoice(BaseModel):\n    vendor: str\n    invoice_number: str          # pattern: INV-\\d{6}\n    issue_date: date\n    due_date: date | None\n    lines: list[InvoiceLine]\n    subtotal: Decimal\n    tax: Decimal\n    total: Decimal\n\n    @model_validator(mode=\"after\")\n    def totals_reconcile(self):\n        if abs(sum(l.line_total for l in self.lines) - self.subtotal) > Decimal(\"0.01\"):\n            raise ValueError(\"lines don't sum to subtotal\")\n        if abs(self.subtotal + self.tax - self.total) > Decimal(\"0.01\"):\n            raise ValueError(\"subtotal + tax != total\")\n        return self\n\nasync def extract(text: str) -> tuple[Invoice, list[str]]:\n    inv = await llm(EXTRACT_PROMPT, text=text, response_model=Invoice)\n    # verification pass: every field must be text-supported\n    issues = await llm(VERIFY_PROMPT, source=text, record=inv.model_dump(),\n                       response_model=list[str])\n    return inv, issues   # issues feed the confidence score",
+      "annot": [
+        "Pydantic validators encode business INVARIANTS — arithmetic reconciliation runs in code, not in prompt hope",
+        "The verify pass is a different prompt with a different job: find unsupported fields — separation of extraction and audit",
+        "issues are data: they drive the confidence score and the exception-queue routing"
+      ],
+      "narration": "Why the contract earns so much of the design: validation that lives in the schema is testable — unit-test the reconciler with wrong totals; versioned — a new invoice format is a schema version, deployed like GA-26 artifacts; and self-documenting — the field descriptions become the model's extraction instructions. The verification pass catches the extraction's signature failure — the PLAUSIBLE field: a hallucinated tax rate that arithmetic validates because the model adjusted everything to fit. Verification asks a different question — 'is this value IN THE TEXT?' — and flags 'total: 1,240' when the document says 1,420. Confidence scoring assembles the verdict: schema validation passed, verification issues empty, parsing quality good — high confidence → auto-accept; anything short → the exception queue. Confidence is COMPUTED, never self-assessed — the same external-verification principle as GA-25's routing."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · EXCEPTIONS",
+      "title": "The exception queue: **humans see only what needs eyes**",
+      "sub": "Low-confidence cases with everything attached",
+      "narration": "High-volume extraction succeeds quietly; the exception queue is where the system earns trust. ROUTING: by confidence — computed from validation results, verification issues, and parse quality — below threshold goes to review; by field — missing critical fields, arithmetic mismatches, unparseable documents always route; nothing is silently dropped or silently guessed. The REVIEW PACKAGE is the product: the document, side-by-side with the extracted record; every flagged field highlighted with its issue — 'total didn't reconcile: lines sum to 1,410, extracted total 1,420'; the source text location for each value — the reviewer checks in seconds, not minutes. The reviewer's corrections feed back: each corrected record becomes a golden-set case — GA-20's loop at extraction scale — and correction PATTERNS aggregate: 'invoice_number misreads on this vendor's font' — a signal to improve the parse layer or add a few-shot example. The queue's METRICS are the system's quality dashboard: exception rate, top issue classes, correction rates — reviewed weekly."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📥", "t": "Confidence-computed routing", "s": "Validation + verification + parse quality → score · below threshold = review, never silent guesses" },
+        { "e": "👀", "t": "Side-by-side packages", "s": "Document + record + per-field issues + source locations · seconds-to-review by design" },
+        { "e": "♻️", "t": "Corrections as curriculum", "s": "Every correction → golden case · patterns → pipeline fixes (parse layer, few-shot, schema)" }
+      ],
+      "narration": "The economic argument for this design: humans reviewing EVERY document is the old world — expensive, slow, the bottleneck; humans reviewing FIVE PERCENT of documents is the new world — same accuracy where it matters, a fraction of the cost. But it only works if the five percent is the RIGHT five percent — which is why confidence is computed from independent signals rather than the model's mood, and why the queue's metrics get watched: a rising exception rate means the intake distribution shifted — new vendors, new formats, degraded OCR — detected in days from the dashboard rather than in months from customer complaints. Also design the fast path honestly: auto-accepted records are SAMPLED for audit — two percent re-checked — auto-acceptance without audit drifts; the sample's findings recalibrate the threshold. The queue is not an error dump; it's the system's learning organ."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · INTEGRATE",
+      "title": "Writing results to your systems: **the last mile, guarded**",
+      "sub": "Idempotent, audited, reversible",
+      "narration": "Accepted records flow into business systems — the accounting database, the CRM, the document store — and the integration step inherits every discipline. IDEMPOTENCY: each record carries a natural key — vendor plus invoice number — upserts replace rather than duplicate; re-running the pipeline is safe, the AG-02 rule at data scale. PARTIAL FAILURE: per-record results — '47 written, 1 rejected by the ERP as duplicate, 1 queued' — the batch never all-or-nothing; failed writes go to the exception queue with the target system's error attached. AUDIT: the write trail records source document hash, extracted values, confidence score, reviewer identity if any, target system response — the full provenance from PDF byte to ERP row; a regulator asking 'where did this number come from' gets a query. AND REVERSIBILITY: where the target supports it, writes are undoable — a retraction flag rather than a delete, the GA-14 delete lesson applied to integrations."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "📄", "t": "PDF in", "s": "Parse layer: pdfplumber / OCR · page text with quality flags" },
+        { "e": "🔍", "t": "Extract + verify", "s": "Schema contract · two-pass with text-support check · confidence computed" },
+        { "e": "👤", "t": "Route", "s": "High confidence → write · low → exception package → reviewer" },
+        { "e": "💾", "t": "Write + audit", "s": "Idempotent upserts · per-record results · full provenance · reversibility" }
+      ],
+      "narration": "The loop's completeness property: every input ends in one of three states — written, reviewed-then-written, or flagged-undeliverable — never lost, never silently swallowed; a daily reconciliation counts documents in versus records out versus queue depth, and the counts must reconcile, the same completeness assertion as AG-10's parallel merges. Throughput shape: the pipeline is QUEUE-DRIVEN — AG-19 — documents arrive, jobs enqueue, workers scale; nightly batches of thousands run at off-peak model rates, GA-25's batch economics. And the system's eval story, AG-18 style: a fixture set of documents with known field values — extraction accuracy per field, reconciliation rates, exception-rate stability — regression-gated like everything else. When this loop runs, the organization stops typing invoices into systems — the oldest data-entry job in existence, quietly retired with its accuracy IMPROVED, because machines extract and humans review the edge, exactly where their attention belongs."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · THE LOOP",
+      "title": "The document loop as a **pattern template**",
+      "sub": "What transfers to every extraction-shaped problem",
+      "narration": "Step back: this project's shape — parse to text, extract against a typed contract, verify against source, compute confidence, route to humans or systems, audit everything — is a TEMPLATE, not a one-off. The same loop processes: insurance claims — extraction with policy cross-checks; onboarding documents — ID fields with format validation; compliance filings — figures with regulatory rule checks; support attachments — issue classification with routing. The schema changes, the invariants change, the target systems change; the architecture doesn't. What makes the template transfer: every component was built to be content-agnostic — the parse layer abstracts document format, the contract layer abstracts business shape, the confidence layer abstracts judgment quality. When the next extraction problem arrives — and in any real organization, it arrives quarterly — the project isn't rebuilt; it's INSTANTIATED. That's the deepest lesson of the hands-on stage: the capstones aren't five separate builds; they're one architecture, specialized five ways."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "📐", "t": "Content-agnostic components", "s": "Parse layer, contract layer, confidence layer — each abstracts its concern · new document type = new schema, not new system" },
+        { "e": "🧪", "t": "Fixture-driven evals", "s": "Known-field document sets per type · per-field accuracy · exception-rate regression gates" },
+        { "e": "🔄", "t": "The template mindset", "s": "Claims, onboarding, filings, attachments — the same loop, instantiated · build once, specialize forever" }
+      ],
+      "narration": "The build order for this capstone: one — the parse layer, tested on your actual document zoo — the scans, the two-column layouts, the photographed invoices; two — the schema plus validators for ONE document type, end to end; three — the verification pass and confidence computation, tuned on a fixture set until the accept/review split is right — target: auto-accept only what you'd bet on; four — the review package UI, built with the actual reviewers — their seconds-per-review is the metric; five — the idempotent write layer plus reconciliation counts; six — evals and thresholds regression-gated in CI. Each milestone ships value alone: even milestone two beats manual entry for its one type. One project remains in the stage — the messaging assistant — where the same disciplines meet a conversational surface and real users."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-24",
+      "title": "Back-office mastered. Now the front door: users, in chat.",
+      "next": "Reel 72 · Project: Messaging Assistant — Telegram/Slack agent with memory"
+    }
+  ],
+  "recap": [
+    "Extraction is contract-driven: typed schemas with code validators, two-pass extraction with text-support verification, confidence computed from independent signals",
+    "The exception queue routes by computed confidence and serves side-by-side review packages; corrections feed the golden set and pipeline improvements",
+    "Integration writes are idempotent upserts with per-record results, full provenance, and reversibility; the whole loop is a content-agnostic template for every extraction problem"
+  ],
+  "quiz": [
+    {
+      "q": "Why run a separate verification pass after extraction?",
+      "opts": [
+        "It's faster",
+        "Extraction's signature failure is the plausible-but-unsupported field — a different question ('is it in the text?') catches what the first pass invents",
+        "APIs require it",
+        "It saves tokens"
+      ],
+      "a": 1,
+      "why": "Extraction and audit are different jobs: the extractor finds values, the verifier checks them against the source — separation catches hallucinated plausibility."
+    },
+    {
+      "q": "Why must exception routing use computed confidence rather than the model's self-assessment?",
+      "opts": [
+        "Self-assessment is slow",
+        "Models that extract wrongly usually believe they're right — computed scores from validation, verification, and parse quality are independent of that optimism",
+        "It costs less",
+        "It's easier to code"
+      ],
+      "a": 1,
+      "why": "The same external-verification principle as GA-25's routing: confidence must come from evidence, not from the thing being evaluated."
+    },
+    {
+      "q": "What makes the daily reconciliation (documents in = records out + queue depth) essential?",
+      "opts": [
+        "It speeds up parsing",
+        "Completeness is a first-class invariant — inputs that vanish silently are the extraction system's worst failure, and the counts make that impossible",
+        "Auditors like numbers",
+        "It reduces storage"
+      ],
+      "a": 1,
+      "why": "Every input must end in a known state — written, reviewed, or flagged; the reconciliation is the assertion that proves it."
+    }
+  ],
+  "code": {
+    "title": "The extraction loop, one function",
+    "body": "async def process_document(pdf_path: str) -> Route:\n    pages = parse_layer.extract(pdf_path)          # text + quality flags\n    record, issues = await extract_and_verify(pages)\n    conf = confidence(record_valid=record is not None,\n                      verify_issues=issues,\n                      parse_quality=pages.quality)\n\n    if conf >= AUTO_ACCEPT and record:\n        result = await systems.upsert(record, key=record.natural_key())\n        audit.log(hash(pdf_path), record, conf, result)\n        return Route(\"written\", result)\n\n    package = review_package(pdf=pdf_path, record=record,\n                             issues=issues, confidence=conf)\n    await exception_queue.push(package)            # human decides\n    audit.log(hash(pdf_path), record, conf, \"queued\")\n    return Route(\"review\", package.id)\n\n# Invariants: idempotent (natural keys) · complete (reconciled counts) ·\n# provenance (audit from byte to row) · learning (corrections → gold).",
+    "annot": [
+      "confidence() combines independent signals — no single failure mode can fake high confidence",
+      "review_package carries everything: the reviewer's seconds-per-case is a designed metric",
+      "Both branches audit: auto-acceptance is a decision too, and it's sampled for audit"
+    ]
+  },
+  "notes": "# Project: Document Processing Agent\n\n## Extraction\n- Parse layer (pdfplumber/OCR) upstream · typed schema contract (Pydantic + code validators).\n- Two-pass: extract then verify text-support · confidence computed (validation + verification + parse quality).\n\n## Exception queue\n- Computed-confidence routing · side-by-side packages with per-field issues · corrections → golden cases + pipeline fixes.\n- Metrics: exception rate, issue classes, correction rate · sampled audit of auto-accepts.\n\n## Integration\n- Idempotent upserts (natural keys) · per-record results · full provenance audit · reversibility.\n- Queue-driven throughput · daily reconciliation (in = out + queued).\n\n## Template\n- Content-agnostic: parse / contract / confidence layers · instantiate per document type (claims, onboarding, filings).\n- Build order: parse → one schema E2E → confidence tuning → review UI → writes + reconciliation → evals."
+}

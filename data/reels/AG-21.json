@@ -1,0 +1,148 @@
+{
+  "id": "AG-21",
+  "num": 69,
+  "track": "agentic",
+  "stage": "9. Hands-on Projects",
+  "topic": "Project: SOP-to-Excel Agent",
+  "hook": "Capstone project one: an agent that reads a Standard Operating Procedure and **safely updates Excel workbooks** — every discipline from Stages 6–8 in one build.",
+  "chapters": [
+    "Parse the SOP",
+    "Plan the changes",
+    "Execute via Excel MCP",
+    "Verify, approve, roll back"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · PARSE",
+      "title": "SOP in, structured rules out",
+      "sub": "Extraction as a contract, not a summary",
+      "narration": "The input: a Standard Operating Procedure — 'when the regional VAT rate changes, update cell B7 on the Rates sheet in each regional workbook to the new rate, effective from the first of next month.' The agent's first job is turning prose into STRUCTURE: rule objects — target: which files, which sheets, which cells; action: what value or formula; conditions: effective dates, exceptions, thresholds; and sources: which SOP section this came from. The extraction prompt demands completeness with a self-check — 'list every rule you found; then re-scan the document for anything you missed' — the evaluator-optimizer discipline from AG-10 in miniature. Validation before proceeding: every rule must have a resolvable target — a named workbook pattern, an existing sheet, a valid range — unresolvable rules go to the exception queue, not silently dropped; and every rule carries its source quote — provenance for the human review ahead, AG-02's traceability as data."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Rule extraction: structured, sourced, validated",
+      "lang": "python",
+      "body": "class Rule(BaseModel):\n    target_files: str          # glob pattern, e.g. \"regional_*.xlsx\"\n    sheet: str\n    cell_range: str\n    new_value: str | None = None\n    new_formula: str | None = None\n    condition: str | None = None      # \"effective 2026-11-01\"\n    source_quote: str                  # provenance for review\n\nEXTRACT = \"\"\"Extract EVERY update rule from this SOP as Rule objects.\nRules you MUST catch: explicit cell edits, formula changes,\nrate/threshold updates, date-conditional changes.\nAfter listing rules, re-scan for any you missed.\"\"\"\n\nasync def parse_sop(sop_text: str) -> list[Rule]:\n    rules = await llm(EXTRACT, text=sop_text,\n                      response_model=list[Rule])\n    # validate targets BEFORE planning\n    for r in rules:\n        matches = list(ALLOWED.glob(r.target_files))\n        if not matches:\n            exceptions.push(r, \"no files match target_files\")\n        elif not sheet_exists(matches[0], r.sheet):\n            exceptions.push(r, f\"sheet '{r.sheet}' not found\")\n    return [r for r in rules if not exceptions.has(r)]",
+      "annot": [
+        "response_model=list[Rule]: the output is STRUCTURE, not prose — plan-able, diff-able, testable",
+        "source_quote is load-bearing: human review checks rules against the SOP, not the agent's paraphrase",
+        "Validation happens before PLANNING, not before editing — bad rules die cheap, at parse time"
+      ],
+      "narration": "The design choices worth copying. Structure-first: Pydantic response models make extraction output machine-usable — rules become data the rest of the pipeline operates on, and tests can assert their properties directly. Provenance: the source quote turns review from 'trust the agent's reading' into 'check the quote' — a different, much cheaper verification. Completeness pressure: the re-scan instruction catches the SOP's second rule hiding in paragraph nine — extraction recall is the project's first quality metric, golden-testable with SOPs of known rule counts. And the exception queue inherits GA-19's discipline — ambiguous or unresolvable rules go to humans with context attached, they don't get guessed. Parsing is half the project: a perfectly executed wrong rule is worse than no execution at all, so the pipeline spends its care here, upstream of everything consequential."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · PLAN",
+      "title": "From rules to a change plan: **preview before power**",
+      "sub": "The dry-run as the heart of the system",
+      "narration": "Rules become a PLAN: for each target workbook, compute the exact cell-level diff — old value, new value, formula impacts — before touching anything. This is AG-09's dry-run pattern elevated to the system level: the plan is a data structure — file, sheet, range, old, new, source-rule — rendered as a review document for the human: '4 workbooks will change, 3 cells each; 1 workbook already matches; formula F9 on EMEA references B7 and will recalculate.' Formula IMPACT analysis belongs here: when a changed cell is referenced by formulas, the preview says so — 'F9 depends on B7; post-change value computes to X' — so reviewers see consequences, not just edits. The plan stage is also where CONFLICTS surface: two rules touching the same cell, a rule contradicting an earlier SOP — flagged, not merged silently. Then the confirmation flow: the human approves the rendered plan — or approves with modifications, which regenerate the diff — and only then does execution get its token."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🗺️", "t": "Plan as data", "s": "file → sheet → range → old → new → source-rule · renderable as a human review document" },
+        { "e": "🧮", "t": "Formula impact", "s": "Dependents of changed cells identified · reviewers see computed consequences, not just edits" },
+        { "e": "⚠️", "t": "Conflict detection", "s": "Two rules → one cell · SOP contradictions · flagged for humans, never merged silently" }
+      ],
+      "narration": "Why the plan stage earns its weight: it converts the agent's work from 'edits happened' to 'edits were REVIEWED' — the governance property that makes automation permissible on business-critical spreadsheets. The approval UX follows AG-17's what-not-which discipline: the review document speaks in consequences — 'VAT on the EMEA sheet becomes 21.5%, effective November; the quarterly summary recalculates to 2,340,000' — not in cell addresses. And the plan is versioned: approval generates the confirmation token AG-09 defined, binding THIS diff to the authorization — execution of a different diff requires a new approval. Edge cases handled here: idempotent skips — workbooks already matching report 'no change needed', which is a SUCCESS case, not an exception; partial targets — a file that matches the glob but lacks the sheet goes to the exception queue with the others. Planning is where the project proves AG-11's thesis: thinking first, acting after, reviewing in between."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · EXECUTE",
+      "title": "Execution through the Excel MCP server: **guards by construction**",
+      "sub": "AG-09's tools as the only mutation path",
+      "narration": "Execution runs through the AG-09 Excel MCP server — not around it: the server's tools are the ONLY mutation path, which means every guardrail built there — backups, path scoping, bounded writes — applies automatically; the agent holds no direct file access, which is precisely the trust-boundary architecture from AG-06. The execution loop: per approved change — backup first, the server does this; apply via write-cells with the diff-token; verify the write by reading back — the value at the cell now equals the planned value; record the result — applied, with backup reference — into the audit trail. Batch semantics from AG-09 apply at the plan level: per-file results, partial success, already-applied skips. And the loop is DURABLE — AG-19: after each workbook, the checkpoint records progress; a crash mid-batch resumes at the next unprocessed workbook; every applied change is idempotent-safe to re-verify."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "📋", "t": "Approved plan", "s": "Diff + confirmation token · the only input execution accepts" },
+        { "e": "🛡️", "t": "Excel MCP tools", "s": "backup → bounded write with token → read-back verify · no other mutation path exists" },
+        { "e": "📜", "t": "Audit per file", "s": "applied/unchanged/errored · backup refs · token recorded · durable checkpoints between files" }
+      ],
+      "narration": "The read-back verification deserves emphasis: write-then-verify closes the loop on every mutation — the agent doesn't assume the write landed, it CONFIRMS — a mismatch becomes an error entry with the expected-versus-actual pair, actionable in AG-02's sense. Execution failures follow the pattern: transient — file locked by a user's Excel client — requeue with backoff; structural — the sheet changed since planning — halt the file, report, continue others; the plan-level token prevents a partial-approval drift — executed diffs can never diverge from approved diffs. And the audit trail from AG-09 accumulates the full story: who approved which diff, which files changed, where the backups are — the compliance answer generated as a byproduct of the design. This is what 'tool-driven edits with governance built in' means in practice: the dangerous power flows through the narrowest possible channel, and every crossing is recorded."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · VERIFY",
+      "title": "Final verification — and the rollback promise",
+      "sub": "Post-batch checks and the two-minute undo",
+      "narration": "After the batch, verification at the SYSTEM level: sampled re-reads — a percentage of changed cells re-read independently, compared against the plan; formula recomputation — dependent formulas evaluate to the previewed values within tolerance; and a consolidated report — '4 files updated, 12 cells, 0 discrepancies; backups at…; exceptions: 1 file locked, requeued for tonight.' Then the rollback promise, tested not promised: rollback restores each file from its timestamped backup — a copy operation, minutes not hours; the drill runs on a canary workbook monthly — AG-17's kill-switch-and-rollback discipline at project scale. The exception queue closes the story: locked files, unresolvable rules, verification discrepancies — each with context and a proposed next step, reviewed by the human who owns the process. The project's final artifact isn't the updated spreadsheets; it's the EVIDENCE PACKAGE — SOP, extracted rules, approvals, diffs, execution log, verification report — reconstructable end to end."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🔎", "t": "Post-batch verification", "s": "Sampled re-reads + formula recomputation vs previewed values · discrepancies = exceptions, not shrugged shoulders" },
+        { "e": "⏪", "t": "Rollback, drilled", "s": "Backup restore, tested monthly on a canary file — 'can undo' is only real when demonstrated" },
+        { "e": "📦", "t": "Evidence package", "s": "SOP → rules → approvals → diffs → execution → verification · the compliance artifact as a byproduct" }
+      ],
+      "narration": "The build order, if you're implementing: one — the Excel MCP server from AG-09, tested with the Inspector; two — rule extraction against three real SOPs with known rule counts, measuring recall; three — the plan renderer, reviewed with the actual spreadsheet owner until the diff document reads clearly to THEM; four — execution wiring with read-back verification; five — verification sampling and the rollback drill. Each stage is independently shippable and testable — AG-11's verifiable decomposition as a project plan. What you'll have proven when it runs end to end: that an agent can hold real business power — editing the spreadsheets a company runs on — inside a frame where every consequential step is previewed, approved, recorded, and reversible. That's the difference between a demo and a deployment, and it's the thesis of this whole stage."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-22",
+      "title": "Spreadsheet governance done. Now an agent that ANSWERS with data.",
+      "next": "Reel 70 · Project: Data Analyst Agent — DuckDB, charts, SQL guardrails"
+    }
+  ],
+  "recap": [
+    "Parse: structured rule extraction with source quotes, validation of targets before planning, exception queue for the ambiguous",
+    "Plan: cell-level diffs with formula-impact analysis and conflict detection, rendered for human approval — preview before power",
+    "Execute: only through the guarded Excel MCP tools, write-then-verify per change, durable checkpoints, per-file audit; rollback drilled monthly; evidence package as the deliverable"
+  ],
+  "quiz": [
+    {
+      "q": "Why does every extracted rule carry a source_quote?",
+      "opts": [
+        "It saves tokens",
+        "Human review verifies rules against the SOP directly — checking a quote is far cheaper than trusting the agent's paraphrase",
+        "Excel requires it",
+        "It speeds up parsing"
+      ],
+      "a": 1,
+      "why": "Provenance converts review from 'trust the reading' into 'check the quote' — the cheapest possible verification loop."
+    },
+    {
+      "q": "Why is the Excel MCP server the ONLY mutation path?",
+      "opts": [
+        "It's faster",
+        "All its guardrails — backups, scoping, bounded writes, tokens — then apply by construction, and no code path bypasses them",
+        "Files are locked otherwise",
+        "openpyxl is unsafe"
+      ],
+      "a": 1,
+      "why": "Single mutation path = single enforcement point: the trust-boundary architecture from AG-06, applied to files."
+    },
+    {
+      "q": "What makes the rollback promise real rather than theoretical?",
+      "opts": [
+        "Backups exist",
+        "It's drilled monthly on a canary workbook — a restore demonstrated regularly, not an untested procedure in a runbook",
+        "The agent promises",
+        "Git tracks files"
+      ],
+      "a": 1,
+      "why": "AG-17's principle: unexercised recovery is a hypothesis; drills turn procedures into capabilities."
+    }
+  ],
+  "code": {
+    "title": "The pipeline, end to end",
+    "body": "async def sop_to_excel(sop_text: str, approver: User):\n    # 1 · PARSE → structured rules (with quotes, validated targets)\n    rules = await parse_sop(sop_text)\n\n    # 2 · PLAN → per-file diffs + formula impact + conflicts\n    plan = await build_plan(rules)\n    report = render_review(plan)                    # human language\n    token = await human_approve(report, approver)   # AG-17 gate\n\n    # 3 · EXECUTE via Excel MCP (AG-09 tools only)\n    for fchange in plan.files:                      # durable, checkpointed\n        backup = excel.preview_write(...)           # backup + dry-run\n        excel.write_cells(..., confirm_token=token)\n        assert read_back(fchange) == fchange.planned   # verify\n        audit.log(file=fchange.name, backup=backup)\n\n    # 4 · VERIFY + package\n    discrepancies = sample_verify(plan)\n    return evidence_package(rules, plan, audit, discrepancies)",
+    "annot": [
+      "Stages 1–2 are pure computation — no side effects possible, review happens while undoing is still trivial",
+      "The assert is literal: read-back equality, not assumed success",
+      "evidence_package is the actual deliverable — spreadsheets were the byproduct"
+    ]
+  },
+  "notes": "# Project: SOP-to-Excel Agent\n\n## Parse\n- Structured rule extraction (Pydantic models) · completeness self-check.\n- source_quote per rule (review = check the quote).\n- Validate targets before planning · exception queue for ambiguous.\n\n## Plan\n- Cell-level diffs as data · formula-impact analysis · conflict detection.\n- Human review doc in consequences (what-not-which) · approval binds token to diff.\n- Idempotent skips are successes.\n\n## Execute\n- Excel MCP tools ONLY mutation path · backup → token write → read-back verify.\n- Durable checkpoints per file · per-file audit with backup refs.\n\n## Verify & govern\n- Sampled re-reads + formula recomputation vs preview.\n- Rollback = backup restore, DRILLED monthly (canary).\n- Deliverable: evidence package (SOP→rules→approvals→diffs→execution→verification).\n\n**Build order: MCP server → extraction recall → plan renderer (owner-approved) → execution → verification drill.**"
+}

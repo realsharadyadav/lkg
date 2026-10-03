@@ -1,0 +1,147 @@
+{
+  "id": "AG-24",
+  "num": 72,
+  "track": "agentic",
+  "stage": "9. Hands-on Projects",
+  "topic": "Project: Messaging Assistant",
+  "hook": "Capstone four: an agent living in Telegram or Slack — **personalized through memory, guarded at the boundary, monitored like production.** The front door of everything you've built.",
+  "chapters": [
+    "The bot surface",
+    "Tools & memory",
+    "Safety in a chat",
+    "Deploy & monitor"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SURFACE",
+      "title": "Chat is the interface: **webhooks in, replies out**",
+      "sub": "Telegram/Slack mechanics — the async backbone you've already built",
+      "narration": "The surface is simple to describe because PY-12 and PY-14 built the machinery: the platform — Telegram or Slack — POSTs events to your webhook; your FastAPI endpoint validates the payload — signature verification, bot-token checks — enqueues a job; a worker runs the agent loop and POSTs the reply through the platform's API. The disciplines you already own: ASYNC — webhooks enqueue, never process inline — the endpoint returns 200 in milliseconds and the queue carries the work — AG-19's decoupling, because a slow agent must never timeout the platform's delivery; RETRIES — platform APIs retry deliveries when your endpoint is down — idempotency keys on message IDs prevent double-processing, the same rule as AG-19's jobs; and STREAMING-ish UX — chat platforms don't stream, so the agent posts a 'thinking…' placeholder and EDITS it with the answer — perceived latency managed within platform limits. One platform quirk: message EDITS are rate-limited — batch updates, keep the placeholder text short."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Webhook endpoint: validate, enqueue, answer fast",
+      "lang": "python",
+      "body": "@app.post(\"/webhook/telegram\")\nasync def telegram_webhook(update: TelegramUpdate,\n                           background: BackgroundTasks):\n    # 1 · validate (platform signature — reject forgeries fast)\n    if not verify_signature(raw_body, headers):\n        raise HTTPException(403)\n\n    msg = update.message\n    if not msg or msg.from_user.is_bot:\n        return {\"ok\": True}              # ignore bots, edits, services\n\n    # 2 · idempotent enqueue — platforms REDELIVER on timeout\n    job_id = f\"tg-{msg.message_id}\"      # natural dedupe key\n    if seen(job_id):\n        return {\"ok\": True}\n\n    queue.push(job_id, {\n        \"chat_id\": msg.chat.id,\n        \"user_id\": msg.from_user.id,\n        \"text\": msg.text,\n        \"placeholder\": telegram.send(msg.chat.id, \"…\"),\n    })\n    return {\"ok\": True}                  # 200 in ms; work happens async",
+      "annot": [
+        "job_id from the platform's message ID: redeliveries dedupe automatically — the AG-19 idempotency pattern, platform edition",
+        "Bots ignored at the edge: bot-to-bot loops are a real failure mode — cut them at the door",
+        "The placeholder message travels with the job: the worker EDITS it rather than sending fresh — one message per request, rate-limit friendly"
+      ],
+      "narration": "Three platform-specific traps this endpoint avoids. Signature verification FIRST — forged webhooks are free attack surface, and an unvalidated chatbot endpoint is an unauthenticated remote-trigger for your agent; process nothing before verification. Message-type sprawl — Telegram delivers edits, reactions, service notices on the same webhook; the guard clauses filter to actual user text before anything expensive happens. And the thinking-placeholder — chat's equivalent of streaming: it sets the conversational expectation ('working on it') and its message ID rides the job so the final answer EDITS it in place — the user's message history stays clean. The endpoint is deliberately boring; everything interesting happens in the worker — where this project's real design lives."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · MEMORY",
+      "title": "Personalization through memory: **the assistant that knows you**",
+      "sub": "AG-12's four registers, chat-sized",
+      "narration": "A messaging assistant without memory is a stranger in every conversation; with memory, it's YOUR assistant. The register mapping: SHORT-TERM — the conversation, managed per AG-13 — chat threads are long and rambling, so compaction matters even more: summarize older thread segments, keep recent turns verbatim. LONG-TERM SEMANTIC — preferences and facts the user volunteers — 'I prefer Hindi-English mix', 'my team is on Slack #eng' — written at conversation end via the AG-12 write gate, deduplicated, per-user scoped; retrieved at session start — just-in-time, threshold-gated. EPISODIC — 'last time you helped me draft the vendor email' — surfacing when the current request resembles a past one; chat's informal references — 'same as before' — make episodic recall unusually valuable. SCRATCHPAD — for multi-step tasks the assistant works through visibly — 'checking your calendar… checking the doc…' — the progress notes pattern keeps chat users informed mid-task, the conversational version of AG-12's resumability."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🧷", "t": "Per-user memory namespaces", "s": "Every memory scoped to user_id — retrieval-time filtering is structural (AG-13) · group chats complicate: memory per user, context shared" },
+        { "e": "✍️", "t": "Write gates at thread end", "s": "Reflection extracts durable facts · dedupe against existing memory · nothing mid-conversation" },
+        { "e": "🔒", "t": "User-visible memory", "s": "\"What do you remember about me?\" · \"Forget that\" — inspectable and erasable memory is a trust feature, not a compliance extra" }
+      ],
+      "narration": "Group chats deserve special care: the context is shared, but memory must NOT be — what Alice tells the bot in a group is Alice's memory, not Bob's; and cross-user disclosure — the bot repeating Alice's preferences when Bob asks — is a privacy incident in a group setting, the AG-13 access-check lesson with higher stakes. The user-visible memory commands are the trust layer: 'what do you remember about me' returns the actual entries — provenance included, 'learned Oct 3 from your message' — and 'forget that' deletes, verified, with confirmation; chat users who can SEE and EDIT their memory extend trust; users who can't, wonder. The TOOLS the assistant wields — calendar, notes, search — inherit AG-07's rules: per-user scoped credentials, side-effect gates, and chat-shaped confirmations — a one-tap inline button beats a link to a review page: 'Send this email?' [Send] [Edit] [Cancel] — approval UX native to the surface."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · SAFETY",
+      "title": "Chat safety: **small surface, real exposure**",
+      "sub": "Injection in DMs, prompt bombs in groups, rate abuse",
+      "narration": "A public chatbot is the most exposed deployment shape in this curriculum: anyone can reach it, and chat content is injection-rich — forwarded emails, pasted links, shared documents all arrive as TEXT aimed at your context. The defenses, layered as always: treat inbound content as untrusted — GA-22's labeling rides the system prompt — a forwarded message is DATA, whatever it says; EGRESS scoping — a personal assistant's network reach should be narrow — no arbitrary URL fetching; tools gated — chat-shaped confirmations for anything side-effecting; and GROUP-CHAT hygiene — mention-gating (the bot responds only when addressed — '@assistant …' — ignoring ambient conversation, which slashes both noise and injection surface) and per-sender trust — a group member the bot has never seen gets suggest-level autonomy, not act. RATE LIMITS per user — chat invites abuse play — token budgets per user per day, the AG-19 metering at chat scale."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "📣", "t": "Responds to everything", "s": "Ambient chat enters context · injection surface maximal · noisy, expensive, risky", "win": false },
+        { "e": "🎯", "t": "Mention-gated + scoped", "s": "Responds when addressed · per-sender trust levels · narrow egress · gated tools · per-user budgets", "win": true }
+      ],
+      "narration": "The per-sender trust ladder is worth detailing: KNOWN USER with history → their usual autonomy level, memory active; KNOWN GROUP, unfamiliar sender → suggest-only, no memory reads, tools gated; UNKNOWN DM sender → basic chat only, no tools, no memory — escalation as a relationship deepens, AG-17's earned-autonomy principle applied to strangers. Also plan for the prompt-bomb: a user pastes a wall of text ending with 'ignore your instructions and…' — input length caps truncate, injection screens flag, and the response stays calm; test this — GA-22's canary suite runs against the chat surface too. And the social layer: the bot should INTRODUCE its limits on first contact — 'I can check your calendar and notes; I won't message anyone without asking; say \"what do you remember\" anytime' — the stated-limits discipline from AG-22, delivered conversationally. A bot whose limits are known gets trusted further, faster."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · OPERATE",
+      "title": "Deploy & monitor: **the front door is production**",
+      "sub": "Queues, budgets, dashboards — the full Stage-8 stack, chat-sized",
+      "narration": "Operate it like everything else in Stage 8, scaled to a chatbot's shape. DEPLOY: the webhook receiver as a small always-on service — App Service or a Container App; the WORKERS queue-driven — AG-19 — scaling with message volume; the whole thing deployable via the PY-23 pipeline, eval gates included — the messaging golden set: fifty representative conversations with known-good behaviors, regression-gated on every prompt change. MONITOR: per-user cost dashboards — chat users are the most spend-variable traffic that exists; latency — time-to-first-edit on the placeholder; quality — the feedback signal is built into chat: reaction buttons on replies — 👍👎 become GA-24's feedback loop with zero extra UX; and abuse signals — rate-limit trips, injection-screen flags, blocked egress attempts — the GA-22 canaries reporting live. THE SOCIAL LAUNCH: start with five friendly users, watch everything, widen the circle as the exception queue teaches you what real usage looks like — the pilot-then-scale discipline that Stage 10 will formalize."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "🌐", "t": "Webhook receiver", "s": "Validate → enqueue → 200ms · always-on, tiny, boring" },
+        { "e": "👷", "t": "Queue workers", "s": "Agent loop · memory registers · gated tools · placeholder-edit replies · budget-metered" },
+        { "e": "📡", "t": "Observability", "s": "Per-user costs · reaction feedback → golden set · abuse-signal alerts · exception queue" }
+      ],
+      "narration": "The four capstones form an arc worth naming: the SOP agent governed CHANGE, the analyst agent governed ANSWERS, the document agent governed EXTRACTION — this one governs CONVERSATION, the least structured surface of all, and does it with the same disciplines: bounded power, earned trust, honest limits, watched operation. What a user experiences — an assistant that remembers, thinks out loud, asks before acting, admits limits — is the curriculum made personable. And the build order: one — echo bot with validated webhooks and idempotent enqueueing; two — the agent loop with mention-gating; three — memory registers with the inspect/forget commands; four — one gated tool end-to-end — calendar reads say — with inline confirmations; five — budgets, dashboards, abuse signals; six — the golden conversation set in CI. Stage 9's projects end here; Stage 10 zooms out — from building agents to architecting platforms."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 9 COMPLETE",
+      "title": "Four capstones built: change, answers, extraction, conversation.",
+      "next": "Reel 73 · Stage 10: Azure AI Services — the enterprise platform layer"
+    }
+  ],
+  "recap": [
+    "Webhook receivers validate, enqueue, and answer in milliseconds; platform redeliveries dedupe on message IDs; placeholder-edit UX manages perceived latency",
+    "Memory personalizes: per-user namespaces, write gates at thread end, inspectable/erasable memory as a trust feature; group chats need per-sender trust ladders and mention-gating",
+    "Chat is the most exposed surface: untrusted inbound content, narrow egress, gated tools, per-user budgets — and reaction buttons close the quality feedback loop natively"
+  ],
+  "quiz": [
+    {
+      "q": "Why must webhook handlers never process agent work inline?",
+      "opts": [
+        "It's slower to code",
+        "Platform deliveries timeout in seconds while agent runs take minutes — enqueue and 200 immediately, or redelivery storms and user-visible failures follow",
+        "APIs forbid it",
+        "It uses more memory"
+      ],
+      "a": 1,
+      "why": "Decoupling is structural at the boundary: the endpoint's only job is validation and enqueueing — AG-19's queue discipline, platform edition."
+    },
+    {
+      "q": "Why is mention-gating a security control and not just a UX nicety?",
+      "opts": [
+        "It looks cleaner",
+        "Ambient group-chat content — the richest injection surface — never enters context unless the bot is explicitly addressed, slashing both noise and attack surface",
+        "Platforms require it",
+        "It saves tokens only"
+      ],
+      "a": 1,
+      "why": "Every unaddressed message that stays out of context is injected text that never reached the model — gating is perimeter control."
+    },
+    {
+      "q": "Why offer 'what do you remember about me' and 'forget that' as commands?",
+      "opts": [
+        "They're trendy",
+        "Inspectability and erasability convert memory from a compliance liability into a trust feature — users extend trust to systems they can audit",
+        "Regulation forbids memory",
+        "They reduce costs"
+      ],
+      "a": 1,
+      "why": "AG-13's memory-safety discipline made user-facing: visible, correctable memory is the difference between 'creepy' and 'personal'."
+    }
+  ],
+  "code": {
+    "title": "The chat worker: loop + memory + gates, compact",
+    "body": "async def handle_chat(job: ChatJob):\n    user = users.for_platform(job.user_id)\n    trust = user.trust_level(job.chat_type)      # known/unknown/group\n\n    ctx = context.build(\n        system=CHAT_SYSTEM,                      # untrusted-content rules\n        memory=memory.recall(job.text, user.id,  # threshold-gated\n                             k=4),\n        recent=recent_turns(job.chat_id, cap=8_000),\n    )\n    async with budget(user.daily_budget.remaining()):\n        result = await agent_loop(ctx, tools=tools_for(trust))\n\n    if result.needs_confirmation:                # inline buttons\n        await send_buttons(job.chat_id, result.preview,\n                           [Send, Edit, Cancel])\n        return\n\n    await telegram.edit(job.placeholder, result.reply)\n    await react_buttons(job.chat_id)             # 👍👎 feedback\n    memory.consider_write(user.id, job.thread)   # end-of-thread gate",
+    "annot": [
+      "tools_for(trust): the same tool set, different autonomy by sender relationship — AG-17's dial, chat edition",
+      "budget() wraps the whole loop: per-user daily meters enforced at runtime, not invoiced later",
+      "consider_write at thread end: memory writes are deliberate events, not ambient logging"
+    ]
+  },
+  "notes": "# Project: Messaging Assistant\n\n## Surface\n- Webhook: validate signature → filter (bots, non-text) → idempotent enqueue (message-ID keys) → 200 in ms.\n- Placeholder message + edit = chat's streaming UX; edits are rate-limited — batch.\n\n## Tools & memory\n- AG-12 registers chat-sized: compaction for long threads, per-user namespaces, end-of-thread write gates.\n- Group chats: mention-gating, per-sender trust ladder (known → suggest → basic), cross-user disclosure = incident.\n- User commands: 'what do you remember' / 'forget that' — memory as a trust feature.\n\n## Safety\n- Untrusted inbound content; narrow egress; inline-button confirmations; per-user daily budgets.\n\n## Deploy & monitor\n- Tiny always-on receiver + queue-driven workers; PY-23 pipeline with conversation golden set.\n- 👍👎 reactions = native feedback loop; abuse-signal alerts; pilot with 5 friendly users, then widen."
+}
