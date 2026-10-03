@@ -13,7 +13,7 @@
 
   /* ---------------- sheets ---------------- */
   const scrim = $('#scrim');
-  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet') };
+  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet') };
   let openName = null;
   function openSheet(name) {
     Object.values(sheets).forEach(s => s.classList.remove('open'));
@@ -164,6 +164,7 @@
     });
 
     $('#settingsBtn').addEventListener('click', () => openName === 'settings' ? closeSheets() : openSheet('settings'));
+    $('#aboutBtn').addEventListener('click', () => openSheet('about'));
     $('#resetBtn').addEventListener('click', () => {
       if (confirm('Reset all progress, likes and streak on this device?')) { SS.state.reset(); location.reload(); }
     });
