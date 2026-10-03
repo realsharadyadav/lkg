@@ -1,0 +1,146 @@
+{
+  "id": "GA-26",
+  "num": 63,
+  "track": "genai",
+  "stage": "8. Production + Security",
+  "topic": "Deployment",
+  "hook": "Prompts are code. Models are dependencies. **Deploy them like it** — gateways, environments, version pinning, and rollouts that can't surprise you.",
+  "chapters": [
+    "LLM gateways",
+    "Environments & promotion",
+    "Version pinning",
+    "Feature flags & rollout"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · GATEWAYS",
+      "title": "The AI gateway: **one front door for every model call**",
+      "sub": "APIM and friends — policy at the edge of the LLM traffic",
+      "narration": "An AI gateway sits between your applications and model providers — Azure API Management is the canonical enterprise example, with dedicated LLM policies; LiteLLM and Portkey serve the same role platform-agnostically. What the gateway centralizes: AUTH — one key for your apps, provider keys held in the gateway's vault — no credentials in application code; POLICY — rate limits, quotas, and the GA-25 smoothing rules enforced at the edge, uniformly; OBSERVABILITY — every call logged, costed, and traced at one choke point, GA-24's pipeline for free; and PROVIDER ABSTRACTION — apps call ONE endpoint; the gateway routes to OpenAI, Anthropic, Azure, or a fallback — GA-25's multi-provider resilience becomes configuration, not code. The architectural principle is the same as AG-06's MCP gateway: cross-cutting concerns belong at the boundary, not scattered through applications."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔐", "t": "Credential vault", "s": "Provider keys live in the gateway · apps hold one internal identity · rotation without deployments" },
+        { "e": "📏", "t": "Policy enforcement", "s": "Rate limits, quotas, PII redaction hooks, allowed-models lists — uniform across every app" },
+        { "e": "🔀", "t": "Provider abstraction", "s": "One endpoint in, many providers behind · failover and routing as config (GA-25)" }
+      ],
+      "narration": "The maturity ladder: stage one, apps call providers directly with env-var keys — fine for one prototype; stage two, a gateway for keys and logging — the moment a SECOND app exists; stage three, full policy and abstraction — when compliance, multi-provider, or cost governance arrive. Skipping straight to stage three is over-engineering; staying at stage one past two apps is debt. One gateway subtlety: streaming passthrough — SSE streams must flow through without buffering, or the gateway defeats PY-13's latency wins; verify before adopting. And note the symmetry with everything else in this curriculum: the gateway is a trust boundary — treat its config as AG-06 treated MCP configs — reviewed, versioned, minimal — because a misconfigured gateway is a misconfigured firewall."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · ENVIRONMENTS",
+      "title": "Prompts and models get environments **too**",
+      "sub": "Dev → UAT → Prod for the things that behave like code",
+      "narration": "The deployment insight of this whole stage: prompts, model versions, and agent configurations change BEHAVIOR — so they're code artifacts and deserve the same pipeline. ENVIRONMENTS: dev for iteration; a staging or UAT environment where the golden evals — GA-20's datasets, GA-21's gates, AG-18's agent evals — run against production-shaped data; production, changed only by promotion. PROMOTION AS A PIPELINE: a prompt change is a pull request — diffed, reviewed, evaluated in CI — and merges deploy to dev automatically; UAT runs the full eval suite and agent regression suites; production receives the artifact only on green. The evals ARE the tests: 'all golden cases pass, no metric regressed beyond threshold' is the deploy gate — the same discipline as code, because the risk is the same class: silent behavioral change shipped to users. ARTIFACT REGISTRY: prompts versioned with hashes — GA-21's provenance — models pinned by version, configurations in the repo; nothing production-critical lives only in a portal UI."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🔀", "t": "PR: prompt/model/config change", "s": "Diff + review · linked to eval expectations" },
+        { "e": "🧪", "t": "CI: eval gates", "s": "Golden set · faithfulness/recall thresholds · agent regression suite · security canaries (GA-22)" },
+        { "e": "🚀", "t": "Promote: dev → UAT → prod", "s": "Automated on green · each env pinned to its artifacts" },
+        { "e": "🧾", "t": "Registry", "s": "Versioned prompts (hashed) · pinned models · full provenance per release" }
+      ],
+      "narration": "What breaks without this: the prompt-edit-in-production story — someone improves wording in the provider's web UI at 4 p.m. Friday; quality shifts subtly over the weekend; Monday's debugging finds an unversioned change nobody can diff or roll back. The pipeline exists to make that impossible: production changes only via artifacts, artifacts only via evals, evals only via the golden set — each link already built in earlier reels. UAT deserves one more word: production-SHAPED data means real question distributions, synthetic where privacy demands — GA-20's golden set, expanded continuously from production feedback — so the evals measure the world as it is, not the world as dev imagines it. And keep environments' configs IDENTICAL except the artifact versions — environment drift masquerading as prompt regressions wastes more debugging hours than almost anything else in this space."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · PINNING",
+      "title": "Pin everything: **'latest' is a behavior you didn't choose**",
+      "sub": "Model versions as locked dependencies",
+      "narration": "Model providers update behavior under the SAME model name — a quiet retrain, a safety patch, a routing change — and your system, unpinned, absorbs whatever arrives. GA-21 called this silent drift; deployment is where you defeat it: PIN model versions — date-stamped or versioned identifiers where the provider offers them; PIN prompts by content hash; PIN the full configuration — temperatures, tool lists, system prompts — in versioned artifacts. The update PROCESS is then deliberate: a new model version arrives as a candidate; the eval pipeline runs — golden set, agent regressions, canaries; promotion happens on green; rollback is instant because the previous artifact is intact. The un-pinned alternative — floating versions — trades all of this for zero maintenance, and pays with surprise: behavior changes you can't attribute, regressions you can't reproduce, improvements you can't keep. Pinning converts model updates from WEATHER into DECISIONS — reviewed, tested, reversible."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "🎲", "t": "Floating versions", "s": "\"gpt-x\" always latest · zero maintenance · silent behavior changes · un-reproducible incidents", "win": false },
+        { "e": "📌", "t": "Pinned + tested promotion", "s": "Versioned artifacts · eval-gated updates · instant rollback · incidents reproducible by hash", "win": true }
+      ],
+      "narration": "The incident story that convinces teams: a provider deprecates an old snapshot and auto-migrates traffic to a successor; answers shift — slightly worse citations, slightly different refusals; support tickets rise over two weeks; without pins and hashes, you're bisecting an invisible change across an unknown date. With pins: the eval diff catches the migration candidate at the gate; the incident never reaches users; the ticket count never moves. Two practical notes: snapshot availability — some providers retire old versions on schedules, so pinning requires a WATCH on provider deprecation notices — a calendar event, not a hope; and the hybrid lane — some teams pin production while letting staging float, catching provider drift early in the environment where it's cheap to observe. Pinning isn't fear of updates — it's making updates arrive as decisions with evidence attached."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · ROLLOUT",
+      "title": "Feature flags & staged rollouts: **small blast radii by design**",
+      "sub": "Canary percentages, instant kills, measured promotion",
+      "narration": "Even eval-gated changes can surprise production — the evals are a SAMPLE, reality is wider. Staged rollouts close the gap: FEATURE FLAGS wrap the new artifact — prompt v2, new model, new agent behavior — behind a runtime switch; rollout is a PERCENTAGE — five percent of traffic sees the new version, the control keeps the rest — and the metrics decide promotion: quality metrics from GA-24's shadow evals, cost per request, latency, error rates — all sliced by version, compared against control. Promotion is automatic on green thresholds, HALTED on red — and the kill switch is instant: set the flag to zero percent and the old behavior returns in seconds, no redeploy. Rollback COMPLETES the story: previous artifacts stay live-ready — the last-known-good is one flag flip away, not one emergency deploy away."
+    },
+    {
+      "type": "loop",
+      "chapter": 3,
+      "steps": [
+        { "e": "🚩", "t": "Flag off", "s": "New artifact deployed dark · zero traffic · shadow-run if useful" },
+        { "e": "🐤", "t": "Canary 5%", "s": "Metrics sliced by version vs control · guardrail trips watched" },
+        { "e": "📈", "t": "Promote 25→50→100%", "s": "Each step gated on thresholds · automatic halt on red" },
+        { "e": "⏪", "t": "Kill = flag to 0%", "s": "Last-known-good serves instantly · incident, not outage" }
+      ],
+      "narration": "The cultural shift this enables: deploys stop being events and become ROUTINES — because every change is reversible in seconds and observed continuously, the fear that makes teams batch changes into risky releases disappears; smaller, safer, more frequent. Two design notes. Flag granularity: version flags at the REQUEST level — not per server — so percentages are exact and kills are global in the instant they're flipped; per-server flags straggle and leak. And measure the CANARY honestly: five percent of traffic for an hour may see no rare-but-severe cases — the long tail needs either longer canaries or shadow evaluation of the new artifact against real traffic before any users see it — the rollout ladder and shadow evals compose into defense in depth. This reel completes the production story: gateway at the edge, environments in the middle, pins and flags at the core — deploy like prompts are code, because they are."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-17",
+      "title": "Deployed safely. Now: how much should it act on its own?",
+      "next": "Reel 64 · Control Design — approval gates, autonomy levels, kill switches"
+    }
+  ],
+  "recap": [
+    "AI gateways centralize auth, policy, observability, and provider abstraction — cross-cutting concerns at the boundary, config as reviewed code",
+    "Prompts/models/configs are artifacts: PR → eval-gated CI → dev/UAT/prod promotion, with versioned registries and environment parity",
+    "Pin everything by version/hash — updates become tested, reversible decisions; staged rollouts with feature flags and instant kills keep blast radii small"
+  ],
+  "quiz": [
+    {
+      "q": "Why do prompts deserve the same pipeline as code?",
+      "opts": [
+        "They use the same editors",
+        "They change behavior — so they carry the same risk class as code changes: silent behavioral regressions shipped to users",
+        "Providers require it",
+        "It's faster"
+      ],
+      "a": 1,
+      "why": "The risk defines the discipline: anything that changes user-visible behavior needs review, eval gates, and rollback — regardless of file extension."
+    },
+    {
+      "q": "What does pinning model versions buy that floating versions can't?",
+      "opts": [
+        "Lower prices",
+        "Reproducibility and eval-gated updates: incidents attributable by hash, updates tested before promotion, rollback instant",
+        "Faster responses",
+        "More features"
+      ],
+      "a": 1,
+      "why": "Floating versions absorb provider changes as uncontrolled variables; pins convert them into decisions with evidence and reversibility."
+    },
+    {
+      "q": "Why should feature flags operate per-request rather than per-server?",
+      "opts": [
+        "Servers are slower",
+        "Exact percentages and instant global kills — per-server flags straggle during rollouts and leak during emergencies",
+        "Requests are cheaper",
+        "Load balancers require it"
+      ],
+      "a": 1,
+      "why": "The kill switch is only real if flipping it changes ALL traffic in the same instant — per-request routing makes that true."
+    }
+  ],
+  "code": {
+    "title": "Promotion pipeline definition (the whole reel as YAML)",
+    "body": "# prompt v42 change → this pipeline runs\npipeline:\n  pr:\n    gates: [diff_review, linked_eval_expectation]\n  ci:\n    evals:\n      golden_set: { dataset: golden/v7, min_hit_rate: 0.92 }\n      faithfulness: { min: 0.90 }\n      agent_regression: { suite: agents/v3, allow_fail: 0 }\n      security_canaries: { jailbreak_set: redteam/v2, contain: 100% }\n  promote:\n    dev:   automatic_on_ci_green\n    uat:   automatic · shadow traffic 24h · compare vs prod\n    prod:  flag_canary [5%, 25%, 50%, 100%]\n           each_step_gated: [quality_delta < 2pts, cost_delta < 10%, errors < baseline]\n           halt_on_red: true\n  rollback: flag_to 0% + artifact v41 hot\n\n# Everything versioned: prompts by hash, models by snapshot,\n# configs in repo. 'Latest' appears nowhere.",
+    "annot": [
+      "The security canary gate catches jailbreak regressions a golden set won't — red-team suites as deploy requirements",
+      "Shadow traffic in UAT: new artifact serves ZERO users but is SCORED on real-shaped traffic before the canary",
+      "Rollback needs no deploy — last-known-good stays warm until the new version proves itself"
+    ]
+  },
+  "notes": "# Deployment\n\n## AI gateways\n- One front door: auth vault, rate limits/quotas, observability, provider abstraction + failover (APIM, LiteLLM, Portkey).\n- Config = reviewed code; verify streaming passthrough.\n\n## Environments & promotion\n- Prompts/models/configs are artifacts: PR → CI eval gates → dev/UAT/prod.\n- Registry with hashes; env parity except artifact versions; UAT on production-shaped data.\n\n## Version pinning\n- Pin model snapshots, prompt hashes, full config. Updates = eval-gated promotions.\n- Watch provider deprecation schedules; staging may float to catch drift early.\n\n## Feature flags & rollout\n- Per-request flags, canary 5→25→50→100 with metric gates, instant global kill.\n- Deploys become routine: small, reversible, observed."
+}

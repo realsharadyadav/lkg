@@ -1,0 +1,146 @@
+{
+  "id": "GA-25",
+  "num": 62,
+  "track": "genai",
+  "stage": "8. Production + Security",
+  "topic": "Performance & Cost",
+  "hook": "The same answer can cost 10× more or arrive 5× slower depending on engineering. **Caching, routing, streaming, fallbacks** — the optimization stack, honestly prioritized.",
+  "chapters": [
+    "Caching layers",
+    "Model routing",
+    "Latency & resilience",
+    "Quotas & throughput"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · CACHING",
+      "title": "Three caches, three wins: **prompt, response, semantic**",
+      "sub": "The highest-ROI optimizations in the whole stack",
+      "narration": "Caching is the first lever because it's pure win — same answers, less spend, less latency. PROMPT CACHING: many providers cache the PREFIX of your request — system prompt plus tool schemas, which are identical across calls; subsequent calls bill the cache read at a fraction of full price. Exploit it: put static content first, dynamic content LAST — reorder your prompt assembly so nothing variable appears early, or you bust the cache on every call. RESPONSE CACHING: exact-match cache — same question, same answer settings → serve the stored response; perfect for FAQ traffic, near-zero cost, and with GA-17's tenant-scoping rule for keys. SEMANTIC CACHING: the fuzzy version — embed the question, serve cached answers for near-duplicates above a similarity threshold — 'what's the refund policy' in twelve phrasings, one generation. Threshold discipline from GA-17: high — 0.95-plus — or wrong answers get served fast."
+    },
+    {
+      "type": "compare",
+      "chapter": 0,
+      "cards": [
+        { "e": "🧱", "t": "Prompt cache", "s": "Provider-side prefix reuse · static-first assembly · fractions of full price", "win": true },
+        { "e": "🎯", "t": "Response cache", "s": "Exact match → instant · FAQ goldmine · tenant-scoped keys", "win": true },
+        { "e": "🧠", "t": "Semantic cache", "s": "Near-duplicate questions → cached answer · high threshold · QA the hits", "win": true }
+      ],
+      "narration": "Composition order matters: check response cache first — exact match is free and instant; then semantic — paraphrase coverage; then the live call, whose result gets stored in both. Cache INVALIDATION deserves a policy: prompt-version changes must version the cache keys, or old-prompt answers leak into new-prompt traffic; TTLs on semantic entries, because cached answers age — a 'refund policy' answer from six months ago is a liability. And measure what GA-24 promised: cache hit-rate and cost-per-request on one dashboard — a healthy system's hit-rate line tells you your traffic's repetitiveness, which in turn tells you how much MORE caching could buy. One caution: never cache ERROR paths or abstentions as successes — the cache key must include enough of the request's context that a 'not found' today doesn't become 'not found' forever."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · ROUTING",
+      "title": "Model routing: **cheap first, strong when needed**",
+      "sub": "Not every question deserves your best model",
+      "narration": "The insight: question difficulty varies wildly, but teams historically pay top-model prices for ALL of it. Routing sends each request to the cheapest model that can handle it: a classifier — or cascade — triages: simple FAQ → small model; complex reasoning → flagship. The cascade pattern: try the cheap model with a confidence check; if its self-assessed confidence — or a verifier pass — falls short, escalate to the stronger model. Savings of fifty to eighty percent are routine, because MOST traffic is easy. The failure mode to engineer: misrouted hard questions getting cheap-model answers with confident delivery — so the escalation check must be EXTERNAL — verified, not self-reported — and quality monitoring from GA-24 slices per route, proving the cheap lane isn't quietly degrading. Model routing composes with prompt caching — smaller models, shorter prompts, cached prefixes — the savings multiply."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🔀", "t": "Triage", "s": "Classifier or rules: length, topic, sensitivity → route" },
+        { "e": "💸", "t": "Cheap lane", "s": "Small/fast model · prompt cache · full guardrails" },
+        { "e": "✅", "t": "Verify or escalate", "s": "External check: verifier pass or golden-sample score · below bar → flagship lane" },
+        { "e": "🏆", "t": "Strong lane", "s": "Flagship model · only the traffic that earns it" }
+      ],
+      "narration": "Three design decisions define a routing system. WHO triages: a fine-grained classifier, an LLM self-rating, or simple rules — start with rules — 'questions under twenty words about pricing → cheap lane' — and graduate to learned triage only when the logs show rules misrouting. WHAT verifies: the escalation check can be a second cheap model grading the first, a retrieval check — 'did the cheap answer cite the same chunks as the strong lane would?' — or periodic golden-lane sampling — score the cheap lane against known answers and watch the delta. And WHICH questions never route cheap: anything safety-adjacent, anything with side effects, anything the compliance contract names — some traffic pays full price BY POLICY. Route the rest; the invoice shrinks without the quality bar moving."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · LATENCY",
+      "title": "Latency: streaming, parallelism, **and smaller contexts**",
+      "sub": "Time-to-first-token is a product feature",
+      "narration": "Users judge responsiveness by TIME TO FIRST TOKEN — half a second of streaming beats five seconds of buffered waiting, even when total time is identical. Streaming is table stakes — PY-12's SSE consumption, PY-13's SSE emission — the loop from LLM to browser stays open. Parallelism: independent calls run together — retrieval and guardrail prechecks, multiple tool calls — asyncio.gather, PY-10; serialize only true dependencies. Smaller contexts: latency scales with context length — trim system prompts, cap retrieved chunks, AG-13's budget discipline pays in milliseconds too. And batch where the user isn't waiting: overnight embedding jobs, background summarization — cheap models, batch APIs, off-peak rates. The composite: a request streams its first token fast, fans out its independent work in parallel, and carries the smallest context that answers — that system FEELS instant even when the total compute is unchanged."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🌊", "t": "Streaming everywhere", "s": "LLM → server → browser, all SSE (PY-12/13) · first token in <1s" },
+        { "e": "⚡", "t": "Parallel independent work", "s": "gather() for independent calls · only true dependencies serialize" },
+        { "e": "✂️", "t": "Shrink the context", "s": "Latency scales with tokens · trimmed prompts, capped retrieval, budget discipline" }
+      ],
+      "narration": "RESILIENCE belongs in the same chapter because latency without fallback is fragility. Multi-provider fallback: the pipeline holds a primary provider and a secondary; on 429s or 5xxs beyond retry budgets — PY-12's tenacity — traffic fails over, possibly to a degraded mode — 'answers may be slower, we're on backup capacity'. Response SHAPE stays constant across providers — the exit contract your users depend on regardless of who's answering today. Idempotent retries complete the picture: a retried request must not double-charge or double-send — AG-02's idempotency rule at the infrastructure layer, client-request IDs deduplicating replays. A system that degrades gracefully — slower, cheaper, still correct — outlasts any system that's fast until the day it isn't."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · QUOTAS",
+      "title": "Quotas & throughput: **capacity is a design input**",
+      "sub": "PTU vs pay-as-you-go, rate limits, and planning",
+      "narration": "Providers sell capacity two ways: pay-as-you-go — per-token pricing with rate limits — and provisioned throughput — PTU — reserved capacity at fixed cost, predictable latency, enterprise-grade. The decision math: PTU wins when utilization is HIGH and steady — your baseline traffic — reserved capacity costs less than equivalent on-demand and removes rate-limit surprises; pay-as-you-go wins for spiky, uncertain, or growing workloads — you pay for what you use and scale without commitments. Most mature systems blend: PTU for the baseline, on-demand for the peaks. Engineering around rate limits: client-side token buckets — smooth your own traffic rather than hitting provider walls — with queue-and-degrade patterns: when limits tighten, non-urgent work queues, urgent work passes, and the product degrades by FEATURE, not by crashing. And plan capacity from observability: GA-24's dashboards give the utilization curves that make the PTU-versus-on-demand math honest."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "📈", "t": "Pay-as-you-go", "s": "Spiky/growing traffic · zero commitment · rate limits bite at peaks · cost = usage", "win": true },
+        { "e": "📦", "t": "Provisioned (PTU)", "s": "High steady baseline · predictable latency/cost · reserved capacity · commitment risk", "win": true },
+        { "e": "🥤", "t": "Blend + smoothing", "s": "PTU the baseline, on-demand the peaks · client token buckets · queue-and-degrade under pressure", "win": true }
+      ],
+      "narration": "The queue-and-degrade pattern deserves the last word: under capacity pressure, the system sheds load INTELLIGENTLY — background jobs pause, heavy features throttle, core answers keep flowing — the difference between a slow afternoon and an outage report. Design the degradation ladder in advance — which features pause first, second, third — because deciding during an incident means deciding badly. And rehearse: load-test against your own limits quarterly — rate limits, PTU ceilings, cache behavior under pressure — capacity surprises are self-inflicted when the dashboards existed to predict them. This reel's stack — caches, routing, streaming, fallbacks, quotas — compounds: each lever multiplies the others, and together they turn a workable system into an efficient one. Stage 8 closes with deployment: putting it all in an environment that promotes safely."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-26",
+      "title": "Fast and cheap, observed and controlled. Now ship it safely.",
+      "next": "Reel 63 · Deployment — gateways, environments, pinning, rollouts"
+    }
+  ],
+  "recap": [
+    "Three caches compound: static-first prompts for provider cache reuse, exact response cache, high-threshold semantic cache — with versioned keys and TTLs",
+    "Model routing sends easy traffic to cheap lanes with EXTERNAL verification and policy exceptions; PTU covers the steady baseline, on-demand the peaks",
+    "Latency = streaming + parallelism + small contexts; resilience = multi-provider fallback with constant response shapes and idempotent retries; capacity pressure sheds load by design"
+  ],
+  "quiz": [
+    {
+      "q": "Why must prompt caching dictate prompt ASSEMBLY order?",
+      "opts": [
+        "Models read faster that way",
+        "Provider prefix caches only the static beginning — variable content placed early busts the cache on every call",
+        "It's required by JSON",
+        "It reduces tokens"
+      ],
+      "a": 1,
+      "why": "The cache is positional: static system prompts and schemas first, dynamic user content last — assembly order is a billing decision."
+    },
+    {
+      "q": "Why must routing's escalation check be EXTERNAL rather than the cheap model's self-assessment?",
+      "opts": [
+        "Self-assessment is slow",
+        "A model that answers wrongly usually believes it's right — external verification (verifier pass, golden sampling) catches what self-report can't",
+        "APIs forbid self-rating",
+        "It's cheaper"
+      ],
+      "a": 1,
+      "why": "Confidence is not correctness: the failure mode — confident wrong answers in the cheap lane — requires an independent check to detect."
+    },
+    {
+      "q": "When does provisioned throughput (PTU) beat pay-as-you-go?",
+      "opts": [
+        "Always",
+        "High, steady baseline utilization — reserved capacity costs less than equivalent on-demand and removes rate-limit surprises; spiky traffic stays on-demand",
+        "Never",
+        "Only for demos"
+      ],
+      "a": 1,
+      "why": "PTU is a capacity commitment — it pays off exactly where demand is predictable; blend: PTU the baseline, on-demand the peaks."
+    }
+  ],
+  "code": {
+    "title": "The request pipeline with every lever in place",
+    "body": "async def handle(q, user):\n    key = cache_key(q, user.tenant, prompt_version())\n    if hit := response_cache.get(key):            # exact\n        return hit\n    if near := semantic_cache.search(embed(q), 0.95):\n        return near                               # paraphrase\n\n    route = triage(q)                             # cheap | strong\n    try:\n        async with token_bucket(user):            # smoothing\n            stream = route.model.stream(assemble_static_first(q))\n            return await emit_sse(stream,         # first token <1s\n                                  on_complete=lambda r: (\n                                      response_cache.set(key, r),\n                                      semantic_cache.add(q, r)))\n    except ProviderUnavailable:\n        return await fallback_provider.handle(q)  # same shape, degraded note",
+    "annot": [
+      "Cache reads precede everything; writes happen on completion — the pattern is read-shortcut, write-through",
+      "token_bucket smooths per-user traffic — client-side politeness beats provider rate-limit errors",
+      "fallback keeps the response CONTRACT constant — users see 'slower today', never a different shape"
+    ]
+  },
+  "notes": "# Performance & Cost\n\n## Caching\n- Prompt cache: static-first assembly (positional).\n- Response cache: exact match, tenant-scoped keys.\n- Semantic cache: high threshold (≥0.95), TTLs, versioned keys, never cache errors/abstentions.\n\n## Model routing\n- Cheap lane first, EXTERNAL verification, escalate on miss.\n- Policy exceptions: safety/side-effects/compliance stay flagship.\n- Quality monitored per route (GA-24).\n\n## Latency & resilience\n- Streaming everywhere · gather() independent calls · smallest sufficient context.\n- Multi-provider fallback, constant response shapes, idempotent retries.\n\n## Quotas & throughput\n- PTU for steady baselines, on-demand for peaks; token buckets; queue-and-degrade ladder designed in advance; load-test quarterly."
+}

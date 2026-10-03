@@ -1,0 +1,152 @@
+{
+  "id": "PY-23",
+  "num": 68,
+  "track": "python",
+  "stage": "8. Production + Security",
+  "topic": "Packaging & Deployment",
+  "hook": "The FastAPI service from PY-13 needs a home: **Docker images, Azure pipelines, and secrets that never touch a config file.** The final mile of Stage 8.",
+  "chapters": [
+    "Dockerizing Python",
+    "CI/CD in Azure DevOps",
+    "Azure deploy targets",
+    "Key Vault & managed identity"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · DOCKER",
+      "title": "Slim, multi-stage, reproducible: **the container contract**",
+      "sub": "Small images, pinned bases, non-root, health-checked",
+      "narration": "The Dockerfile that ships to production, discipline by discipline. MULTI-STAGE: a build stage with compilers and dev dependencies produces wheels; the final stage copies ONLY the runtime artifacts — images shrink from gigabytes to hundreds of megabytes, and attack surface shrinks with every dropped package. SLIM BASES: python:3.12-slim or distroless for the truly brave — 'latest' tags are forbidden; PIN the base image by digest — the same pinning philosophy as GA-26's models. NON-ROOT: create a user, drop privileges — a container running as root that escapes is a host compromise; as UID 10001, it's an annoyance. REPRODUCIBLE INSTALLS: requirements locked — uv.lock or pip-tools output — installed with no cache. And RUNTIME HYGIENE: a HEALTHCHECK endpoint — FastAPI's /healthz — so orchestrators know the truth; .dockerignore excluding .git, tests, and anything secrets-shaped — the image IS an artifact that gets stored, scanned, and possibly leaked — treat its contents as published."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Multi-stage Dockerfile for the FastAPI service",
+      "lang": "dockerfile",
+      "body": "# ---- build stage: compilers & dev deps live HERE only ----------\nFROM python:3.12-slim AS build\nWORKDIR /app\nRUN pip install --no-cache-dir uv\nCOPY pyproject.toml uv.lock ./\nRUN uv sync --frozen --no-dev          # locked & reproducible\n\n# ---- runtime stage: the smallest possible surface ----------------\nFROM python:3.12-slim\nWORKDIR /app\nRUN groupadd -r app && useradd -r -g app app\nCOPY --from=build /app/.venv ./.venv\nCOPY ./app ./app\nUSER app                                # never root\nEXPOSE 8000\nHEALTHCHECK --interval=30s --timeout=3s \\\n  CMD python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/healthz')\"\nCMD [\"./.venv/bin/uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]",
+      "annot": [
+        "uv.lock --frozen: the same dependency tree in every build, every environment — the model-pinning discipline for packages",
+        "The venv COPYs over, compilers don't: the runtime image has no gcc, no build headers — far fewer CVEs",
+        "HEALTHCHECK: orchestrators route on truth; without it, a hung service keeps receiving traffic"
+      ],
+      "narration": "Why each line earns its place: the lockfile makes builds reproducible — 'works on my machine' dies when the dependency graph is frozen; the multi-stage split means the image that RUNS contains no toolchain — scanners find less, attackers find less; the non-root user converts container escapes from catastrophe to inconvenience; and the healthcheck closes the loop with the platform — Azure Container Apps, Kubernetes, whatever — so traffic follows liveness, not hope. Two image-level habits complete it: SCAN in CI — Trivy or Grype against the image, failures block promotion, the same gate pattern as everything else; and LABEL — source repo, commit SHA, build time as OCI labels — when an incident involves an image, 'which code is running' must be a label read, not an archaeology dig. Small, pinned, non-root, health-checked, scanned, labeled — six adjectives that distinguish a container from a tarball."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · PIPELINES",
+      "title": "Azure DevOps pipelines: **the same gates, now automated**",
+      "sub": "Build → test → scan → deploy, with quality as a gate",
+      "narration": "The pipeline embodies the whole curriculum's discipline in YAML. STAGES: BUILD — install with frozen lockfile, run ruff + black from PY-22's pre-commit set, compile-check, build the Docker image, tag with the commit SHA. TEST — pytest with PY-22's suites: unit tests with Fakes, and — the LKG signature — the eval gates: golden-set runs against the service, faithfulness thresholds, the agent regression suite from AG-18; failures here stop the line, exactly GA-26's promotion logic. SCAN — image vulnerability scan, dependency audit, secret scanning on the repo — nothing deploys with known-critical CVEs or a leaked key. DEPLOY — push the image to a registry — Azure Container Registry — then deploy via the pipeline to the target environment, with approvals between environments — the human checkpoint as a pipeline gate: dev deploys automatically, production requires an approver. ARTIFACTS AND TRACES: every run links commit → image digest → deployment — full provenance, GA-21's requirement, for the application layer."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🔨", "t": "Build", "s": "Locked deps · lint/format · image build · SHA tags" },
+        { "e": "🧪", "t": "Test", "s": "pytest + Fakes · EVAL GATES: golden set, faithfulness, agent regressions" },
+        { "e": "🔒", "t": "Scan", "s": "Image CVEs · dependency audit · secret scanning" },
+        { "e": "🚀", "t": "Deploy", "s": "ACR push · env promotion with approvals · provenance: commit → digest → deploy" }
+      ],
+      "narration": "The eval-gates-in-CI step is the one that makes an AI application pipeline DIFFERENT from a classical one: the test stage doesn't only assert code correctness — it asserts BEHAVIOR against golden datasets, exactly GA-26's environment promotion, running on every commit. Notice the symmetry the whole curriculum keeps drawing: prompts versioned like code, models pinned like dependencies, quality gated like tests, deployments promoted like releases — because AI systems are software systems whose behavior happens to be probabilistic; the engineering response is MORE discipline, not less. Pipeline hygiene: keep stages FAST — the build-and-unit stage under ten minutes, because slow gates get bypassed — push heavy eval suites to a scheduled nightly with PR-blocking smoke subsets, GA-21's fast-gate pattern one last time. And everything as CODE — azure-pipelines.yaml in the repo, reviewed, versioned, diffed."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · TARGETS",
+      "title": "Where it runs: App Service, Container Apps, Functions",
+      "sub": "Matching the workload to the Azure compute shape",
+      "narration": "Three Azure homes for the service, chosen by shape. APP SERVICE — the managed web platform: simplest path for a stateless FastAPI service — managed TLS, scaling, deployment slots for blue-green — right when you want PaaS convenience and your workload is a conventional web API. AZURE CONTAINER APPS — the container-native middle: run the exact Docker image with scale-to-zero, event-driven scaling from queues — AG-19's queue-consuming agents fit here perfectly: jobs arrive, containers spin up, scale away when quiet — you pay for use, and the durable-agent pattern gets a native home. AZURE FUNCTIONS — the function shape: event-triggered pieces — a webhook that kicks an agent run, a timer that launches the nightly eval suite — cheap, serverless, composable as glue around the bigger services. The selection logic: stateless API with steady traffic → App Service; queue-driven, spiky, container-shaped workloads → Container Apps; event glue and small triggers → Functions. Real systems mix: the API on App Service, the agent workers on Container Apps, the triggers on Functions — each piece on the cheapest shape that fits."
+    },
+    {
+      "type": "compare",
+      "chapter": 2,
+      "cards": [
+        { "e": "🌐", "t": "App Service", "s": "Managed PaaS · TLS + slots · steady stateless APIs · least container ceremony", "win": true },
+        { "e": "📦", "t": "Container Apps", "s": "Your exact image · scale-to-zero · queue/event-driven agents · pay per use", "win": true },
+        { "e": "⚡", "t": "Functions", "s": "Event glue · webhooks/timers · smallest triggers around the bigger pieces", "win": true }
+      ],
+      "narration": "Two cross-cutting Azure practices whatever the target. Deployment slots: stage a release alongside production, swap when ready, swap BACK in ninety seconds if quality gates trip post-deploy — GA-26's feature-flag rollout, implemented by the platform; pair slot swaps with the shadow-eval discipline — run the golden set against the slot BEFORE the swap, and the promotion becomes boring, which is the goal. And scaling honesty: autoscaling reacts to load, not to cost — GA-24's per-feature cost dashboards tell you whether the scaling you're doing is profitable; a feature whose revenue doesn't cover its autoscale bill is a pricing conversation, not an infrastructure one. The deployment options are the easy part — the curriculum's real weight sits in everything the pipeline gates before a single container starts: the tests, the evals, the scans, the pins."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · SECRETS",
+      "title": "Key Vault & managed identity: **secrets that were never anywhere**",
+      "sub": "The end of connection strings in environment variables",
+      "narration": "The final discipline, and the most absolute: secrets never appear in code, config files, pipeline variables, or environment dumps. AZURE KEY VAULT: the store — API keys, database passwords, provider tokens — with access POLICIES controlling which identities may read which secrets, rotation history built in, and audit of every access. MANAGED IDENTITY: the mechanism that makes it clean — the Azure resource — your App Service, your Container App — gets an identity that IS an Azure AD principal; the application asks the platform for a token, the platform vouches for the resource, Key Vault releases the secret; NO credential is ever stored in the app — nothing to leak from a config, nothing to rotate in a hurry, nothing appearing in a support-bundle screenshot. The application code reads: 'get secret X from vault Y via my identity' — DefaultAzureCredential handles the dance. Rotation becomes a Key Vault operation, not a deployment: rotate the secret, the app picks up the new value on next fetch — the credential-lifecycle discipline from AG-07, implemented by the platform."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "The application side: identity-based secret access",
+      "lang": "python",
+      "body": "from azure.identity import DefaultAzureCredential\nfrom azure.keyvault.secrets import SecretClient\n\n# The app has NO secret in its config — only WHERE to ask.\ncredential = DefaultAzureCredential()          # the platform's identity\nclient = SecretClient(vault_url=VAULT_URL, credential=credential)\n\nasync def get_db_password() -> str:\n    return client.get_secret(\"db-password\").value\n\n# Locally: DefaultAzureCredential falls back to your az CLI login.\n# In Azure: the resource's managed identity vouches automatically.\n# The pipeline: variable groups bound to Key Vault — same rule.\n# Nowhere: a secret in a file, an env var dump, or a pipeline log.",
+      "annot": [
+        "DefaultAzureCredential chains local dev (az login) → managed identity (Azure) — one code path, zero config forks",
+        "Variable groups bound to Key Vault bring the SAME discipline to pipeline variables — the leak surface shrinks everywhere at once",
+        "get_secret at runtime + short TTL caching: fresh secrets without a restart, rotation without a deployment"
+      ],
+      "narration": "What changes culturally when this is real: the 'where are the credentials' question disappears from onboarding, incident response, and audits — because the answer is a Key Vault access policy, reviewable and revocable in one place; the rotation drill — AG-07's playbook — becomes a five-minute platform operation instead of a cross-team scramble; and the whole class of 'secret committed to git' incidents — still among the most common breaches anywhere — becomes structurally impossible for the secrets that matter most. This closes Stage 8 the way the stage opened: with boundaries. The LLM traffic got a gateway; the agent actions got gates; the egress got allow-lists; and now the application's own credentials live in a vault, fetched by identity, never written down. Theory complete — Stages 9 and 10 turn it all into projects."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "STAGE 8 COMPLETE",
+      "title": "Security, observability, performance, deployment, engineering — production-grade.",
+      "next": "Reel 69 · Stage 9: Hands-on Projects — build the real things"
+    }
+  ],
+  "recap": [
+    "Docker done right: multi-stage, slim pinned bases, locked deps, non-root, health-checked, scanned, labeled",
+    "Pipelines gate quality, not just code: eval suites block promotion; App Service / Container Apps / Functions matched to workload shape",
+    "Key Vault + managed identity: secrets fetched by platform vouching — never in code, config, or pipeline variables; rotation without deployment"
+  ],
+  "quiz": [
+    {
+      "q": "What does multi-stage building buy beyond a smaller image?",
+      "opts": [
+        "Faster laptops",
+        "The runtime image carries no toolchain — fewer CVEs, smaller attack surface, faster scans — not just fewer megabytes",
+        "Better caching only",
+        "It's required by Azure"
+      ],
+      "a": 1,
+      "why": "Every build-time package in the final image is a vulnerability-report line and an attacker opportunity — the split removes them by construction."
+    },
+    {
+      "q": "How do eval gates change a CI pipeline for AI applications?",
+      "opts": [
+        "They don't belong in CI",
+        "Behavior becomes a promotion gate — golden sets and agent regressions block deployment exactly like failing unit tests, on every commit",
+        "They only run nightly",
+        "They replace unit tests"
+      ],
+      "a": 1,
+      "why": "Code correctness alone can't gate a probabilistic system; the pipeline asserts BEHAVIOR the same disciplined way — smoke on PRs, full suites on schedule."
+    },
+    {
+      "q": "What makes managed identity fundamentally different from environment-variable secrets?",
+      "opts": [
+        "It's newer",
+        "No credential is ever stored in the app at all — the platform vouches for the resource, so there's nothing to leak, commit, or rotate in code",
+        "It's faster",
+        "It's cheaper"
+      ],
+      "a": 1,
+      "why": "The secret's lifecycle — storage, access, rotation, audit — moves entirely to the platform; the application holds nothing worth stealing."
+    }
+  ],
+  "code": {
+    "title": "The pipeline definition — the whole reel in YAML",
+    "body": "# azure-pipelines.yml — build, gate, scan, deploy\ntrigger: [main]\n\nstages:\n  - stage: Build\n    jobs:\n      - script: |\n          pip install uv && uv sync --frozen\n          uv run ruff check --fix . && uv run black --check .\n          uv run pytest tests/unit -q          # PY-22 suites + Fakes\n        displayName: lint + unit tests\n      - script: docker build -t $(acr)/app:$(Build.SourceVersion) .\n        displayName: build image (SHA-tagged)\n\n  - stage: EvalGate                 # the AI difference\n    dependsOn: Build\n    jobs:\n      - script: uv run pytest tests/evals -q   # golden set, faithfulness,\n        displayName: eval gates                # agent regressions (AG-18)\n\n  - stage: Scan\n    dependsOn: EvalGate\n    jobs:\n      - script: trivy image --severity HIGH,CRITICAL --exit-code 1 $(acr)/app:$(Build.SourceVersion)\n        displayName: image CVE gate\n\n  - stage: DeployProd\n    dependsOn: Scan\n    condition: succeeded()\n    jobs:\n      - deployment: swap\n        environment: production              # approval gate here\n        strategy: runOnce:\n          deploy:\n            steps:\n              - script: az webapp deployment slot swap -g $(rg) -n $(app) --slot staging --target-slot production",
+    "annot": [
+      "SHA tagging: the running image's identity is its git commit — provenance by construction (GA-21 discipline)",
+      "EvalGate between build and scan: behavior is gated BEFORE the image is even security-scanned for deployment",
+      "Slot swap with rollback: the ninety-second reverse gear — if post-deploy quality trips, swap back"
+    ]
+  },
+  "notes": "# Packaging & Deployment\n\n## Docker\n- Multi-stage (no toolchain in runtime) · slim base PINNED by digest · locked deps (uv.lock --frozen) · non-root · HEALTHCHECK · scan + OCI labels.\n\n## Azure DevOps pipelines\n- Build → EvalGate (golden set, faithfulness, agent regressions) → Scan (image CVEs, deps, secrets) → Deploy with env approvals.\n- Fast PR gates + nightly full suites; everything as YAML in the repo.\n\n## Azure targets\n- App Service: steady stateless APIs. Container Apps: queue/event-driven agents, scale-to-zero. Functions: event glue.\n- Slots for blue-green + shadow eval before swap.\n\n## Key Vault & managed identity\n- Secrets fetched via DefaultAzureCredential — no credential in code/config/pipeline.\n- Rotation = Key Vault operation; access policies reviewable; audit of every read."
+}

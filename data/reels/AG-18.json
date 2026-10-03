@@ -1,0 +1,149 @@
+{
+  "id": "AG-18",
+  "num": 65,
+  "track": "agentic",
+  "stage": "8. Production + Security",
+  "topic": "Agent Evals",
+  "hook": "Agent quality is more than the final answer: **did it take sensible steps, call the right tools, waste nothing?** Trajectory evaluation and the agent regression suite.",
+  "chapters": [
+    "Task success rate",
+    "Trajectory & tool-call evaluation",
+    "Simulated environments",
+    "Cost, latency & regression suites"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · SUCCESS",
+      "title": "Task success rate: the only metric users care about — **measured honestly**",
+      "sub": "End-to-end correctness, golden tasks, strict rubrics",
+      "narration": "For agents, the headline metric is end-to-end: did the task COMPLETE, and is the result CORRECT? Sounds simple; the honesty is in the definition. TASK COMPLETION: the agent declared done — but agents declare victory early, so completion claims get VERIFIED — the artifact exists, meets the spec, passes the checks — not just trusted. CORRECTNESS: graded against golden tasks — GA-20's datasets, now agent-shaped: 'research these five companies and produce a comparison table' with a rubric — must contain all five, comparison across the named dimensions, sources cited — rubric-graded, not vibe-graded, with the LLM-as-judge discipline from GA-21 — calibrated, bias-aware. And the hardening detail: include ADVERSARIAL golden tasks — tasks where the correct behavior is to REFUSE, ask for clarification, or escalate — success includes not-doing, measured, not assumed. Success rate over a versioned agent-task suite is the number that gates every promotion — GA-26's pipeline, with this as its load-bearing gate."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "✅", "t": "Verified completion", "s": "Done-means-checked: artifact exists, meets spec, passes mechanical checks — not the agent's self-report" },
+        { "e": "📏", "t": "Rubric-graded correctness", "s": "Golden agent-tasks with explicit rubrics · calibrated judge · adversarial cases where success = refusing" },
+        { "e": "🚪", "t": "Efficient success", "s": "Right answer via wasteful paths still costs 10× — success rate must pair with efficiency (ch.4)" }
+      ],
+      "narration": "Why 'efficient success' belongs in the same breath: an agent that succeeds by trying forty things teaches you nothing about whether it KNOWS what it's doing — and costs accordingly; two agents can share a 95 percent success rate while one spends three times the tokens and latency of the other. Score success as a DISTRIBUTION across task difficulty: easy, medium, hard buckets — 'easy 99, hard 61' is a completely different system from 'uniform 87' — the hard-bucket misses name the capability gaps to build next. And measure success PER DOMAIN: GA-17's control design grants autonomy per domain; the metric that justifies 'act' level for refunds is success ON REFUNDS across meaningful run counts — the trust flywheel runs on this number. Everything else in this reel decomposes HOW that success happens — and whether it's happening for the right reasons."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · TRAJECTORY",
+      "title": "Trajectory evaluation: **judging the journey, not just the arrival**",
+      "sub": "Were the steps sensible? Tool calls right?",
+      "narration": "Two agents reach the same correct answer: one researched efficiently, called three tools precisely; another flailed through eleven calls, got lucky. Same outcome, very different systems — TRAJECTORY evaluation is how you tell them apart. What to score: STEP SENSIBILITY — did each action follow from what was known? — judged by a trajectory-aware evaluator with the full trace; TOOL SELECTION — right tool for each sub-goal — AG-02's selection quality, measured; ARGUMENT ACCURACY — right parameters, validated shapes, no retry storms from malformed calls; and EFFICIENCY — steps taken versus a reference path, with over-call patterns — redundant fetches, repeated searches — flagged as their own failure class. The reference-path approach: golden tasks carry not just the answer but an EXPERT trajectory — the steps a strong human operator would take; trajectories are scored against it — not rigidly, alternate valid paths exist — but large deviations get explanation: was the detour justified by discovery, or confusion?"
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "Trajectory scoring: rubric per step class",
+      "lang": "python",
+      "body": "TRAJECTORY_RUBRIC = [\n    # (dimension, what good looks like, weight)\n    (\"tool_selection\", \"right tool for the sub-goal; no plausible-\"\n                       \"but-wrong picks (AG-02 boundaries)\", 0.30),\n    (\"arg_accuracy\",   \"validated args first try; retries only on \"\n                       \"transient errors\", 0.25),\n    (\"step_sense\",     \"each action follows from known state; no \"\n                       \"aimless exploration\", 0.25),\n    (\"efficiency\",     \"steps vs reference path; detours justified\", 0.20),\n]\n\ndef score_trajectory(trace, reference=None) -> dict:\n    steps = parse_steps(trace)\n    return {\n        \"tool_selection\": judge(steps, dim=\"tool_selection\"),\n        \"arg_accuracy\":   1 - malformed_ratio(steps),\n        \"step_sense\":     judge(steps, dim=\"step_sense\"),\n        \"efficiency\":     efficiency_ratio(steps, reference),\n        \"verdict\":        weighted(TRAJECTORY_RUBRIC),\n    }\n\n# A lucky-flail scores low here even with a correct final answer —\n# exactly the signal 'did it succeed for the right reasons?'.",
+      "annot": [
+        "Malformed-call ratio is mechanical — free, honest, and a direct AG-02 health signal",
+        "The judge dimensions get the GA-21 treatment: calibrated against human-graded trajectories, bias-audit scheduled",
+        "Reference paths are guides, not cages — justified detours (discoveries) score as competence, not deviation"
+      ],
+      "narration": "Why trajectory metrics pay: they're DIAGNOSTIC in a way outcome metrics aren't. Success rate drops — why? Trajectory scores decompose the failure: tool selection tanked after the tool-menu changed — AG-15's drift; argument accuracy degraded when the schema changed — a description-drift bug; efficiency collapsed — context mismanagement, AG-13's budgets biting. Each trajectory dimension maps to a specific fix — the same stage-localization philosophy as GA-21's RAG metrics, applied to agent behavior. And trajectories are your AUTONOMY-EVIDENCE: GA-17's promotion ladder asks for demonstrated competence — clean trajectories over many runs ARE that demonstration, reviewable by humans in ways aggregate scores aren't. Instrument traces first — GA-24's flight recorder — because every trajectory metric reads from traces; no traces, no trajectories."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · SIMULATION",
+      "title": "Simulated environments: **breaking things where it's free**",
+      "sub": "Safe sandboxes for agent testing",
+      "narration": "You cannot test a file-deleting agent against production files; you cannot train an infrastructure agent on real infrastructure. Simulated environments are the answer: sandboxes that MIRROR production shape without production stakes. The shapes: SNAPSHOT SANDBOXES — a copy of the real environment — a database snapshot, a file-system mirror, a mock of the internal APIs — refreshed on a schedule; agents act freely; damage is disposable. INTERACTION MOCKS — fake API servers that respond like the real ones — recorded real responses replayed, or generated — letting tool-heavy agents run full loops offline. ADVERSARIAL SIMULATIONS — environments seeded with GA-22's threat patterns — poisoned documents, failing services, permission edge cases — measuring not just CAN the agent succeed, but does it stay SAFE under pressure. The feedback loop: simulation failures become golden-set cases; every incident in production gets a simulated twin — the same conditions, replayable forever — so the fix is regression-protected from day one."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🪞", "t": "Shape mirrors, not scale", "s": "Simulations copy STRUCTURE — schemas, states, failure modes — a toy warehouse teaches the same lessons as the real one" },
+        { "e": "🎭", "t": "Adversarial seeding", "s": "Poisoned content, flaky tools, permission traps — safety under pressure is a measurable skill" },
+        { "e": "📼", "t": "Incident replays", "s": "Every production incident gets a simulated twin · fixes become permanent regression tests" }
+      ],
+      "narration": "Simulation fidelity is a trade to make deliberately: too-rosy sandboxes teach overconfidence — the agent never met a locked file, a rate limit, a corrupted document — so seed failure modes SYSTEMATICALLY: every simulated service should sometimes be slow, sometimes wrong, sometimes down, at configurable rates. And the AGENTS should know they're in simulation when that serves the test — evaluation harnesses need the agent's true behavior, not simulation-aware behavior. The economics complete the argument: simulated runs cost API tokens but zero incidents — a week of simulation traffic costs less than one production mishap, and produces the golden tasks that GA-20's entire methodology runs on. Simulation is where the eval suite lives; production evals — shadow traffic, canary analysis — then verify that simulation and reality still agree, closing the loop GA-26's UAT environment formalizes."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · EFFICIENCY",
+      "title": "Cost & latency per task: **efficiency as a first-class quality**",
+      "sub": "The metrics that keep autonomy affordable",
+      "narration": "Agents spend tokens the way engines spend fuel — measure per TASK, not per call: total tokens across all steps, wall-clock to completion, number of model calls, tool-call count — the full resource signature of a task. Why per-task: an agent that uses eight small calls may cost less than one giant context-stuffed call — per-call metrics hide that; and task efficiency is what BUDGETS are made of — GA-25's caps and GA-17's autonomy bounds get their numbers from these distributions. The efficiency-regression rule: an agent update that keeps success constant but doubles cost-per-task is a REGRESSION — same as a quality drop — and the promotion gates from GA-26 treat it as one; pin the efficiency profile like any behavioral property. Optimization informed by these numbers is targeted: the Pareto frontier of your golden tasks — which tasks cost most for their success — names where routing (GA-25), better tools, or decomposition work pays best."
+    },
+    {
+      "type": "arch",
+      "chapter": 3,
+      "layers": [
+        { "e": "🧪", "t": "Regression suite", "s": "Golden agent-tasks: success + trajectory + efficiency · run on every change" },
+        { "e": "🚦", "t": "Promotion gates", "s": "Success ≥ baseline · trajectory dims ≥ baseline · cost/task ≤ baseline + tolerance" },
+        { "e": "🌙", "t": "Nightly full run", "s": "Complete suite on latest artifacts · trends + drift alarm" },
+        { "e": "⏮️", "t": "Instant rollback", "s": "Red gate → last-known-good (GA-26) · behavior drift never persists overnight" }
+      ],
+      "narration": "The regression suite is where everything composes: GA-20's golden discipline provides the tasks; GA-21's judge calibration grades them; GA-24's traces feed the trajectory scoring; GA-26's pipeline gates promotions on it; GA-17's autonomy ladder trusts it. That's the mature posture: agent behavior is MEASURED like software quality — versioned expectations, continuous runs, gated promotion — because it drifts like software quality never did. And the suite's living-document practice: new incidents, new escalations, new user feedback — all become cases — the suite grows at its frontier, exactly where the system is weakest; a suite that only grows in comfortable areas measures yesterday's agent. Stage 8 closes its eval arc here; production engineering — the durable machinery of loops, queues, and budgets — comes next."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-19",
+      "title": "Measurement complete. Now the machinery that runs agents at 3 a.m.",
+      "next": "Reel 66 · Production Engineering — durable execution, queues, budgets"
+    }
+  ],
+  "recap": [
+    "Task success is verified completion against rubric-graded golden tasks — including adversarial cases where success means refusing — distributed by difficulty and domain",
+    "Trajectory evaluation decomposes HOW agents succeed: tool selection, argument accuracy, step sense, efficiency — each dimension maps to a specific fix",
+    "Simulated environments with seeded failures make breaking things free; efficiency metrics (cost/latency/calls per task) are promotion-gated regressions"
+  ],
+  "quiz": [
+    {
+      "q": "Why isn't the agent's 'task complete' declaration sufficient as a success signal?",
+      "opts": [
+        "It's too slow",
+        "Agents declare victory early — completion must be verified against the artifact, spec, and mechanical checks",
+        "APIs forbid it",
+        "It costs too much"
+      ],
+      "a": 1,
+      "why": "Self-reported success is optimism, not evidence; verified completion is the honest version of the same claim."
+    },
+    {
+      "q": "What does trajectory evaluation catch that outcome-only evaluation misses?",
+      "opts": [
+        "Nothing",
+        "Lucky flails — correct answers reached via wasteful, confused paths — and which behavioral dimension (tools, args, steps) is degrading",
+        "Cost only",
+        "Latency only"
+      ],
+      "a": 1,
+      "why": "Outcome metrics say WHAT happened; trajectories say WHY and HOW — the diagnostic layer that turns regressions into fixes."
+    },
+    {
+      "q": "Why seed simulated environments with failures deliberately?",
+      "opts": [
+        "To make tests harder for fun",
+        "Rosy sandboxes teach overconfidence — agents that never met a locked file or rate limit fail in production where it's expensive; simulation makes those meetings free",
+        "Failures are required by law",
+        "It speeds up testing"
+      ],
+      "a": 1,
+      "why": "Safety under pressure is a measurable skill — trainable only in environments where pressure is safe to experience."
+    }
+  ],
+  "code": {
+    "title": "The agent regression gate, as CI config",
+    "body": "agent_regression:\n  dataset: agent_tasks/v4            # golden + adversarial + incidents\n  gates:\n    success_rate:   { min: 0.90, by_difficulty: { easy: 0.98, hard: 0.60 } }\n    trajectory:     { tool_selection: 0.85, arg_accuracy: 0.95,\n                      step_sense: 0.80, efficiency: 0.70 }\n    resources:      { cost_per_task_max: 1.4x_baseline,\n                      calls_per_task_max: 1.3x_baseline }\n    safety:         { adversarial_pass: 1.0 }   # refusals where required\n  cadence:\n    pr:      smoke_20_tasks\n    nightly: full_suite → trend_report\n    release: full_suite + simulation_replay\n\n# Red gate → no promotion → last-known-good keeps serving.",
+    "annot": [
+      "by_difficulty distributions expose capability gaps that uniform thresholds hide",
+      "Efficiency gates carry multipliers, not absolutes — cost grows are regression-caught, not banned",
+      "safety at 1.0 is deliberate: adversarial failures are the one class with no acceptable rate"
+    ]
+  },
+  "notes": "# Agent Evals\n\n## Task success rate\n- Verified completion (artifact + spec + checks) · rubric-graded correctness · adversarial golden tasks (success = refuse/clarify/escalate).\n- Distributions by difficulty and domain; paired with efficiency.\n\n## Trajectory evaluation\n- Dimensions: tool selection, arg accuracy, step sense, efficiency vs reference path.\n- Judge-calibrated (GA-21); mechanical where possible (malformed-call ratio).\n- Diagnostic: each dimension maps to a fix; trajectories are autonomy evidence (GA-17).\n\n## Simulated environments\n- Snapshot sandboxes · interaction mocks · adversarial seeding (failures at configurable rates).\n- Incident replays become permanent regression cases.\n\n## Cost, latency & regression\n- Per-task signatures: tokens, wall-clock, calls, tool calls.\n- Efficiency regressions gate promotion like quality regressions.\n- Suite grows at its frontier: incidents, escalations, feedback → new cases."
+}

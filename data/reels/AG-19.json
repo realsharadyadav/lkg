@@ -1,0 +1,148 @@
+{
+  "id": "AG-19",
+  "num": 66,
+  "track": "agentic",
+  "stage": "8. Production + Security",
+  "topic": "Production Engineering",
+  "hook": "Agents that run for HOURS can't live in a request handler. **Durable execution, queues, budgets, and the failure catalogue** — the machinery of 3 a.m. reliability.",
+  "chapters": [
+    "Loop limits, timeouts, retries",
+    "Durable execution",
+    "Queues, concurrency & locking",
+    "Cost caps & failure catalogue"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · BOUNDS",
+      "title": "Every loop gets a fence: **limits, timeouts, idempotent retries**",
+      "sub": "The physics of runaway prevention",
+      "narration": "The cardinal sin of agent operations is the unbounded loop — the agent that retries, re-plans, or spirals until the card declines. The fences, system-wide. LOOP LIMITS: iterations, wall-clock, and MODEL CALLS — whichever hits first stops the run; nested loops need nested budgets — an outer task budget with inner step budgets, so one stuck step can't eat the task's whole allowance. TIMEOUTS: every tool call, every model call, every stage — PY-10's wait-for discipline applied at every boundary; timeouts compose — a task timeout larger than any single step timeout, or step stalls eat the task. RETRIES WITH IDEMPOTENCY: retries happen — PY-12's backoff — but only on TRANSIENT failures, and every retried action must be safe to repeat — AG-02's idempotency rule; a retried 'send' that sends twice is worse than the error it recovered from. Runaway signals get monitored too: retry-rate spikes and loop-exit-by-budget events are AG-24 alerts — the canary that an agent is confused."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "🔢", "t": "Three budget kinds", "s": "Iterations · wall-clock · model calls — each capped, nested budgets per level" },
+        { "e": "⏱️", "t": "Timeouts at every boundary", "s": "Model, tool, stage, task — composed so a stalled step can't consume the task" },
+        { "e": "🔁", "t": "Transient-only retries", "s": "Backoff + jitter (PY-12) · idempotent actions only · budget-exit = observable event" }
+      ],
+      "narration": "One design decision shapes all of this: fail BUDGETED, not silently. When the iteration cap hits, the run doesn't just stop — it exits with state: what's done, what's pending, why it stopped, and a resumption POINT — AG-17's escalation package as the standard loop-exit payload. That turns 'agent hung' from an incident into a resumable pause — the difference between losing an hour of work and continuing after breakfast. Also compose with graceful degradation: a run that exhausts its model-call budget mid-task should deliver PARTIAL results — 'completed 7 of 10 sections; budget exhausted' — rather than nothing; users prefer 70 percent with honesty over 0 percent with an apology. The fences feel unglamorous until the night they save you; they're the seatbelts of agent engineering — invisible in the good times, decisive in the bad."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · DURABLE",
+      "title": "Durable execution: **surviving crashes, deploys, and Tuesdays**",
+      "sub": "Temporal, Durable Functions, and checkpointing",
+      "narration": "A request handler dies with its process; an agent that runs for hours must NOT. Durable execution is the pattern: the run's STATE — where it is, what's done, what's pending — is PERSISTED after every step, so any crash, deploy, or scaling event resumes from the last checkpoint instead of restarting. The machinery exists and is mature: TEMPORAL — the durable workflow engine: workflows as code, every step's result recorded, replay-based recovery; you write the agent loop as a durable workflow and the engine handles survival. AZURE DURABLE FUNCTIONS — the same pattern inside Azure's serverless world — orchestrator functions checkpoint between activity calls; MAF and LangGraph both integrate checkpointing — AG-15's frameworks list included it deliberately. The checkpoint contract: after every meaningful step — model call, tool result, subtask completion — persist {step, result, state-delta}; resume = load latest checkpoint, continue. State stores must be transactional with the checkpoint, or half-applied effects duplicate on replay."
+    },
+    {
+      "type": "arch",
+      "chapter" : 1,
+      "layers": [
+        { "e": "💾", "t": "Checkpoint after every step", "s": "Step + result + state-delta persisted · resume = load + continue" },
+        { "e": "🔁", "t": "Replay-safe steps", "s": "Idempotent side effects (AG-02) or activity-results recorded — replays never duplicate" },
+        { "e": "⏸️", "t": "Suspend & resume", "s": "Human gates (AG-17) become waits · multi-day tasks are normal, not heroic" }
+      ],
+      "narration": "The mindset shift durable execution enables: WAITING IS FREE. An agent that needs a human approval, an API callback, or tomorrow's data simply SUSPENDS — its checkpoint rests, its budget doesn't burn, and it resumes when the world is ready. Multi-day tasks become ordinary: the overnight research job, the week-long migration assistant — without durability, these are fragile miracles; with it, they're Tuesday. The design cost: your agent loop must be written AS a sequence of checkpointable steps — which is exactly the decomposition discipline from AG-11, so the investment overlaps; and every side effect must be idempotent or recorded — AG-02's rule enforced by the execution model. For shorter workloads, lightweight checkpointing — LangGraph's checkpointer writing to Postgres — covers the same ground without a workflow engine. The rule of thumb: minutes of runtime — plain loops with fences; hours-to-days, human waits, or crash-sensitivity — durable machinery."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · QUEUES",
+      "title": "Queues, concurrency, and the file-locking problem",
+      "sub": "Decoupling agent runs from everything else",
+      "narration": "Production agent traffic is spikey and slow — exactly what request handlers handle badly. The queue decouples: requests enqueue as JOBS; workers consume at sustainable concurrency; results deliver by callback, email, or polling. What queues buy: SMOOTHING — bursts absorb into the queue instead of hammering providers — GA-25's token buckets at the system level; PRIORITIES — urgent jobs jump the queue, batch work fills gaps; RETRY DISCIPLINE — failed jobs requeue with backoff, dead-letter after N attempts, and every retry is idempotent-safe. CONCURRENCY: worker pools sized to provider rate limits; a semaphore per provider — the PY-10 pattern fleet-wide. And the file-locking problem: TWO AGENTS, ONE FILE — the spreadsheet both the research agent and the reporting agent want to edit. Rules: single-writer per artifact — the blackboard from AG-14 owns coordination, with sections and ownership; optimistic concurrency — version-stamped files, last-writer-wins replaced by detect-and-merge; advisory locks where a tool ecosystem supports them. Undisciplined concurrent writes are the silent corruptor of multi-agent systems."
+    },
+    {
+      "type": "code",
+      "chapter": 1,
+      "title": "The queue + lock skeleton",
+      "lang": "python",
+      "body": "# enqueue at the edge, consume at sustainable concurrency\nasync def worker():\n    job = await queue.pop(priority=True)\n    async with provider_semaphore(job.provider):   # fleet-wide politeness\n        try:\n            result = await run_agent(job,           # durable, checkpointed\n                                     budget=job.budget)\n            await notify(job.callback, result)\n        except TransientError:\n            await job.requeue(backoff=exp(job.attempts))\n        except BudgetExhausted as e:\n            await escalate(job, package=e.state)    # resumable, not lost\n        except Exception:\n            await job.dead_letter()                 # after N attempts\n\n# artifact coordination: single-writer + version stamps\nasync def write_artifact(artifact_id, changes, expected_version):\n    async with advisory_lock(f\"artifact:{artifact_id}\"):\n        cur = await store.version_of(artifact_id)\n        if cur != expected_version:\n            raise Conflict(\"merged since you read — reload and reapply\")\n        await store.apply(artifact_id, changes, version=cur + 1)",
+      "annot": [
+        "The semaphore wraps the PROVIDER call, not the job — waiting happens before the rate limit does",
+        "BudgetExhausted carries the resumable state — exhaustion is a pause with a package, not a crash",
+        "Version-stamped writes make conflicts explicit and rare — 'reload and reapply' beats silent corruption"
+      ],
+      "narration": "Dead-letter queues deserve a mention: jobs that fail permanently land somewhere REVIEWABLE, not forgotten — each dead-letter is a failure-catalogue entry — the data for the next chapter — and a golden-set candidate for AG-18. Job identity makes retries safe: every job carries an ID; every side effect checks it — 'have I already done job 42's step 3?' — the idempotency key pattern applied across the whole pipeline, and the same client-request-ID discipline as GA-25. Visibility timeouts — the queue's 'is this job stuck?' lease — must exceed your LONGEST checkpoint interval, or a slow job gets reassigned to a second worker and everything doubles. Queues are boring infrastructure that makes agents survivable: the API stays fast, the workers stay polite, and the failures land somewhere you can study them."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · BUDGETS",
+      "title": "Cost caps: **meters at every level**",
+      "sub": "Token budgets, spend ceilings, and graceful degradation",
+      "narration": "Agent spend can explode in one bad loop — a misconfigured retry, a runaway subagent, a poisoned prompt spinning through expensive calls. The metering stack: PER-RUN budgets — tokens or dollars, set at enqueue time, enforced at every model call — the run stops at the cap with the resumable-exit pattern; PER-USER and PER-TENANT quotas — daily or monthly ceilings, GA-24's dashboards sliced to enforce them; and SYSTEM-WIDE circuit breakers — if global spend rate exceeds N× baseline, non-critical lanes pause automatically — the queue-and-degrade ladder from GA-25 operating on money. Degradation order is pre-decided: caches serve longer, cheap lanes absorb more traffic, heavy features pause, the core keeps answering. Alert thresholds precede the caps: at 80 percent of any budget, someone knows — at 100 percent, the system already behaved. And forecasts from history: 'this load pattern spends X per day' makes capacity and quota decisions evidence-based instead of hopeful."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "🎛️", "t": "Three budget levels", "s": "Per-run caps · per-user/tenant quotas · system circuit breakers · each with 80% alerts and 100% behavior" },
+        { "e": "📉", "t": "Pre-decided degradation", "s": "Cache-longer → cheap-lanes → pause-features → core-only · the ladder chosen calmly, executed automatically" },
+        { "e": "📖", "t": "Failure mode catalogue", "s": "Dead-letters + budget-exits + incidents → documented breakages with standard fixes · the ops handbook for agents" }
+      ],
+      "narration": "The failure mode catalogue deserves its own paragraph because it's how all of this knowledge COMPOUNDS: a living document — 'typical breakages and fixes' — where every incident, dead-letter, and budget-exit becomes an entry: the signature — what it looked like in logs; the cause; the standard fix; the prevention now in place. The classics any catalogue starts with: runaway loops — signature: call-rate spike; fix: budget exit; prevention: fences. Stuck waits — signature: job idle past lease; fix: reassignment; prevention: lease tuning. Duplicate side effects — signature: two identical records; fix: idempotency keys; prevention: recorded activity results. Provider degradation — signature: latency + error-rate climb; fix: failover; prevention: multi-provider config. Poisoned-tool loops — signature: same failing call repeated; fix: actionable errors; prevention: AG-02. New agents join the team and read the catalogue — operational memory that outlives any single engineer's on-call scar tissue. That's Stage 8's engineering arc: fenced, durable, queued, metered — and every failure, catalogued."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-20",
+      "title": "The machinery is reliable. Now: who can the agent be tricked into being?",
+      "next": "Reel 67 · Threat Model — confused deputies, exfiltration paths, sandboxing"
+    }
+  ],
+  "recap": [
+    "Fences everywhere: iteration/wall/call budgets composed per level, timeouts at every boundary, transient-only idempotent retries — budget exits carry resumable state",
+    "Durable execution checkpoints after every step; replay-safe idempotent effects; waiting becomes free, multi-day tasks become ordinary",
+    "Queues smooth and prioritize; version-stamped single-writer artifacts prevent silent corruption; cost meters run per-run, per-tenant, and system-wide with pre-decided degradation"
+  ],
+  "quiz": [
+    {
+      "q": "Why must durable-execution steps be idempotent or have results recorded?",
+      "opts": [
+        "It's faster",
+        "Recovery replays steps from the last checkpoint — a non-idempotent side effect would execute twice",
+        "APIs require it",
+        "It saves memory"
+      ],
+      "a": 1,
+      "why": "Replay is the recovery mechanism; idempotency or recorded results are what make replay safe — AG-02's rule enforced by the engine."
+    },
+    {
+      "q": "What converts a budget exhaustion from an incident into a pause?",
+      "opts": [
+        "Bigger budgets",
+        "The exit carries resumable state — done work, pending work, and a continuation point — so the run continues later",
+        "More retries",
+        "Faster models"
+      ],
+      "a": 1,
+      "why": "State-preserving exits turn caps from destructive interruptions into schedulable pauses — the difference between lost work and deferred work."
+    },
+    {
+      "q": "Why single-writer rules with version stamps for shared artifacts?",
+      "opts": [
+        "Files are slow",
+        "Concurrent silent writes corrupt state — single ownership plus detect-and-merge conflicts makes corruption explicit and rare",
+        "Locks are fashionable",
+        "Storage is expensive"
+      ],
+      "a": 1,
+      "why": "'Reload and reapply' conflicts are recoverable; silently overwritten work is not — the blackboard's ownership metadata is the coordination protocol."
+    }
+  ],
+  "code": {
+    "title": "The fenced, durable, metered run — one skeleton",
+    "body": "async def run_agent(job):\n    state = store.load_checkpoint(job.id) or fresh_state(job)\n    budget = Budget(tokens=job.token_cap, wall=job.time_cap)\n\n    while not state.done and not budget.exhausted():\n        step = plan_next(state)\n        async with timeout(step.max_seconds):\n            result = await idempotent(step, key=state.idem_key(step.n))\n        state.apply(step, result)\n        store.checkpoint(job.id, state)            # durable after every step\n        budget.spend(result.tokens)\n\n    if not state.done:\n        await escalate(job, package=state.export())  # resumable exit\n    return state.result\n\n# Properties, by construction:\n#   crash      → resume from last checkpoint\n#   retry      → idempotent key prevents duplicates\n#   spiral     → budget exits with full state\n#   cost       → metered at every model call",
+    "annot": [
+      "Checkpoint-then-spend ordering: state is durable BEFORE the budget moves — a crash mid-step replays cleanly",
+      "idem_key ties idempotency to (job, step-number) — retries dedupe, replays dedupe, across both",
+      "escalate() exports everything — the AG-17/AG-18 packages and the resumption point in one payload"
+    ]
+  },
+  "notes": "# Production Engineering\n\n## Fences\n- Budgets: iterations/wall/calls, nested per level · exits carry resumable state.\n- Timeouts at every boundary, composed.\n- Retries: transient-only, backoff+jitter, idempotent actions.\n\n## Durable execution\n- Checkpoint after every step (step+result+state-delta) · replay-safe effects.\n- Temporal / Durable Functions / framework checkpointing.\n- Waiting is free → multi-day tasks, human gates as suspends.\n\n## Queues & concurrency\n- Jobs: enqueue → priority queue → workers with provider semaphores.\n- Dead-letter after N attempts; visibility timeouts > checkpoint interval.\n- Artifacts: single-writer + version stamps + advisory locks.\n\n## Cost caps & failure catalogue\n- Per-run caps, per-tenant quotas, system circuit breakers; 80% alerts, pre-decided degradation ladder.\n- Catalogue: signature → cause → fix → prevention for every incident."
+}

@@ -1,0 +1,147 @@
+{
+  "id": "AG-17",
+  "num": 64,
+  "track": "agentic",
+  "stage": "8. Production + Security",
+  "topic": "Control Design",
+  "hook": "An agent's autonomy isn't a switch — it's a **dial**. Approval gates, autonomy levels, escalation paths, kill switches: the control design that makes autonomy shippable.",
+  "chapters": [
+    "Approval gates",
+    "Autonomy levels",
+    "Escalation paths",
+    "Kill switch, rollback & audit"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · GATES",
+      "title": "Approval gates: **consequences pause for humans**",
+      "sub": "The confirm-before-consequence pattern, systematized",
+      "narration": "You've met the pattern in pieces — AG-07's side-effect gate, AG-09's diff-token — now systematize it. An approval gate is a checkpoint in the agent's execution where consequential actions pause for explicit human approval: irreversible operations — deletes, payments, sends; blast-radius actions — anything touching more than N records or users; novel situations — actions outside the agent's demonstrated competence envelope; and policy-flagged categories — whatever compliance names. The gate's QUALITY decides whether it's protection or theater: the approval UI shows WHAT will happen — rendered consequences, not tool names — 'refund $340 to order 8821' beats 'call refund tool'; the diff-style preview from AG-09 generalizes — every gate presents the planned change in human language, with parameters spelled out; and denials are actionable — the agent receives 'denied: amount exceeds your $200 approval limit' and asks the user how to proceed, not a silent refusal. A gate that humans rubber-stamp is worse than none — it trains inattention — so tune the sensitivity: gate only what's genuinely consequential, keeping approvals rare enough to be READ."
+    },
+    {
+      "type": "list",
+      "chapter": 0,
+      "items": [
+        { "e": "⚠️", "t": "Gate on consequence, not tool", "s": "The same tool may be trivial (draft email) or consequential (send email) — gates trigger on the ACTION'S parameters" },
+        { "e": "👁️", "t": "Show what, not which", "s": "Rendered consequences in plain language · diffs for changes · amounts, targets, irreversibility flagged" },
+        { "e": "🎯", "t": "Rare enough to be read", "s": "Over-gating trains rubber-stamping · tune thresholds so approvals stay meaningful" }
+      ],
+      "narration": "The parameter-based insight deserves emphasis: 'send email' to a teammate with a draft attached is Tuesday; 'send email' to five thousand customers is an incident — the gate must read the ARGUMENTS, not the tool name, which means gate logic lives in code that can evaluate parameters — amount thresholds, recipient counts, destination domains — the same where-clause thinking as every other filter in this curriculum. Batch the gates: an agent planning twelve record updates presents ONE consolidated diff — 'these twelve changes' — rather than twelve interruptions; humans approve patterns, not keystrokes, and a batch preview preserves that. And log every gate decision — approved, denied, modified — with the rendered preview attached: the audit trail from GA-23 needs to show not just that a human approved, but WHAT they were shown when they did."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · LEVELS",
+      "title": "Autonomy levels: suggest, recommend, act, act-and-report",
+      "sub": "Dialing trust by situation, not philosophy",
+      "narration": "Autonomy as a dial with named positions: SUGGEST — the agent proposes actions; the human executes everything; zero risk, maximal friction — right for new deployments and new users. RECOMMEND — the agent pre-stages the action — draft composed, change previewed — and the human confirms with one click; AG-09's dry-run pattern as a product feature. ACT — the agent executes within pre-authorized bounds — spending limits, allow-listed targets, reversible operations — and reports afterward; the daily-work mode for trusted domains. ACT-AND-REPORT — full autonomy with complete logging and periodic human review; reserved for well-understood, reversible, low-stakes workloads. The dial turns per DIMENSION, not per agent: the same agent might act autonomously on read-only research while gating every write — capability-scoped autonomy, echoing GA-22's blast-radius principle."
+    },
+    {
+      "type": "compare",
+      "chapter": 1,
+      "cards": [
+        { "e": "🗣️", "t": "Suggest", "s": "Proposals only · human executes · zero risk · new deployments & users", "win": true },
+        { "e": "👆", "t": "Recommend", "s": "Pre-staged actions · one-click confirm · dry-run as UX", "win": true },
+        { "e": "🏃", "t": "Act (bounded)", "s": "Executes within limits/allow-lists · reversible only · reports after", "win": true },
+        { "e": "🚀", "t": "Act & report", "s": "Full autonomy + complete logs + periodic review · trusted low-stakes domains only", "win": true }
+      ],
+      "narration": "The promotion ladder between levels: autonomy is EARNED, not granted — an agent graduates from suggest to act in a domain after demonstrating reliability under observation — measured, GA-20-style, on that domain's task success rate across enough runs to be statistically meaningful; regression — a quality drop, an incident, a drift signal from GA-24 — demotes back down automatically. This creates the trust flywheel: agents earn scope by being measured, and measurement runs continuously, so scope tracks actual competence rather than optimism. Also note the per-user dimension: autonomy can differ by WHO's asking — a staff engineer's agent acts on infrastructure reads; an intern's suggests — the same system, scoped permissions, AG-07's least-privilege principle applied to agency itself. Autonomy configuration is a first-class artifact: versioned, reviewed, and audited like everything else in GA-26's registry."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 2 · ESCALATION",
+      "title": "Escalation paths: **knowing when to hand over**",
+      "sub": "The design that keeps automation humble",
+      "narration": "The moment an agent exceeds its competence is the most dangerous moment in its life — unless escalation is DESIGNED. Trigger classes: repeated failure — same error across N attempts, the loop isn't converging; low confidence — self-assessed OR verifier-scored below threshold; novel situation — inputs outside the training envelope — unfamiliar domain, unprecedented request shape; policy boundaries — anything the rules say a human must own — legal, HR, financial commitments; and user demand — an explicit 'let me talk to a person'. The handoff QUALITY is the product: the escalation package carries everything the human needs — what was tried, with outcomes; current state; the agent's assessment of where it's stuck; and relevant artifacts by reference — AG-12's scratchpad as the escalation payload. A human receiving a bare 'agent failed' starts from zero; one receiving a complete package starts informed — the difference between a two-minute resolution and a twenty-minute archaeology."
+    },
+    {
+      "type": "arch",
+      "chapter": 2,
+      "layers": [
+        { "e": "🚨", "t": "Trigger", "s": "Repeated failure · low confidence · novel input · policy boundary · user asks" },
+        { "e": "📦", "t": "Escalation package", "s": "Tried/outcomes · current state · agent's assessment · artifact references" },
+        { "e": "👤", "t": "Human resolves", "s": "Informed start from the package · resolution logged" },
+        { "e": "♻️", "t": "Learn", "s": "Resolution becomes golden-set case + possibly new capability/rule" }
+      ],
+      "narration": "The final layer closes the loop the way GA-24's quality loop does: escalations are DATA. Each resolved escalation is a candidate golden-set case — GA-20's dataset growing from the frontier of the agent's incompetence; patterns in escalation REASONS reveal where the system needs capability, clearer rules, or better training — fifty escalations about the same novel situation is a signal to build the skill, not to hire more humans. And track escalation RATE as a health metric: a rising rate means the agent's envelope is being stressed — by traffic drift, by scope creep, by degradation — and the response is measured, not panicked. Design the emotional layer too: how the agent ANNOUNCES escalation shapes user trust — 'I've tried three approaches and I'm not converging; I've prepared a summary for a teammate who can take this' reads as competence; 'error, escalating' reads as failure. Same event, different story — write the good one."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 3 · KILL & ROLLBACK",
+      "title": "Kill switch and rollback: **the brakes and the reverse gear**",
+      "sub": "Stopping bad autonomy in seconds, undoing what it touched",
+      "narration": "Every autonomous system needs two mechanical truths: it can be STOPPED instantly, and what it did can be UNDONE. THE KILL SWITCH: one control that halts all agent execution — in-flight loops cancel, queued work drops, credentials revoke — reaching effective zero within seconds, global and per-agent scoped. Design notes: the switch must work when everything else is broken — independent of the agent's own infrastructure, manual by design — an automation that can only be stopped by the thing you're stopping isn't a kill switch; and drills — actually pull it quarterly — a kill switch that's never been tested is a hypothesis. ROLLBACK: every agent action was reversible by design — AG-09's backups, versioned state, idempotent tools — or it went through an approval gate; rollback EXECUTES those reversals: restore from backups, replay-inverse operations, undo transactions. The recovery runbook is written BEFORE the incident: what gets restored in what order, what gets re-verified, who signs off."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "⛔", "t": "Kill switch properties", "s": "Seconds to zero · independent of agent infra · manual · drilled quarterly" },
+        { "e": "⏪", "t": "Rollback prerequisites", "s": "Reversible-by-design actions (backup/version/idempotency) or approval-gated · recovery runbook pre-written" },
+        { "e": "📜", "t": "Post-incident audit", "s": "Trace + gate logs + actions replayed · the GA-23/GA-26 trail makes forensics a query" }
+      ],
+      "narration": "Audit and compliance complete the control design: every element — gate decisions, autonomy-level configuration, escalations, kills, rollbacks — feeds the append-only audit trail from GA-23; a client or regulator asking 'what did your AI do, who authorized it, and how would you know if it misbehaved' gets answers from queries, not investigations. The composite picture: gates make consequences pause, levels make trust proportional, escalation makes incompetence humble, and kill-plus-rollback makes autonomy reversible — together they answer the question every stakeholder asks before approving an agent: 'what's the worst it can do, and can you stop it?' With this reel's design, the honest answer is: 'bounded, watched, and stoppable in seconds — and here's the audit trail proving it.' That's what shipping autonomy actually requires."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · AG-18",
+      "title": "Controls designed. How do we MEASURE whether agents are good?",
+      "next": "Reel 65 · Agent Evals — task success, trajectories, simulated environments"
+    }
+  ],
+  "recap": [
+    "Approval gates trigger on consequences and parameters, render what-not-which previews, batch intelligently, and stay rare enough to be read",
+    "Autonomy is a per-dimension dial — suggest → recommend → act → act-and-report — earned through measured reliability and demoted on regression",
+    "Escalations carry complete packages and feed the learning loop; kill switches are independent, drilled, and paired with rollback-by-design"
+  ],
+  "quiz": [
+    {
+      "q": "Why should approval gates trigger on action parameters rather than tool names?",
+      "opts": [
+        "Tools are unreliable",
+        "The same tool ranges from trivial to consequential by its arguments — 'send email' to a colleague vs to five thousand customers · only parameter-aware gates see the difference",
+        "Tool names change often",
+        "Parameters are faster to check"
+      ],
+      "a": 1,
+      "why": "Consequence lives in the arguments; gates that read only tool names either over-gate the trivial or under-gate the catastrophic."
+    },
+    {
+      "q": "How does an agent 'earn' a higher autonomy level?",
+      "opts": [
+        "By running without incidents for a week",
+        "Through measured task success on that domain across statistically meaningful runs — and it demotes automatically on quality drops or incidents",
+        "By manager approval only",
+        "By using more tools"
+      ],
+      "a": 1,
+      "why": "Trust tracks demonstrated competence measured continuously — the flywheel that keeps autonomy proportional to actual reliability."
+    },
+    {
+      "q": "What makes a kill switch real rather than decorative?",
+      "opts": [
+        "A big red button",
+        "Seconds-to-zero effect, independence from the agent's own infrastructure, manual operation, and regular drills",
+        "Automated triggers",
+        "Cloud hosting"
+      ],
+      "a": 1,
+      "why": "A switch that depends on the system it's stopping, or that's never been tested, is a hypothesis — independence and drills are the properties."
+    }
+  ],
+  "code": {
+    "title": "The control plane as configuration",
+    "body": "domains:\n  customer_refunds:\n    autonomy: act                      # earned: 99% success over 500 runs\n    bounds: { max_amount_usd: 200, reversible_only: true }\n    gates: [ { trigger: \"amount > 200\", action: require_approval },\n             { trigger: \"recipient_count > 10\", action: require_approval } ]\n    escalation: { on: [failures>=3, confidence<0.6], package: full }\n\n  infrastructure_changes:\n    autonomy: recommend                # not yet earned\n    gates: [ { trigger: \"always\", action: require_approval } ]\n\nglobal:\n  kill_switch: { scope: [per_agent, all], drill: quarterly }\n  rollback: { backups: automatic, runbook: v3, signoff: oncall_lead }\n  audit: { append_only: true, includes: [gates, levels, escalations, actions] }",
+    "annot": [
+      "Autonomy levels per domain, per capability-dimension — the dial as data, versioned like GA-26 artifacts",
+      "Gates as declarative triggers — tunable without code changes, at incident speed",
+      "The whole file answers the stakeholder question: bounded, watched, stoppable — in one page"
+    ]
+  },
+  "notes": "# Control Design\n\n## Approval gates\n- Consequence + parameter aware · show WHAT (rendered preview/diff) not which tool · batch as consolidated diffs · rare enough to be read.\n\n## Autonomy levels\n- Suggest → recommend → act (bounded) → act-and-report.\n- Per-dimension, per-user; earned via measured success, auto-demoted on regression; versioned config artifact.\n\n## Escalation paths\n- Triggers: repeated failure, low confidence, novelty, policy, user demand.\n- Package: tried/outcomes, state, assessment, artifact refs.\n- Escalations → golden-set cases; rate = health metric.\n\n## Kill switch & rollback\n- Kill: seconds-to-zero, infra-independent, manual, drilled.\n- Rollback: reversible-by-design or gated; runbook pre-written; post-incident audit from existing trails."
+}

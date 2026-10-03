@@ -1,0 +1,148 @@
+{
+  "id": "GA-23",
+  "num": 60,
+  "track": "genai",
+  "stage": "8. Production + Security",
+  "topic": "Controls",
+  "hook": "Every threat from the last reel meets its match here: **redaction, guardrails, moderation, audit trails, compliance** — the control plane that never jailbreaks.",
+  "chapters": [
+    "PII detection & redaction",
+    "Guardrails: input & output",
+    "Content safety services",
+    "Audit, residency & compliance"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · PII",
+      "title": "Redact before you send: **PII discipline at the boundary**",
+      "sub": "Detect → replace → route → restore",
+      "narration": "Every piece of personal data that reaches a third-party model API is a data-processing event with compliance consequences — and every piece that enters your logs is a breach waiting for a subpoena. The redaction pipeline: DETECT — scan outgoing text for PII — emails, phone numbers, IDs, card numbers, names-in-context — with recognizers: regexes for structured patterns — cards, phones — plus NER models or LLM passes for unstructured mentions; combine both, since each catches what the other misses. REPLACE with typed placeholders — '<EMAIL_1>', '<PERSON_3>' — preserving sentence shape so the model's task still makes sense. ROUTE the sanitized version to the model. RESTORE on return — swap placeholders back in the response so users see their own data, and the provider never did. The mapping table lives in YOUR memory, scoped per request, never logged with the values."
+    },
+    {
+      "type": "code",
+      "chapter": 0,
+      "title": "The redaction round-trip",
+      "lang": "python",
+      "body": "import re\n\nRECOGNIZERS = [\n    (re.compile(r\"\\b[\\w.+-]+@[\\w-]+\\.[\\w.]+\\b\"), \"EMAIL\"),\n    (re.compile(r\"\\b\\d{4}[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b\"), \"CARD\"),\n    (re.compile(r\"\\b\\+?\\d[\\d -]{8,}\\d\\b\"), \"PHONE\"),\n    # + NER pass for names, addresses, IDs\n]\n\ndef redact(text: str) -> tuple[str, dict]:\n    mapping = {}\n    for rx, kind in RECOGNIZERS:\n        def sub(m, kind=kind):\n            key = f\"<{kind}_{len(mapping) + 1}>\"\n            mapping[key] = m.group(0)\n            return key\n        text = rx.sub(sub, text)\n    return text, mapping\n\ndef restore(text: str, mapping: dict) -> str:\n    for key, value in mapping.items():\n        text = text.replace(key, value)\n    return text\n\n# Request flow:\n#   user text → redact() → LLM API → restore() → user\n#   provider sees placeholders only · mapping never leaves the request scope",
+      "annot": [
+        "Placeholder tokens are deliberately unnatural ('<EMAIL_1>') — the model can't confuse them with real data or instructions",
+        "Mapping lives in request scope and dies with it — no PII at rest in your infra beyond what's needed",
+        "Structured regexes + NER pass: regexes are exact where patterns exist; NER catches what patterns can't"
+      ],
+      "narration": "Two refinements make this production-grade. Deterministic-first ordering: run the cheap regex recognizers before any LLM-based detection — most PII is pattern-shaped, and each item found deterministically is an item the slower pass never sees. Evaluation discipline: build a golden PII set — fifty texts with known entities, including adversarial shapes like 'my number is five five five…' — and measure detection recall the GA-20 way, because an undetected credit number sent to an API is an incident, not a metric. And know the limits: redaction REDUCES exposure; it doesn't change that you sent derived content to a processor — contractual and compliance questions about THAT belong in the next chapters. Also: redact BEFORE logging too — the log boundary and the API boundary deserve the same treatment."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 2 · GUARDRAILS",
+      "title": "Guardrails: filters on the way in, **gates on the way out**",
+      "sub": "Input validation, output filtering, and the sandwich pattern",
+      "narration": "Guardrails are deterministic checks wrapped around the model call. INPUT side: length caps, encoding normalization — attackers hide payloads in homoglyphs and escaped Unicode — injection-pattern screens from GA-22's tripwires, and topic allow-lists for narrow systems. OUTPUT side: the response passes through filters BEFORE reaching the user — secret-pattern detection — 'did the model just emit something that LOOKS like an API key?', PII screens for anything that leaked through, topic boundaries — a support bot shouldn't output legal advice — and format validators where structure is contractual. The composition pattern that works: guardrails OUTSIDE the model, on both sides — the sandwich: filter the input, call the model, filter the output. Each filter is a pure function, independently testable, versioned — PY-22's suite covers them directly, and they run regardless of what the model felt like doing that day."
+    },
+    {
+      "type": "arch",
+      "chapter": 1,
+      "layers": [
+        { "e": "🎫", "t": "Input filters", "s": "Length/encoding caps · injection screens · topic allow-lists · PII redaction (ch.1)" },
+        { "e": "🧠", "t": "Model call", "s": "The probabilistic center — never the enforcement point" },
+        { "e": "🚪", "t": "Output gates", "s": "Secret/PII screens · topic boundaries · format validators · block-or-replace policy" }
+      ],
+      "narration": "The decision that shapes the output gate: block-or-replace. BLOCK returns a canned refusal — safe but abrupt, and it leaks that SOMETHING was filtered; REPLACE substitutes a sanitized version — 'I've removed some sensitive details' — smoother UX, but requires judgment about what substitution preserves meaning. Choose per content class: secrets and PII — block-and-log, always; style drift — replace; borderline topics — block with a helpful redirect. Also make failures observable: every guardrail trip is an event — count them per rule per day — a spike in injection-screen trips is GA-22's canary telling you someone is probing; silent filters hide attack telemetry. And keep the rules DATA-DRIVEN where possible — patterns in config, versioned, deployable without code changes — because guardrail tuning moves at incident speed, not release speed."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · MODERATION",
+      "title": "Managed moderation: **provider-grade safety as a service**",
+      "sub": "When to buy the check instead of building it",
+      "narration": "Some content judgments are hard, high-stakes, and standard across the industry — hate, harassment, sexual content involving minors, self-harm, violence — and for these, managed moderation APIs are the right default: models trained by providers on exactly these classes, continuously updated, one API call away — OpenAI's moderation endpoint, Azure AI Content Safety, Google and AWS equivalents. The architecture: moderation runs as an INDEPENDENT pass — both directions where needed — user content in, model content out — so a jailbroken model still can't smuggle prohibited content past the exit gate. Classify-then-act: scores per category map to actions — pass, soft-block with message, hard-block with logging, escalate-to-human for the gray band. And compose with your own guardrails rather than replacing them: managed services cover the standard harm taxonomy; YOUR policies — brand voice, domain rules, compliance wording — remain your filters' job."
+    },
+    {
+      "type": "list",
+      "chapter": 2,
+      "items": [
+        { "e": "🛡️", "t": "Independent pass", "s": "Moderation checks content OUTSIDE the generation call — a jailbroken model can't influence its own exit gate" },
+        { "e": "📊", "t": "Thresholds → actions", "s": "Per-category scores map to pass / soft-block / hard-block / human-review bands" },
+        { "e": "🧩", "t": "Compose, don't replace", "s": "Managed services cover standard harm classes · your brand/domain policies stay in your own filters" }
+      ],
+      "narration": "The human-review band deserves design attention: content in the gray zone — the moderator scores 0.6-ish on a sensitive class — shouldn't be auto-blocked, false positives there alienate legitimate users; queue it for review with the full context attached, and use reviewer verdicts as calibration data for your thresholds — GA-20's human loop, running on safety. Latency note: moderation adds a call; for streaming responses, run it on the COMPLETED response before release, or stream with a delayed-commit pattern — the user sees 'generating…' while the safety pass completes. Cost note: moderation calls are cheap relative to generation, but at scale they compound — batch and cache where the content repeats, the same semantic-cache lesson as GA-17. Buying safety judgment is usually correct; operating it well is still your job."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · AUDIT & COMPLIANCE",
+      "title": "Audit everything; **know where your data sleeps**",
+      "sub": "Audit logging, residency, and client contracts",
+      "narration": "AUDIT LOGGING: the non-negotiable record — who asked what, when, what the system returned, which tools ran, what the guardrails did. The GA-22 framing applies: assume you'll reconstruct an incident or answer a regulator from these logs alone. Design: append-only — the same integrity property as AG-09's audit trail; structured — JSON events with correlation IDs threading user → request → model call → tool → response; and privacy-shaped — audit logs containing full PII become their own liability, so log hashes and references where the full content lives in access-controlled storage. DATA RESIDENCY AND COMPLIANCE: client contracts specify where data may be processed — EU data stays in EU regions — provider region selection and self-hosted models for the strictest cases; GDPR, HIPAA, and sector rules each shape what's allowed to leave your perimeter and in what form; and retention — how long conversations are stored — is a contract term you must implement, not a setting you forgot."
+    },
+    {
+      "type": "list",
+      "chapter": 3,
+      "items": [
+        { "e": "📜", "t": "Append-only, structured, correlated", "s": "Who asked what → what returned → tools → guardrail decisions · one correlation ID threads it all" },
+        { "e": "🌍", "t": "Residency by contract", "s": "Provider regions, self-hosting for strict perimeters · GDPR/HIPAA shape what's allowed to leave" },
+        { "e": "⏳", "t": "Retention is a feature", "s": "Deletion schedules implemented and TESTED — 'we forgot' is not a compliance posture" }
+      ],
+      "narration": "The thread tying this reel together: every control is deterministic, observable, and testable — the anti-model. Redaction round-trips have golden tests; guardrails have unit tests and trip counters; moderation thresholds have calibration loops; audit trails have integrity checks; retention has VERIFIED deletion drills — run a deletion, confirm absence, log the proof. That verifiability is what transforms 'we take security seriously' from a slide into an answer. And for client conversations: map each control to the OWASP entries from GA-22 — redaction to LLM02, guardrails to LLM01/05, audit to traceability questions — a one-page control matrix, updated quarterly, closes most security reviews before they start. Next: observing the system itself — traces, costs, and quality in production."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-24",
+      "title": "Controls in place. Can you SEE them working?",
+      "next": "Reel 61 · Observability — tracing, cost dashboards, quality monitoring"
+    }
+  ],
+  "recap": [
+    "Redact before you send: detect → placeholder → route → restore, with the mapping in request scope and regex+NER combined detection",
+    "Guardrails sandwich the model — deterministic input filters and output gates, block-or-replace by content class, every trip an observable event",
+    "Managed moderation runs as an independent pass with threshold-to-action bands; audit logs are append-only, correlated, and privacy-shaped; residency and retention are implemented, tested features"
+  ],
+  "quiz": [
+    {
+      "q": "Why is the placeholder-mapping kept in request scope rather than stored?",
+      "opts": [
+        "It's faster",
+        "It's the re-identification key — storing it creates a persisted PII vault; request scope means the sensitive mapping dies with the request",
+        "Databases are full",
+        "APIs forbid it"
+      ],
+      "a": 1,
+      "why": "The mapping IS the personal data; its lifecycle must match the request's, or redaction just moves the liability."
+    },
+    {
+      "q": "Why run moderation as a pass OUTSIDE the generation call?",
+      "opts": [
+        "It's cheaper",
+        "A jailbroken or manipulated model can't influence its own exit gate — the check is independent of what the model 'decided'",
+        "It's faster",
+        "Providers require it"
+      ],
+      "a": 1,
+      "why": "Independence is the property: safety judgment must not share a trust boundary with the thing being judged."
+    },
+    {
+      "q": "What's the right treatment for content in the moderation gray zone?",
+      "opts": [
+        "Always hard-block",
+        "Queue for human review with full context, and feed reviewer verdicts back as threshold-calibration data",
+        "Always pass",
+        "Log and ignore"
+      ],
+      "a": 1,
+      "why": "Auto-blocking gray zones maximizes false positives; human review plus calibration improves the band over time (GA-20's loop)."
+    }
+  ],
+  "code": {
+    "title": "The control plane as middleware, one pipeline",
+    "body": "async def handle_request(user, text):\n    audit = AuditLog.start(user.id)               # correlated from birth\n\n    safe_in, mapping = redact(normalize(text))    # ch.1\n    if trip := injection_screen(safe_in):         # ch.2 tripwire\n        audit.guardrail_trip(\"injection\", trip)\n        return refuse(\"I can't process that request.\")\n\n    reply = await llm.complete(safe_in)           # the model proposes\n\n    if secret := secret_pattern(reply):           # output gates\n        audit.guardrail_trip(\"secret_leak\", hash(secret))\n        return refuse(\"The response contained sensitive data.\")\n    mod = await moderate(reply)                   # ch.3 independent pass\n    if mod.action == \"block\":\n        audit.guardrail_trip(f\"moderation_{mod.category}\")\n        return refuse(\"I can't provide that content.\")\n    if mod.action == \"review\":\n        await human_review_queue.add(reply, mod, audit.id)\n\n    audit.complete(tokens=reply.usage)            # ch.4 record\n    return restore(reply, mapping)                # ch.1 round-trip",
+    "annot": [
+      "Every branch — refusal or success — writes its audit events: denials are telemetry, not silent drops",
+      "The model call is one line in the middle; the control plane is everything around it",
+      "restore() is the last step: users see their own data; the provider and logs saw placeholders"
+    ]
+  },
+  "notes": "# Controls\n\n## PII detection & redaction\n- Detect: regex (structured) + NER (unstructured), golden-set recall.\n- Replace → route → restore; mapping in request scope, never logged; redact before APIs AND logs.\n\n## Guardrails\n- Sandwich: input filters (length/encoding/injection screens) → model → output gates (secret/PII screens, topic, format).\n- Block-or-replace per content class; trips are observable events with counters.\n- Rules data-driven, versioned, deployable without releases.\n\n## Content safety services\n- Independent pass (in/out), threshold→action bands, gray-zone human review as calibration.\n- Compose with own filters: standard harm classes = managed; brand/domain = yours.\n\n## Audit & compliance\n- Append-only structured logs, correlation IDs, privacy-shaped (hashes + references).\n- Residency by contract (regions, self-host), retention implemented AND deletion-tested.\n- Map controls → OWASP entries; quarterly control matrix."
+}

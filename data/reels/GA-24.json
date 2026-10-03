@@ -1,0 +1,147 @@
+{
+  "id": "GA-24",
+  "num": 61,
+  "track": "genai",
+  "stage": "8. Production + Security",
+  "topic": "Observability",
+  "hook": "LLM systems fail silently — quality decays, costs creep, latency spikes. **You can't fix what you can't see:** traces, cost dashboards, and quality monitoring.",
+  "chapters": [
+    "Tracing LLM calls",
+    "Cost dashboards",
+    "Quality monitoring",
+    "Tooling"
+  ],
+  "scenes": [
+    {
+      "type": "bigtext",
+      "chapter": 0,
+      "kicker": "CHAPTER 1 · TRACING",
+      "title": "Every call, one trace: **the flight recorder**",
+      "sub": "Inputs, outputs, latency, tokens — correlated end to end",
+      "narration": "A trace is the full record of one request's journey: the model call with its exact inputs and outputs, latency per stage, token counts, tool invocations with their arguments and results, retrieval details — which chunks, which scores — and the guardrail decisions from GA-23. The properties that matter. CORRELATION: one ID threads user → API → retrieval → model → tools → response — the same discipline as the audit log, now for debugging; the question 'why did THIS user get THAT answer' becomes a lookup, not an archaeology. SAMPLING: at scale you can't trace everything — sample 100 percent of errors and a percentage of successes, and always trace your golden-set questions — the evals' runs must be fully visible. SENSITIVITY: traces contain prompts and outputs — PII-shaped handling — hashed or access-controlled storage, AG-07's rule applied to your own telemetry. A trace you can't afford to keep is a trace you won't have when it matters."
+    },
+    {
+      "type": "arch",
+      "chapter": 0,
+      "layers": [
+        { "e": "📨", "t": "Request in", "s": "User, feature, correlation ID attached at the edge" },
+        { "e": "🔍", "t": "Retrieval span", "s": "Query, rewritten forms, top-k chunks, scores, timing" },
+        { "e": "🧠", "t": "Generation span", "s": "Model, version, prompt hash, tokens, latency, finish reason" },
+        { "e": "🔧", "t": "Tool spans", "s": "Per tool call: name, args, latency, result size, errors" }
+      ],
+      "narration": "Notice what per-span detail buys: when a user reports a bad answer, the trace shows WHICH span failed — retrieval surfaced wrong chunks, or generation misread good ones — the same stage-localization as GA-21's metrics, now for single incidents. Finish reasons and error codes deserve their own alerts: a spike in 'length' finishes means context-overflow bugs; 'content_filter' spikes mean something changed in your traffic or your filters; retry-storms show up as duplicate spans. And record the prompt HASH plus version pointer, not just text — 'which prompt version served this request' is a query, matching GA-21's provenance discipline. Instrumentation cost is real — spans add overhead — so make tracing pluggable and standard across services: one instrumentation layer, every pipeline emits the same shape."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 1,
+      "kicker": "CHAPTER 1 · COST",
+      "title": "Cost dashboards: **spend is a metric, not an invoice**",
+      "sub": "Per user, per feature, per model — in near real time",
+      "narration": "Token spend is the least-visible production metric — it accumulates in provider invoices, weeks late, with no shape. The dashboard fixes that: aggregate tokens × model pricing into DOLLARS, sliced three ways. Per user/tenant: who spends what — a runaway script, a power user, an abusive trial — each needs a different response, and you can't choose without the slice. Per feature: which PRODUCT capability costs most — the chat feature might cost ten times the summarizer; pricing and architecture decisions need this. Per model and per prompt version: cost shifts when you switch models or prompts — routing more traffic to a cheaper model should show up as a clean delta, not a surprise. Then budgets: alerts at thresholds — daily spend doubles suddenly, page someone; per-request caps enforced at runtime — GA-23's pipeline is where they bite."
+    },
+    {
+      "type": "list",
+      "chapter": 1,
+      "items": [
+        { "e": "👤", "t": "Per user/tenant", "s": "Runaway scripts, power users, abuse — different problems, different responses · quota enforcement" },
+        { "e": "🧩", "t": "Per feature", "s": "Which capability costs most · pricing and architecture decisions ride on this slice" },
+        { "e": "🚨", "t": "Alerts + runtime caps", "s": "Daily-spend anomalies page someone · per-request caps enforced in the pipeline" }
+      ],
+      "narration": "The cost-quality pairing is the dashboard's real power: plot cost AGAINST quality metrics on the same time axis — a cost drop that coincides with a quality drop is a regression wearing an optimization's costume; a quality rise that costs 40 percent more is a product decision, made with data. Caching effects should be visible too — GA-17's semantic cache shows up as a cost-per-request line stepping down; when the step flattens, cache hit-rate deserves a look. And forecast: monthly run-rate projected from current traffic — the question 'what happens to our bill when this feature 10xes' should have a number attached BEFORE the growth arrives, not after the invoice. Cost observability completes the loop with GA-25's optimization levers — you can only route, cache, and cap what you can measure."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 2,
+      "kicker": "CHAPTER 3 · QUALITY",
+      "title": "Quality monitoring: **drift shows up before complaints do**",
+      "sub": "Feedback loops and production evals",
+      "narration": "GA-20 and GA-21 built the offline eval machine; production is where it earns its keep. Three loops. USER FEEDBACK: thumbs, ratings, corrections — cheap, biased, directional — instrument it, read it in aggregate, and treat every thumbs-down as a golden-set candidate: the flagged exchange flows into review, confirmed failures become new eval cases — GA-20's dataset grows from production pain. SHADOW EVALS: sample production traffic — one to five percent — and run the metric stack on it: faithfulness, relevance, retrieval recall — quality trends on REAL questions, continuously, the same delta-alerting discipline as cost: 'faithfulness dropped eight points this week' pages before users write in. DRIFT DETECTION: watch the INPUTS too — question distribution shifts — new topics appearing, language mix changing, query lengths drifting — input drift predicts quality drift, because the system is tuned for yesterday's traffic."
+    },
+    {
+      "type": "loop",
+      "chapter": 2,
+      "steps": [
+        { "e": "🚩", "t": "Flag", "s": "User feedback + shadow-eval failures + drift signals" },
+        { "e": "🔍", "t": "Triage", "s": "Traces show WHICH span failed · incident or golden-set candidate?" },
+        { "e": "➕", "t": "Add to golden set", "s": "Confirmed failures become eval cases · regression-protected forever" },
+        { "e": "🔁", "t": "Fix & verify", "s": "Fix ships only when the eval gate passes (GA-21)" }
+      ],
+      "narration": "The loop's cultural meaning: quality becomes a MANAGED quantity — it has a dashboard, a trend line, an owner, and an alert threshold — instead of a vibe reconstructed from support tickets. Two operational notes. Keep the human in the triage step: auto-adding every flagged case to the golden set pollutes it — false positives from user mood, adversarial flags — SME confirmation keeps the gold clean, GA-20's calibration discipline again. And close the loop VISIBLY: when a fix ships from this loop, note it where the team sees it — 'the citation regression users flagged in October is fixed and now regression-tested' — the loop feeds on demonstrated value, and dries up when fixes disappear into the changelog unannounced. Observability, evals, and the fix pipeline are one system — this reel is the connective tissue."
+    },
+    {
+      "type": "bigtext",
+      "chapter": 3,
+      "kicker": "CHAPTER 4 · TOOLING",
+      "title": "The toolbox: **Langfuse, LangSmith, Azure Monitor** — pick per ecosystem",
+      "sub": "And the DIY floor that always works",
+      "narration": "The mature options, honestly mapped. LANGFUSE — open-source, self-hostable LLM engineering platform: traces, eval datasets, prompt management, cost tracking; the right default when data must stay in your perimeter or you want hackable internals — generous free tier, real self-hosting. LANGSMITH — LangChain's first-party observability: deepest integration with LangGraph pipelines, first-class dataset and eval workflows; the natural pick when LangGraph is your runtime — commercial, polished. AZURE MONITOR + Application Insights — the enterprise path when you're on Azure: OpenTelemetry-based, fits existing alerting and compliance infrastructure; pairs with MAF's built-in telemetry — AG-15's ecosystem logic. GOOGLE CLOUD and AWS ship equivalents — Vertex and Bedrock observability — same ecosystem-matching rule. And the DIY floor: OpenTelemetry is the standard span format — emit OTLP from your pipeline into ANY backend — the exit hatch that keeps every option above replaceable."
+    },
+    {
+      "type": "compare",
+      "chapter": 3,
+      "cards": [
+        { "e": "🦩", "t": "Langfuse", "s": "Open source · self-hostable · traces + evals + cost · best for perimeter/data-sovereignty needs", "win": true },
+        { "e": "🦜", "t": "LangSmith", "s": "First-party for LangGraph · datasets/evals integrated · commercial · best inside that ecosystem", "win": true },
+        { "e": "📟", "t": "Azure Monitor", "s": "Enterprise Azure path · OpenTelemetry-based · fits existing ops/compliance · pairs with MAF", "win": true }
+      ],
+      "narration": "Selection heuristics: match the observability tool to your runtime ecosystem — LangGraph plus LangSmith, MAF plus Azure Monitor — because framework-integrated traces are richer than bolted-on ones; choose self-hosting — Langfuse or your own OTLP stack — when data residency or hackability dominates; and whatever you pick, EMIT STANDARD TELEMETRY underneath — OpenTelemetry spans with consistent attribute names — because the tool above should be a replaceable view, not a permanent dependency. Migration reality: teams do switch observability providers; the ones who kept OTel clean switch in days, the ones with proprietary-only instrumentation rewrite. One more practice: keep a 'trace of the week' review — ten minutes, one interesting trace, whole team — observability culture is built by looking, not by dashboards existing."
+    },
+    {
+      "type": "bridge",
+      "chapter": 3,
+      "kicker": "UP NEXT · GA-25",
+      "title": "You can see everything. Now make it fast AND cheap.",
+      "next": "Reel 62 · Performance & Cost — caching, routing, fallbacks, quotas"
+    }
+  ],
+  "recap": [
+    "Traces are the flight recorder: correlated IDs, sampled errors fully, PII-shaped storage, span-level detail that localizes failures to retrieval or generation",
+    "Cost dashboards slice spend per user/feature/model with delta alerts, runtime caps, and cost-quality pairing on the same time axis",
+    "Quality monitoring closes the loop: feedback and shadow evals feed the golden set through SME triage; pick observability per ecosystem with OpenTelemetry underneath"
+  ],
+  "quiz": [
+    {
+      "q": "Why must errors be traced at 100% while successes are sampled?",
+      "opts": [
+        "Errors are more common",
+        "Failures are rarer but carry the diagnostic signal you can't afford to miss; success sampling keeps cost sane",
+        "Successes are useless",
+        "Sampling is required by law"
+      ],
+      "a": 1,
+      "why": "The incidents you need to reconstruct are, by definition, in the error class — sampling them risks losing exactly the evidence you need."
+    },
+    {
+      "q": "What does pairing cost and quality on one time axis reveal?",
+      "opts": [
+        "Nothing",
+        "Whether a cost change is a genuine optimization or a regression in disguise — and whether quality gains justify their spend",
+        "Which users complain most",
+        "Model popularity"
+      ],
+      "a": 1,
+      "why": "Either metric alone misleads: cheap-and-worse or pricey-and-better are both business decisions that need both axes visible."
+    },
+    {
+      "q": "Why emit OpenTelemetry even when using a managed observability tool?",
+      "opts": [
+        "OTel is faster",
+        "It keeps the instrumentation layer standard and portable — switching providers becomes a config change, not a rewrite",
+        "Tools require it",
+        "It reduces token costs"
+      ],
+      "a": 1,
+      "why": "The tool above should be a replaceable view of standard telemetry — clean OTel is the exit hatch that keeps the option open."
+    }
+  ],
+  "code": {
+    "title": "Minimal trace decorator — the whole instrumentation habit",
+    "body": "import time, uuid, functools\n\ndef traced(span_name):\n    def deco(fn):\n        @functools.wraps(fn)\n        async def wrapper(*args, **kw):\n            span = {\n                \"trace_id\": kw.pop(\"trace_id\", str(uuid.uuid4())),\n                \"span\": span_name,\n                \"start\": time.perf_counter(),\n                \"model\": kw.get(\"model\"), \"prompt_hash\": h(kw.get(\"prompt\")),\n            }\n            try:\n                result = await fn(*args, **kw)\n                span.update(ok=True, tokens=getattr(result, \"usage\", None))\n                return result\n            except Exception as e:\n                span.update(ok=False, error=str(e)[:200])\n                raise\n            finally:\n                span[\"ms\"] = round((time.perf_counter() - span[\"start\"]) * 1000)\n                emitter.send(span)          # OTLP or Langfuse/etc.\n        return wrapper\n    return deco\n\n# @traced(\"retrieval\") on search · @traced(\"generation\") on complete —\n# three decorators and your pipeline is observable end to end.",
+    "annot": [
+      "trace_id threading via kwargs: every span joins the same journey automatically",
+      "prompt_hash not prompt text: observability without a PII leak (GA-23 discipline)",
+      "finally-block emission: spans fire on errors too — failed calls are the ones you most need to see"
+    ]
+  },
+  "notes": "# Observability\n\n## Tracing\n- One trace per request: retrieval/generation/tool spans, correlated IDs.\n- 100% of errors + sampled successes; golden-set runs always traced.\n- PII-shaped storage: hashes, access control, retention.\n\n## Cost dashboards\n- Dollars per user/tenant · per feature · per model/prompt version.\n- Delta alerts + runtime caps; cost×quality on one axis; forecasting run-rate.\n\n## Quality monitoring\n- Feedback → triage (traces localize the span) → SME-confirmed golden cases → gated fixes.\n- Shadow evals on sampled traffic; input-drift watch predicts quality drift.\n\n## Tooling\n- Langfuse (OSS/self-host) · LangSmith (LangGraph) · Azure Monitor (MAF) — ecosystem match.\n- Always emit OpenTelemetry underneath; keep the provider replaceable."
+}
