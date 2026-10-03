@@ -73,12 +73,13 @@ def main():
         os.makedirs(os.path.dirname(path), exist_ok=True)
         chunks = [audio for _, _, audio in pipe(text, voice=VOICE, speed=1.0)]
         wav = np.concatenate(chunks)
+        pcm = (np.clip(wav, -1.0, 1.0) * 32767).astype(np.int16)  # lameenc needs int16 PCM
         enc = lameenc.Encoder()
         enc.set_bit_rate(48)
         enc.set_in_sample_rate(24000)
         enc.set_channels(1)
         enc.set_out_sample_rate(24000)
-        mp3 = enc.encode(wav.tobytes()) + enc.flush()
+        mp3 = enc.encode(pcm.tobytes()) + enc.flush()
         with open(path, "wb") as f:
             f.write(mp3)
         done += 1
