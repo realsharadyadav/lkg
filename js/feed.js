@@ -44,6 +44,7 @@
       `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">${SS.icon('heart')}</span><span class="lb">0</span></button>` +
       (data.code ? `<button class="rail-btn rail-code" aria-label="Show code"><span class="ic">${SS.icon('code')}</span><span class="lb">code</span></button>` : '') +
       (data.notes ? `<button class="rail-btn rail-notes" aria-label="Show notes"><span class="ic">${SS.icon('doc')}</span><span class="lb">notes</span></button>` : '') +
+      `<button class="rail-btn rail-share" aria-label="Share this reel"><span class="ic">${SS.icon('share')}</span><span class="lb">share</span></button>` +
       `<button class="rail-btn rail-mute" aria-label="Mute or unmute narration"><span class="ic">${SS.icon('sound')}</span><span class="lb">sound</span></button>` +
       `</div>`));
     const player = new SS.ReelPlayer(el, data, { segEl: [...el.querySelectorAll('.seg')].find(s => s.classList.contains('cur')) });
@@ -55,6 +56,7 @@
     if (codeBtn) codeBtn.addEventListener('click', () => SS.ui.openCode(data));   // narration keeps playing
     const notesBtn = rail.querySelector('.rail-notes');
     if (notesBtn) notesBtn.addEventListener('click', () => SS.ui.openNotes(data));
+    rail.querySelector('.rail-share').addEventListener('click', () => SS.ui.shareReel(data));
     rail.querySelector('.rail-mute').addEventListener('click', () => {
       SS.narrator.setMuted(!SS.narrator.muted);
       document.dispatchEvent(new CustomEvent('ss:mute'));

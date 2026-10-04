@@ -4,6 +4,29 @@
   const $ = s => document.querySelector(s);
   SS.audioUnlocked = false;
 
+  /* ---------------- share ---------------- */
+  async function shareReel(data) {
+    const url = 'https://lkgschool.in/?reel=' + encodeURIComponent(data.id);
+    const payload = { title: data.topic + ' — LKG School', text: data.topic + ' — a 1-minute animated reel on LKG School (free GenAI course for .NET devs)', url };
+    try {
+      if (navigator.share) { await navigator.share(payload); return; }
+      await navigator.clipboard.writeText(url);
+      toast('🔗 Link copied');
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;   // user closed the share sheet
+      toast(url);
+    }
+  }
+
+  /* ---------------- analytics (Cloudflare Web Analytics, cookieless) ---------------- */
+  const CF_BEACON_TOKEN = '';   // paste the token from Cloudflare dashboard → Web Analytics; empty = off
+  if (CF_BEACON_TOKEN && location.hostname !== 'localhost') {
+    const s = document.createElement('script');
+    s.defer = true; s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', JSON.stringify({ token: CF_BEACON_TOKEN }));
+    document.head.appendChild(s);
+  }
+
   /* ---------------- toast ---------------- */
   let toastTimer;
   function toast(msg) {
@@ -227,7 +250,7 @@
   }
 
   SS.ui = {
-    toast, openSheet, closeSheets, bindReelSwipe,
+    toast, shareReel, openSheet, closeSheets, bindReelSwipe,
     fillCode(data) {
       $('#codeTitle').textContent = data.code.title;
       $('#codeBody').innerHTML = py(data.code.body);
