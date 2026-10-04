@@ -421,10 +421,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .segs{gap:3px;padding-inline:8px}
   .stage{padding-inline:12px;padding-bottom:140px}
   .scene{inset-inline:12px;bottom:140px;transform:translateY(-10vh) scale(.9);transform-origin:center center}
-  .capzone{left:10px;right:calc(var(--rail) + 10px);bottom:calc(74px + var(--sab));gap:5px}
+  .capzone{left:10px;right:calc(var(--rail) + 10px);bottom:calc(18px + var(--sab));gap:5px}
   .cap-title{font-size:17px}
   .cap-text{font-size:14px;line-height:1.4;max-height:calc(1.4em * 3.2)}
-  .rail{right:4px;bottom:calc(82px + var(--sab));gap:10px}
+  .rail{right:4px;bottom:calc(24px + var(--sab));gap:10px}
   .rail-btn .ic{width:42px;height:42px;font-size:18px}
   .rail-btn .lb{font-size:9.5px}
   .hook{padding-inline:20px;transform:translateY(-10vh) scale(.9);transform-origin:center center}
