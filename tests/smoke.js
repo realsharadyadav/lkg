@@ -46,9 +46,9 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   const r0 = await frac(); await p.waitForTimeout(1000); const r1 = await frac();
   ok(r0 < fp && r1 > r0, 'resume replays the last ~2s then continues (' + fp.toFixed(2) + ' -> ' + r0.toFixed(2) + ' -> ' + r1.toFixed(2) + ')');
   await tapActive('.rail-code'); await p.waitForTimeout(300);
-  ok(await p.evaluate(() => SS.feed.activePlayer().paused), 'opening code pauses');
+  ok(await p.evaluate(() => !SS.feed.activePlayer().paused), 'opening code keeps playing');
   await p.click('#codePanel .close-sheet'); await p.waitForTimeout(400);
-  ok(await p.evaluate(() => !SS.feed.activePlayer().paused), 'closing code resumes');
+  ok(await p.evaluate(() => !SS.feed.activePlayer().paused), 'still playing after closing code');
   await tapActive('.rail-mute'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => [...document.querySelectorAll('audio')].length === 0 && SS.narrator.muted), 'mute toggles on');
   await tapActive('.rail-mute'); await p.waitForTimeout(200);
@@ -60,7 +60,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await swipe(120, 300); await p.waitForTimeout(500);
   ok(await p.evaluate(() => document.querySelector('#notesSheet').classList.contains('open')), 'swipe right opens notes');
   await swipe(300, 100); await p.waitForTimeout(500);
-  ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open') && !SS.feed.activePlayer().paused), 'swipe notes back closes it and resumes');
+  ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open') && !SS.feed.activePlayer().paused), 'swipe notes back closes it, still playing');
   // real touch events (the phone path): a slightly diagonal swipe must still open notes in one go
   const cdp = await p.context().newCDPSession(p);
   const touch = async (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
