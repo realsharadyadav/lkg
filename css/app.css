@@ -442,3 +442,57 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .cap-title{font-size:16px}
   .cap-text{font-size:13.5px}
 }
+
+/* ============ Instagram-style polish (compact chrome, one-line script, snappy pause) ============ */
+.feed{scroll-behavior:auto;-webkit-overflow-scrolling:touch}
+.reel,.teaser,.stage-divider{contain:layout paint style}
+
+/* compact top bar */
+#topbar{padding:calc(6px + var(--sat)) 12px 4px;gap:8px}
+.brand{font-size:16px}
+.brand-sub{font-size:8px;letter-spacing:1px;margin-left:5px}
+.top-right{gap:5px}
+.prog-pill{font-size:10.5px;padding:3px 8px}
+.streak{font-size:11px;padding:3px 8px}
+.iconbtn{width:28px;height:28px;font-size:13px;box-shadow:none}
+.segs{padding:calc(42px + var(--sat)) 10px 0;gap:3px}
+.seg{height:2px}
+
+/* course status: tiny single line under the progress segments */
+.reel-meta{position:relative;z-index:6;padding:5px 12px 0;font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* caption zone: small type like Instagram */
+.cap-title{font-size:14px;font-weight:800;letter-spacing:-.1px}
+.chap-chip{font-size:9.5px;letter-spacing:.8px}
+.chapbar{gap:5px;margin-bottom:0}
+.chap-dot{width:22px;height:22px}
+.chap-dot span{font-size:10px}
+.cap-text{font-size:13px;line-height:1.35;font-weight:500;min-height:0;max-height:none;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;color:#33463a;padding-right:0}
+.cap-hint{font-size:10.5px}
+.capzone{gap:4px}
+
+/* slimmer rail */
+.rail{gap:10px}
+.rail-btn .ic{width:38px;height:38px;font-size:17px;box-shadow:0 2px 8px rgba(53,88,52,.14)}
+.rail-btn .lb{font-size:9.5px}
+
+/* instant play/pause cue */
+.bigplay{width:72px;height:72px;font-size:26px;animation:cueIn .12s ease-out}
+@keyframes cueIn{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+/* full-script popup */
+.script-body{font-size:14px;line-height:1.6;color:#3c5140;user-select:text;-webkit-user-select:text}
+.script-body p{margin:0 0 12px;opacity:.55}
+.script-body p.cur{opacity:1;font-weight:700;color:var(--text);background:#f1f8e9;border-left:3px solid var(--genai);border-radius:0 10px 10px 0;padding:8px 10px}
+
+@media (max-width:480px){
+  #topbar{padding:calc(6px + var(--sat)) 10px 4px}
+  .brand{font-size:16px}
+  .prog-pill{font-size:10px;padding:3px 7px}
+  .iconbtn{width:28px;height:28px;font-size:13px}
+  .segs{padding:calc(42px + var(--sat)) 8px 0}
+  .cap-title{font-size:14px}
+  .cap-text{font-size:13px;line-height:1.35;max-height:none}
+  .rail{gap:9px}
+  .rail-btn .ic{width:38px;height:38px;font-size:17px}
+}

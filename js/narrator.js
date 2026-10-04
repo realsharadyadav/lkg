@@ -53,8 +53,12 @@
     const sents = sentences(text);
     const words = wordSpans(text);
     if (muted || !('speechSynthesis' in window)) {
-      const t = setTimeout(() => cb.onend && cb.onend(), estMs(text));
-      return { cancel: () => clearTimeout(t) };
+      let t = setTimeout(() => cb.onend && cb.onend(), estMs(text)), left = estMs(text), at = Date.now();
+      return {
+        cancel: () => clearTimeout(t),
+        pause: () => { clearTimeout(t); left -= Date.now() - at; },
+        resume: () => { at = Date.now(); t = setTimeout(() => cb.onend && cb.onend(), Math.max(0, left)); }
+      };
     }
     let cancelled = false, ended = false, cur = null;
     const t0 = Date.now();
@@ -105,7 +109,11 @@
       speechSynthesis.speak(u);
     };
     next(0, 0);
-    return { cancel: () => { cancelled = true; try { speechSynthesis.cancel(); } catch (e) {} } };
+    return {
+      cancel: () => { cancelled = true; try { speechSynthesis.cancel(); } catch (e) {} },
+      pause: () => { try { speechSynthesis.pause(); } catch (e) {} },
+      resume: () => { try { speechSynthesis.resume(); } catch (e) {} }
+    };
   }
 
   SS.narrator = {

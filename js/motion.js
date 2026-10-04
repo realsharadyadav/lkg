@@ -16,8 +16,8 @@
     if (oldLayers && oldLayers.length) {
       // old scene lifts out with a soft blur while the new one springs in
       gsap.to(oldLayers, {
-        opacity: 0, y: -26, scale: 0.95, filter: 'blur(3px)',
-        duration: 0.32, ease: 'power2.in',
+        opacity: 0, y: -26, scale: 0.95,
+        duration: 0.25, ease: 'power2.in',
         onComplete: () => oldLayers.forEach(l => l.remove())
       });
       gsap.fromTo(newMount,

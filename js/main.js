@@ -13,13 +13,15 @@
 
   /* ---------------- sheets ---------------- */
   const scrim = $('#scrim');
-  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet') };
-  let openName = null;
+  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet'), script: $('#scriptSheet') };
+  let openName = null, onSheetClose = null;
+  function fireClose() { const f = onSheetClose; onSheetClose = null; if (f) f(); }
   function openSheet(name) {
+    fireClose();
     Object.values(sheets).forEach(s => s.classList.remove('open'));
     sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
   }
-  function closeSheets() { Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; }
+  function closeSheets() { Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; fireClose(); }
   scrim.addEventListener('click', closeSheets);
   document.querySelectorAll('.close-sheet').forEach(b => b.addEventListener('click', closeSheets));
 
@@ -112,6 +114,13 @@
       $('#codeBody').innerHTML = py(data.code.body);
       $('#codeNotes').innerHTML = (data.code.annot || []).map(a => `<div>💡 ${a}</div>`).join('');
       openSheet('code');
+    },
+    openScript(title, paras, cur, onClose) {
+      $('#scriptTitle').textContent = '📜 ' + title;
+      $('#scriptBody').innerHTML = paras.map((p, i) => `<p${i === cur ? ' class="cur"' : ''}>${p.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</p>`).join('');
+      openSheet('script');
+      onSheetClose = onClose || null;
+      const c = $('#scriptBody .cur'); if (c) requestAnimationFrame(() => { c.scrollIntoView({ block: 'center' }); });
     },
     openNotes(data) {
       if (!data.notes) return;

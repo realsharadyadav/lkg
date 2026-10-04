@@ -20,7 +20,7 @@
   function chipText(data) {
     const total = SS.catalog.reels.length;
     const done = SS.state.completedCount(SS.catalog.reels.map(r => r.id));
-    return `${TRACK_ICON[data.track] || '🎓'} ${data.track} · ${data.stage} · Reel ${data.num}/${total} · ✅ ${done}/${total}`;
+    return `${TRACK_ICON[data.track] || '🎓'} ${data.track} · ${data.stage.replace(/^\d+\.\s*/, '')} · Reel ${data.num}/${total}`;
   }
 
   function buildReelEl(item, data, order) {
@@ -32,9 +32,9 @@
     if (SS.motion) SS.motion.attachBg(el);
     el.appendChild(h('div', 'reel-inner',
       `<div class="segs">${segRow.innerHTML}</div>` +
+      `<div class="reel-meta cap-progress">${chipText(data)}</div>` +
       `<div class="stage"></div>` +
       `<div class="capzone">` +
-      `<span class="cap-chip cap-progress">${chipText(data)}</span>` +
       `<div class="cap-title">${data.topic}</div>` +
       `<div class="chap-chip"></div>` +
       `<div class="cap-text"></div>` +
@@ -105,7 +105,7 @@
   }
 
   function attachGestures(el, player) {
-    let down = null, lpTimer = null, lastTap = 0, swipeFired = false;
+    let down = null, lpTimer = null, lastTap = 0, swipeFired = false, toggled = false;
     el.addEventListener('pointerdown', e => {
       down = { x: e.clientX, y: e.clientY, t: performance.now(), long: false };
       swipeFired = false;
@@ -126,10 +126,15 @@
       down = null;
       if (swipeFired || dist >= 14 || dt >= 400) return;
       const now = performance.now();
-      if (now - lastTap < 300) { lastTap = 0; player.like(e.clientX, e.clientY); }
-      else {
+      // react instantly (no double-tap wait); a second tap undoes the toggle and likes
+      if (now - lastTap < 300) {
+        lastTap = 0;
+        if (toggled) player.tap();
+        toggled = false;
+        player.like(e.clientX, e.clientY);
+      } else {
         lastTap = now;
-        setTimeout(() => { if (lastTap) { lastTap = 0; player.tap(); } }, 280);
+        toggled = player.tap();
       }
     };
     el.addEventListener('pointerup', up);

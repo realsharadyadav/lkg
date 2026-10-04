@@ -19,6 +19,19 @@
       this._buildOverlays();
       this._buildChapBar();
       this._syncRail();
+      this.capText.addEventListener('pointerdown', e => e.stopPropagation());
+      this.capText.addEventListener('click', () => this._openScript());
+    }
+
+    /* tap the one-line caption -> full script popup (playback holds while reading) */
+    _openScript() {
+      if (!this._capFull || this._pending) return;
+      const sc = this.data.scenes;
+      const live = this.state === 'scene';
+      const paras = live ? sc.map(s => strip(s.narration || s.title || '')) : [this._capFull];
+      const wasPaused = this.paused;
+      if (!wasPaused && (live || this.state === 'recap' || this.state === 'hook')) this._pause();
+      SS.ui.openScript(this.data.topic, paras, live ? this.sceneIdx : 0, () => { if (!wasPaused && this.paused) this._resume(); });
     }
 
     _buildOverlays() {
@@ -89,8 +102,8 @@
       this.speedpill.classList.remove('show');
       ['.recap', '.quiz', '.done-pop'].forEach(s => { const e = this.root.querySelector(s); if (e) e.remove(); });
       this.stage.classList.remove('frozen');
-      this.paused = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0;
-      this.capText.innerHTML = '<span class="w">' + strip(this.data.hook) + '</span>';
+      this.paused = false; this._kept = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0;
+      this._setCap(strip(this.data.hook));
       this._seg(0);
     }
 
@@ -239,25 +252,30 @@
     }
 
     /* ---------- input ---------- */
-    tap() {
-      if (this._pending) return;
-      if (this.state === 'hook') return this.skipHook();
-      if (this.state === 'quiz' || this.state === 'done' || this.state === 'idle') return;
+    tap() {                  // returns true when it toggled pause (so a double-tap can undo it)
+      if (this._pending) return false;
+      if (this.state === 'hook') { this.skipHook(); return false; }
+      if (this.state === 'quiz' || this.state === 'done' || this.state === 'idle') return false;
       this.togglePause();
+      return true;
     }
     togglePause() { if (this.paused) this._resume(); else this._pause(); }
     _pause() {
       if (this.paused || this.state === 'idle') return;
       this.paused = true;
-      this._stopSpeech(); this._clearTimers();
+      // hold narration + pending timers in place so resume continues mid-sentence
+      this._holdTimers();
+      this._kept = !!(this.speech && this.speech.pause);
+      if (this._kept) this.speech.pause(); else { this._stopSpeech(); }
       this.stage.classList.add('frozen');
-      this.bigplay.textContent = '❚❚'; this.bigplay.classList.add('show');
+      this.bigplay.textContent = '▶'; this.bigplay.classList.add('show');
     }
     _resume() {
       if (!this.paused) return;
       this.paused = false;
       this.stage.classList.remove('frozen');
       this.bigplay.classList.remove('show');
+      if (this._kept) { this._kept = false; this._releaseTimers(); this.speech.resume(); return; }
       const s = this.state;
       if (s === 'scene') { this.sceneIdx = Math.min(this.sceneIdx, this.data.scenes.length - 1); this._scene(); }
       else if (s === 'recap') this._recap();
@@ -291,16 +309,23 @@
 
     /* ---------- helpers ---------- */
     _caption(text) {
-      // Keep the complete script readable and let the learner control scrolling.
-      // Narration can continue, but the caption never moves underneath the user.
-      this.capText.innerHTML = '<span class="w on">' + strip(text) + '</span>';
-      this.capText.scrollTop = 0;
+      // One clipped line (CSS ellipsis); tapping it opens the full script.
+      this._setCap(strip(text));
     }
+    _setCap(text) { this._capFull = text; this.capText.textContent = text; }
     _say(text, onend) { this.speech = SS.narrator.speak(text, { onend }); }
     _stopSpeech() { if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
     _clearScene() { if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; } this.stage.innerHTML = ''; }
-    _after(ms, fn) { const t = setTimeout(() => { if (!this.paused && this.state !== 'idle') fn(); }, ms); this.timers.push(t); return t; }
-    _clearTimers() { this.timers.forEach(clearTimeout); this.timers = []; }
+    _after(ms, fn) {
+      const t = { left: ms, at: Date.now(), id: 0 };
+      t.run = () => { this.timers = this.timers.filter(x => x !== t); if (!this.paused && this.state !== 'idle') fn(); };
+      t.id = setTimeout(t.run, ms);
+      this.timers.push(t);
+      return t;
+    }
+    _clearTimers() { this.timers.forEach(t => clearTimeout(t.id)); this.timers = []; }
+    _holdTimers() { this.timers.forEach(t => { clearTimeout(t.id); t.left -= Date.now() - t.at; }); }
+    _releaseTimers() { this.timers.forEach(t => { t.at = Date.now(); t.id = setTimeout(t.run, Math.max(0, t.left)); }); }
     _seg(frac) {
       const seg = this.ctx.segEl; if (!seg) return;
       seg.classList.add('live');
