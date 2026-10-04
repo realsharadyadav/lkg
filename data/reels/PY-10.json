@@ -42,12 +42,12 @@
       "narration": "The event loop is a single thread running one loop: it keeps a queue of coroutines that are READY to run, picks one, runs it until it hits an await — a pause point — then switches to the next ready coroutine. Crucially, when a coroutine awaits a network response, the loop doesn't sit there; it runs OTHER work, and a completion notification re-queues the paused coroutine when its I-O finishes. That's why one thread handles thousands of concurrent connections: the CPU is never the bottleneck in I-O-bound work — waiting is. Asyncio converts waiting into doing. It's cooperative multitasking: coroutines yield control at awaits, so a coroutine that never awaits starves everything else."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "🧵", "t": "One thread", "s": "No context switching cost · no locks needed for shared state" },
-        { "e": "📋", "t": "Ready queue", "s": "Coroutines waiting for CPU time · loop picks one, runs to next await" },
-        { "e": "📡", "t": "Completion events", "s": "Network I/O done → coroutine re-queued → loop resumes it" }
+        { "e": "🧵", "pk": "🧵", "t": "One thread", "s": "No context switching cost · no locks needed for shared state" },
+        { "e": "📋", "pk": "📍", "t": "Ready queue", "s": "Coroutines waiting for CPU time · loop picks one, runs to next await" },
+        { "e": "📡", "pk": "⚡", "t": "Completion events", "s": "Network I/O done → coroutine re-queued → loop resumes it" }
       ],
       "narration": "Compare with threads: the OS switches threads preemptively, mid-instruction, so shared data needs locks. Coroutines switch only at awaits — points where YOU know it's safe — so within one event loop, shared state needs no locks at all. The trade: anything CPU-heavy inside a coroutine blocks the entire loop, because nothing else can run until it awaits. Rule: async for waiting on the network, threads or processes for CPU work — PY-11 goes deep on that split. And a sharp edge for GenAI apps: some libraries are secretly blocking — a sync SDK call inside an async function freezes the whole loop; use async-native clients like httpx."
     },

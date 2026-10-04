@@ -39,12 +39,12 @@
       "narration": "A request handler dies with its process; an agent that runs for hours must NOT. Durable execution is the pattern: the run's STATE — where it is, what's done, what's pending — is PERSISTED after every step, so any crash, deploy, or scaling event resumes from the last checkpoint instead of restarting. The machinery exists and is mature: TEMPORAL — the durable workflow engine: workflows as code, every step's result recorded, replay-based recovery; you write the agent loop as a durable workflow and the engine handles survival. AZURE DURABLE FUNCTIONS — the same pattern inside Azure's serverless world — orchestrator functions checkpoint between activity calls; MAF and LangGraph both integrate checkpointing — AG-15's frameworks list included it deliberately. The checkpoint contract: after every meaningful step — model call, tool result, subtask completion — persist {step, result, state-delta}; resume = load latest checkpoint, continue. State stores must be transactional with the checkpoint, or half-applied effects duplicate on replay."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter" : 1,
       "layers": [
-        { "e": "💾", "t": "Checkpoint after every step", "s": "Step + result + state-delta persisted · resume = load + continue" },
-        { "e": "🔁", "t": "Replay-safe steps", "s": "Idempotent side effects (AG-02) or activity-results recorded — replays never duplicate" },
-        { "e": "⏸️", "t": "Suspend & resume", "s": "Human gates (AG-17) become waits · multi-day tasks are normal, not heroic" }
+        { "e": "💾", "pk": "💾", "t": "Checkpoint after every step", "s": "Step + result + state-delta persisted · resume = load + continue" },
+        { "e": "🔁", "pk": "📝", "t": "Replay-safe steps", "s": "Idempotent side effects (AG-02) or activity-results recorded — replays never duplicate" },
+        { "e": "⏸️", "pk": "⏳", "t": "Suspend & resume", "s": "Human gates (AG-17) become waits · multi-day tasks are normal, not heroic" }
       ],
       "narration": "The mindset shift durable execution enables: WAITING IS FREE. An agent that needs a human approval, an API callback, or tomorrow's data simply SUSPENDS — its checkpoint rests, its budget doesn't burn, and it resumes when the world is ready. Multi-day tasks become ordinary: the overnight research job, the week-long migration assistant — without durability, these are fragile miracles; with it, they're Tuesday. The design cost: your agent loop must be written AS a sequence of checkpointable steps — which is exactly the decomposition discipline from AG-11, so the investment overlaps; and every side effect must be idempotent or recorded — AG-02's rule enforced by the execution model. For shorter workloads, lightweight checkpointing — LangGraph's checkpointer writing to Postgres — covers the same ground without a workflow engine. The rule of thumb: minutes of runtime — plain loops with fences; hours-to-days, human waits, or crash-sensitivity — durable machinery."
     },

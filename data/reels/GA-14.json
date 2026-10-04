@@ -84,13 +84,13 @@
       "narration": "The ingestion pipeline runs once in every demo and forever in production. Documents get edited, deprecated, replaced. The naive answer — re-index everything nightly — breaks down at corpus scale: it's slow, expensive, and produces a window where answers mix old and new. The right pattern: track document versions, diff at the document level, and re-embed only what changed. Give every chunk a deterministic ID from document ID plus chunk position — GA-11's upsert lesson — so an updated document replaces its old chunks exactly. Deletes are the silent killer: when a document is withdrawn, its chunks must leave the index immediately, or users retrieve and cite retracted content."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "👁️", "t": "Watch", "s": "Sources polled/webhooked · events: created · updated · deleted" },
-        { "e": "🔀", "t": "Diff", "s": "Version check → only changed docs enter the pipeline" },
-        { "e": "♻️", "t": "Re-process", "s": "Parse → chunk → embed · deterministic IDs → upsert replaces cleanly" },
-        { "e": "🗑️", "t": "Delete", "s": "Withdrawn docs → cascade chunk deletion · no zombie content" }
+        { "e": "👁️", "pk": "📢", "t": "Watch", "s": "Sources polled/webhooked · events: created · updated · deleted" },
+        { "e": "🔀", "pk": "📝", "t": "Diff", "s": "Version check → only changed docs enter the pipeline" },
+        { "e": "♻️", "pk": "🧩", "t": "Re-process", "s": "Parse → chunk → embed · deterministic IDs → upsert replaces cleanly" },
+        { "e": "🗑️", "pk": "✅", "t": "Delete", "s": "Withdrawn docs → cascade chunk deletion · no zombie content" }
       ],
       "narration": "The incremental pipeline. Watch: sources announce changes — polls, webhooks, event streams. Diff: compare versions; only changed documents pay the embedding cost. Re-process: deterministic IDs make upsert a clean replace — same document, same chunk positions, new vectors. Delete: cascade — a withdrawn document must take every chunk with it, or your system cites content that no longer exists, which in regulated domains is a compliance incident, not a bug. Build this on day one: retro-fitting deletes into a corpus that assumed immutability is miserable."
     },

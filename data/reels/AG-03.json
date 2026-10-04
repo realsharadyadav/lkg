@@ -39,12 +39,12 @@
       "narration": "Two complementary tools. Web search: a query goes to a search API — results return as titles, snippets and URLs; the model reads the landscape and picks what to open. Fetch: a URL is retrieved and converted to clean text — HTML stripped to readable content — and returned as an observation. Together they close the freshness gap from GA-13: stock prices, today's documentation, this week's breaking change, all reachable at query time. The engineering realities: fetch needs care — paywalls, JavaScript-heavy pages, cookie walls and bot detection return garbage; prefer pages with clean markup and provide the model error signals like AG-02 taught. Rate limits apply to your search API. And robots and terms-of-service are legal constraints, not technical ones."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "🔍", "t": "search(query)", "s": "Landscape scan · snippets + URLs · the model picks candidates" },
-        { "e": "📥", "t": "fetch(url)", "s": "Clean-text extraction · paywalls/JS = noise → actionable errors back" },
-        { "e": "🧠", "t": "Synthesize with dates", "s": "\"As of <date>, …\" · sources cited · stale pages flagged by the model" }
+        { "e": "🔍", "pk": "📝", "t": "search(query)", "s": "Landscape scan · snippets + URLs · the model picks candidates" },
+        { "e": "📥", "pk": "🌐", "t": "fetch(url)", "s": "Clean-text extraction · paywalls/JS = noise → actionable errors back" },
+        { "e": "🧠", "pk": "📋", "t": "Synthesize with dates", "s": "\"As of <date>, …\" · sources cited · stale pages flagged by the model" }
       ],
       "narration": "The research loop this enables: search broadly, fetch the three most promising, synthesize with explicit as-of dates and source links. Two quality disciplines. Source triage: the model should weigh source authority — official documentation beats a random blog — and cross-check single-source claims, because the web confidently repeats itself; one original error becomes fifty copies. Freshness labeling: always state the as-of date in answers built from web data; 'as of October 2026' protects the answer from silently aging. Cost note: search-plus-fetch chains consume tokens fast — fetched pages enter the context window, so truncate aggressively — summary-first, full text only when the summary warrants it. Built-in web tools make agents current; discipline makes them trustworthy."
     },

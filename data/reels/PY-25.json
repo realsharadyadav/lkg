@@ -93,13 +93,13 @@
       "narration": "Finally, the intuition behind everything modern. A neural network is layers of simple units: each multiplies inputs by weights, adds a bias, applies a small nonlinearity — and passes the result on. Learning is a loop: run data forward, measure how wrong the output is — the loss — then propagate that error backward and nudge every weight slightly downhill. Repeat over millions of examples. That's gradient descent, and it's the entire secret behind LLMs, embedding models, and image models alike."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 4,
       "layers": [
-        { "e": "📥", "t": "Input", "s": "Tokens / pixels / features" },
-        { "e": "🧮", "t": "Hidden layers", "s": "Weighted sums + nonlinearities — patterns emerge level by level" },
-        { "e": "📤", "t": "Output", "s": "Prediction → compared to truth = loss" },
-        { "e": "🔁", "t": "Backprop", "s": "Loss flows backward; every weight nudged downhill. Repeat × millions." }
+        { "e": "📥", "pk": "📥", "t": "Input", "s": "Tokens / pixels / features" },
+        { "e": "🧮", "pk": "🧠", "t": "Hidden layers", "s": "Weighted sums + nonlinearities — patterns emerge level by level" },
+        { "e": "📤", "pk": "📤", "t": "Output", "s": "Prediction → compared to truth = loss" },
+        { "e": "🔁", "pk": "🔁", "t": "Backprop", "s": "Loss flows backward; every weight nudged downhill. Repeat × millions." }
       ],
       "narration": "The picture, top to bottom. Input data flows through hidden layers — each one recombining the previous one's signals, so early layers catch simple patterns, deep layers catch abstractions. The output is compared to the truth, producing loss. Backpropagation computes how each weight contributed and adjusts them all slightly. Iterate across the dataset until the loss stops falling. Transformers — GA-01's attention stack — are this same loop with a particular layer design and a few trillion tokens of training data."
     },

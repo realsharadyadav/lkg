@@ -74,13 +74,13 @@
       "narration": "Assemble the stack. VETTING at intake — AG-06's checklist: provenance, pinned versions, audited tool surface. LEAST PRIVILEGE at configuration: scoped directories, read-only roles, fine-grained tokens. HUMAN CONFIRMATION at action time: side-effecting calls pause for explicit approval — with the confirmation UI showing WHAT will happen, not just which tool was called. AUDIT at runtime: log every tool call with user, arguments, result — the gateway pattern — so incidents are reconstructable and anomalies detectable: 'this server usually reads five files a day; it just read five thousand'. And RESPONSE for when layers fail anyway: credential rotation playbooks, server disconnect switches, blast-radius reviews. Security architecture is the sum of boring layers, each cheap alone, decisive together."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "🔎", "t": "Vet", "s": "Provenance · pinned versions · tool-surface review" },
-        { "e": "🎯", "t": "Scope", "s": "Least privilege per server AND per tool · short-lived creds" },
-        { "e": "✋", "t": "Confirm", "s": "Human approval for side effects · show WHAT, not just which tool" },
-        { "e": "📡", "t": "Monitor & respond", "s": "Full call audit · anomaly alerts · rotation playbooks" }
+        { "e": "🔎", "pk": "🔍", "t": "Vet", "s": "Provenance · pinned versions · tool-surface review" },
+        { "e": "🎯", "pk": "🎯", "t": "Scope", "s": "Least privilege per server AND per tool · short-lived creds" },
+        { "e": "✋", "pk": "✅", "t": "Confirm", "s": "Human approval for side effects · show WHAT, not just which tool" },
+        { "e": "📡", "pk": "📊", "t": "Monitor & respond", "s": "Full call audit · anomaly alerts · rotation playbooks" }
       ],
       "narration": "Map the layers to the threats: vetting raises the cost of poisoning at intake; scoping bounds what any successful attack reaches; confirmation interrupts poisoned side-effects at the moment of execution — the single highest-value layer; monitoring converts silent exfiltration into a detectable anomaly. Notice what each layer costs: vetting, minutes per server; scoping, careful config; confirmation, a click on consequential actions; monitoring, a log pipeline you probably already have. None requires exotic tooling — MCP security is mostly existing security discipline applied to a new integration surface. The failure stories in this space will almost always trace to a skipped cheap layer, not a defeated expensive one. And keep current: the official security guidance from the MCP project and security researchers evolves with the ecosystem — review advisories the way you review dependency CVEs, because that's what servers are."
     },

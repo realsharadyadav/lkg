@@ -42,12 +42,12 @@
       "narration": "Guardrails are deterministic checks wrapped around the model call. INPUT side: length caps, encoding normalization — attackers hide payloads in homoglyphs and escaped Unicode — injection-pattern screens from GA-22's tripwires, and topic allow-lists for narrow systems. OUTPUT side: the response passes through filters BEFORE reaching the user — secret-pattern detection — 'did the model just emit something that LOOKS like an API key?', PII screens for anything that leaked through, topic boundaries — a support bot shouldn't output legal advice — and format validators where structure is contractual. The composition pattern that works: guardrails OUTSIDE the model, on both sides — the sandwich: filter the input, call the model, filter the output. Each filter is a pure function, independently testable, versioned — PY-22's suite covers them directly, and they run regardless of what the model felt like doing that day."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "🎫", "t": "Input filters", "s": "Length/encoding caps · injection screens · topic allow-lists · PII redaction (ch.1)" },
-        { "e": "🧠", "t": "Model call", "s": "The probabilistic center — never the enforcement point" },
-        { "e": "🚪", "t": "Output gates", "s": "Secret/PII screens · topic boundaries · format validators · block-or-replace policy" }
+        { "e": "🎫", "pk": "📥", "t": "Input filters", "s": "Length/encoding caps · injection screens · topic allow-lists · PII redaction (ch.1)" },
+        { "e": "🧠", "pk": "🧠", "t": "Model call", "s": "The probabilistic center — never the enforcement point" },
+        { "e": "🚪", "pk": "📤", "t": "Output gates", "s": "Secret/PII screens · topic boundaries · format validators · block-or-replace policy" }
       ],
       "narration": "The decision that shapes the output gate: block-or-replace. BLOCK returns a canned refusal — safe but abrupt, and it leaks that SOMETHING was filtered; REPLACE substitutes a sanitized version — 'I've removed some sensitive details' — smoother UX, but requires judgment about what substitution preserves meaning. Choose per content class: secrets and PII — block-and-log, always; style drift — replace; borderline topics — block with a helpful redirect. Also make failures observable: every guardrail trip is an event — count them per rule per day — a spike in injection-screen trips is GA-22's canary telling you someone is probing; silent filters hide attack telemetry. And keep the rules DATA-DRIVEN where possible — patterns in config, versioned, deployable without code changes — because guardrail tuning moves at incident speed, not release speed."
     },

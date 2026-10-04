@@ -60,13 +60,13 @@
       "narration": "Accepted records flow into business systems — the accounting database, the CRM, the document store — and the integration step inherits every discipline. IDEMPOTENCY: each record carries a natural key — vendor plus invoice number — upserts replace rather than duplicate; re-running the pipeline is safe, the AG-02 rule at data scale. PARTIAL FAILURE: per-record results — '47 written, 1 rejected by the ERP as duplicate, 1 queued' — the batch never all-or-nothing; failed writes go to the exception queue with the target system's error attached. AUDIT: the write trail records source document hash, extracted values, confidence score, reviewer identity if any, target system response — the full provenance from PDF byte to ERP row; a regulator asking 'where did this number come from' gets a query. AND REVERSIBILITY: where the target supports it, writes are undoable — a retraction flag rather than a delete, the GA-14 delete lesson applied to integrations."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "📄", "t": "PDF in", "s": "Parse layer: pdfplumber / OCR · page text with quality flags" },
-        { "e": "🔍", "t": "Extract + verify", "s": "Schema contract · two-pass with text-support check · confidence computed" },
-        { "e": "👤", "t": "Route", "s": "High confidence → write · low → exception package → reviewer" },
-        { "e": "💾", "t": "Write + audit", "s": "Idempotent upserts · per-record results · full provenance · reversibility" }
+        { "e": "📄", "pk": "📝", "t": "PDF in", "s": "Parse layer: pdfplumber / OCR · page text with quality flags" },
+        { "e": "🔍", "pk": "📋", "t": "Extract + verify", "s": "Schema contract · two-pass with text-support check · confidence computed" },
+        { "e": "👤", "pk": "🎯", "t": "Route", "s": "High confidence → write · low → exception package → reviewer" },
+        { "e": "💾", "pk": "✅", "t": "Write + audit", "s": "Idempotent upserts · per-record results · full provenance · reversibility" }
       ],
       "narration": "The loop's completeness property: every input ends in one of three states — written, reviewed-then-written, or flagged-undeliverable — never lost, never silently swallowed; a daily reconciliation counts documents in versus records out versus queue depth, and the counts must reconcile, the same completeness assertion as AG-10's parallel merges. Throughput shape: the pipeline is QUEUE-DRIVEN — AG-19 — documents arrive, jobs enqueue, workers scale; nightly batches of thousands run at off-peak model rates, GA-25's batch economics. And the system's eval story, AG-18 style: a fixture set of documents with known field values — extraction accuracy per field, reconciliation rates, exception-rate stability — regression-gated like everything else. When this loop runs, the organization stops typing invoices into systems — the oldest data-entry job in existence, quietly retired with its accuracy IMPROVED, because machines extract and humans review the edge, exactly where their attention belongs."
     },

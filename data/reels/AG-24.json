@@ -77,12 +77,12 @@
       "narration": "Operate it like everything else in Stage 8, scaled to a chatbot's shape. DEPLOY: the webhook receiver as a small always-on service — App Service or a Container App; the WORKERS queue-driven — AG-19 — scaling with message volume; the whole thing deployable via the PY-23 pipeline, eval gates included — the messaging golden set: fifty representative conversations with known-good behaviors, regression-gated on every prompt change. MONITOR: per-user cost dashboards — chat users are the most spend-variable traffic that exists; latency — time-to-first-edit on the placeholder; quality — the feedback signal is built into chat: reaction buttons on replies — 👍👎 become GA-24's feedback loop with zero extra UX; and abuse signals — rate-limit trips, injection-screen flags, blocked egress attempts — the GA-22 canaries reporting live. THE SOCIAL LAUNCH: start with five friendly users, watch everything, widen the circle as the exception queue teaches you what real usage looks like — the pilot-then-scale discipline that Stage 10 will formalize."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "🌐", "t": "Webhook receiver", "s": "Validate → enqueue → 200ms · always-on, tiny, boring" },
-        { "e": "👷", "t": "Queue workers", "s": "Agent loop · memory registers · gated tools · placeholder-edit replies · budget-metered" },
-        { "e": "📡", "t": "Observability", "s": "Per-user costs · reaction feedback → golden set · abuse-signal alerts · exception queue" }
+        { "e": "🌐", "pk": "📨", "t": "Webhook receiver", "s": "Validate → enqueue → 200ms · always-on, tiny, boring" },
+        { "e": "👷", "pk": "💬", "t": "Queue workers", "s": "Agent loop · memory registers · gated tools · placeholder-edit replies · budget-metered" },
+        { "e": "📡", "pk": "📊", "t": "Observability", "s": "Per-user costs · reaction feedback → golden set · abuse-signal alerts · exception queue" }
       ],
       "narration": "The four capstones form an arc worth naming: the SOP agent governed CHANGE, the analyst agent governed ANSWERS, the document agent governed EXTRACTION — this one governs CONVERSATION, the least structured surface of all, and does it with the same disciplines: bounded power, earned trust, honest limits, watched operation. What a user experiences — an assistant that remembers, thinks out loud, asks before acting, admits limits — is the curriculum made personable. And the build order: one — echo bot with validated webhooks and idempotent enqueueing; two — the agent loop with mention-gating; three — memory registers with the inspect/forget commands; four — one gated tool end-to-end — calendar reads say — with inline confirmations; five — budgets, dashboards, abuse signals; six — the golden conversation set in CI. Stage 9's projects end here; Stage 10 zooms out — from building agents to architecting platforms."
     },

@@ -58,13 +58,13 @@
       "narration": "The moment an agent exceeds its competence is the most dangerous moment in its life — unless escalation is DESIGNED. Trigger classes: repeated failure — same error across N attempts, the loop isn't converging; low confidence — self-assessed OR verifier-scored below threshold; novel situation — inputs outside the training envelope — unfamiliar domain, unprecedented request shape; policy boundaries — anything the rules say a human must own — legal, HR, financial commitments; and user demand — an explicit 'let me talk to a person'. The handoff QUALITY is the product: the escalation package carries everything the human needs — what was tried, with outcomes; current state; the agent's assessment of where it's stuck; and relevant artifacts by reference — AG-12's scratchpad as the escalation payload. A human receiving a bare 'agent failed' starts from zero; one receiving a complete package starts informed — the difference between a two-minute resolution and a twenty-minute archaeology."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "🚨", "t": "Trigger", "s": "Repeated failure · low confidence · novel input · policy boundary · user asks" },
-        { "e": "📦", "t": "Escalation package", "s": "Tried/outcomes · current state · agent's assessment · artifact references" },
-        { "e": "👤", "t": "Human resolves", "s": "Informed start from the package · resolution logged" },
-        { "e": "♻️", "t": "Learn", "s": "Resolution becomes golden-set case + possibly new capability/rule" }
+        { "e": "🚨", "pk": "🔴", "t": "Trigger", "s": "Repeated failure · low confidence · novel input · policy boundary · user asks" },
+        { "e": "📦", "pk": "📋", "t": "Escalation package", "s": "Tried/outcomes · current state · agent's assessment · artifact references" },
+        { "e": "👤", "pk": "✅", "t": "Human resolves", "s": "Informed start from the package · resolution logged" },
+        { "e": "♻️", "pk": "📚", "t": "Learn", "s": "Resolution becomes golden-set case + possibly new capability/rule" }
       ],
       "narration": "The final layer closes the loop the way GA-24's quality loop does: escalations are DATA. Each resolved escalation is a candidate golden-set case — GA-20's dataset growing from the frontier of the agent's incompetence; patterns in escalation REASONS reveal where the system needs capability, clearer rules, or better training — fifty escalations about the same novel situation is a signal to build the skill, not to hire more humans. And track escalation RATE as a health metric: a rising rate means the agent's envelope is being stressed — by traffic drift, by scope creep, by degradation — and the response is measured, not panicked. Design the emotional layer too: how the agent ANNOUNCES escalation shapes user trust — 'I've tried three approaches and I'm not converging; I've prepared a summary for a teammate who can take this' reads as competence; 'error, escalating' reads as failure. Same event, different story — write the good one."
     },

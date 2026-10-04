@@ -60,13 +60,13 @@
       "narration": "When the question wants a picture — 'plot monthly revenue' — the agent writes Python: pandas over the DuckDB results, matplotlib for the chart; a sandbox executes it — AG-03's contract: no network, resource caps, ephemeral workspace; the chart returns as an artifact — stored, linked, viewable — with the agent's narrative alongside: 'Revenue climbed through Q2, dipped in July — the dip tracks the pricing change in your notes.' Summaries follow the same discipline: the numbers come from SQL — the engine computes; the WORDS come from the model — it interprets, it cannot alter. The composition rule from GA-19 is the integrity invariant: the agent may never state a number that didn't pass through the SQL tool — if it quotes a figure, the trace shows the query that produced it — citations for arithmetic, the same grounded-answer discipline as GA-16, one layer down."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter" : 2,
       "layers": [
-        { "e": "❓", "t": "Question", "s": "\"Why did July dip?\"" },
-        { "e": "🔀", "t": "Route", "s": "analysis → SQL tool · visual → sandbox code · semantic → retrieval" },
-        { "e": "🧮", "t": "Engine computes", "s": "DuckDB exact · sandbox matplotlib · artifacts linked" },
-        { "e": "✍️", "t": "Model interprets", "s": "Narrative cites every number · 'July revenue: 214k (query #7)' · speculation labeled as such" }
+        { "e": "❓", "pk": "❓", "t": "Question", "s": "\"Why did July dip?\"" },
+        { "e": "🔀", "pk": "🛣️", "t": "Route", "s": "analysis → SQL tool · visual → sandbox code · semantic → retrieval" },
+        { "e": "🧮", "pk": "📈", "t": "Engine computes", "s": "DuckDB exact · sandbox matplotlib · artifacts linked" },
+        { "e": "✍️", "pk": "📝", "t": "Model interprets", "s": "Narrative cites every number · 'July revenue: 214k (query #7)' · speculation labeled as such" }
       ],
       "narration": "The interpretive layer has honesty rules worth writing into the system prompt: cite or hedge — every quantitative claim carries its query reference, every inference carries language like 'suggests' or 'correlates with'; state coverage — when the answer rests on sampled or filtered data, say so — 'based on 48k shipped orders, excluding the 14 rejected rows'; and abstain on under-determination — 'the data can't tell us WHY July dipped — it shows WHAT happened; possible explanations need information I don't have' — GA-16's abstention discipline, adapted. These aren't politeness; they're what separates an analyst agent from a plausible-numbers machine, and they're evaluable — the golden set includes 'unanswerable why' cases where the correct response names the gap. The chart route inherits the same rules: axes labeled, units stated, source query referenced in the caption."
     },

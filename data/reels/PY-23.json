@@ -42,13 +42,13 @@
       "narration": "The pipeline embodies the whole curriculum's discipline in YAML. STAGES: BUILD — install with frozen lockfile, run ruff + black from PY-22's pre-commit set, compile-check, build the Docker image, tag with the commit SHA. TEST — pytest with PY-22's suites: unit tests with Fakes, and — the LKG signature — the eval gates: golden-set runs against the service, faithfulness thresholds, the agent regression suite from AG-18; failures here stop the line, exactly GA-26's promotion logic. SCAN — image vulnerability scan, dependency audit, secret scanning on the repo — nothing deploys with known-critical CVEs or a leaked key. DEPLOY — push the image to a registry — Azure Container Registry — then deploy via the pipeline to the target environment, with approvals between environments — the human checkpoint as a pipeline gate: dev deploys automatically, production requires an approver. ARTIFACTS AND TRACES: every run links commit → image digest → deployment — full provenance, GA-21's requirement, for the application layer."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "🔨", "t": "Build", "s": "Locked deps · lint/format · image build · SHA tags" },
-        { "e": "🧪", "t": "Test", "s": "pytest + Fakes · EVAL GATES: golden set, faithfulness, agent regressions" },
-        { "e": "🔒", "t": "Scan", "s": "Image CVEs · dependency audit · secret scanning" },
-        { "e": "🚀", "t": "Deploy", "s": "ACR push · env promotion with approvals · provenance: commit → digest → deploy" }
+        { "e": "🔨", "pk": "🔨", "t": "Build", "s": "Locked deps · lint/format · image build · SHA tags" },
+        { "e": "🧪", "pk": "🧪", "t": "Test", "s": "pytest + Fakes · EVAL GATES: golden set, faithfulness, agent regressions" },
+        { "e": "🔒", "pk": "🔍", "t": "Scan", "s": "Image CVEs · dependency audit · secret scanning" },
+        { "e": "🚀", "pk": "🚀", "t": "Deploy", "s": "ACR push · env promotion with approvals · provenance: commit → digest → deploy" }
       ],
       "narration": "The eval-gates-in-CI step is the one that makes an AI application pipeline DIFFERENT from a classical one: the test stage doesn't only assert code correctness — it asserts BEHAVIOR against golden datasets, exactly GA-26's environment promotion, running on every commit. Notice the symmetry the whole curriculum keeps drawing: prompts versioned like code, models pinned like dependencies, quality gated like tests, deployments promoted like releases — because AI systems are software systems whose behavior happens to be probabilistic; the engineering response is MORE discipline, not less. Pipeline hygiene: keep stages FAST — the build-and-unit stage under ten minutes, because slow gates get bypassed — push heavy eval suites to a scheduled nightly with PR-blocking smoke subsets, GA-21's fast-gate pattern one last time. And everything as CODE — azure-pipelines.yaml in the repo, reviewed, versioned, diffed."
     },

@@ -78,13 +78,13 @@
       "narration": "Agents spend tokens the way engines spend fuel — measure per TASK, not per call: total tokens across all steps, wall-clock to completion, number of model calls, tool-call count — the full resource signature of a task. Why per-task: an agent that uses eight small calls may cost less than one giant context-stuffed call — per-call metrics hide that; and task efficiency is what BUDGETS are made of — GA-25's caps and GA-17's autonomy bounds get their numbers from these distributions. The efficiency-regression rule: an agent update that keeps success constant but doubles cost-per-task is a REGRESSION — same as a quality drop — and the promotion gates from GA-26 treat it as one; pin the efficiency profile like any behavioral property. Optimization informed by these numbers is targeted: the Pareto frontier of your golden tasks — which tasks cost most for their success — names where routing (GA-25), better tools, or decomposition work pays best."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "🧪", "t": "Regression suite", "s": "Golden agent-tasks: success + trajectory + efficiency · run on every change" },
-        { "e": "🚦", "t": "Promotion gates", "s": "Success ≥ baseline · trajectory dims ≥ baseline · cost/task ≤ baseline + tolerance" },
-        { "e": "🌙", "t": "Nightly full run", "s": "Complete suite on latest artifacts · trends + drift alarm" },
-        { "e": "⏮️", "t": "Instant rollback", "s": "Red gate → last-known-good (GA-26) · behavior drift never persists overnight" }
+        { "e": "🧪", "pk": "✅", "t": "Regression suite", "s": "Golden agent-tasks: success + trajectory + efficiency · run on every change" },
+        { "e": "🚦", "pk": "🚦", "t": "Promotion gates", "s": "Success ≥ baseline · trajectory dims ≥ baseline · cost/task ≤ baseline + tolerance" },
+        { "e": "🌙", "pk": "📈", "t": "Nightly full run", "s": "Complete suite on latest artifacts · trends + drift alarm" },
+        { "e": "⏮️", "pk": "⏮️", "t": "Instant rollback", "s": "Red gate → last-known-good (GA-26) · behavior drift never persists overnight" }
       ],
       "narration": "The regression suite is where everything composes: GA-20's golden discipline provides the tasks; GA-21's judge calibration grades them; GA-24's traces feed the trajectory scoring; GA-26's pipeline gates promotions on it; GA-17's autonomy ladder trusts it. That's the mature posture: agent behavior is MEASURED like software quality — versioned expectations, continuous runs, gated promotion — because it drifts like software quality never did. And the suite's living-document practice: new incidents, new escalations, new user feedback — all become cases — the suite grows at its frontier, exactly where the system is weakest; a suite that only grows in comfortable areas measures yesterday's agent. Stage 8 closes its eval arc here; production engineering — the durable machinery of loops, queues, and budgets — comes next."
     },

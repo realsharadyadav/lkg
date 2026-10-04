@@ -21,12 +21,12 @@
       "narration": "The supervisor pattern: a central orchestrator agent receives the user's task, delegates to specialist workers — research, code, review — collects their outputs, and synthesizes the final result. If AG-10's orchestrator-workers sounded familiar, that's because this IS that pattern with agents as workers: dynamic decomposition, dispatched subtasks, judged completeness. Why it became the default: the control flow is legible — one decision-maker means one place to debug; workers are independently testable — each specialist evals against its own golden set; and skills scale horizontally — adding a new specialist doesn't retrain the system, it extends the roster. The supervisor's design determines the ceiling: its delegation quality, its context discipline — worker outputs compressed on return — and its termination criteria — when is the task ACTUALLY done, not just delegated?"
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 0,
       "layers": [
-        { "e": "🧭", "t": "Supervisor", "s": "Decomposes · delegates · judges completeness · owns the user conversation" },
-        { "e": "👥", "t": "Specialists", "s": "Research · coder · reviewer · each with own tools, prompts, evals" },
-        { "e": "📦", "t": "Compressed returns", "s": "Workers return summaries + artifact pointers, not raw dumps (AG-13)" }
+        { "e": "🧭", "pk": "🎯", "t": "Supervisor", "s": "Decomposes · delegates · judges completeness · owns the user conversation" },
+        { "e": "👥", "pk": "🔧", "t": "Specialists", "s": "Research · coder · reviewer · each with own tools, prompts, evals" },
+        { "e": "📦", "pk": "📦", "t": "Compressed returns", "s": "Workers return summaries + artifact pointers, not raw dumps (AG-13)" }
       ],
       "narration": "Two failure modes to engineer against. Supervisor bottleneck: EVERYTHING flows through one context — the supervisor's window becomes the system's capacity limit; the same compaction and budget disciplines from AG-13 apply one level up, plus aggressive output compression from workers. Skill-boundary blur: specialists drift into each other's domains — the coder starts doing research, the reviewer starts rewriting — and quality quietly equalizes at mediocre; sharp system prompts per specialist, and a supervisor that ROUTES rather than lets workers self-select, keep the boundaries real. Framework note: LangGraph's supervisor nodes, CrewAI's crews and Microsoft Agent Framework's orchestration patterns all implement this topology directly — AG-15 compares them."
     },

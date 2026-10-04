@@ -39,12 +39,12 @@
       "narration": "Vector search uses a bi-encoder — question and chunks embedded separately, compared by cosine similarity. That independence is what makes it fast, but it caps accuracy: the query encoding can't see the chunk it's scoring. A cross-encoder fixes exactly that: feed the question and chunk JOINTLY through a small transformer that outputs one relevance score. Far more accurate — and far slower, because every pair needs its own forward pass. So you never rerank the corpus — you rerank the candidate list: bi-encoder fetches fifty cheaply, cross-encoder scores those fifty, you keep the top five. Two-stage retrieval: recall at scale, precision at the end."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "⚡", "t": "Stage 1 · vector search", "s": "Question → embedding → top-50 by cosine · milliseconds over millions" },
-        { "e": "🎯", "t": "Stage 2 · cross-encoder", "s": "Each (question, chunk) pair scored jointly · ~50 forward passes" },
-        { "e": "✂️", "t": "Cut", "s": "Keep top-5 by rerank score → only these enter the prompt" }
+        { "e": "⚡", "pk": "📊", "t": "Stage 1 · vector search", "s": "Question → embedding → top-50 by cosine · milliseconds over millions" },
+        { "e": "🎯", "pk": "📈", "t": "Stage 2 · cross-encoder", "s": "Each (question, chunk) pair scored jointly · ~50 forward passes" },
+        { "e": "✂️", "pk": "📋", "t": "Cut", "s": "Keep top-5 by rerank score → only these enter the prompt" }
       ],
       "narration": "Why two stages and not one perfect one: because accuracy and latency pull opposite ways, and each stage optimizes one. The bi-encoder pass is a dot-product index lookup — sub-linear, cacheable, fine at corpus scale. The cross-encoder pass is fifty small model calls — independent, parallelizable, fine at candidate scale. Swap them — rerank everything, vector-search fifty — and you've built something too slow to ship and no more accurate. This pattern, retrieve-then-rerank, is the single most common upgrade in mature RAG systems, and it plugs into the GA-13 pipeline without changing any other stage."
     },

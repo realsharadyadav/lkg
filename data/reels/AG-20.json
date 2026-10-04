@@ -39,12 +39,12 @@
       "narration": "The confused deputy is a classic security concept that agents embody literally: a component that holds MORE privilege than its caller, tricked into using that privilege on the attacker's behalf. Your agent holds database credentials, API tokens, file access — more power than any single user who talks to it. The attack: an ordinary user — or an injected instruction — asks the agent to do something the ASKER couldn't do directly: 'show me the payroll table' — the agent's DB role can read it; the user's own permissions can't. The agent, confused about WHOSE authority it's exercising, complies — the deputy served the wrong master. The defense is AUTHORITY PROPAGATION: the agent acts under the ASKER'S permissions, not its own superpowers — every tool call carries the user's identity and scopes — the where-clause filtering from GA-17 and AG-07's per-user scoping, applied as a universal rule; capability narrowing — the agent's service account gets the UNION of what legitimate flows need, never more — least privilege for machines; and escalation of the gap — when the task NEEDS more authority than the asker has — 'approve this refund over your limit' — the request routes to someone WITH that authority — AG-17's approval gates as authorization, not just safety."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "👤", "t": "Asker with scopes", "s": "What THIS user may do — the authority that should govern the whole run" },
-        { "e": "🤖", "t": "Agent as deputy", "s": "Holds broader credentials — the confusion risk lives exactly here" },
-        { "e": "⚙️", "t": "Tool calls under asker's identity", "s": "Every call filtered by user scopes · agent's own role kept minimal" }
+        { "e": "👤", "pk": "🔐", "t": "Asker with scopes", "s": "What THIS user may do — the authority that should govern the whole run" },
+        { "e": "🤖", "pk": "📤", "t": "Agent as deputy", "s": "Holds broader credentials — the confusion risk lives exactly here" },
+        { "e": "⚙️", "pk": "🔒", "t": "Tool calls under asker's identity", "s": "Every call filtered by user scopes · agent's own role kept minimal" }
       ],
       "narration": "The design test: for every tool the agent can touch, ask 'could the current asker do this themselves?' If no, that call needs either a permission-error path — the AG-02 actionable kind — or an approval chain to someone who CAN. Two operational details. Service accounts: the agent's own credentials should be TIGHT — if the only thing the agent ever does with table X is read rows for users who may see them, the service account doesn't get write on X — the 'gap' between what agents CAN do and what flows NEED is attack surface; measure it and shrink it. And logging: attribute every tool call to BOTH the asker and the agent — 'user U asked, agent A executed' — the audit trail must reconstruct whose authority was exercised, or the confused-deputy forensics never close. The principle in one line: agents don't HAVE authority — they BORROW it, per call, from a human or a policy — and the borrowing must be visible, scoped, and logged."
     },

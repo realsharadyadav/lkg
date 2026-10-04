@@ -39,12 +39,12 @@
       "narration": "Long-term memory is what the agent can recall tomorrow: user preferences — 'Sharad prefers concise answers with citations'; project facts — 'the LKG app deploys from main to GitHub Pages'; accumulated lessons — from AG-11's process reflection. Mechanically it's a store plus a retrieval step: write — decided at reflection points or explicitly, never raw-transcript everything; store — a vector store is the default, and Stage 4 was the prerequisite: embeddings, chunking, retrieval quality all apply verbatim; retrieve — at session start or per-query, the relevant memories enter context as injected notes. The quality bar is curation: memory written carelessly is poison retrieved confidently — stale preferences, wrong 'facts', contradictions from an evolving project. Long-term memory needs the same freshness discipline as a RAG corpus: updates, deletes, and provenance."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "✍️", "t": "Write gates", "s": "Reflection points · explicit user facts · dedupe against existing memory" },
-        { "e": "🗄️", "t": "Store with provenance", "s": "Vector store + metadata: when learned, source, confidence, expiry" },
-        { "e": "🔍", "t": "Retrieve deliberately", "s": "Session start + per-query · only what the current task needs" }
+        { "e": "✍️", "pk": "✍️", "t": "Write gates", "s": "Reflection points · explicit user facts · dedupe against existing memory" },
+        { "e": "🗄️", "pk": "🗄️", "t": "Store with provenance", "s": "Vector store + metadata: when learned, source, confidence, expiry" },
+        { "e": "🔍", "pk": "📤", "t": "Retrieve deliberately", "s": "Session start + per-query · only what the current task needs" }
       ],
       "narration": "The provenance metadata is what separates memory from mess: every entry tagged with when it was learned, where it came from, and how confident the system is — because memories GO STALE: the deployment branch changes, the preference evolves. Review and eviction must be scheduled the way GA-14 scheduled index updates — memory is a living corpus, not an append-only log. The retrieval discipline mirrors RAG's hardest lesson: relevance-based recall pulls what's SIMILAR, not what's TRUE — a confident-sounding wrong memory outranks a correct one when the embedding matches better; mitigate with the same stack — hybrid search over memory metadata, recency weighting, and the abstention discipline of 'no relevant memory found' over forced recall. And mind the write gate: writing every transcript line to memory creates a haystack; write conclusions, not conversations."
     },

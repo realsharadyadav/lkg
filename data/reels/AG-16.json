@@ -74,13 +74,13 @@
       "narration": "Close with decision discipline. Write the ADR — architecture decision record: the options scored, the bake-off evidence, the weights, the chosen framework, and the EXPLICIT exit conditions — 'we reconsider if the repo goes quiet for six months, if MCP support lags a spec revision, or if our scale exceeds X' — pre-agreeing the tripwires prevents sunk-cost attachment. Set the review cadence: quarterly, fifteen minutes, one question — 'would we choose this again TODAY, knowing what we now know?' — a yes costs little; a no early is cheap, a no after two years of entanglement is expensive. And normalize re-evaluation: frameworks rise and fall on a two-year clock now — the team that treats the original decision as permanent will run a 2024 framework in 2028; the team that treats it as revisable captures each generation's gains. Choose well, document fully, review cheaply, switch bravely. Stage 7's final word: frameworks are tools; the patterns — the loops, the graphs, the protocols — are the craft."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "📋", "t": "Score", "s": "Matrix: control, ecosystem, language, maturity — weighted, reviewable" },
-        { "e": "🔬", "t": "Test", "s": "Bake-off: same task, two frameworks, honest dimensions" },
-        { "e": "🧅", "t": "Structure", "s": "Plain core + framework shell + protocol integrations = cheap exits" },
-        { "e": "🔁", "t": "Review", "s": "ADR + tripwires + quarterly 'would we choose this again?'" }
+        { "e": "📋", "pk": "📊", "t": "Score", "s": "Matrix: control, ecosystem, language, maturity — weighted, reviewable" },
+        { "e": "🔬", "pk": "🏆", "t": "Test", "s": "Bake-off: same task, two frameworks, honest dimensions" },
+        { "e": "🧅", "pk": "🏗️", "t": "Structure", "s": "Plain core + framework shell + protocol integrations = cheap exits" },
+        { "e": "🔁", "pk": "✅", "t": "Review", "s": "ADR + tripwires + quarterly 'would we choose this again?'" }
       ],
       "narration": "The four-step discipline as an architecture. Notice it prices everything: scoring prices ignorance, the bake-off prices marketing, shell-structure prices lock-in, and review prices drift. What it deliberately does NOT do: chase the newest framework — adoption timing is its own matrix; being six months late to a winning framework costs far less than being two years early on a losing one. And a closing symmetry with where the LKG journey started: you began by writing a thirty-line agent loop in AG-01; you now hold the full map — patterns, memory, architectures, frameworks, and the judgment to choose among them. The remaining stages turn this craft toward production: operating agents at scale, securing them, and shipping the capstone projects."
     },

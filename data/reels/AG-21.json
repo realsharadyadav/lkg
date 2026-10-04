@@ -60,12 +60,12 @@
       "narration": "Execution runs through the AG-09 Excel MCP server — not around it: the server's tools are the ONLY mutation path, which means every guardrail built there — backups, path scoping, bounded writes — applies automatically; the agent holds no direct file access, which is precisely the trust-boundary architecture from AG-06. The execution loop: per approved change — backup first, the server does this; apply via write-cells with the diff-token; verify the write by reading back — the value at the cell now equals the planned value; record the result — applied, with backup reference — into the audit trail. Batch semantics from AG-09 apply at the plan level: per-file results, partial success, already-applied skips. And the loop is DURABLE — AG-19: after each workbook, the checkpoint records progress; a crash mid-batch resumes at the next unprocessed workbook; every applied change is idempotent-safe to re-verify."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "📋", "t": "Approved plan", "s": "Diff + confirmation token · the only input execution accepts" },
-        { "e": "🛡️", "t": "Excel MCP tools", "s": "backup → bounded write with token → read-back verify · no other mutation path exists" },
-        { "e": "📜", "t": "Audit per file", "s": "applied/unchanged/errored · backup refs · token recorded · durable checkpoints between files" }
+        { "e": "📋", "pk": "✅", "t": "Approved plan", "s": "Diff + confirmation token · the only input execution accepts" },
+        { "e": "🛡️", "pk": "📊", "t": "Excel MCP tools", "s": "backup → bounded write with token → read-back verify · no other mutation path exists" },
+        { "e": "📜", "pk": "📜", "t": "Audit per file", "s": "applied/unchanged/errored · backup refs · token recorded · durable checkpoints between files" }
       ],
       "narration": "The read-back verification deserves emphasis: write-then-verify closes the loop on every mutation — the agent doesn't assume the write landed, it CONFIRMS — a mismatch becomes an error entry with the expected-versus-actual pair, actionable in AG-02's sense. Execution failures follow the pattern: transient — file locked by a user's Excel client — requeue with backoff; structural — the sheet changed since planning — halt the file, report, continue others; the plan-level token prevents a partial-approval drift — executed diffs can never diverge from approved diffs. And the audit trail from AG-09 accumulates the full story: who approved which diff, which files changed, where the backups are — the compliance answer generated as a byproduct of the design. This is what 'tool-driven edits with governance built in' means in practice: the dangerous power flows through the narrowest possible channel, and every crossing is recorded."
     },

@@ -171,21 +171,24 @@
       "narration": "Where does all this come from? Three stages. Pretraining: the model reads a large fraction of the internet and learns to predict the next token — this is where knowledge and language ability form, and it costs millions of dollars. Fine-tuning: smaller, curated datasets teach specific skills or formats. Alignment: human feedback shapes helpful, safe behavior. You almost never touch stage one — but stages two and three explain why different models have different personalities and why fine-tuning exists as a product."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 5,
       "layers": [
         {
           "e": "📖",
+          "pk": "🧠",
           "t": "Pretraining",
           "s": "Trillions of tokens from the web — knowledge + language. Millions of GPU-hours."
         },
         {
           "e": "🎯",
+          "pk": "🔧",
           "t": "Fine-tuning",
           "s": "Curated examples teach domains, formats, tools — thousands to millions of samples"
         },
         {
           "e": "🤝",
+          "pk": "✅",
           "t": "Alignment (RLHF)",
           "s": "Human preference ranking → helpful, harmless, honest behavior"
         }

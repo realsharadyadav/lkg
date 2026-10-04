@@ -56,12 +56,12 @@
       "narration": "The old spec let servers initiate requests BACK to the client mid-conversation: elicitation — 'ask the user to confirm this destructive action'; sampling — 'have the model generate text for me'; roots — 'tell me which directories you expose'. All three required a held-open, bidirectional stream — impossible for a stateless server behind a load balancer. Enter Multi Round-Trip Requests — MRTR: the server returns an interim result marked input-required, carrying the questions it needs; the client gathers the answers — from the user, or by running a model completion — and RE-ISSUES the original request with the answers attached. A human approval step becomes a plain request-and-response pattern that survives load balancers and serverless runtimes. One round-trip pattern replaces three bespoke channels."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "🔧", "t": "Tool call pauses", "s": "Server returns resultType: input_required + inputRequests[]" },
-        { "e": "👤", "t": "Client gathers input", "s": "User answers, or client runs a completion (the old 'sampling')" },
-        { "e": "🔁", "t": "Client retries original call", "s": "Same request re-issued with inputResponses attached (continuation state included)" }
+        { "e": "🔧", "pk": "🔧", "t": "Tool call pauses", "s": "Server returns resultType: input_required + inputRequests[]" },
+        { "e": "👤", "pk": "💬", "t": "Client gathers input", "s": "User answers, or client runs a completion (the old 'sampling')" },
+        { "e": "🔁", "pk": "🔄", "t": "Client retries original call", "s": "Same request re-issued with inputResponses attached (continuation state included)" }
       ],
       "narration": "Walk the MRTR flow once and you'll never fear it again. Server: 'I need approval to delete record 42' — input-required, with the question structured. Client — the host — surfaces the question to the user, collects the answer, and re-sends the original tool call with the answer attached; servers that need to correlate the two attempts encode their own identifier in request state. Note how each old feature maps: elicitation becomes an input-required asking the user; sampling becomes an input-required asking for a model completion; roots become explicit arguments instead of a server query. And note the deprecation status precisely: roots, sampling, and logging are DEPRECATED with a twelve-month minimum runway — they still work, but new implementations must not adopt them. Sessions and the handshake, by contrast, were REMOVED — no grace period, because the old revisions still exist for old clients."
     },

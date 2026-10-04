@@ -21,13 +21,13 @@
       "narration": "Text-to-SQL looks like one trick but it's a pipeline. Stage one: the question arrives — 'which region had the most churn last quarter' — ambiguous in a dozen ways. Stage two: SCHEMA LINKING — the system identifies which tables and columns the question touches and hands the model only that slice; a 400-table warehouse shown in full would drown the answer. Stage three: GENERATION — the model writes SQL with the schema, column descriptions, and a few example pairs as guidance. Stage four: VALIDATION — the SQL is checked, executed read-only, the RESULT is verified against the question, and only then shown to the user. Stages two and four are where production systems live or die."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 0,
       "layers": [
-        { "e": "❓", "t": "Question", "s": "Natural language, ambiguous by nature" },
-        { "e": "🧭", "t": "Schema linking", "s": "Find relevant tables/columns · prune the 400-table warehouse to the 5 that matter" },
-        { "e": "✍️", "t": "SQL generation", "s": "Model writes SQL: schema + descriptions + example pairs in context" },
-        { "e": "✅", "t": "Validate → execute → verify", "s": "Syntax check, read-only run, result sanity, self-correct on failure" }
+        { "e": "❓", "pk": "❓", "t": "Question", "s": "Natural language, ambiguous by nature" },
+        { "e": "🧭", "pk": "📋", "t": "Schema linking", "s": "Find relevant tables/columns · prune the 400-table warehouse to the 5 that matter" },
+        { "e": "✍️", "pk": "💾", "t": "SQL generation", "s": "Model writes SQL: schema + descriptions + example pairs in context" },
+        { "e": "✅", "pk": "✅", "t": "Validate → execute → verify", "s": "Syntax check, read-only run, result sanity, self-correct on failure" }
       ],
       "narration": "The architecture insight: the model is only stage three of four. The boring stages around it carry the reliability. Schema linking — stage two — has two implementations: retrieval-based, embed the question and match against table/column descriptions, or pattern-based, a curated mapping of common business terms to tables. Validation — stage four — is mechanical and non-negotiable: parse the SQL, confirm it parses and is read-only, run it with limits, sanity-check the result shape against the question. When any check fails, the error returns to the model for a fix — the AG-02 loop applied to SQL. Systems that skip stage four ship confident, wrong queries."
     },

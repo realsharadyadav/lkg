@@ -76,13 +76,13 @@
       "narration": "Nobody asks one perfect question. Real sessions are chains: 'what's the refund policy' → 'and for enterprise customers' → 'how long does that take'. Each follow-up is unanswerable in isolation — 'that' has no referent. Conversation-aware RAG carries state. The standard recipe: keep the chat history, and before retrieval, use an LLM to rewrite the latest question into a standalone query that incorporates the thread — 'what is the refund processing time for enterprise customers'. That rewritten query goes to retrieval; the full history goes to generation, so the answer can stay consistent with what was already said. Skip the rewrite and follow-ups silently degrade into generic answers from mismatched retrieval."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 3,
       "layers": [
-        { "e": "💬", "t": "History", "s": "Keep the full thread · it's state, not just log" },
-        { "e": "✍️", "t": "Standalone rewrite", "s": "Latest + history → self-contained query (GA-15's rewriter, now conversation-aware)" },
-        { "e": "🔍", "t": "Retrieve", "s": "Rewritten query → hybrid + rerank → top-k" },
-        { "e": "✍️", "t": "Generate", "s": "History + fresh context → consistent, cited answer" }
+        { "e": "💬", "pk": "💭", "t": "History", "s": "Keep the full thread · it's state, not just log" },
+        { "e": "✍️", "pk": "✏️", "t": "Standalone rewrite", "s": "Latest + history → self-contained query (GA-15's rewriter, now conversation-aware)" },
+        { "e": "🔍", "pk": "📚", "t": "Retrieve", "s": "Rewritten query → hybrid + rerank → top-k" },
+        { "e": "✍️", "pk": "💬", "t": "Generate", "s": "History + fresh context → consistent, cited answer" }
       ],
       "narration": "The loop, complete. History feeds the rewriter — the same rewriting machinery from GA-15, now with conversation as its context. Retrieval runs on the STANDALONE query, because vague anaphora like 'that' embeds badly and matches nothing. Generation receives BOTH: the fresh retrieved context and the prior turns, so the answer can refer back — 'as mentioned, enterprise tier differs' — without contradicting itself. Two pitfalls to avoid: unbounded history — trim to the last few turns or summarize, or costs and distraction grow; and staleness — if the conversation pivoted topics, the rewriter must let go of old context instead of dragging it into every new query."
     },

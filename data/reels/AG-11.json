@@ -38,12 +38,12 @@
       "narration": "Plan-and-execute splits the work: a PLANNING pass produces an ordered step list — often with dependencies — then EXECUTION runs the steps, typically without re-deliberating each one. The planner sees the whole board: subtasks ordered by dependency, parallelizable steps grouped, risks noted. Execution is cheaper per step — no reasoning narration — and the plan is inspectable: a human can review and EDIT the plan before a single expensive action runs, which is exactly the human-in-the-loop checkpoint production systems want. The catch: plans made blind. When execution reveals reality differs — the API can't do what the plan assumed — a rigid plan fails expensively. The fix is RE-PLANNING: on step failure or unexpected results, feed the state back to the planner for a revised plan, with a re-plan budget."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "📋", "t": "Plan", "s": "Full ordered step list · dependencies · parallel groups · risks — reviewable before execution" },
-        { "e": "🏃", "t": "Execute", "s": "Steps run without per-step deliberation · cheaper, faster, predictable" },
-        { "e": "🔁", "t": "Re-plan trigger", "s": "Step fails or reality diverges → state back to planner → revised plan (budgeted)" }
+        { "e": "📋", "pk": "📋", "t": "Plan", "s": "Full ordered step list · dependencies · parallel groups · risks — reviewable before execution" },
+        { "e": "🏃", "pk": "✅", "t": "Execute", "s": "Steps run without per-step deliberation · cheaper, faster, predictable" },
+        { "e": "🔁", "pk": "🔁", "t": "Re-plan trigger", "s": "Step fails or reality diverges → state back to planner → revised plan (budgeted)" }
       ],
       "narration": "Choose by horizon: five-ish steps with unknown path — ReAct, the overhead isn't worth it; twenty-plus steps with knowable structure — plan-and-execute, the global view pays. Hybrid is the mature pattern: plan at the top level — the milestones — and ReAct WITHIN each milestone, where the local path is genuinely unknown. The plan format matters: machine-readable steps with explicit dependencies — not prose — because execution engines and re-planners both consume it structurally; a plan that can't be diffed can't be re-planned cleanly. And keep the plan in context during execution: the model's awareness of remaining steps prevents premature 'done' declarations — agents that forget the plan declare victory at step two."
     },
@@ -74,12 +74,12 @@
       "narration": "Every strategy above rests on one skill: breaking a goal down. Good decomposition has a shape: steps are INDEPENDENTLY VERIFIABLE — each produces an artifact or answer checkable on its own — because 'research the market' isn't a step, it's a wish, while 'list the top ten competitors with pricing from their sites' is; steps have EXPLICIT dependencies — a DAG, not a list, so parallelizable branches are visible and ordering is justified; and each step fits ONE context — sized so a single model call can hold its input, instructions, and output. Techniques: MECE thinking — mutually exclusive, collectively exhaustive — so steps neither overlap nor leave gaps; question reformulation — restating the goal from different angles before splitting, which surfaces hidden subtasks; and leverage ordering — do the riskiest, most uncertain step FIRST, when cheapest to change course."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter" : 3,
       "layers": [
-        { "e": "🎯", "t": "Goal", "s": "\"Migrate the reporting stack\"" },
-        { "e": "🧩", "t": "Subgoals (MECE)", "s": "Inventory current reports · Map data sources · Choose target stack · Migrate top-5 reports first" },
-        { "e": "✅", "t": "Verifiable steps", "s": "Each ends with an artifact: list, mapping doc, decision record, working report" }
+        { "e": "🎯", "pk": "🎯", "t": "Goal", "s": "\"Migrate the reporting stack\"" },
+        { "e": "🧩", "pk": "🧩", "t": "Subgoals (MECE)", "s": "Inventory current reports · Map data sources · Choose target stack · Migrate top-5 reports first" },
+        { "e": "✅", "pk": "✅", "t": "Verifiable steps", "s": "Each ends with an artifact: list, mapping doc, decision record, working report" }
       ],
       "narration": "The example shows the shape: each subgoal ends in an ARTIFACT — inventory, mapping, decision record — not an activity, so completion is decidable rather than a feeling. The dependency DAG decides execution order: inventory enables mapping enables stack choice; 'migrate top-five reports' depends on all three — visible in a graph, invisible in a flat list. And the risk-ordering principle inverts instinct: teams start with the comfortable steps — inventory — while the uncertain one — does the target stack actually handle our biggest report? — carries the project's risk; do THAT first. Decomposition quality is measurable: a plan where every step is verifiable, dependencies explicit, and risks front-loaded will execute smoothly; one that's activities-in-a-list will drift. Judge your plans by these three properties before a single step runs."
     },

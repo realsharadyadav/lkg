@@ -112,13 +112,13 @@
       "narration": "GA-07's comparison ends here: production retrieval fuses semantic and keyword signals. Run both searches — vector ANN for meaning, BM25 for exact tokens — then merge the rankings. Fusion methods: simple weighted scores, or Reciprocal Rank Fusion — score each result by the inverse of its rank in each list, sum, re-sort — robust and parameter-light. Why bother: vectors find the paraphrase, keywords nail the SKU. Together they lift recall measurably on every mixed-content corpus you'll meet — and most real corpora are mixed."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 5,
       "layers": [
-        { "e": "🔤", "t": "Keyword leg (BM25)", "s": "Inverted index over the corpus — exact tokens, typos-tolerant variants" },
-        { "e": "🧠", "t": "Vector leg (ANN)", "s": "Embedding search over the same corpus — meaning across phrasing" },
-        { "e": "🤝", "t": "Fusion (RRF)", "s": "Reciprocal Rank Fusion: 1/(k+rank) summed per doc → one ranked list" },
-        { "e": "🎯", "t": "Optional rerank", "s": "Cross-encoder re-scores the fused top — precision finale (GA-15)" }
+        { "e": "🔤", "pk": "📇", "t": "Keyword leg (BM25)", "s": "Inverted index over the corpus — exact tokens, typos-tolerant variants" },
+        { "e": "🧠", "pk": "🔢", "t": "Vector leg (ANN)", "s": "Embedding search over the same corpus — meaning across phrasing" },
+        { "e": "🤝", "pk": "📊", "t": "Fusion (RRF)", "s": "Reciprocal Rank Fusion: 1/(k+rank) summed per doc → one ranked list" },
+        { "e": "🎯", "pk": "🏆", "t": "Optional rerank", "s": "Cross-encoder re-scores the fused top — precision finale (GA-15)" }
       ],
       "narration": "The hybrid pipeline, top to bottom. Two retrievers over the same corpus — BM25 on the left, ANN on the right. Fusion by reciprocal rank: a document ranked second in one list and fifth in the other scores one over k-plus-two plus one over k-plus-five — summed across lists, re-sorted. RRF ignores raw score scales entirely, which makes it robust across wildly different score distributions. Then optionally, a cross-encoder reranker reads the fused top twenty and produces the final five. Four stages, each simple, together near state of the art for production RAG."
     },

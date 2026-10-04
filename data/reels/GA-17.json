@@ -57,12 +57,12 @@
       "narration": "'How does the team's headcount compare to the project budget?' requires two facts from two places, THEN a comparison. Single-shot retrieval fetches chunks about headcount OR budget — rarely both. Multi-hop pipelines decompose: an LLM splits the compound question into sub-questions, retrieves for each independently, then synthesizes the combined answer. It's the agentic pattern with a fixed plan instead of a free plan — cheaper and more evaluable, less flexible. The debug insight: evaluate each hop separately. If sub-question two retrieves garbage, the final synthesis inherits it — and the failure signature in logs is a good first hop followed by an empty second."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "🧩", "t": "Decompose", "s": "Compound question → 2–4 standalone sub-questions" },
-        { "e": "🔍", "t": "Retrieve per hop", "s": "Each sub-question → its own hybrid + rerank pass" },
-        { "e": "🧵", "t": "Synthesize", "s": "All hop results + original question → one cited answer" }
+        { "e": "🧩", "pk": "❓", "t": "Decompose", "s": "Compound question → 2–4 standalone sub-questions" },
+        { "e": "🔍", "pk": "📄", "t": "Retrieve per hop", "s": "Each sub-question → its own hybrid + rerank pass" },
+        { "e": "🧵", "pk": "💬", "t": "Synthesize", "s": "All hop results + original question → one cited answer" }
       ],
       "narration": "Three hops, three failure surfaces — which is why multi-hop demands per-hop evaluation. Decompose can mangle the question: 'compare X to Y' split into sub-questions that each lose the comparison intent. Retrieval per hop inherits everything from GA-15 — golden sets per sub-question. Synthesis can drop a hop's evidence or compare unequal units — the check is citations: a multi-hop answer should cite EVERY hop's sources, and a citation count lower than the hop count is a red flag you can assert on programmatically. Start with decomposition for predictable compound questions; graduate to full agentic control when the question shapes stop fitting a fixed template."
     },

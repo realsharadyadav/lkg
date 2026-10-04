@@ -21,13 +21,13 @@
       "narration": "PROMPT CHAINING: output of step N becomes input of step N-plus-one — extract, then summarize, then translate. Each step is a small, separately-testable prompt; the chain decomposes a hard task into easy ones, and failures localize to a step you can inspect. The discipline: validate BETWEEN steps — if extraction returned nothing, don't let the empty result flow downstream; chains fail loudly at the right step instead of silently at the end. ROUTING: one classifier step sends the input to a specialized handler — billing questions to the billing prompt, technical issues to the technical one. The win: each handler stays small and sharp instead of one mega-prompt being mediocre at everything. Both patterns are workflows in AG-01's sense — code controls the flow — and that's their strength: predictable, testable, cheap."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 0,
       "layers": [
-        { "e": "1️⃣", "t": "Extract", "s": "Pull structured facts from raw input · validated before proceeding" },
-        { "e": "2️⃣", "t": "Analyze", "s": "Work only on the extracted facts — smaller context, sharper prompt" },
-        { "e": "3️⃣", "t": "Format", "s": "Render for the audience · each step independently testable" },
-        { "e": "🔀", "t": "Router variant", "s": "Classify first → specialized handler → consistent output contract" }
+        { "e": "1️⃣", "pk": "📥", "t": "Extract", "s": "Pull structured facts from raw input · validated before proceeding" },
+        { "e": "2️⃣", "pk": "💡", "t": "Analyze", "s": "Work only on the extracted facts — smaller context, sharper prompt" },
+        { "e": "3️⃣", "pk": "📄", "t": "Format", "s": "Render for the audience · each step independently testable" },
+        { "e": "🔀", "pk": "🏷️", "t": "Router variant", "s": "Classify first → specialized handler → consistent output contract" }
       ],
       "narration": "Two reasons chains outperform mega-prompts. Quality: each step's model concentrates on one job with a clean input — context is smaller, instructions are sharper, and the failure surface per call is a fraction of the monolith's. Operations: when quality drops, you know WHICH step regressed — GA-20's evals run per step, and the fix targets one prompt, not a tangle. The router adds specialization: handlers share an output CONTRACT — same shape regardless of route — so downstream code never cares which expert answered. Warning sign that you need routing: one prompt accumulating ever-more conditional instructions — 'if billing do X, if technical do Y, unless enterprise…' — that's a router begging to exist. Conditional logic in prose is a smell; conditional logic in code is architecture."
     },
@@ -58,12 +58,12 @@
       "narration": "Sectioning assumes you can list the slices in advance. Orchestrator-workers handles the cases you can't: the orchestrator — a model — receives the task, breaks it into subtasks ON THE FLY, dispatches each to a worker — which may itself be a model, a tool, a whole chain — collects results, and decides whether the task is done or needs more rounds. Example: 'audit this repository for security issues' — the orchestrator first maps the structure, then spawns workers per module based on what it finds, then synthesizes. The orchestrator is where AG-01's judgment lives: task decomposition quality determines everything downstream. Compared to static sectioning: more flexible, more expensive, harder to test — the orchestrator's choices vary run to run, so eval on OUTCOMES with golden tasks, not on the decomposition."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 2,
       "layers": [
-        { "e": "🧠", "t": "Orchestrator", "s": "Decomposes dynamically · dispatches · judges completeness" },
-        { "e": "👷", "t": "Workers (N, parallel)", "s": "Specialized per subtask · own context, tools, prompts" },
-        { "e": "🔁", "t": "Feedback loop", "s": "Results return → orchestrator re-plans until done or budget out" }
+        { "e": "🧠", "pk": "📋", "t": "Orchestrator", "s": "Decomposes dynamically · dispatches · judges completeness" },
+        { "e": "👷", "pk": "🔧", "t": "Workers (N, parallel)", "s": "Specialized per subtask · own context, tools, prompts" },
+        { "e": "🔁", "pk": "📤", "t": "Feedback loop", "s": "Results return → orchestrator re-plans until done or budget out" }
       ],
       "narration": "The orchestrator's context is the bottleneck to design around: every worker result returns to it, and long tasks overflow the window — so results must be COMPRESSED on return — summaries plus pointers to full outputs, not raw dumps. Also cap the loop: max rounds, max workers, max total cost — the same budgets as AG-01, one level up. When does this beat static parallelization? When the decomposition DEPENDS on findings — research across unknown sources, audits, migrations — the slices aren't knowable until you start looking. When the decomposition is knowable — fixed pipeline, known shards — static sectioning is simpler, cheaper and more testable; reach for orchestration only when the task truly can't be pre-planned. Framework support: LangGraph's supervisor nodes and CrewAI's crews both encode this pattern — AG-15 shows where."
     },

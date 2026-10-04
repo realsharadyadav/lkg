@@ -39,13 +39,13 @@
       "narration": "The deployment insight of this whole stage: prompts, model versions, and agent configurations change BEHAVIOR — so they're code artifacts and deserve the same pipeline. ENVIRONMENTS: dev for iteration; a staging or UAT environment where the golden evals — GA-20's datasets, GA-21's gates, AG-18's agent evals — run against production-shaped data; production, changed only by promotion. PROMOTION AS A PIPELINE: a prompt change is a pull request — diffed, reviewed, evaluated in CI — and merges deploy to dev automatically; UAT runs the full eval suite and agent regression suites; production receives the artifact only on green. The evals ARE the tests: 'all golden cases pass, no metric regressed beyond threshold' is the deploy gate — the same discipline as code, because the risk is the same class: silent behavioral change shipped to users. ARTIFACT REGISTRY: prompts versioned with hashes — GA-21's provenance — models pinned by version, configurations in the repo; nothing production-critical lives only in a portal UI."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "🔀", "t": "PR: prompt/model/config change", "s": "Diff + review · linked to eval expectations" },
-        { "e": "🧪", "t": "CI: eval gates", "s": "Golden set · faithfulness/recall thresholds · agent regression suite · security canaries (GA-22)" },
-        { "e": "🚀", "t": "Promote: dev → UAT → prod", "s": "Automated on green · each env pinned to its artifacts" },
-        { "e": "🧾", "t": "Registry", "s": "Versioned prompts (hashed) · pinned models · full provenance per release" }
+        { "e": "🔀", "pk": "📋", "t": "PR: prompt/model/config change", "s": "Diff + review · linked to eval expectations" },
+        { "e": "🧪", "pk": "✅", "t": "CI: eval gates", "s": "Golden set · faithfulness/recall thresholds · agent regression suite · security canaries (GA-22)" },
+        { "e": "🚀", "pk": "🚀", "t": "Promote: dev → UAT → prod", "s": "Automated on green · each env pinned to its artifacts" },
+        { "e": "🧾", "pk": "📦", "t": "Registry", "s": "Versioned prompts (hashed) · pinned models · full provenance per release" }
       ],
       "narration": "What breaks without this: the prompt-edit-in-production story — someone improves wording in the provider's web UI at 4 p.m. Friday; quality shifts subtly over the weekend; Monday's debugging finds an unversioned change nobody can diff or roll back. The pipeline exists to make that impossible: production changes only via artifacts, artifacts only via evals, evals only via the golden set — each link already built in earlier reels. UAT deserves one more word: production-SHAPED data means real question distributions, synthetic where privacy demands — GA-20's golden set, expanded continuously from production feedback — so the evals measure the world as it is, not the world as dev imagines it. And keep environments' configs IDENTICAL except the artifact versions — environment drift masquerading as prompt regressions wastes more debugging hours than almost anything else in this space."
     },
