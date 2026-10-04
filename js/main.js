@@ -236,15 +236,22 @@
 
   /* ---------------- PWA ---------------- */
   function initPwa() {
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    }
+    if (!('serviceWorker' in navigator) || !location.protocol.startsWith('http')) return;
+    // when a new version takes over, reload once so the page never runs a stale mix of files
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      reloaded = true; location.reload();
+    });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
   }
+
 
   document.addEventListener('DOMContentLoaded', () => {
     SS.loadCatalog().then(() => {
       SS.feed.init();
-      initSettings();
+      try { initSettings(); } catch (e) { console.error(e); }   // a settings glitch must never block playback
       refreshStreak();
       initPwa();
       document.addEventListener('ss:complete', refreshStreak);
