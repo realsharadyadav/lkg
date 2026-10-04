@@ -75,7 +75,9 @@ def page(title, desc, path, body, ld):
 </head><body><main>
 {body}
 <footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
-</main></body></html>
+</main>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{{"token": "43403f5627e94125a22ecd705208684c"}}'></script>
+</body></html>
 '''
 
 reels = m['reels']

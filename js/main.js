@@ -19,7 +19,7 @@
   }
 
   /* ---------------- analytics (Cloudflare Web Analytics, cookieless) ---------------- */
-  const CF_BEACON_TOKEN = '';   // paste the token from Cloudflare dashboard → Web Analytics; empty = off
+  const CF_BEACON_TOKEN = '43403f5627e94125a22ecd705208684c';   // paste the token from Cloudflare dashboard → Web Analytics; empty = off
   if (CF_BEACON_TOKEN && location.hostname !== 'localhost') {
     const s = document.createElement('script');
     s.defer = true; s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
