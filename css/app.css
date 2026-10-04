@@ -496,3 +496,29 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .rail{gap:9px}
   .rail-btn .ic{width:38px;height:38px;font-size:17px}
 }
+
+/* ============ Instagram look pass 2: scrim under caption, bare icons, tight spacing ============ */
+.reel-inner::after{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(150px + var(--sab));z-index:5;pointer-events:none;
+  background:linear-gradient(to top,rgba(240,248,236,.97) 0%,rgba(240,248,236,.85) 45%,rgba(240,248,236,0) 100%)}
+.capzone{left:12px;right:calc(var(--rail) + 4px);bottom:calc(10px + var(--sab));gap:3px}
+.cap-title{font-size:14px;font-weight:800}
+.cap-text{font-size:13px;color:#2b3b31}
+
+/* bare icons, no circles */
+.rail{right:6px;gap:14px;bottom:calc(14px + var(--sab))}
+.rail-btn{gap:1px}
+.rail-btn .ic{width:34px;height:34px;font-size:24px;background:none;border:0;box-shadow:none;filter:drop-shadow(0 1px 3px rgba(40,60,45,.25))}
+.rail-btn:active .ic{transform:scale(.85)}
+.rail-btn .lb{font-size:10.5px;font-weight:700;color:#2b3b31}
+.rail-btn.liked .ic{background:none;border:0}
+.rail-code .ic{font-size:15px;font-weight:800;letter-spacing:-1px;width:34px}
+
+/* quieter chapter dots + progress bars */
+.chap-dot{width:20px;height:20px;background:rgba(255,255,255,.6)}
+.seg{background:rgba(53,88,52,.18)}
+.reel-meta{opacity:.85}
+@media (max-width:480px){
+  .rail{right:4px;gap:12px}
+  .rail-btn .ic{width:34px;height:34px;font-size:23px}
+  .capzone{right:calc(var(--rail) + 2px)}
+}
