@@ -31,11 +31,22 @@
       "narration": "Side by side: in C sharp, int count equals five locks the sticker to integers. In Python, count equals five just sticks the name on a five. Later, count equals some text is perfectly legal. Nothing is declared; everything is an object with a type of its own. The variable is untyped — the value isn't."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · INDENTATION",
       "title": "Whitespace **is** the syntax",
       "sub": "Indentation = braces. There is no other way.",
+      "h": 300,
+      "actors": [
+        { "id": "code", "k": "term", "x": 50, "y": 40, "w": 96, "h": 50 }
+      ],
+      "steps": [
+        { "at": "biggest culture shock", "do": [["show", "code"]] },
+        { "at": "Python has no curly braces", "do": [["text", "code", "if x > 0:"]] },
+        { "at": "indentation is the block", "do": [["text", "code", "if x > 0:\n    print(\"positive\")\n    count += 1"]] },
+        { "at": "It's not a style choice", "do": [["text", "code", "if x > 0:\n    print(\"positive\")\n    count += 1\nprint(\"always\")"]] },
+        { "at": "one mixed tab", "do": [["text", "code", "if x > 0:\n\tprint(\"error\")  # mixed tabs!"]] }
+      ],
       "narration": "Here's the biggest culture shock: Python has no curly braces. The indentation is the block. If a line is inside an if, it's indented four spaces — that's the whole rule. It's not a style choice like in C sharp; it's the language. The good news: every Python file on Earth looks the same. The bad news: one mixed tab and your day is gone."
     },
     {
@@ -49,11 +60,23 @@
       "narration": "Three rules. Four spaces per level — set your editor to convert tabs. A block ends when the indentation ends — unindenting is your closing brace. And everything inside a block must be indented, even a single line. The compiler won't guess your intent — it reads the whitespace, literally."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · F-STRINGS",
       "title": "String interpolation, **upgraded**",
       "sub": "The f-string makes C# interpolation look basic",
+      "h": 300,
+      "actors": [
+        { "id": "code", "k": "term", "x": 50, "y": 40, "w": 96, "h": 50 }
+      ],
+      "steps": [
+        { "at": "Now the fun part", "do": [["show", "code"], ["text", "code", "price = 19.99"]] },
+        { "at": "Put an f before a string", "do": [["text", "code", "price = 19.99\ntext = f\"Total: {price}\""]] },
+        { "at": "any expression in curly braces", "do": [["text", "code", "items = [1, 2, 3]\ntext = f\"{len(items) * 2} slots\""]] },
+        { "at": "colon point two f", "do": [["text", "code", "price = 19.99\ntext = f\"Cost: {price:.2f}\""]] },
+        { "at": "colon comma", "do": [["text", "code", "rows = 1_234_567\ntext = f\"{rows:,} rows\""]] },
+        { "at": "string interpolation", "do": [["text", "code", "# Many formats, one syntax\nf\"{price:.2f}\"\nf\"{rows:,}\"\nf\"{name=}  # debug\""]] }
+      ],
       "narration": "Now the fun part. Put an f before a string, and any expression in curly braces is evaluated inside it. But here's what C sharp can't do: format specifiers live right in the braces — colon point two f for floats, colon comma for thousands, even date formatting and alignment. It's the string interpolation you know, with the format string built in."
     },
     {
@@ -67,11 +90,31 @@
       "narration": "Look at the power here. f-quote total colon point two f — gives you two decimals. f-quote n colon comma — inserts thousands separators. And the braces take any expression: function calls, math, whatever. One line, no string dot format, no concatenation. You'll use this constantly in logging and LLM prompt building."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · NONE & TRUTHINESS",
       "title": "null is gone. Meet **None**",
       "sub": "And almost everything can be truthy or falsy",
+      "h": 300,
+      "actors": [
+        { "id": "none", "k": "chip", "x": 12, "y": 20, "t": "None", "c": "sm" },
+        { "id": "zero", "k": "chip", "x": 28, "y": 20, "t": "0", "c": "sm" },
+        { "id": "empty_str", "k": "chip", "x": 44, "y": 20, "t": "\"\"", "c": "sm" },
+        { "id": "empty_list", "k": "chip", "x": 60, "y": 20, "t": "[]", "c": "sm" },
+        { "id": "text", "k": "chip", "x": 15, "y": 50, "t": "\"hello\"", "c": "sm" },
+        { "id": "num", "k": "chip", "x": 35, "y": 50, "t": "42", "c": "sm" },
+        { "id": "list", "k": "chip", "x": 55, "y": 50, "t": "[1,2]", "c": "sm" },
+        { "id": "falsy", "k": "tag", "x": 40, "y": 32, "t": "falsy", "tone": "bad" },
+        { "id": "truthy", "k": "tag", "x": 40, "y": 62, "t": "truthy", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "C sharp's null becomes None", "do": [["show", "none"]] },
+        { "at": "nearly every object is either truthy or falsy", "do": [["show", "zero"], ["show", "empty_str"], ["show", "empty_list"], ["show", "text"], ["show", "num"], ["show", "list"]] },
+        { "at": "Empty string, empty list, zero, None", "do": [["show", "falsy"], ["tone", "none", "bad"], ["tone", "zero", "bad"], ["tone", "empty_str", "bad"], ["tone", "empty_list", "bad"]] },
+        { "at": "all falsy", "do": [["hot", "none"], ["hot", "zero"], ["hot", "empty_str"], ["hot", "empty_list"]] },
+        { "at": "Non-empty collections", "do": [["show", "truthy"], ["tone", "text", "good"], ["tone", "num", "good"], ["tone", "list", "good"]] },
+        { "at": "non-zero numbers are truthy", "do": [["hot", "text"], ["hot", "num"], ["hot", "list"]] }
+      ],
       "narration": "C sharp's null becomes None in Python — capital N. Same idea: the absence of a value. But Python goes further: nearly every object is either truthy or falsy. Empty string, empty list, zero, None — all falsy. Non-empty collections and non-zero numbers are truthy. So you can write 'if items:' instead of 'if items dot count greater than zero'."
     },
     {

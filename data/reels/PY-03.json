@@ -49,11 +49,30 @@
       "narration": "Three habits. One: lookup, insert, and delete are constant time. Two: iterate with dot items to get key-value pairs in one step. Three: use dot get with a default instead of square brackets when the key might be missing — square brackets on a missing key throws KeyError, and dot get just returns your default."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · SET",
       "title": "set = **HashSet<T>**, and it's instant",
       "sub": "Unordered, unique, lightning-fast membership",
+      "h": 290,
+      "actors": [
+        { "id": "src_list", "k": "tag", "x": 30, "y": 20, "t": "[1, 2, 2, 3, 3, 3]" },
+        { "id": "dup_note", "k": "tag", "x": 30, "y": 30, "e": "💥", "t": "has duplicates" },
+        { "id": "arrow1", "k": "tag", "x": 30, "y": 45, "t": "→ set()" },
+        { "id": "result", "k": "tag", "x": 30, "y": 60, "t": "{1, 2, 3}" },
+        { "id": "unique_note", "k": "tag", "x": 30, "y": 70, "e": "✓", "t": "unique only" },
+        { "id": "lookup_label", "k": "tag", "x": 70, "y": 40, "e": "⚡", "t": "O(1) lookup" },
+        { "id": "test_item", "k": "chip", "x": 70, "y": 50, "e": "2", "t": "is 2 in set?", "c": "sm" },
+        { "id": "test_result", "k": "tag", "x": 70, "y": 60, "e": "✓", "t": "instant" }
+      ],
+      "steps": [
+        { "at": "a set is exactly", "do": [["show", "src_list"]] },
+        { "at": "unordered collection of unique items", "do": [["show", "dup_note"]] },
+        { "at": "add a duplicate and it silently ignores it", "do": [["show", "arrow1"]] },
+        { "at": "membership testing", "do": [["show", "lookup_label"], ["show", "test_item"]] },
+        { "at": "constant time", "do": [["show", "test_result"], ["tone", "test_result", "good"]] },
+        { "at": "deduplication and for", "do": [["show", "result"], ["show", "unique_note"]] }
+      ],
       "narration": "A set is exactly C sharp's HashSet: unordered collection of unique items. Add a duplicate and it silently ignores it. Its superpower is membership testing — 'is this item in the set' is constant time, even with a million entries. Use it for deduplication and for 'have I seen this before' checks."
     },
     {
@@ -67,11 +86,31 @@
       "narration": "Sets come with algebra: pipe for union, ampersand for intersection, minus for difference. Dedupe a list by converting to set and back — though order disappears; use dict dot fromkeys if you need to preserve it. And remember: membership checks never slow down as the set grows."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · COMPREHENSIONS",
       "title": "Comprehensions = **LINQ in one line**",
       "sub": "[expr for x in items if cond]",
+      "h": 280,
+      "actors": [
+        { "id": "items_label", "k": "tag", "x": 15, "y": 20, "t": "models" },
+        { "id": "gpt4", "k": "chip", "x": 15, "y": 32, "t": "gpt-4", "c": "sm" },
+        { "id": "claude", "k": "chip", "x": 15, "y": 43, "t": "claude", "c": "sm" },
+        { "id": "gptm", "k": "chip", "x": 15, "y": 54, "t": "gpt-mini", "c": "sm" },
+        { "id": "llama", "k": "chip", "x": 15, "y": 65, "t": "llama", "c": "sm" },
+        { "id": "comp_label", "k": "tag", "x": 50, "y": 20, "t": "comprehension" },
+        { "id": "comp_code", "k": "term", "x": 50, "y": 35, "w": 36, "h": 40 },
+        { "id": "result_label", "k": "tag", "x": 85, "y": 20, "t": "result" },
+        { "id": "res_gpt4", "k": "chip", "x": 85, "y": 32, "e": "✓", "t": "GPT-4", "c": "sm", "tone": "good" },
+        { "id": "res_gptm", "k": "chip", "x": 85, "y": 43, "e": "✓", "t": "GPT-MINI", "c": "sm", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "this is the feature that makes python feel like magic", "do": [["show", "items_label"], ["show", "gpt4"], ["show", "claude"], ["show", "gptm"], ["show", "llama"]] },
+        { "at": "transforms a collection in a single readable line", "do": [["show", "comp_label"], ["show", "comp_code"], ["text", "comp_code", "[m.upper()\n for m in models\n if 'gpt' in m]"]] },
+        { "at": "select and where, fused", "do": [["hot", "comp_code"]] },
+        { "at": "square brackets make a list", "do": [["show", "result_label"], ["show", "res_gpt4"], ["show", "res_gptm"]] },
+        { "at": "read them as easily as a loop", "do": [["pulse", "comp_code"]] }
+      ],
       "narration": "This is the feature that makes Python feel like magic. A comprehension transforms a collection in a single readable line — it's LINQ's select and where, fused. Square brackets make a list, curly braces make a set or dict. Once your eyes adjust, you'll read them as easily as a loop."
     },
     {
@@ -85,11 +124,37 @@
       "narration": "Read left to right: expression, for, items, optional if. Uppercase every model name — that's select. Keep only names containing g-p-t, transformed — that's where plus select. And the dict version maps each name to its length. Same idea, three shapes. If a comprehension gets longer than one line, go back to a plain loop."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · SLICING & UNPACKING",
       "title": "Slicing: **a[1:3]** means indexes 1 and 2",
       "sub": "Start inclusive, end exclusive — half-open, like .Substring",
+      "h": 280,
+      "actors": [
+        { "id": "array_label", "k": "tag", "x": 50, "y": 18, "t": "a = [10, 20, 30, 40, 50]" },
+        { "id": "idx0", "k": "tag", "x": 15, "y": 28, "t": "0", "c": "sm" },
+        { "id": "v0", "k": "chip", "x": 15, "y": 38, "e": "10", "t": "10", "c": "sm" },
+        { "id": "idx1", "k": "tag", "x": 30, "y": 28, "t": "1", "c": "sm" },
+        { "id": "v1", "k": "chip", "x": 30, "y": 38, "e": "20", "t": "20", "c": "sm" },
+        { "id": "idx2", "k": "tag", "x": 45, "y": 28, "t": "2", "c": "sm" },
+        { "id": "v2", "k": "chip", "x": 45, "y": 38, "e": "30", "t": "30", "c": "sm" },
+        { "id": "idx3", "k": "tag", "x": 60, "y": 28, "t": "3", "c": "sm" },
+        { "id": "v3", "k": "chip", "x": 60, "y": 38, "e": "40", "t": "40", "c": "sm" },
+        { "id": "idx4", "k": "tag", "x": 75, "y": 28, "t": "4", "c": "sm" },
+        { "id": "v4", "k": "chip", "x": 75, "y": 38, "e": "50", "t": "50", "c": "sm" },
+        { "id": "slice_label", "k": "tag", "x": 50, "y": 55, "t": "a[1:3]" },
+        { "id": "rule", "k": "tag", "x": 50, "y": 65, "t": "start inclusive, end exclusive" },
+        { "id": "result_label", "k": "tag", "x": 50, "y": 78, "t": "→ [20, 30]" },
+        { "id": "res_v1", "k": "chip", "x": 35, "y": 88, "e": "20", "t": "20", "c": "sm", "tone": "good" },
+        { "id": "res_v2", "k": "chip", "x": 65, "y": 88, "e": "30", "t": "30", "c": "sm", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "slicing pulls sub-ranges", "do": [["show", "array_label"], ["show", "idx0"], ["show", "v0"], ["show", "idx1"], ["show", "v1"], ["show", "idx2"], ["show", "v2"], ["show", "idx3"], ["show", "v3"], ["show", "idx4"], ["show", "v4"]] },
+        { "at": "start inclusive, end exclusive", "do": [["show", "rule"], ["tone", "idx1", "good"], ["tone", "idx3", "bad"]] },
+        { "at": "a square bracket one colon three gives you", "do": [["show", "slice_label"], ["tone", "v1", "good"], ["tone", "v2", "good"], ["hot", "v1"], ["hot", "v2"]] },
+        { "at": "elements at index one and two", "do": [["show", "result_label"], ["show", "res_v1"], ["show", "res_v2"]] },
+        { "at": "negative numbers count from the back", "do": [["tone", "idx4", "accent"], ["pulse", "v4"]] }
+      ],
       "narration": "Slicing pulls sub-ranges out of lists, tuples, and strings. The rule: start inclusive, end exclusive — exactly like C sharp's substring. a square bracket one colon three gives you elements at index one and two. Leave the start empty to begin at zero; leave the end empty to go to the finish; negative numbers count from the back."
     },
     {
