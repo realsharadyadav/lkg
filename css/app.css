@@ -699,3 +699,10 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 @keyframes segShine{to{transform:translateX(100%)}}
 .seg.cur.done b::after{animation:none}
 @media (max-width:480px){.segs{gap:4px;padding-inline:10px}}
+
+/* notes: side panel from the left (mirrors the code panel on the right) */
+.sheet.left{top:0;left:0;bottom:0;width:min(440px,94vw);border-radius:0 22px 22px 0;transform:translateX(-105%);box-shadow:20px 0 60px rgba(28,43,30,.25);padding-top:var(--sat)}
+.sheet.right{padding-top:var(--sat)}
+.sheet.left.open,.sheet.right.open{transform:none}
+.sheet.left,.sheet.right{touch-action:pan-y}
+.notes-body pre.code{margin:4px 0 14px;font-size:12px}

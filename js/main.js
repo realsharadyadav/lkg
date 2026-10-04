@@ -23,6 +23,22 @@
   }
   function closeSheets() { Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; fireClose(); }
   scrim.addEventListener('click', closeSheets);
+  // swipe a side panel back the way it came to close it (not while scrolling code sideways)
+  [[sheets.code, 1], [sheets.notes, -1]].forEach(([el, dir]) => {
+    let sx = null, sy = 0;
+    el.addEventListener('pointerdown', e => { sx = e.target.closest('pre, table') ? null : e.clientX; sy = e.clientY; });
+    el.addEventListener('pointerup', e => {
+      if (sx == null) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+      if (dx * dir > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) closeSheets();
+    });
+  });
+  // one-time hint about the side swipes
+  try {
+    if (!localStorage.getItem('lkg_swipe_hint')) {
+      setTimeout(() => { toast('← swipe for code · swipe → for notes'); localStorage.setItem('lkg_swipe_hint', '1'); }, 9000);
+    }
+  } catch (e) {}
   document.querySelectorAll('.close-sheet').forEach(b => b.addEventListener('click', closeSheets));
 
   /* ---------------- python highlighting ---------------- */
@@ -57,8 +73,15 @@
         table.slice(1).map(r => '<tr>' + r.map(c => `<td>${inline(c)}</td>`).join('') + '</tr>').join('') + '</table>';
       table = null;
     };
+    let fence = null;
     for (const raw of lines) {
       const line = raw.trimEnd();
+      if (line.trimStart().startsWith('```')) {            // fenced code block
+        if (fence === null) { flush(); closeList(); flushTable(); fence = []; }
+        else { html += `<pre class="code">${py(fence.join('\n'))}</pre>`; fence = null; }
+        continue;
+      }
+      if (fence !== null) { fence.push(raw); continue; }
       if (!line.trim()) { flush(); closeList(); flushTable(); continue; }
       if (line.startsWith('## ')) { flush(); closeList(); flushTable(); html += `<h4>${inline(line.slice(3))}</h4>`; }
       else if (line.startsWith('# ')) { flush(); closeList(); flushTable(); html += `<h3>${inline(line.slice(2))}</h3>`; }
