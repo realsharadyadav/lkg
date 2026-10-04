@@ -717,3 +717,23 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 .sheet.left.open,.sheet.right.open{visibility:visible}
 .sheet.left .sheet-head,.sheet.right .sheet-head{padding-top:calc(12px + var(--sat));border-bottom:.5px solid var(--line)}
 #topbar{transition:transform .45s cubic-bezier(.22,1,.36,1)}
+
+/* ---------- side pages: depth + glide ---------- */
+#feeds{overflow:hidden;transform-origin:50% 50%}
+
+#app{background:#1c2b1e}   /* what shows behind the receding reel */
+.sheet.left,.sheet.right{transition:none}      /* every move is driven inline (finger or settle) */
+@keyframes glideInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
+@keyframes glideInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.sheet.right.glide .sheet-scroll>*{animation:glideInR .5s cubic-bezier(.22,1,.36,1) both}
+.sheet.left.glide .sheet-scroll>*{animation:glideInL .5s cubic-bezier(.22,1,.36,1) both}
+.sheet.glide .sheet-scroll>*:nth-child(1){animation-delay:.08s}
+.sheet.glide .sheet-scroll>*:nth-child(2){animation-delay:.14s}
+.sheet.glide .sheet-scroll>*:nth-child(3){animation-delay:.2s}
+.sheet.glide .sheet-scroll>*:nth-child(n+4){animation-delay:.26s}
+.sheet.left.glide .notes-body>*{animation:glideInL .5s cubic-bezier(.22,1,.36,1) both}
+.sheet.left.glide .notes-body>*:nth-child(1){animation-delay:.08s}
+.sheet.left.glide .notes-body>*:nth-child(2){animation-delay:.12s}
+.sheet.left.glide .notes-body>*:nth-child(3){animation-delay:.16s}
+.sheet.left.glide .notes-body>*:nth-child(n+4){animation-delay:.2s}
+#feeds{background:var(--bg)}
