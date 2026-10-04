@@ -6,7 +6,7 @@
    and any change to the original narration / scene order (compared with git HEAD). Exit 1 on errors. */
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const root = path.join(__dirname, '..');
-const STAGE_W = 351;                                   // min(390px, 90vw) on a 390px phone
+const STAGE_W = 292;                                   // real stage width on a 360px phone (~0.81 x viewport); 316 on 390, 348 on 430 — design for the smallest
 const OPS = { show: 2, hide: 2, hot: 2, unhot: 2, dim: 2, undim: 2, tone: 3, text: 3, move: 4, pulse: 2 };
 const TONES = ['good', 'bad', 'accent', 'dashed', ''];
 const KINDS = ['panel', 'chip', 'pkg', 'tag', 'term'];
