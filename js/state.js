@@ -2,10 +2,10 @@
 (function () {
   const KEY = 'lkg_v1';
   const blank = () => ({
-    completed: {}, likes: {},
+    completed: {}, likes: {}, xp: 0,
     streak: { last: null, count: 0 },
-    prefs: { muted: false, rate: 1.05, voiceURI: null, expr: 0.6 },
-    last: { reel: null }
+    prefs: { muted: false, rate: 1.05, voiceURI: null, expr: 0.6, speed: 1, textSize: 'm', autonext: true, reduceMotion: false },
+    last: { reel: null, at: null }
   });
 
   let data = blank();
@@ -26,6 +26,7 @@
     return s.count;
   }
 
+  let resumeUsed = false;
   window.SS = window.SS || {};
   SS.state = {
     get prefs() { return data.prefs; },
@@ -38,6 +39,17 @@
     streak: () => data.streak.count,
     getLastReel: () => (data.last && data.last.reel) || null,
     setLastReel(id) { data.last.reel = id; save(); },
+    xp: () => data.xp || 0,
+    addXp(n) { data.xp = (data.xp || 0) + n; save(); return data.xp; },
+    /* exact-scene resume: remember {id, idx}; the first player started after a load may consume it */
+    setScene(id, idx) { data.last.at = { id, idx }; save(); },
+    clearScene() { data.last.at = null; save(); },
+    takeResume(id) {
+      if (resumeUsed) return 0;
+      resumeUsed = true;
+      const a = data.last.at;
+      return a && a.id === id ? a.idx : 0;
+    },
     reset() { data = blank(); save(); }
   };
 })();

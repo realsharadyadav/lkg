@@ -6,13 +6,13 @@
    3. hookFX()      — Lottie pulse accent behind the hook card            */
 (function () {
   const SS = window.SS = window.SS || {};
-  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('reduce-motion');
   const LIN = { i: { x: [0.5], y: [0.5] }, o: { x: [0.5], y: [0.5] } };   // linear keyframe pair
   const EASE = { i: { x: [0.33], y: [1] }, o: { x: [0.33], y: [0] } };    // ease-out pair
 
   /* ================= 1. scene exit/enter transition ================= */
   function transition(stage, oldLayers, newMount) {
-    if (!window.gsap) { if (oldLayers) oldLayers.forEach(l => l.remove()); return; }
+    if (!window.gsap || reduced()) { if (oldLayers) oldLayers.forEach(l => l.remove()); return; }
     if (oldLayers && oldLayers.length) {
       // old scene lifts out with a soft blur while the new one springs in
       gsap.to(oldLayers, {

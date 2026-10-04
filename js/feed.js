@@ -41,10 +41,10 @@
       `<div class="cap-hint"><span class="arr">↑</span> swipe next · tap ⏯ · 2× tap ❤ · dots = chapters</div>` +
       `</div>` +
       `<div class="rail">` +
-      `<button class="rail-btn rail-like"><span class="ic">❤️</span><span class="lb">0</span></button>` +
-      (data.code ? `<button class="rail-btn rail-code"><span class="ic">&lt;/&gt;</span><span class="lb">code</span></button>` : '') +
-      (data.notes ? `<button class="rail-btn rail-notes"><span class="ic">📄</span><span class="lb">notes</span></button>` : '') +
-      `<button class="rail-btn rail-mute"><span class="ic">🔊</span><span class="lb">sound</span></button>` +
+      `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">❤️</span><span class="lb">0</span></button>` +
+      (data.code ? `<button class="rail-btn rail-code" aria-label="Show code"><span class="ic">&lt;/&gt;</span><span class="lb">code</span></button>` : '') +
+      (data.notes ? `<button class="rail-btn rail-notes" aria-label="Show notes"><span class="ic">📄</span><span class="lb">notes</span></button>` : '') +
+      `<button class="rail-btn rail-mute" aria-label="Mute or unmute narration"><span class="ic">🔊</span><span class="lb">sound</span></button>` +
       `</div>`));
     const player = new SS.ReelPlayer(el, data, { segEl: [...el.querySelectorAll('.seg')].find(s => s.classList.contains('cur')) });
     const rail = el.querySelector('.rail');
@@ -125,6 +125,10 @@
       const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
       if (swipeFired || dist >= 14 || dt >= 400) return;
+      // left / right edges step through scenes (Stories-style); centre pauses
+      const box = el.getBoundingClientRect();
+      const rx = (e.clientX - box.left) / box.width;
+      if (rx < .22 || rx > .78) { lastTap = 0; player.seekScene(rx < .5 ? -1 : 1); return; }
       const now = performance.now();
       // react instantly (no double-tap wait); a second tap undoes the toggle and likes
       if (now - lastTap < 300) {
@@ -139,6 +143,22 @@
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', () => { down = null; if (lpTimer) clearTimeout(lpTimer); player.pressEnd(); });
+  }
+
+  /* warm the next reels' opening clips so swiping on never waits for audio */
+  const warmed = new Set();
+  function prefetchAhead(id) {
+    const c = navigator.connection;
+    if (c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''))) return;
+    const rs = SS.catalog.reels, i = rs.findIndex(r => r.id === id);
+    rs.slice(i + 1, i + 3).forEach(r => {
+      ['hook', 's0', 's1'].forEach(k => {
+        const u = `data/audio/${r.id}/${k}.mp3`;
+        if (warmed.has(u)) return;
+        warmed.add(u);
+        fetch(u, { priority: 'low' }).catch(() => warmed.delete(u));
+      });
+    });
   }
 
   const items = [];       // parallel to catalog.reels: {meta, el, player, id}
@@ -201,7 +221,7 @@
             if (prev === next) return;
             feed._active = next;
             const item = items.find(it => it.el === next);
-            if (item && item.id) SS.state.setLastReel(item.id);
+            if (item && item.id) { SS.state.setLastReel(item.id); prefetchAhead(item.id); }
             items.forEach(it => {
               if (it.el === prev && it.player) it.player.stop();
               if (it.el === next && it.player) it.player.start();
@@ -250,6 +270,13 @@
       if (!feed || !feed._active) return null;
       const found = items.find(it => it.el === feed._active);
       return found && found.player ? found.player : null;
+    },
+    next() { feed.scrollTo({ top: feed.scrollTop + feed.clientHeight, behavior: 'smooth' }); },
+    goTo(id) { const it = items.find(x => x.id === id); if (it) feed.scrollTo({ top: it.el.offsetTop }); },
+    nextLabel(id) {
+      const rs = SS.catalog.reels, i = rs.findIndex(r => r.id === id);
+      const n = i >= 0 ? rs[i + 1] : null;
+      return n ? `Reel ${n.num} · ${n.topic}` : null;
     },
     kickActive() { const p = this.activePlayer(); if (p) p.kick(); },
     refreshProgress

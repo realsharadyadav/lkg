@@ -13,7 +13,7 @@
 
   /* ---------------- sheets ---------------- */
   const scrim = $('#scrim');
-  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet'), script: $('#scriptSheet') };
+  const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet'), script: $('#scriptSheet'), map: $('#mapSheet') };
   let openName = null, onSheetClose = null;
   function fireClose() { const f = onSheetClose; onSheetClose = null; if (f) f(); }
   function openSheet(name) {
@@ -122,6 +122,20 @@
       onSheetClose = onClose || null;
       const c = $('#scriptBody .cur'); if (c) requestAnimationFrame(() => { c.scrollIntoView({ block: 'center' }); });
     },
+    openMap() {
+      const cur = SS.state.getLastReel();
+      $('#mapBody').innerHTML = SS.catalog.stages.map(st => {
+        const done = SS.state.completedCount(st.reels);
+        const rows = st.reels.map(id => {
+          const r = SS.catalog.reels.find(x => x.id === id);
+          const ok = SS.state.isCompleted(id);
+          return `<button class="map-row${id === cur ? ' cur' : ''}" data-id="${id}"><span class="mi">${ok ? '✅' : id === cur ? '▶️' : '○'}</span><span class="mt">${r.num}. ${r.topic}</span></button>`;
+        }).join('');
+        return `<div class="map-stage"><div class="map-sh"><b>${st.name}</b><span>${done}/${st.reels.length}</span></div>${rows}</div>`;
+      }).join('');
+      openSheet('map');
+      const c = $('#mapBody .cur'); if (c) requestAnimationFrame(() => c.scrollIntoView({ block: 'center' }));
+    },
     openNotes(data) {
       if (!data.notes) return;
       $('#notesTitle').textContent = `📄 ${data.topic} — full notes`;
@@ -173,6 +187,25 @@
       exprVal.textContent = Math.round(expr.value * 100) + '%';
     });
 
+    // playback speed / caption size / autoplay / reduce motion
+    const pick = (sel, cur, apply) => {
+      const box = $(sel);
+      const paint = v => box.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === String(v)));
+      paint(cur);
+      box.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; paint(b.dataset.v); apply(b.dataset.v); });
+    };
+    pick('#speedPick', SS.state.prefs.speed || 1, v => SS.audio.setSpeed(+v));
+    pick('#sizePick', SS.state.prefs.textSize || 'm', v => { SS.state.prefs.textSize = v; SS.state.save(); applyLook(); });
+    const auto = $('#autoSel'); auto.checked = SS.state.prefs.autonext !== false;
+    auto.addEventListener('change', () => { SS.state.prefs.autonext = auto.checked; SS.state.save(); });
+    const mo = $('#motionSel'); mo.checked = !!SS.state.prefs.reduceMotion;
+    mo.addEventListener('change', () => { SS.state.prefs.reduceMotion = mo.checked; SS.state.save(); applyLook(); });
+    $('#courseProgress').addEventListener('click', () => SS.ui.openMap());
+    $('#mapBody').addEventListener('click', e => {
+      const b = e.target.closest('.map-row'); if (!b) return;
+      closeSheets(); SS.feed.goTo(b.dataset.id);
+    });
+
     $('#settingsBtn').addEventListener('click', () => openName === 'settings' ? closeSheets() : openSheet('settings'));
     $('#aboutBtn').addEventListener('click', () => openSheet('about'));
     $('#resetBtn').addEventListener('click', () => {
@@ -189,6 +222,14 @@
   window.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', unlock);
   window.addEventListener('contextmenu', e => { if (!e.target.closest('.sheet')) e.preventDefault(); });
+
+  function applyLook() {
+    const p = SS.state.prefs, root = document.documentElement;
+    root.classList.remove('ts-s', 'ts-l');
+    if (p.textSize === 's' || p.textSize === 'l') root.classList.add('ts-' + p.textSize);
+    root.classList.toggle('reduce-motion', !!p.reduceMotion);
+  }
+  applyLook();
 
   function refreshStreak() { $('#streakCount').textContent = SS.state.streak(); }
 

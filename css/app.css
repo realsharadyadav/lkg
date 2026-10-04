@@ -526,3 +526,37 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 /* ---------- audio clip progress (very bottom) ---------- */
 .aud-bar{position:absolute;left:0;right:0;bottom:0;height:3px;z-index:12;background:rgba(53,88,52,.14);pointer-events:none}
 .aud-bar b{display:block;height:100%;width:100%;background:var(--accent-deep);transform:scaleX(0);transform-origin:left center;border-radius:0 3px 3px 0;will-change:transform}
+
+/* ============ UX v2: scrub zone, next-up, course map, settings pickers, a11y ============ */
+button.prog-pill{cursor:pointer;font-family:inherit}
+.aud-hit{position:absolute;left:0;right:0;bottom:0;height:18px;z-index:13;touch-action:none;cursor:pointer}
+.capzone{bottom:calc(16px + var(--sab))}
+.rail{bottom:calc(20px + var(--sab))}
+.xp-line{margin-top:4px;font-size:12.5px;font-weight:800;color:var(--accent-deep);background:var(--accent-soft);padding:4px 12px;border-radius:999px}
+
+.nextup{position:absolute;z-index:12;left:50%;bottom:calc(74px + var(--sab));transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 28px);
+  background:#fff;border:1.5px solid var(--accent);border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:800;color:var(--text);box-shadow:0 8px 24px -8px var(--accent-soft);animation:cueIn .2s ease-out}
+.nextup span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nextup b{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent-deep);color:#fff;display:grid;place-items:center;font-size:12px}
+.nextup i{flex:none;font-style:normal;font-size:10.5px;color:var(--muted);font-weight:700}
+
+.map-body{padding:6px 12px 16px}
+.map-stage{margin-bottom:12px}
+.map-sh{display:flex;justify-content:space-between;align-items:center;padding:10px 6px 6px;font-size:12px;letter-spacing:.3px;color:var(--genai-deep);text-transform:uppercase;position:sticky;top:-6px;background:var(--bg2);z-index:1}
+.map-sh span{color:var(--muted);font-weight:800}
+.map-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 8px;border-radius:12px;font-size:13.5px;font-weight:600;color:var(--text)}
+.map-row:active{background:#f1f8e9}
+.map-row.cur{background:#f1f8e9;font-weight:800}
+.map-row .mi{flex:none;width:22px;text-align:center;color:var(--dim)}
+.map-row .mt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.seg-pick{display:flex;gap:6px;flex-wrap:wrap}
+.seg-pick button{padding:7px 11px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:800;font-size:12.5px;color:var(--text)}
+.seg-pick button.on{background:var(--genai);border-color:var(--genai-deep);color:#fff}
+
+/* caption size + reduce motion (in-app) */
+.ts-s .cap-text{font-size:12px}.ts-s .cap-title{font-size:13px}
+.ts-l .cap-text{font-size:15px}.ts-l .cap-title{font-size:16px}.ts-l .script-body{font-size:16.5px}
+.reduce-motion *,.reduce-motion *::before,.reduce-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+.reduce-motion .bg-fx{display:none}
+:focus-visible{outline:2px solid var(--genai-deep);outline-offset:2px;border-radius:8px}

@@ -39,7 +39,10 @@
       this.bigplay = h('div', 'bigplay', '▶');
       this.speedpill = h('div', 'speedpill', '⏩ 2×');
       this.audBar = h('div', 'aud-bar', '<b></b>');
-      this.root.querySelector('.reel-inner').append(this.hookEl, this.bigplay, this.speedpill, this.audBar);
+      this.audBar.setAttribute('role', 'progressbar'); this.audBar.setAttribute('aria-label', 'Narration progress');
+      this.audHit = h('div', 'aud-hit');
+      this.root.querySelector('.reel-inner').append(this.hookEl, this.bigplay, this.speedpill, this.audBar, this.audHit);
+      this._bindScrub();
     }
 
     _buildChapBar() {
@@ -101,7 +104,7 @@
       this.hookEl.style.display = 'none';
       this.bigplay.classList.remove('show');
       this.speedpill.classList.remove('show');
-      ['.recap', '.quiz', '.done-pop'].forEach(s => { const e = this.root.querySelector(s); if (e) e.remove(); });
+      ['.recap', '.quiz', '.done-pop', '.nextup'].forEach(s => { const e = this.root.querySelector(s); if (e) e.remove(); });
       this.stage.classList.remove('frozen');
       this.paused = false; this._kept = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0;
       this._setCap(strip(this.data.hook));
@@ -109,7 +112,16 @@
       this._seg(0);
     }
 
-    _begin() { this._hook(); }
+    _begin() {
+      this._beganAt = performance.now();
+      const at = SS.state.takeResume(this.data.id);
+      if (at > 0 && at < this.data.scenes.length) {
+        this.hookEl.style.display = 'none';
+        this.sceneIdx = at;
+        SS.ui.toast('↩︎ Picking up where you left off');
+        this._scene();
+      } else this._hook();
+    }
 
     _hook() {
       this.state = 'hook';
@@ -123,14 +135,63 @@
       this.speech = this._voice(this.data.id + '/hook', hookText, () => this._after(450, () => this._startScenes()));
       this._after(SS.narrator.estMs(hookText) * 2.2 + 3000, () => { if (this.state === 'hook') this._startScenes(); });
     }
+    /* drag the bottom bar to seek inside the current narration clip */
+    _bindScrub() {
+      const hit = this.audHit;
+      const frac = e => { const r = hit.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+      let drag = false;
+      hit.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        if (!this.speech || !this.speech.seek || this.state === 'quiz' || this.state === 'done') return;
+        drag = true; hit.setPointerCapture(e.pointerId); this._prog(frac(e));
+      });
+      hit.addEventListener('pointermove', e => { if (drag) this._prog(frac(e)); });
+      const end = e => { if (!drag) return; drag = false; this.speech && this.speech.seek && this.speech.seek(frac(e)); };
+      hit.addEventListener('pointerup', e => { e.stopPropagation(); end(e); });
+      hit.addEventListener('pointercancel', () => { drag = false; });
+    }
+
+    /* previous / next scene (edge taps) */
+    seekScene(delta) {
+      if (this._pending) return;
+      if (this.state === 'hook') return this.skipHook();
+      if (this.state !== 'scene' && this.state !== 'recap') return;
+      const n = this.data.scenes.length;
+      let idx = this.state === 'recap' ? (delta < 0 ? n - 1 : n) : this.sceneIdx + delta;
+      idx = Math.max(0, idx);
+      if (this.state === 'recap' && delta > 0) return;
+      if (this.paused) { this.paused = false; this._kept = false; this.stage.classList.remove('frozen'); this.bigplay.classList.remove('show'); }
+      this._clearTimers(); this._stopSpeech();
+      this.root.querySelectorAll('.recap').forEach(e => e.remove());
+      if (idx >= n) return this._recap();
+      this.state = 'scene'; this.sceneIdx = idx;
+      this._scene();
+    }
+
     /* narrate one clip and drive the bottom audio progress bar */
     _voice(key, text, onend) {
+      this._sents = null; this._sentIdx = -1;
+      if (this.state === 'scene') {
+        const parts = text.match(/[^.?!…]+[.?!…]+["'”’)]?\s*|[^.?!…]+$/g) || [];
+        if (parts.length > 1) {
+          let acc = 0; const total = text.length || 1;
+          this._sents = parts.map(s => { acc += s.length; return { s: s.trim(), end: acc / total }; });
+        }
+      }
       this._prog(0);
       return SS.audio
         ? SS.audio.speak(key, text, { onend, onprogress: f => this._prog(f) })
         : SS.narrator.speak(text, { onend, onword: (i, n) => this._prog((i + 1) / n) });
     }
-    _prog(f) { if (this.audBar) this.audBar.firstChild.style.transform = 'scaleX(' + Math.max(0, Math.min(1, f)) + ')'; }
+    _prog(f) {
+      if (!this.audBar) return;
+      f = Math.max(0, Math.min(1, f));
+      this.audBar.firstChild.style.transform = 'scaleX(' + f + ')';
+      if (this._sents) {   // one-line caption follows the sentence being spoken
+        let i = this._sents.findIndex(x => f <= x.end); if (i < 0) i = this._sents.length - 1;
+        if (i !== this._sentIdx) { this._sentIdx = i; this.capText.textContent = this._sents[i].s; }
+      }
+    }
     skipHook() { if (this.state === 'hook') this._startScenes(); }
 
     _startScenes() {
@@ -155,6 +216,7 @@
       if (SS.motion) SS.motion.transition(this.stage, olds, mount);
       else olds.forEach(l => l.remove());
       this._caption(sc.narration || sc.title || '');
+      SS.state.setScene(this.data.id, this.sceneIdx);
       this._seg(this.sceneIdx / this.data.scenes.length);
       this._syncChap();
       let ended = false;
@@ -243,24 +305,45 @@
       const recap = this.root.querySelector('.recap'); if (recap) recap.remove();
       const first = !SS.state.isCompleted(this.data.id);
       SS.state.markCompleted(this.data.id);
+      SS.state.clearScene();
       if (first) { SS.fx.confetti(this.root); }
       const n = this.data.quiz.length;
       const perfect = this.score === n;
+      const xp = this.score * 10 + (first ? 20 : 0) + (perfect ? 10 : 0);
+      SS.state.addXp(xp);
       const pop = h('div', 'done-pop',
         `<div class="ck">${perfect ? '🏆' : this.score >= n - 1 ? '✅' : '💪'}</div>` +
         `<b>Reel complete — ${this.score}/${n}</b>` +
-        `<small>${perfect ? 'Perfect score!' : 'swipe ↑ for the next reel'}</small>`);
+        `<small>${perfect ? 'Perfect score!' : 'swipe ↑ for the next reel'}</small>` +
+        `<div class="xp-line">+${xp} XP · 🔥 ${SS.state.streak()}-day streak</div>`);
       this.root.querySelector('.reel-inner').appendChild(pop);
       this._caption('✅ Done! Swipe up for the next reel');
       this.hint.classList.add('show');
       document.dispatchEvent(new CustomEvent('ss:complete', { detail: { id: this.data.id } }));
-      this._after(2600, () => pop.remove());
+      this._after(2600, () => { pop.remove(); this._autoNext(); });
+    }
+
+    /* "Next up" countdown; tap it to stay on this reel */
+    _autoNext() {
+      if (!SS.state.prefs.autonext || this.state !== 'done') return;
+      const label = SS.feed.nextLabel(this.data.id);
+      if (!label) return;
+      let n = 4;
+      const chip = h('button', 'nextup');
+      const paint = () => { chip.innerHTML = `<span>Next · ${label}</span><b>${n}</b><i>tap to stay</i>`; };
+      paint();
+      chip.addEventListener('pointerdown', e => e.stopPropagation());
+      chip.addEventListener('click', e => { e.stopPropagation(); this._clearTimers(); chip.remove(); });
+      this.root.querySelector('.reel-inner').appendChild(chip);
+      const tick = () => { if (--n <= 0) { chip.remove(); SS.feed.next(); } else { paint(); this._after(1000, tick); } };
+      this._after(1000, tick);
     }
 
     /* ---------- input ---------- */
     tap() {                  // returns true when it toggled pause (so a double-tap can undo it)
       if (this._pending) return false;
-      if (this.state === 'hook') { this.skipHook(); return false; }
+      // the tap that unlocked audio / started the reel must not skip its intro
+      if (this.state === 'hook') { if (performance.now() - (this._beganAt || 0) > 700) this.skipHook(); return false; }
       if (this.state === 'quiz' || this.state === 'done' || this.state === 'idle') return false;
       this.togglePause();
       return true;
@@ -318,7 +401,7 @@
       // One clipped line (CSS ellipsis); tapping it opens the full script.
       this._setCap(strip(text));
     }
-    _setCap(text) { this._capFull = text; this.capText.textContent = text; }
+    _setCap(text) { this._capFull = text; this._sents = null; this.capText.textContent = text; }
     _say(text, onend) { this.speech = SS.narrator.speak(text, { onend }); }
     _stopSpeech() { if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
     _clearScene() { if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; } this.stage.innerHTML = ''; }

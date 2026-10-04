@@ -11,14 +11,14 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>LKG · GenAI Architect Path</title>
-<link rel="stylesheet" href="css/app.css?v=13">
+<link rel="stylesheet" href="css/app.css?v=14">
 </head>
 <body>
 <div id="app">
   <header id="topbar">
     <div class="brand">LKG<span class="brand-sub">GenAI Architect</span></div>
     <div class="top-right">
-      <span class="prog-pill" id="courseProgress" title="Course progress">✅ 0/80</span>
+      <button class="prog-pill" id="courseProgress" title="Course map" aria-label="Open course map">✅ 0/80</button>
       <div class="streak" id="streakBadge" title="Daily streak">🔥<b id="streakCount">0</b></div>
       <button id="settingsBtn" class="iconbtn" aria-label="Settings">⚙️</button>
     </div>
@@ -40,6 +40,12 @@
     <div class="grab"></div>
     <div class="sheet-head"><span id="notesTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
     <div id="notesBody" class="sheet-scroll notes-body"></div>
+  </section>
+
+  <section id="mapSheet" class="sheet bottom">
+    <div class="grab"></div>
+    <div class="sheet-head"><span class="sheet-title">🗺️ Course map</span><button class="iconbtn close-sheet" aria-label="Close">✕</button></div>
+    <div id="mapBody" class="sheet-scroll map-body"></div>
   </section>
 
   <section id="scriptSheet" class="sheet bottom">
@@ -83,6 +89,22 @@
       </label>
       <label class="set-row">🎭 Expressiveness <b id="exprVal">60%</b>
         <input type="range" id="exprSel" min="0" max="1" step="0.05">
+      </label>
+      <div class="set-row">🎚️ Playback speed
+        <div class="seg-pick" id="speedPick" role="group" aria-label="Playback speed">
+          <button data-v="1">1×</button><button data-v="1.25">1.25×</button><button data-v="1.5">1.5×</button><button data-v="1.75">1.75×</button><button data-v="2">2×</button>
+        </div>
+      </div>
+      <div class="set-row">🔠 Caption size
+        <div class="seg-pick" id="sizePick" role="group" aria-label="Caption size">
+          <button data-v="s">S</button><button data-v="m">M</button><button data-v="l">L</button>
+        </div>
+      </div>
+      <label class="set-row">⏭️ Auto-play next reel
+        <input type="checkbox" id="autoSel">
+      </label>
+      <label class="set-row">🌀 Reduce motion
+        <input type="checkbox" id="motionSel">
       </label>
       <label class="set-row">🔇 Mute narration
         <input type="checkbox" id="muteSel">

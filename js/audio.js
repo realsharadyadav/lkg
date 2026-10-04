@@ -5,8 +5,14 @@
 (function () {
   const SS = window.SS;
 
+  let curAudio = null;
+  const speed = () => SS.state.prefs.speed || 1;
+
   function playFile(url, cb) {
     const a = new Audio(url);
+    curAudio = a;
+    a.defaultPlaybackRate = a.playbackRate = speed();
+    a.preservesPitch = true; a.webkitPreservesPitch = true;
     let settled = false;
     const ok = () => { if (!settled) { settled = true; cb && cb.onend && cb.onend(); } };
     const fail = () => {
@@ -18,7 +24,7 @@
     let raf = 0;
     const tick = () => {
       if (settled) return;
-      if (cb && cb.onprogress && a.duration > 0) cb.onprogress(a.currentTime / a.duration);
+      if (cb && cb.onprogress && isFinite(a.duration) && a.duration > 0) cb.onprogress(a.currentTime / a.duration);
       raf = requestAnimationFrame(tick);
     };
     a.addEventListener('playing', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
@@ -28,6 +34,7 @@
     if (p && p.catch) p.catch(fail);
     return {
       cancel() { settled = true; try { a.pause(); } catch (e) {} },
+      seek(f) { if (isFinite(a.duration) && a.duration > 0) a.currentTime = Math.max(0, Math.min(.999, f)) * a.duration; },
       pause() { try { a.pause(); } catch (e) {} },
       resume() { if (a.ended) return; const r = a.play(); if (r && r.catch) r.catch(() => {}); }
     };
@@ -39,7 +46,7 @@
     cb = cb || {};
     // muted: stay silent but keep timing so scenes still advance
     if (SS.narrator.muted || !('Audio' in window)) {
-      const ms = Math.max(1500, SS.narrator.estMs(text || ''));
+      const ms = Math.max(1500, SS.narrator.estMs(text || '')) / speed();
       let iv = 0, t = setTimeout(() => { clearInterval(iv); cb.onprogress && cb.onprogress(1); cb.onend && cb.onend(); }, ms), left = ms, at = Date.now(), paused = false;
       iv = setInterval(() => { if (!paused && cb.onprogress) cb.onprogress(Math.min(1, 1 - (left - (Date.now() - at)) / ms)); }, 100);
       return {
@@ -52,6 +59,7 @@
     let inner = null, cancelled = false;
     const handle = {
       cancel() { cancelled = true; inner && inner.cancel(); },
+      seek(f) { inner && inner.seek && inner.seek(f); },
       pause() { inner && inner.pause && inner.pause(); },
       resume() { inner && inner.resume && inner.resume(); }
     };
@@ -63,5 +71,8 @@
     return handle;
   }
 
-  SS.audio = { speak };
+  SS.audio = {
+    speak,
+    setSpeed(v) { SS.state.prefs.speed = v; SS.state.save(); if (curAudio) curAudio.playbackRate = v; }
+  };
 })();
