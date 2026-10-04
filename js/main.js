@@ -133,6 +133,7 @@
         return `<option value="${v.voiceURI}">${name}${mark} — ${v.lang}</option>`;
       }).join('');
       if (SS.state.prefs.voiceURI) sel.value = SS.state.prefs.voiceURI;
+      else if (SS.narrator.voiceName) sel.value = vs.find(v => v.name === SS.narrator.voiceName)?.voiceURI || '';
     };
     fill();
     if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = fill;

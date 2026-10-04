@@ -291,29 +291,13 @@
 
     /* ---------- helpers ---------- */
     _caption(text) {
-      // full text, fully readable from the first moment — no word-by-word dimming.
-      // max ~3 lines on screen; long scripts scroll slowly (auto-scroll), user can also scroll.
-      this._stopCapScroll();
+      // Keep the complete script readable and let the learner control scrolling.
+      // Narration can continue, but the caption never moves underneath the user.
       this.capText.innerHTML = '<span class="w on">' + strip(text) + '</span>';
       this.capText.scrollTop = 0;
-      const el = this.capText;
-      if (el.scrollHeight <= el.clientHeight + 6) return; // fits, no scroll needed
-      const dur = Math.max(4000, (SS.narrator.estMs(text) || 6000) + 1500);
-      const max = el.scrollHeight - el.clientHeight;
-      const t0 = performance.now();
-      let acc = 0, last = t0;
-      const tick = (now) => {
-        const dt = now - last; last = now;
-        if (!this.paused) acc += dt;              // freeze auto-scroll while paused
-        const p = Math.min(1, acc / dur);
-        el.scrollTop = p * max;
-        if (p < 1 && this.state !== 'idle') this._capRaf = requestAnimationFrame(tick);
-      };
-      this._capRaf = requestAnimationFrame(tick);
     }
-    _stopCapScroll() { if (this._capRaf) { cancelAnimationFrame(this._capRaf); this._capRaf = null; } }
     _say(text, onend) { this.speech = SS.narrator.speak(text, { onend }); }
-    _stopSpeech() { this._stopCapScroll(); if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
+    _stopSpeech() { if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
     _clearScene() { if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; } this.stage.innerHTML = ''; }
     _after(ms, fn) { const t = setTimeout(() => { if (!this.paused && this.state !== 'idle') fn(); }, ms); this.timers.push(t); return t; }
     _clearTimers() { this.timers.forEach(clearTimeout); this.timers = []; }

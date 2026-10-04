@@ -10,6 +10,7 @@
   let muted = !!SS.state.prefs.muted;
   let expr = SS.state.prefs.expr != null ? SS.state.prefs.expr : 0.6;
 
+  const DEFAULT_VOICE = 'adam';
   const PREMIUM = ['Natural', 'Neural', 'Samantha', 'Karen', 'Moira', 'Tessa', 'Daniel', 'Google US English', 'Google UK English Female', 'Aria', 'Jenny', 'Guy', 'Ava', 'Zira', 'Alex'];
   const rank = v => { const n = (v.name || '').toLowerCase(); let i = PREMIUM.findIndex(p => n.includes(p.toLowerCase())); return i === -1 ? PREMIUM.length : i; };
 
@@ -17,13 +18,21 @@
     let all = (speechSynthesis.getVoices() || []).filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
     if (!all.length) all = speechSynthesis.getVoices() || [];
     const saved = SS.state.prefs.voiceURI;
-    voice = (saved && all.find(v => v.voiceURI === saved)) || null;
+    const savedVoice = saved && all.find(v => v.voiceURI === saved);
+    voice = savedVoice ||
+      all.find(v => (v.name || '').trim().toLowerCase() === DEFAULT_VOICE) ||
+      all.find(v => (v.name || '').toLowerCase().includes(DEFAULT_VOICE)) || null;
     if (!voice && all.length) voice = [...all].sort((a, b) => rank(a) - rank(b))[0];
+    // Adam is the product default, but never replace a voice the learner chose
+    // while that voice is still available on this device.
+    if (voice && !savedVoice && (!saved || voice.voiceURI !== saved)) {
+      SS.state.prefs.voiceURI = voice.voiceURI; SS.state.save();
+    }
     voiceName = voice ? voice.name : 'auto';
   }
   if ('speechSynthesis' in window) {
     pickVoice();
-    speechSynthesis.onvoiceschanged = pickVoice;
+    speechSynthesis.addEventListener('voiceschanged', pickVoice);
   }
 
   const wps = () => 2.55 * rate;                 // approx words per second
