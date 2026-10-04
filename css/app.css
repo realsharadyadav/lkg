@@ -655,3 +655,16 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 .switch:checked{background:#34c759}
 .switch:checked::after{transform:translateX(20px)}
 .set2 .set-hint{margin-top:16px;line-height:1.7}
+
+/* ---------- intro: reel badge with narration ring ---------- */
+.hook{flex-direction:column;gap:22px}
+.hook-badge{position:relative;width:88px;height:88px;border-radius:50%;display:grid;place-items:center;flex:none;
+  background:var(--glass-bg);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%);animation:popIn .5s cubic-bezier(.2,1.3,.4,1)}
+.hook-badge svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.hook-badge .trk{fill:none;stroke:rgba(53,88,52,.12);stroke-width:5}
+.hook-badge .prg{fill:none;stroke:var(--accent-deep);stroke-width:5;stroke-linecap:round;stroke-dasharray:238.8;stroke-dashoffset:238.8}
+.hook-badge .in{text-align:center;line-height:1;position:relative}
+.hook-badge small{display:block;font-size:9px;font-weight:900;letter-spacing:1.4px;color:var(--muted);margin-bottom:2px}
+.hook-badge b{font-size:27px;font-weight:900;color:var(--accent-deep);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.hook-lottie{display:none}

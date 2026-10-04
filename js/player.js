@@ -33,7 +33,13 @@
     }
 
     _buildOverlays() {
-      this.hookEl = h('div', 'hook', `<div class="hook-text">${mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
+      // reel badge: ring fills as the intro line is spoken (replaces the old pulse that looked like loading)
+      const num = String(this.data.num).padStart(2, '0');
+      this.hookEl = h('div', 'hook',
+        `<div class="hook-badge"><svg viewBox="0 0 86 86" aria-hidden="true"><circle class="trk" cx="43" cy="43" r="38"/><circle class="prg" cx="43" cy="43" r="38"/></svg>` +
+        `<div class="in"><small>REEL</small><b>${num}</b></div></div>` +
+        `<div class="hook-text">${mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
+      this.hookRing = this.hookEl.querySelector('.hook-badge .prg');
       this.bigplay = h('div', 'bigplay', SS.icon('play'));
       this.speedpill = h('div', 'speedpill', '⏩ 2×');
       this.audBar = h('div', 'aud-bar', '<b></b>');
@@ -126,7 +132,6 @@
       this.state = 'hook';
       this.hookEl.style.display = 'flex';
       if (this._hookFX) { this._hookFX(); this._hookFX = null; }
-      if (SS.motion) this._hookFX = SS.motion.hookFX(this.hookEl);
       const t = this.hookEl.querySelector('.hook-text');
       t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop');
       // advance only when the hook line has finished (+ a short beat); the timer is just a safety net
@@ -206,6 +211,7 @@
       if (!this.audBar) return;
       f = Math.max(0, Math.min(1, f));
       this.audBar.firstChild.style.transform = 'scaleX(' + f + ')';
+      if (this.state === 'hook' && this.hookRing) this.hookRing.style.strokeDashoffset = String(238.8 * (1 - f));
       if (this._sents) {   // one-line caption follows the sentence being spoken
         let i = this._sents.findIndex(x => f <= x.end); if (i < 0) i = this._sents.length - 1;
         if (i !== this._sentIdx) { this._sentIdx = i; this.capText.textContent = this._sents[i].s; }
