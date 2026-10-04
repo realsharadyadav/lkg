@@ -38,7 +38,8 @@
       this.hookEl = h('div', 'hook', `<div class="hook-text">${mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
       this.bigplay = h('div', 'bigplay', '▶');
       this.speedpill = h('div', 'speedpill', '⏩ 2×');
-      this.root.querySelector('.reel-inner').append(this.hookEl, this.bigplay, this.speedpill);
+      this.audBar = h('div', 'aud-bar', '<b></b>');
+      this.root.querySelector('.reel-inner').append(this.hookEl, this.bigplay, this.speedpill, this.audBar);
     }
 
     _buildChapBar() {
@@ -104,6 +105,7 @@
       this.stage.classList.remove('frozen');
       this.paused = false; this._kept = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0;
       this._setCap(strip(this.data.hook));
+      this._prog(0);
       this._seg(0);
     }
 
@@ -116,12 +118,19 @@
       if (SS.motion) this._hookFX = SS.motion.hookFX(this.hookEl);
       const t = this.hookEl.querySelector('.hook-text');
       t.classList.remove('pop'); void t.offsetWidth; t.classList.add('pop');
-      const say = SS.audio
-        ? SS.audio.speak(this.data.id + '/hook', strip(this.data.hook), { onend: () => this._startScenes() })
-        : this._say(strip(this.data.hook), () => this._startScenes());
-      this.speech = say;
-      this._after(3600, () => { if (this.state === 'hook') this._startScenes(); });
+      // advance only when the hook line has finished (+ a short beat); the timer is just a safety net
+      const hookText = strip(this.data.hook);
+      this.speech = this._voice(this.data.id + '/hook', hookText, () => this._after(450, () => this._startScenes()));
+      this._after(SS.narrator.estMs(hookText) * 2.2 + 3000, () => { if (this.state === 'hook') this._startScenes(); });
     }
+    /* narrate one clip and drive the bottom audio progress bar */
+    _voice(key, text, onend) {
+      this._prog(0);
+      return SS.audio
+        ? SS.audio.speak(key, text, { onend, onprogress: f => this._prog(f) })
+        : SS.narrator.speak(text, { onend, onword: (i, n) => this._prog((i + 1) / n) });
+    }
+    _prog(f) { if (this.audBar) this.audBar.firstChild.style.transform = 'scaleX(' + Math.max(0, Math.min(1, f)) + ')'; }
     skipHook() { if (this.state === 'hook') this._startScenes(); }
 
     _startScenes() {
@@ -153,9 +162,7 @@
       // scenes without narration (e.g. bridges): hold a beat, move on — never crash
       if (sc.narration) {
         const key = `${this.data.id}/s${this.sceneIdx}`;
-        this.speech = SS.audio
-          ? SS.audio.speak(key, strip(sc.narration), { onend: () => this._after(600, go) })
-          : SS.narrator.speak(strip(sc.narration), { onend: () => this._after(600, go) });
+        this.speech = this._voice(key, strip(sc.narration), () => this._after(600, go));
         this._after(SS.narrator.estMs(sc.narration) * 2.2 + 3100, go);
       } else {
         this._after(4500, go);
@@ -179,9 +186,7 @@
         '. Also: ' + strip(this.data.recap[1]) +
         (this.data.recap[2] ? '. And finally: ' + strip(this.data.recap[2]) : '') +
         '. Now — a quick check.';
-      this.speech = SS.audio
-        ? SS.audio.speak(this.data.id + '/recap', say, { onend: () => this._after(700, () => this._quiz()) })
-        : SS.narrator.speak(say, { onend: () => this._after(700, () => this._quiz()) });
+      this.speech = this._voice(this.data.id + '/recap', say, () => this._after(700, () => this._quiz()));
       this._after(SS.narrator.estMs(say) * 2.2 + 3000, () => this._quiz());
     }
 
@@ -191,6 +196,7 @@
       this._stopSpeech(); this._clearTimers();
       const q = this.data.quiz[this.quizIdx];
       const n = this.data.quiz.length;
+      this._prog(0);
       this._caption(`Quiz ${this.quizIdx + 1}/${n} — tap the right answer ✅`);
       this.root.querySelectorAll('.quiz').forEach(e => e.remove());
       const layer = h('div', 'quiz');
