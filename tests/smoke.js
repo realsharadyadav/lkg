@@ -61,6 +61,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok(await p.evaluate(() => document.querySelector('#notesSheet').classList.contains('open')), 'swipe right opens notes');
   await swipe(300, 100); await p.waitForTimeout(500);
   ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open') && !SS.feed.activePlayer().paused), 'swipe notes back closes it and resumes');
+  await swipe(300, 250); await p.waitForTimeout(600);   // too short: snaps back
+  ok(await p.evaluate(() => !document.querySelector('#codePanel').classList.contains('open') && !SS.feed.activePlayer().paused), 'short drag snaps back closed');
   const i0 = await p.evaluate(() => SS.feed.activePlayer().sceneIdx);
   await p.mouse.click(370, 300); await p.waitForTimeout(300);
   ok(await p.evaluate(i => SS.feed.activePlayer().sceneIdx === i + 1, i0), 'right-edge tap -> next scene');

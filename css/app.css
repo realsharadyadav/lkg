@@ -706,3 +706,14 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 .sheet.left.open,.sheet.right.open{transform:none}
 .sheet.left,.sheet.right{touch-action:pan-y}
 .notes-body pre.code{margin:4px 0 14px;font-size:12px}
+
+/* ============ side pages (code / notes): full-width, finger-driven, no popup chrome ============ */
+#feeds{transition:transform .45s cubic-bezier(.22,1,.36,1);will-change:auto}
+#scrim{transition:opacity .45s cubic-bezier(.22,1,.36,1)}
+.sheet.left,.sheet.right{position:absolute;top:0;bottom:0;width:100%;border-radius:0;border:0;visibility:hidden;
+  transition:transform .45s cubic-bezier(.22,1,.36,1);background:#fbfdf9;-webkit-backdrop-filter:none;backdrop-filter:none}
+.sheet.right{right:0;transform:translateX(100%);box-shadow:-1px 0 0 rgba(28,43,30,.08),-18px 0 40px -18px rgba(28,43,30,.35)}
+.sheet.left{left:0;transform:translateX(-100%);box-shadow:1px 0 0 rgba(28,43,30,.08),18px 0 40px -18px rgba(28,43,30,.35)}
+.sheet.left.open,.sheet.right.open{visibility:visible}
+.sheet.left .sheet-head,.sheet.right .sheet-head{padding-top:calc(12px + var(--sat));border-bottom:.5px solid var(--line)}
+#topbar{transition:transform .45s cubic-bezier(.22,1,.36,1)}
