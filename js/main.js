@@ -219,8 +219,8 @@
     SS.audioUnlocked = true;
     SS.feed.kickActive();
   }
-  window.addEventListener('pointerdown', unlock);
-  window.addEventListener('keydown', unlock);
+  // iOS Safari only lets audio start from the *end* of a tap (pointerdown doesn't count)
+  ['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, unlock, { passive: true }));
   window.addEventListener('contextmenu', e => { if (!e.target.closest('.sheet')) e.preventDefault(); });
 
   function applyLook() {

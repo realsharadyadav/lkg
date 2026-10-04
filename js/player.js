@@ -180,8 +180,15 @@
       }
       this._prog(0);
       return SS.audio
-        ? SS.audio.speak(key, text, { onend, onprogress: f => this._prog(f) })
+        ? SS.audio.speak(key, text, { onend, onprogress: f => this._prog(f), onblocked: () => this._blocked() })
         : SS.narrator.speak(text, { onend, onword: (i, n) => this._prog((i + 1) / n) });
+    }
+    /* the browser refused to start sound (no recent tap): show ▶ and restart the clip on the next tap */
+    _blocked() {
+      if (this.paused || this.state === 'idle' || this.state === 'done' || this.state === 'quiz') return;
+      this._pause();
+      this._kept = false;
+      this._stopSpeech();
     }
     _prog(f) {
       if (!this.audBar) return;

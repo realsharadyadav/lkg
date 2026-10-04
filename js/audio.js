@@ -31,7 +31,7 @@
     a.addEventListener('ended', () => { if (cb && cb.onprogress) cb.onprogress(1); ok(); });
     a.addEventListener('error', fail);
     const p = a.play();
-    if (p && p.catch) p.catch(fail);
+    if (p && p.catch) p.catch(err => (err && err.name === 'NotAllowedError' && cb && cb.onblocked) ? (settled = true, cb.onblocked()) : fail());
     return {
       cancel() { settled = true; try { a.pause(); } catch (e) {} },
       seek(f) { if (isFinite(a.duration) && a.duration > 0) a.currentTime = Math.max(0, Math.min(.999, f)) * a.duration; },
@@ -66,7 +66,8 @@
     inner = playFile('data/audio/' + key + '.mp3', {
       onend: () => cb.onend && cb.onend(),
       onerror: () => { if (!cancelled) inner = SS.narrator.speak(text, Object.assign({}, cb, { onword: (i, n) => cb.onprogress && cb.onprogress((i + 1) / n) })); },
-      onprogress: cb.onprogress
+      onprogress: cb.onprogress,
+      onblocked: cb.onblocked
     });
     return handle;
   }
