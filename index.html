@@ -11,16 +11,16 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>LKG · GenAI Architect Path</title>
-<link rel="stylesheet" href="css/app.css?v=18">
+<link rel="stylesheet" href="css/app.css?v=19">
 </head>
 <body>
 <div id="app">
   <header id="topbar">
     <div class="brand">LKG<span class="brand-sub">GenAI Architect</span></div>
     <div class="top-right">
-      <button class="prog-pill" id="courseProgress" title="Course map" aria-label="Open course map">✅ 0/80</button>
-      <div class="streak" id="streakBadge" title="Daily streak">🔥<b id="streakCount">0</b></div>
-      <button id="settingsBtn" class="iconbtn" aria-label="Settings">⚙️</button>
+      <button class="prog-pill" id="courseProgress" title="Course map" aria-label="Open course map"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16.2 9.5"/></svg><span>0/80</span></button>
+      <div class="streak" id="streakBadge" title="Daily streak"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><b id="streakCount">0</b></div>
+      <button id="settingsBtn" class="iconbtn" aria-label="Settings"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
     </div>
   </header>
 
@@ -29,7 +29,7 @@
   <div id="scrim"></div>
 
   <aside id="codePanel" class="sheet right">
-    <div class="sheet-head"><span id="codeTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-head"><span id="codeTitle" class="sheet-title"></span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="sheet-scroll">
       <pre id="codeBody" class="code"></pre>
       <div id="codeNotes" class="annotes"></div>
@@ -38,25 +38,25 @@
 
   <section id="notesSheet" class="sheet bottom">
     <div class="grab"></div>
-    <div class="sheet-head"><span id="notesTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-head"><span id="notesTitle" class="sheet-title"></span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div id="notesBody" class="sheet-scroll notes-body"></div>
   </section>
 
   <section id="mapSheet" class="sheet bottom">
     <div class="grab"></div>
-    <div class="sheet-head"><span class="sheet-title">🗺️ Course map</span><button class="iconbtn close-sheet" aria-label="Close">✕</button></div>
+    <div class="sheet-head"><span class="sheet-title">🗺️ Course map</span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div id="mapBody" class="sheet-scroll map-body"></div>
   </section>
 
   <section id="scriptSheet" class="sheet bottom">
     <div class="grab"></div>
-    <div class="sheet-head"><span id="scriptTitle" class="sheet-title"></span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-head"><span id="scriptTitle" class="sheet-title"></span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div id="scriptBody" class="sheet-scroll script-body"></div>
   </section>
 
   <section id="aboutSheet" class="sheet bottom">
     <div class="grab"></div>
-    <div class="sheet-head"><span class="sheet-title">ℹ️ About Us</span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-head"><span class="sheet-title">ℹ️ About Us</span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="sheet-scroll about-body">
       <div class="about-hero">
         <img src="img/shyshifter-logo.png" alt="Shyshifter logo" class="about-logo">
@@ -78,7 +78,7 @@
 
   <section id="settingsSheet" class="sheet bottom">
     <div class="grab"></div>
-    <div class="sheet-head"><span class="sheet-title">⚙️ Settings</span><button class="iconbtn close-sheet">✕</button></div>
+    <div class="sheet-head"><span class="sheet-title">⚙️ Settings</span><button class="iconbtn close-sheet" aria-label="Close"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="sheet-scroll set-body">
       <label class="set-row">🗣️ Voice
         <select id="voiceSel"></select>
@@ -116,7 +116,7 @@
         <span style="color:var(--dim);">›</span>
       </button>
       <button id="resetBtn" class="danger">🗑 Reset all progress</button>
-      <p class="set-hint">Progress, likes &amp; streak live on this device only.<br>build 18 · Full path · 80 reels · 10 stages · zero dependencies 🚀<br><br>made by one and only <b style="letter-spacing:1px;">Shyshifter</b></p>
+      <p class="set-hint">Progress, likes &amp; streak live on this device only.<br>build 19 · Full path · 80 reels · 10 stages · zero dependencies 🚀<br><br>made by one and only <b style="letter-spacing:1px;">Shyshifter</b></p>
     </div>
   </section>
 
@@ -125,14 +125,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>
-<script src="js/state.js?v=18"></script>
-<script src="js/motion.js?v=18"></script>
-<script src="js/audio.js?v=18"></script>
-<script src="js/narrator.js?v=18"></script>
-<script src="js/scenes.js?v=18"></script>
-<script src="js/data.js?v=18"></script>
-<script src="js/player.js?v=18"></script>
-<script src="js/feed.js?v=18"></script>
-<script src="js/main.js?v=18"></script>
+<script src="js/icons.js?v=19"></script>
+<script src="js/state.js?v=19"></script>
+<script src="js/motion.js?v=19"></script>
+<script src="js/audio.js?v=19"></script>
+<script src="js/narrator.js?v=19"></script>
+<script src="js/scenes.js?v=19"></script>
+<script src="js/data.js?v=19"></script>
+<script src="js/player.js?v=19"></script>
+<script src="js/feed.js?v=19"></script>
+<script src="js/main.js?v=19"></script>
 </body>
 </html>
