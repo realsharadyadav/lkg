@@ -560,3 +560,58 @@ button.prog-pill{cursor:pointer;font-family:inherit}
 .reduce-motion *,.reduce-motion *::before,.reduce-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 .reduce-motion .bg-fx{display:none}
 :focus-visible{outline:2px solid var(--genai-deep);outline-offset:2px;border-radius:8px}
+
+/* ============ Glass look (iOS-style frosted capsules) + line icons ============ */
+:root{--glass-bg:rgba(255,255,255,.58);--glass-brd:rgba(255,255,255,.85);
+  --glass-sh:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(53,88,52,.05),0 6px 20px -6px rgba(28,43,30,.22),0 0 0 .5px rgba(28,43,30,.08)}
+.ico{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ico .fill{fill:currentColor;stroke:none}
+
+/* top bar: brand on the left, one glass capsule on the right (progress · streak · settings) */
+#topbar{background:linear-gradient(rgba(240,248,236,.85),rgba(240,248,236,0))}
+.top-right{margin-left:auto;gap:0;padding:3px;border-radius:999px;background:var(--glass-bg);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%)}
+.top-right .prog-pill,.top-right .streak,.top-right .iconbtn{background:none;border:0;box-shadow:none;margin:0}
+.prog-pill,.streak{display:flex;align-items:center;gap:4px;padding:4px 9px;font-size:12px;font-weight:800;color:var(--text)}
+.prog-pill .ico{font-size:15px;color:var(--ok)}
+.streak .ico{font-size:15px;color:#f97316}
+.streak b{margin-left:0}
+.top-right .iconbtn{width:30px;height:30px;font-size:17px;color:#3b4a40}
+.top-right>*+*{border-left:1px solid rgba(53,88,52,.12);border-radius:0}
+.top-right>*:last-child{border-radius:0 999px 999px 0}
+
+/* every round button = glass */
+.iconbtn{background:var(--glass-bg);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);color:#3b4a40;
+  -webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%)}
+.sheet-head .iconbtn{width:32px;height:32px;font-size:15px;background:rgba(53,88,52,.07);border:0;box-shadow:none}
+.iconbtn .ico{margin:auto}
+
+/* right rail: glass circles with line icons */
+.rail{gap:12px}
+.rail-btn{gap:3px}
+.rail-btn .ic{width:44px;height:44px;font-size:22px;color:#2f3d34;background:var(--glass-bg);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);filter:none;
+  -webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%)}
+.rail-code .ic{font-size:22px;width:44px}
+.rail-btn .lb{font-size:10.5px;font-weight:700;color:#2f3d34;text-shadow:0 1px 2px rgba(255,255,255,.8)}
+.rail-btn:active .ic{transform:scale(.9)}
+.rail-btn.liked .ic{color:#e11d48;background:rgba(255,228,233,.75);border-color:rgba(255,255,255,.9)}
+.rail-btn.liked .ic .ico{fill:#e11d48;stroke:#e11d48}
+@media (max-width:480px){ .rail-btn .ic{width:42px;height:42px;font-size:21px} .rail{gap:11px} }
+
+/* play cue */
+.bigplay{width:76px;height:76px;font-size:34px;border:1px solid var(--glass-brd);background:rgba(255,255,255,.55);box-shadow:var(--glass-sh);color:var(--accent-deep);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%)}
+.bigplay .ico{margin-left:4px}
+
+/* chapters: now at the top under the course line — bigger, easy to hit */
+.reel-inner>.chapbar{position:relative;z-index:7;display:flex;gap:8px;padding:8px 12px 0;margin:0}
+.reel-inner>.chapbar .chap-dot{width:32px;height:32px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.reel-inner>.chapbar .chap-dot span{font-size:12.5px;color:#46574b}
+.reel-inner>.chapbar .chap-dot i{inset:0;background:var(--accent-deep)}
+.reel-inner>.chapbar .chap-dot.on span{color:#fff;position:relative}
+.reel-inner>.chapbar .chap-dot.on{border-color:transparent}
+
+/* next-up chip + sheets in glass too */
+.nextup{background:rgba(255,255,255,.7);border:1px solid var(--glass-brd);box-shadow:var(--glass-sh);-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%)}
+.sheet{background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%)}

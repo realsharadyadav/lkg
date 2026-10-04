@@ -41,10 +41,10 @@
       `<div class="cap-hint"><span class="arr">↑</span> swipe next · tap ⏯ · 2× tap ❤ · dots = chapters</div>` +
       `</div>` +
       `<div class="rail">` +
-      `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">❤️</span><span class="lb">0</span></button>` +
-      (data.code ? `<button class="rail-btn rail-code" aria-label="Show code"><span class="ic">&lt;/&gt;</span><span class="lb">code</span></button>` : '') +
-      (data.notes ? `<button class="rail-btn rail-notes" aria-label="Show notes"><span class="ic">📄</span><span class="lb">notes</span></button>` : '') +
-      `<button class="rail-btn rail-mute" aria-label="Mute or unmute narration"><span class="ic">🔊</span><span class="lb">sound</span></button>` +
+      `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">${SS.icon('heart')}</span><span class="lb">0</span></button>` +
+      (data.code ? `<button class="rail-btn rail-code" aria-label="Show code"><span class="ic">${SS.icon('code')}</span><span class="lb">code</span></button>` : '') +
+      (data.notes ? `<button class="rail-btn rail-notes" aria-label="Show notes"><span class="ic">${SS.icon('doc')}</span><span class="lb">notes</span></button>` : '') +
+      `<button class="rail-btn rail-mute" aria-label="Mute or unmute narration"><span class="ic">${SS.icon('sound')}</span><span class="lb">sound</span></button>` +
       `</div>`));
     const player = new SS.ReelPlayer(el, data, { segEl: [...el.querySelectorAll('.seg')].find(s => s.classList.contains('cur')) });
     const rail = el.querySelector('.rail');
@@ -152,7 +152,7 @@
     const total = SS.catalog.reels.length;
     const done = SS.state.completedCount(SS.catalog.reels.map(r => r.id));
     const pill = document.getElementById('courseProgress');
-    if (pill) pill.textContent = `✅ ${done}/${total}`;
+    if (pill) pill.innerHTML = SS.icon('check') + `<span>${done}/${total}</span>`;
     items.forEach(it => {
       if (!it.player || !it.data) return;
       const seg = it.el.querySelector('.seg.cur');

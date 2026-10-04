@@ -36,7 +36,7 @@
 
     _buildOverlays() {
       this.hookEl = h('div', 'hook', `<div class="hook-text">${mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
-      this.bigplay = h('div', 'bigplay', '▶');
+      this.bigplay = h('div', 'bigplay', SS.icon('play'));
       this.speedpill = h('div', 'speedpill', '⏩ 2×');
       this.audBar = h('div', 'aud-bar', '<b></b>');
       this.audBar.setAttribute('role', 'progressbar'); this.audBar.setAttribute('aria-label', 'Narration progress');
@@ -55,8 +55,9 @@
         b.addEventListener('click', e => { e.stopPropagation(); this.jumpToChapter(i); });
         bar.appendChild(b);
       });
-      const zone = this.root.querySelector('.capzone');
-      zone.insertBefore(bar, this.capText);
+      // lives at the top (away from the one-line script) so a chapter tap never opens the script
+      const meta = this.root.querySelector('.reel-meta');
+      meta.parentNode.insertBefore(bar, meta.nextSibling);
       this.chapBar = bar;
       this.chapChip = this.root.querySelector('.chap-chip');
     }
@@ -87,7 +88,7 @@
       this.likeBase = base;
       likeBtn.querySelector('.lb').textContent = this._fmt(base + (SS.state.isLiked(this.data.id) ? 1 : 0));
       likeBtn.classList.toggle('liked', SS.state.isLiked(this.data.id));
-      this.root.querySelector('.rail-mute .ic').textContent = SS.narrator.muted ? '🔇' : '🔊';
+      this.root.querySelector('.rail-mute .ic').innerHTML = SS.icon(SS.narrator.muted ? 'mute' : 'sound');
     }
     _fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
 
@@ -365,7 +366,7 @@
       this._kept = !!(this.speech && this.speech.pause);
       if (this._kept) this.speech.pause(); else { this._stopSpeech(); }
       this.stage.classList.add('frozen');
-      this.bigplay.textContent = '▶'; this.bigplay.classList.add('show');
+      this.bigplay.innerHTML = SS.icon('play'); this.bigplay.classList.add('show');
     }
     _resume() {
       if (!this.paused) return;
