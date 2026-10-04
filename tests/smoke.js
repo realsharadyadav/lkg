@@ -52,6 +52,15 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await tapActive('.rail-mute'); await p.waitForTimeout(200);
   ok(await p.evaluate(() => [...document.querySelectorAll('audio')].length === 0 && SS.narrator.muted), 'mute toggles on');
   await tapActive('.rail-mute'); await p.waitForTimeout(200);
+  // horizontal swipes: left -> code, right -> notes
+  const swipe = async (x0, x1) => { await p.mouse.move(x0, 420); await p.mouse.down(); for (let k = 1; k <= 8; k++) await p.mouse.move(x0 + (x1 - x0) * k / 8, 420); await p.mouse.up(); };
+  await swipe(300, 120); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => document.querySelector('#codePanel').classList.contains('open')), 'swipe left opens code');
+  await p.click('#codePanel .close-sheet'); await p.waitForTimeout(500);
+  await swipe(120, 300); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => document.querySelector('#notesSheet').classList.contains('open')), 'swipe right opens notes');
+  await swipe(300, 100); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open') && !SS.feed.activePlayer().paused), 'swipe notes back closes it and resumes');
   const i0 = await p.evaluate(() => SS.feed.activePlayer().sceneIdx);
   await p.mouse.click(370, 300); await p.waitForTimeout(300);
   ok(await p.evaluate(i => SS.feed.activePlayer().sceneIdx === i + 1, i0), 'right-edge tap -> next scene');

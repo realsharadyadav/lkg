@@ -38,7 +38,7 @@
       `<div class="cap-title">${data.topic}</div>` +
       `<div class="chap-chip"></div>` +
       `<div class="cap-text"></div>` +
-      `<div class="cap-hint"><span class="arr">↑</span> swipe next · tap ⏯ · 2× tap ❤ · dots = chapters</div>` +
+      `<div class="cap-hint"><span class="arr">↑</span> swipe next · ← code · notes →</div>` +
       `</div>` +
       `<div class="rail">` +
       `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">${SS.icon('heart')}</span><span class="lb">0</span></button>` +
@@ -60,7 +60,6 @@
       document.dispatchEvent(new CustomEvent('ss:mute'));
       SS.ui.toast(SS.narrator.muted ? '🔇 Narration muted' : '🔊 Narration on');
     });
-    player.hookEl.addEventListener('pointerdown', e => e.stopPropagation());
     attachGestures(el, player);
     return { el, player, id: data.id, data };
   }
@@ -115,7 +114,11 @@
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if ((Math.abs(dx) > 12 || Math.abs(dy) > 12) && lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-      if (!swipeFired && dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.6 && player.data.code) { swipeFired = true; player.holdWhile(done => SS.ui.openCode(player.data, done)); }
+      // horizontal swipes: ← code (panel slides in from the right) · → notes (panel slides in from the left)
+      if (!swipeFired && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+        if (dx < 0 && player.data.code) { swipeFired = true; player.holdWhile(done => SS.ui.openCode(player.data, done)); }
+        else if (dx > 0 && player.data.notes) { swipeFired = true; player.holdWhile(done => SS.ui.openNotes(player.data, done)); }
+      }
     });
     const up = e => {
       if (!down) return;
