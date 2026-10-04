@@ -39,14 +39,14 @@
       "narration": "The pipeline, end to end. Ingest: pull documents from their sources — files, SharePoint, databases. Chunk: cut them into retrieval-sized pieces — the craft of Stage 4's next reels. Embed: turn chunks into vectors with your chosen model. Retrieve: for a question, find the most relevant chunks. Generate: place them in the prompt with the question and let the LLM compose an answer that cites its sources. Each stage is a separable component with its own quality levers — which is why RAG systems improve incrementally, and why each of the next four reels takes one stage deep."
     },
     {
-      "type": "arch",
+      "type": "flow",
       "chapter": 1,
       "layers": [
-        { "e": "📥", "t": "Ingest", "s": "Sources → raw documents (watch formats: PDF, DOCX, HTML — GA-14)" },
-        { "e": "✂️", "t": "Chunk", "s": "Documents → sized pieces + metadata (the highest-leverage stage)" },
-        { "e": "🧮", "t": "Embed & store", "s": "Chunks → vectors → vector DB with payloads" },
-        { "e": "🔍", "t": "Retrieve", "s": "Question → top-k chunks (hybrid, rerank — GA-15)" },
-        { "e": "✍️", "t": "Generate", "s": "Question + context → cited answer (GA-16)" }
+        { "e": "📥", "pk": "📄", "t": "Ingest", "s": "Sources → raw documents (watch formats: PDF, DOCX, HTML — GA-14)" },
+        { "e": "✂️", "pk": "🧩", "t": "Chunk", "s": "Documents → sized pieces + metadata (the highest-leverage stage)" },
+        { "e": "🧮", "pk": "🔢", "t": "Embed & store", "s": "Chunks → vectors → vector DB with payloads" },
+        { "e": "🔍", "pk": "🎯", "t": "Retrieve", "s": "Question → top-k chunks (hybrid, rerank — GA-15)" },
+        { "e": "✍️", "pk": "💬", "t": "Generate", "s": "Question + context → cited answer (GA-16)" }
       ],
       "narration": "See the separability. Ingestion is plumbing — scheduled pulls, format parsing. Chunking is the craft — size, overlap, structure; get it wrong and no retrieval quality saves you. Embedding is a library call you've already mastered. Retrieval is where GA-09 through GA-12 pay off — hybrid, filters, reranking. Generation is prompt engineering with evidence. Each stage can be measured in isolation — chunk quality, retrieval recall, answer faithfulness — which gives RAG a superpower most AI systems lack: you can tell WHICH stage is failing."
     },

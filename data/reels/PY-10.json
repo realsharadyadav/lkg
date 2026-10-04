@@ -52,11 +52,18 @@
       "narration": "Compare with threads: the OS switches threads preemptively, mid-instruction, so shared data needs locks. Coroutines switch only at awaits — points where YOU know it's safe — so within one event loop, shared state needs no locks at all. The trade: anything CPU-heavy inside a coroutine blocks the entire loop, because nothing else can run until it awaits. Rule: async for waiting on the network, threads or processes for CPU work — PY-11 goes deep on that split. And a sharp edge for GenAI apps: some libraries are secretly blocking — a sync SDK call inside an async function freezes the whole loop; use async-native clients like httpx."
     },
     {
-      "type": "bigtext",
+      "type": "timeline",
       "chapter": 2,
       "kicker": "CHAPTER 3 · GATHER",
       "title": "gather: your calls run **in parallel**, your code stays linear",
       "sub": "asyncio.gather + the Semaphore rate-limit dial",
+      "calls": 5,
+      "callSec": 2,
+      "lanes": [
+        { "name": "One by one", "note": "await in a for-loop", "limit": 1 },
+        { "name": "asyncio.gather", "note": "all 5 in flight", "limit": 5, "win": true },
+        { "name": "gather + Semaphore(3)", "note": "max 3 at a time", "limit": 3 }
+      ],
       "narration": "Gather takes a list of coroutines and runs them all concurrently, returning results in order — it doesn't matter which finishes first. Fifty summarize calls in gather complete in roughly the time of the slowest single call, not fifty times that. But uncapped concurrency is how you rate-limit yourself into a 429 error: fifty simultaneous requests may exceed the API's limits. The Semaphore is the dial: it allows at most N coroutines into a region at once — acquire a slot, do the work, release. Ten LLM calls at a time is a polite, fast, limit-respecting default. Gather for parallelism, semaphore for politeness."
     },
     {

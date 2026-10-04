@@ -143,6 +143,88 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .cmp-card p{font-size:13px;color:var(--muted);font-weight:600;line-height:1.5}
 .cmp-card.win{border-color:color-mix(in srgb,var(--accent) 55%,transparent);box-shadow:0 12px 34px -10px var(--accent-soft)}
 
+/* ---------- generic motion layer (applies to every reel) ---------- */
+/* kinetic words: each word of a headline rises in, one after another */
+.w{display:inline-block;opacity:0;animation:wordIn .55s cubic-bezier(.2,1.25,.4,1) forwards;animation-delay:min(1.5s,calc(.12s + var(--i,0) * 55ms))}
+@keyframes wordIn{from{opacity:0;transform:translateY(.6em) scale(.9)}to{opacity:1;transform:none}}
+/* hook is built once and replayed: its words/sweep restart whenever .pop is re-applied */
+.hook-text .w{animation:none;opacity:1}
+.hook-text.pop .w{animation:wordIn .55s cubic-bezier(.2,1.25,.4,1) both;animation-delay:min(1.5s,calc(.15s + var(--i,0) * 55ms))}
+/* **highlighted** words get a marker sweep once their word has landed */
+.hl{background:linear-gradient(color-mix(in srgb,var(--accent,#65a30d) 24%,transparent),color-mix(in srgb,var(--accent,#65a30d) 24%,transparent)) 0 88%/0% 40% no-repeat;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:hlSweep .7s .55s ease-out forwards}
+@keyframes hlSweep{from{background-size:0% 40%}to{background-size:100% 40%}}
+.hook-text .hl{animation:none;background-size:100% 40%}
+.hook-text.pop .hl{animation:hlSweep .7s .7s ease-out both}
+/* list: the item being narrated bounces its icon */
+.list-item.hot .dot{animation:dotBounce .6s cubic-bezier(.2,1.5,.4,1)}
+@keyframes dotBounce{0%{transform:scale(1)}40%{transform:scale(1.28) rotate(-8deg)}100%{transform:scale(1)}}
+/* compare: cards slide in from their own side; the winner pulses a ring */
+.pop.from-l{animation-name:cmpL}.pop.from-r{animation-name:cmpR}
+@keyframes cmpL{0%{opacity:0;transform:translateX(-48px) rotate(-3deg) scale(.92)}100%{opacity:1;transform:none}}
+@keyframes cmpR{0%{opacity:0;transform:translateX(48px) rotate(3deg) scale(.92)}100%{opacity:1;transform:none}}
+.cmp-card{position:relative}
+.cmp-card.win::after{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;animation:winRing 2.3s 1.3s ease-out infinite}
+@keyframes winRing{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 38%,transparent)}70%,100%{box-shadow:0 0 0 14px transparent}}
+.vs.pop{animation-name:vsHit}
+@keyframes vsHit{0%{opacity:0;transform:scale(2.2)}60%{opacity:1;transform:scale(.88)}100%{opacity:1;transform:none}}
+/* chapter chip bumps when the chapter changes */
+.chap-chip.bump{animation:chipBump .8s cubic-bezier(.2,1.4,.4,1)}
+@keyframes chipBump{0%{transform:scale(1)}35%{transform:scale(1.18);color:var(--accent-deep)}100%{transform:scale(1)}}
+.quiz-opt:active:not(:disabled),.quiz-next:active{transform:scale(.97)}
+/* in-app "reduce motion" switch: no staggered waits */
+.reduce-motion .w,.reduce-motion .hook-text.pop .w{animation:none;opacity:1}
+.reduce-motion .hl,.reduce-motion .hook-text.pop .hl{animation:none;background-size:100% 40%}
+@media (prefers-reduced-motion:reduce){.w,.hook-text.pop .w{animation:none;opacity:1}.hl,.hook-text.pop .hl{animation:none;background-size:100% 40%}.cmp-card.win::after,.chap-chip.bump,.list-item.hot .dot{animation:none}}
+
+/* ---------- flow scene: packet travelling through a pipeline ---------- */
+.big-h.sm{font-size:clamp(20px,5.4vw,27px);max-width:24ch;margin-bottom:6px}
+.fl-wrap{position:relative;width:min(390px,90vw);display:flex;flex-direction:column;gap:10px}
+.fl-row{position:relative;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.96);border:1.5px solid var(--line);border-radius:16px;padding:9px 12px;text-align:left;box-shadow:0 6px 18px -8px rgba(53,88,52,.18);transition:border-color .3s,box-shadow .3s}
+.fl-node{position:relative;z-index:1;flex:none;width:44px;height:44px;margin-left:-2px;border-radius:50%;display:grid;place-items:center;font-size:21px;background:#fff;border:2px solid var(--line);transition:background .3s,border-color .3s,transform .3s}
+.fl-tx b{display:block;font-size:14.5px;color:var(--text)}
+.fl-tx small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:11px;color:var(--muted);font-weight:600;line-height:1.35}
+.fl-row.hot{border-color:var(--accent);box-shadow:0 8px 26px -8px var(--accent-soft),0 0 0 4px var(--accent-soft)}
+.fl-row.hot .fl-node{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.1)}
+.fl-row.done .fl-node{background:var(--accent);border-color:var(--accent)}
+.fl-row.done .fl-node::after{content:'✓';position:absolute;right:-5px;top:-5px;width:17px;height:17px;border-radius:50%;background:#16a34a;color:#fff;font-size:10px;font-weight:900;display:grid;place-items:center;animation:popIn .35s cubic-bezier(.2,1.5,.4,1)}
+.fl-track{position:absolute;left:25px;width:3px;margin-left:-1px;background:color-mix(in srgb,var(--accent) 22%,#fff);border-radius:3px;z-index:0}
+.fl-track i{display:block;height:100%;background:var(--accent);border-radius:3px;transform-origin:top;transform:scaleY(0);box-shadow:0 0 10px var(--accent-soft)}
+.fl-pk{position:absolute;left:25px;top:0;z-index:2;transform:translate(-50%,-50%);font-size:20px;line-height:1;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:#fff;border:2px solid var(--accent);box-shadow:0 6px 18px -4px var(--accent-soft),0 0 0 5px var(--accent-soft);opacity:0}
+
+/* ---------- chunks scene: one text, different cuts ---------- */
+.ck-card{width:min(400px,90vw);background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:20px;padding:14px 16px 16px;box-shadow:0 8px 26px -10px rgba(53,88,52,.22);text-align:left}
+.ck-tag{display:inline-block;font-size:12px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent-deep);background:var(--accent-soft);padding:5px 12px;border-radius:999px;margin-bottom:12px}
+.ck-tag.swap{animation:popIn .4s cubic-bezier(.2,1.4,.4,1)}
+.ck-body{font-size:15px;line-height:2.15;font-weight:600;color:var(--text);min-height:150px}
+.ck-w{position:relative;padding:3px 2px;border-radius:5px;transition:background .25s}
+.ck-w.k0{background:color-mix(in srgb,var(--accent) 20%,transparent)}
+.ck-w.k1{background:rgba(56,189,248,.22)}
+.ck-w.k2{background:rgba(245,158,11,.24)}
+.ck-w.k3{background:rgba(167,139,250,.24)}
+.ck-w.cut{box-shadow:3px 0 0 -1px #16a34a;margin-right:5px}
+.ck-w.cut.bad{box-shadow:3px 0 0 -1px #ef4444}
+.ck-w.cut::after{content:'✂️';position:absolute;right:-12px;top:-13px;font-size:11px;animation:cutDrop .4s cubic-bezier(.2,1.6,.4,1)}
+.ck-w.cut.bad::after{content:'✂️ ✗';font-weight:900;color:#ef4444;right:-24px}
+@keyframes cutDrop{from{opacity:0;transform:translateY(-10px) scale(.4)}to{opacity:1;transform:none}}
+.ck-verdict{margin-top:12px;font-size:12.5px;font-weight:800;color:var(--muted);min-height:18px}
+.ck-verdict.ok{color:#15803d}.ck-verdict.bad{color:#dc2626}
+.ck-verdict.ok,.ck-verdict.bad{animation:popIn .4s}
+
+/* ---------- timeline scene: sequential vs concurrent on one time axis ---------- */
+.tl-wrap{width:min(400px,92vw);display:flex;flex-direction:column;gap:12px}
+.tl-lane{background:rgba(255,255,255,.96);border:1.5px solid var(--line);border-radius:16px;padding:10px 12px 12px;text-align:left;transition:border-color .3s,box-shadow .3s}
+.tl-lane.done.win{border-color:var(--accent);box-shadow:0 8px 26px -8px var(--accent-soft),0 0 0 4px var(--accent-soft)}
+.tl-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.tl-head b{font-size:13.5px;color:var(--text)}
+.tl-head small{flex:1;font-size:10.5px;font-weight:700;color:var(--dim)}
+.tl-clock{font-variant-numeric:tabular-nums;font-size:13px;font-weight:900;color:var(--muted);min-width:52px;text-align:right}
+.tl-lane.done .tl-clock{color:#15803d}
+.tl-lane.done .tl-clock::after{content:' ✓'}
+.tl-grid{display:flex;flex-direction:column;gap:4px}
+.tl-row{position:relative;height:17px;border-radius:6px;background:repeating-linear-gradient(90deg,rgba(53,88,52,.07) 0 6px,transparent 6px 12px)}
+.tl-bar{position:absolute;top:0;bottom:0;border-radius:6px;background:var(--accent);transform-origin:left;display:grid;place-items:center;box-shadow:inset 0 -2px 0 rgba(0,0,0,.08);border:1.5px solid #fff}
+.tl-bar em{font-style:normal;font-size:9.5px;font-weight:900;color:#fff}
+
 /* ---------- tokens scene ---------- */
 .tokens-wrap{width:min(440px,92vw);display:flex;flex-direction:column;gap:22px;align-items:center}
 .token-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:44px}

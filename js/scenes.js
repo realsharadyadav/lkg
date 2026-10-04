@@ -5,6 +5,27 @@
   const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const mark = s => s.replace(/\*\*(.+?)\*\*/g, '<span class="hl">$1</span>');
 
+  /* split rendered HTML into per-word spans (keeps the **highlight** spans) so words can rise in one by one */
+  const kinetic = html => {
+    const box = document.createElement('div'); box.innerHTML = html;
+    let n = 0;
+    const walk = node => [...node.childNodes].forEach(c => {
+      if (c.nodeType !== 3) { walk(c); return; }
+      const frag = document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+        const w = document.createElement('span'); w.className = 'w'; w.style.setProperty('--i', n++); w.textContent = part;
+        frag.appendChild(w);
+      });
+      c.replaceWith(frag);
+    });
+    walk(box);
+    return box.innerHTML;
+  };
+  window.SS = window.SS || {};
+  window.SS.kinetic = kinetic;
+
   function base(mount) {
     mount.innerHTML = '';
     const el = h('div', 'scene-inner');
@@ -22,7 +43,7 @@
       const el = base(mount);
       if (sc.kicker) { const k = h('div', 'kicker', sc.kicker); el.appendChild(k); pop(k, 0); }
       const w = h('div', 'floaty'); w.style.width = '100%';
-      const t = h('div', 'big-h', mark(sc.title || ''));
+      const t = h('div', 'big-h', kinetic(mark(sc.title || '')));
       w.appendChild(t); el.appendChild(w); pop(t, 1);
       if (sc.sub) { const s = h('div', 'big-sub', mark(sc.sub)); el.appendChild(s); pop(s, 2); }
       return () => {};
@@ -33,7 +54,7 @@
       const el = base(mount);
       const k = h('div', 'kicker', sc.kicker || 'KEEP SWIPING'); el.appendChild(k); pop(k, 0);
       const w = h('div', 'floaty'); w.style.width = '100%';
-      const t = h('div', 'big-h', mark(sc.title || ''));
+      const t = h('div', 'big-h', kinetic(mark(sc.title || '')));
       w.appendChild(t); el.appendChild(w); pop(t, 1);
       if (sc.next) {
         const n = h('div', '', '▶&nbsp; ' + sc.next);
@@ -50,7 +71,7 @@
       el.appendChild(card);
       (sc.items || []).forEach((it, i) => {
         const d = h('div', 'list-item', `<span class="dot">${it.e || '•'}</span><span><b>${mark(it.t)}</b>${it.s ? `<small>${mark(it.s)}</small>` : ''}</span>`);
-        card.appendChild(d); pop(d, Math.min(i, 3));
+        card.appendChild(d); pop(d, 0); d.style.animationDelay = Math.min(1.2, 0.1 + i * 0.14) + 's';
       });
       // sequential highlight — the narration "walks through" the items one by one
       let dead = false, iv = null;
@@ -75,9 +96,9 @@
       el.appendChild(row);
       (sc.cards || []).slice(0, 2).forEach((c, i) => {
         const d = h('div', 'cmp-card' + (c.win ? ' win' : ''), `<div class="em">${c.e}</div><h3>${mark(c.t)}</h3><p>${mark(c.s)}</p>`);
-        row.appendChild(d); pop(d, i);
+        row.appendChild(d); pop(d, i, i ? 'from-r' : 'from-l');
       });
-      const vs = h('div', 'vs', 'VS'); row.appendChild(vs); pop(vs, 2);
+      const vs = h('div', 'vs', 'VS'); row.insertBefore(vs, row.children[1] || null); pop(vs, 2);
       return () => {};
     },
 
@@ -401,6 +422,161 @@
         }
       })();
       return () => { dead = true; anims.forEach(a => { try { a.cancel(); } catch (e) {} }); };
+    },
+
+    /* ---- pipeline: one packet travels stage to stage, changing shape as it goes ----
+       {type:'flow', layers|stages:[{e,t,s,pk}]}  — pk is the emoji the packet becomes at that stage */
+    flow(mount, sc) {
+      const el = base(mount);
+      const stages = sc.stages || sc.layers || [];
+      const wrap = h('div', 'fl-wrap');
+      const track = h('div', 'fl-track', '<i></i>');
+      const rows = stages.map(L => h('div', 'fl-row', `<span class="fl-node">${L.e || '•'}</span><span class="fl-tx"><b>${mark(L.t)}</b>${L.s ? `<small>${mark(L.s)}</small>` : ''}</span>`));
+      const pkOf = i => (stages[i] && stages[i].pk) || '●';
+      const pk = h('div', 'fl-pk', pkOf(0));
+      wrap.appendChild(track); rows.forEach(r => wrap.appendChild(r)); wrap.appendChild(pk);
+      el.appendChild(wrap);
+      let dead = false, anims = [];
+      const kill = () => { dead = true; anims.forEach(a => { try { a.cancel(); } catch (e) {} }); };
+      if (!rows.length) return kill;
+      rows.forEach((r, i) => { r.style.opacity = 0; anims.push(r.animate([{ opacity: 0, transform: 'translateX(-18px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: i * 160, fill: 'forwards', easing: 'cubic-bezier(.2,1.3,.4,1)' })); });
+
+      (async () => {
+        await sleep(rows.length * 160 + 450);
+        if (dead) return;
+        const cy = r => r.offsetTop + r.offsetHeight / 2;
+        const y0 = cy(rows[0]), span = Math.max(1, cy(rows[rows.length - 1]) - y0);
+        track.style.top = y0 + 'px'; track.style.height = span + 'px';
+        const fill = track.firstChild;
+        for (let guard = 0; !dead && guard < 10; guard++) {
+          rows.forEach(r => r.classList.remove('hot', 'done'));
+          fill.style.transition = 'none'; fill.style.transform = 'scaleY(0)'; void fill.offsetWidth;
+          pk.textContent = pkOf(0); pk.style.top = y0 + 'px';
+          anims.push(pk.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.3)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 360, fill: 'forwards', easing: 'cubic-bezier(.2,1.5,.4,1)' }));
+          rows[0].classList.add('hot');
+          await sleep(900); if (dead) return;
+          for (let i = 1; i < rows.length; i++) {
+            const from = cy(rows[i - 1]), to = cy(rows[i]);
+            pk.style.top = to + 'px';
+            anims.push(pk.animate([{ top: from + 'px' }, { top: to + 'px' }], { duration: 540, easing: 'cubic-bezier(.45,.05,.3,1)' }));
+            fill.style.transition = 'transform .54s cubic-bezier(.45,.05,.3,1)';
+            fill.style.transform = `scaleY(${(to - y0) / span})`;
+            await sleep(560); if (dead) return;
+            rows[i - 1].classList.replace('hot', 'done');
+            rows[i].classList.add('hot');
+            pk.textContent = pkOf(i);
+            anims.push(pk.animate([{ transform: 'translate(-50%,-50%) scale(1.5) rotate(-12deg)' }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: 420, easing: 'cubic-bezier(.2,1.5,.4,1)' }));
+            await sleep(820); if (dead) return;
+          }
+          rows[rows.length - 1].classList.replace('hot', 'done');
+          await sleep(1500); if (dead) return;
+          anims.push(pk.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }));
+          await sleep(350);
+        }
+      })();
+      return kill;
+    },
+
+    /* ---- the same text cut by different chunking strategies ----
+       {type:'chunks', title, text, strategies:[{name, e, cuts:[word index a chunk ENDS on]}]} */
+    chunks(mount, sc) {
+      const el = base(mount);
+      if (sc.title) { const t = h('div', 'big-h sm', kinetic(mark(sc.title))); el.appendChild(t); pop(t, 0); }
+      const card = h('div', 'ck-card');
+      const tag = h('div', 'ck-tag', '&nbsp;');
+      const body = h('div', 'ck-body');
+      const verdict = h('div', 'ck-verdict', '&nbsp;');
+      card.appendChild(tag); card.appendChild(body); card.appendChild(verdict);
+      el.appendChild(card); pop(card, 1);
+      const words = String(sc.text || '').split(/\s+/).filter(Boolean);
+      const spans = words.map(w => { const s = h('span', 'ck-w', w); body.appendChild(s); body.appendChild(document.createTextNode(' ')); return s; });
+      let dead = false;
+      (async () => {
+        await sleep(900);
+        const sts = sc.strategies || [];
+        for (let guard = 0; !dead && guard < 8; guard++) {
+          for (const st of sts) {
+            if (dead) return;
+            spans.forEach(s => { s.className = 'ck-w'; });
+            verdict.className = 'ck-verdict'; verdict.innerHTML = '&nbsp;';
+            tag.innerHTML = `${st.e || ''} ${st.name}`;
+            tag.classList.remove('swap'); void tag.offsetWidth; tag.classList.add('swap');
+            const cuts = new Set(st.cuts || []);
+            let k = 0, chunks = 1, bad = 0;
+            await sleep(500);
+            for (let i = 0; i < spans.length; i++) {
+              if (dead) return;
+              spans[i].classList.add('k' + (k % 4));
+              await sleep(55);
+              if (cuts.has(i) && i < spans.length - 1) {
+                const mid = !/[.!?…]["'”’)]?$/.test(words[i]);
+                spans[i].classList.add('cut'); if (mid) { spans[i].classList.add('bad'); bad++; }
+                k++; chunks++;
+                await sleep(mid ? 520 : 340);
+              }
+            }
+            verdict.className = 'ck-verdict ' + (bad ? 'bad' : 'ok');
+            verdict.textContent = bad ? `${chunks} chunks · ${bad} cut${bad > 1 ? 's' : ''} split a sentence ✗` : `${chunks} chunks · every cut lands on a boundary ✓`;
+            await sleep(2300);
+          }
+        }
+      })();
+      return () => { dead = true; };
+    },
+
+    /* ---- sequential vs concurrent timeline (shared time axis) ----
+       {type:'timeline', title, calls:5, callSec:2, lanes:[{name,note,limit}]}  limit = max calls in flight */
+    timeline(mount, sc) {
+      const el = base(mount);
+      if (sc.kicker) { const k = h('div', 'kicker', sc.kicker); el.appendChild(k); pop(k, 0); }
+      if (sc.title) { const t = h('div', 'big-h sm', kinetic(mark(sc.title))); el.appendChild(t); pop(t, 1); }
+      const n = sc.calls || 5, sec = sc.callSec || 2, unit = sc.unitMs || 900;
+      const wrap = h('div', 'tl-wrap');
+      el.appendChild(wrap); pop(wrap, 2);
+      const lanes = (sc.lanes || []).map(L => {
+        const limit = Math.max(1, Math.min(n, L.limit || n));
+        const lane = h('div', 'tl-lane' + (L.win ? ' win' : ''), `<div class="tl-head"><b>${L.name}</b><small>${L.note || ''}</small><span class="tl-clock">0.0 s</span></div>`);
+        const grid = h('div', 'tl-grid');
+        for (let r = 0; r < limit; r++) grid.appendChild(h('div', 'tl-row'));
+        const bars = [];
+        for (let i = 0; i < n; i++) {
+          const col = Math.floor(i / limit);
+          const b = h('i', 'tl-bar', `<em>${i + 1}</em>`);
+          b.style.left = (col / n * 100) + '%'; b.style.width = (100 / n) + '%';
+          grid.children[i % limit].appendChild(b);
+          bars.push({ b, col });
+        }
+        lane.appendChild(grid); wrap.appendChild(lane);
+        return { lane, bars, units: Math.ceil(n / limit), clock: lane.querySelector('.tl-clock') };
+      });
+      let dead = false, anims = [];
+      const kill = () => { dead = true; anims.forEach(a => { try { a.cancel(); } catch (e) {} }); };
+      (async () => {
+        await sleep(900);
+        for (let guard = 0; !dead && guard < 10; guard++) {
+          anims.forEach(a => { try { a.cancel(); } catch (e) {} }); anims = [];
+          lanes.forEach(L => { L.lane.classList.remove('done'); L.clock.textContent = '0.0 s'; L.bars.forEach(x => {
+            x.b.style.opacity = 0;
+            anims.push(x.b.animate([{ transform: 'scaleX(0)', opacity: 1 }, { transform: 'scaleX(1)', opacity: 1 }], { duration: unit, delay: x.col * unit, fill: 'forwards', easing: 'cubic-bezier(.3,.7,.4,1)' }));
+          }); });
+          const t0 = performance.now(), total = n * unit + 2400;
+          await new Promise(res => {
+            const step = now => {
+              if (dead) return res();
+              const e = now - t0;
+              lanes.forEach(L => {
+                const u = Math.min(L.units, e / unit);
+                L.clock.textContent = (u * sec).toFixed(1) + ' s';
+                if (u >= L.units) L.lane.classList.add('done');
+              });
+              if (e >= total) return res();
+              requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+          });
+        }
+      })();
+      return kill;
     }
   };
 })();

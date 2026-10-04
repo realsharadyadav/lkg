@@ -39,8 +39,16 @@
       "narration": "Chunking is cutting documents into retrieval-sized pieces. Fixed-size chunking splits every N characters with a small overlap — simple, but it amputates sentences mid-thought and shatters tables and code blocks. Recursive chunking respects structure: split on paragraphs, then sentences, then words — only as small as needed, keeping boundaries natural. Semantic chunking embeds a sliding window and cuts where meaning shifts — expensive, but chunks align with topics. Structural chunking follows the document's own skeleton — sections, headings, chapters — the chunk boundary IS the author's boundary. Start recursive; go structural when your documents have reliable headings."
     },
     {
-      "type": "compare",
+      "type": "chunks",
       "chapter": 1,
+      "title": "Same text, **four fates** — watch where the cuts land",
+      "text": "Refunds are issued within 14 days. Digital items are excluded from refunds. Contact support to start a claim. Shipping fees are never refunded.",
+      "strategies": [
+        { "name": "Fixed-size", "e": "📏", "cuts": [3, 9, 15] },
+        { "name": "Recursive", "e": "🌿", "cuts": [5, 11, 17] },
+        { "name": "Semantic", "e": "🧠", "cuts": [11, 22] },
+        { "name": "Structural", "e": "🏛️", "cuts": [5, 11, 17] }
+      ],
       "cards": [
         { "e": "📏", "t": "Fixed-size", "s": "Every N chars + overlap · dead simple · mid-sentence amputations, tables shattered", "win": false },
         { "e": "🌿", "t": "Recursive", "s": "Paragraphs → sentences → words · natural boundaries · the sensible default", "win": true },

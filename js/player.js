@@ -38,7 +38,7 @@
       this.hookEl = h('div', 'hook',
         `<div class="hook-badge"><svg viewBox="0 0 86 86" aria-hidden="true"><circle class="trk" cx="43" cy="43" r="38"/><circle class="prg" cx="43" cy="43" r="38"/></svg>` +
         `<div class="in"><small>REEL</small><b>${num}</b></div></div>` +
-        `<div class="hook-text">${mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
+        `<div class="hook-text">${SS.kinetic ? SS.kinetic(mark(this.data.hook)) : mark(this.data.hook)}</div><div class="hook-skip">tap to skip</div>`);
       this.hookRing = this.hookEl.querySelector('.hook-badge .prg');
       this.bigplay = h('div', 'bigplay', SS.icon('play'));
       this.speedpill = h('div', 'speedpill', '⏩ 2×');
@@ -71,7 +71,11 @@
       const c = sc && sc.chapter != null ? sc.chapter : (this.data.chapters.length - 1);
       [...this.chapBar.children].forEach((b, i) => b.classList.toggle('on', i === c));
       const n = this.data.chapters.length;
-      if (this.chapChip) this.chapChip.textContent = n ? `CHAPTER ${c + 1}/${n} · ${this.data.chapters[c]}` : '';
+      if (this.chapChip) {
+        this.chapChip.textContent = n ? `CHAPTER ${c + 1}/${n} · ${this.data.chapters[c]}` : '';
+        if (this._lastChap != null && this._lastChap !== c) { this.chapChip.classList.remove('bump'); void this.chapChip.offsetWidth; this.chapChip.classList.add('bump'); }
+        this._lastChap = c;
+      }
     }
 
     jumpToChapter(c) {
@@ -111,7 +115,7 @@
       this.speedpill.classList.remove('show');
       ['.recap', '.quiz', '.done-pop', '.nextup'].forEach(s => { const e = this.root.querySelector(s); if (e) e.remove(); });
       this.stage.classList.remove('frozen');
-      this.paused = false; this._kept = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0;
+      this.paused = false; this._kept = false; this.state = 'idle'; this.score = 0; this.quizIdx = 0; this._lastChap = null;
       this._setCap(strip(this.data.hook));
       this._prog(0);
       this._seg(0);
@@ -342,8 +346,15 @@
         `<div class="ck">${perfect ? '🏆' : this.score >= n - 1 ? '✅' : '💪'}</div>` +
         `<b>Reel complete — ${this.score}/${n}</b>` +
         `<small>${perfect ? 'Perfect score!' : 'swipe ↑ for the next reel'}</small>` +
-        `<div class="xp-line">+${xp} XP · 🔥 ${SS.state.streak()}-day streak</div>`);
+        `<div class="xp-line">+<span class="xpn">0</span> XP · 🔥 ${SS.state.streak()}-day streak</div>`);
       this.root.querySelector('.reel-inner').appendChild(pop);
+      const xpn = pop.querySelector('.xpn'), t0 = performance.now();
+      const tick = now => {
+        const k = Math.min(1, (now - t0) / 900);
+        xpn.textContent = Math.round(xp * (1 - Math.pow(1 - k, 3)));
+        if (k < 1 && xpn.isConnected) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
       this._caption('✅ Done! Swipe up for the next reel');
       this.hint.classList.add('show');
       document.dispatchEvent(new CustomEvent('ss:complete', { detail: { id: this.data.id } }));
