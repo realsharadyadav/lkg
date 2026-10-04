@@ -51,11 +51,26 @@
       "narration": "The pattern: a small tree. AppError at the root, then ConfigError, LLMError under it. Raise with a helpful message, and chain with 'from' when wrapping a lower error — it keeps both stack traces. Callers catch the base to handle everything, or a leaf to handle one thing. This is how you keep error handling readable at three in the morning."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · WITH",
       "title": "with = **using / IDisposable**",
       "sub": "Guaranteed cleanup — files, locks, connections, retries",
+      "h": 295,
+      "actors": [
+        { "id": "tm", "k": "term", "x": 50, "y": 25, "w": 80, "h": 32 },
+        { "id": "acquire_c", "k": "chip", "x": 20, "y": 65, "e": "🔓", "t": "acquire", "c": "sm" },
+        { "id": "use_c", "k": "chip", "x": 50, "y": 65, "e": "📖", "t": "use", "c": "sm" },
+        { "id": "cleanup_c", "k": "chip", "x": 80, "y": 65, "e": "🔒", "t": "cleanup", "c": "sm", "tone": "good" },
+        { "id": "exc_tag", "k": "tag", "x": 50, "y": 77, "e": "⚠️", "t": "exception", "tone": "bad", "c": "sm" },
+        { "id": "guarantee", "k": "tag", "x": 80, "y": 85, "t": "always runs", "tone": "good", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "acquire a resource", "do": [["show", "tm"], ["text", "tm", "with open(\"f.txt\") as f:\n    data = f.read()"]] },
+        { "at": "use it", "do": [["show", "acquire_c"], ["show", "use_c"]] },
+        { "at": "exception, return, crash", "do": [["show", "exc_tag"], ["pulse", "exc_tag"]] },
+        { "at": "cleanup runs automatically", "do": [["show", "cleanup_c"], ["show", "guarantee"], ["hot", "cleanup_c"]] }
+      ],
       "narration": "The with statement is C sharp's using block: acquire a resource, use it, and no matter what happens — exception, return, crash — cleanup runs automatically. Files are the textbook case, but anything with setup and teardown works: database connections, locks, even timed sections. In the LLM world you'll use it for httpx clients so connections are pooled and released correctly."
     },
     {
@@ -69,11 +84,31 @@
       "narration": "Details worth knowing. One with can hold multiple resources — comma separated. Files close even when the code inside raises. And you can build your own using contextlib's contextmanager decorator — write a generator that yields the resource, and everything after yield becomes the cleanup. It's the idiomatic way to wrap retry logic or temporary state."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · PATHLIB",
       "title": "Stop using strings for paths",
       "sub": "pathlib.Path — joins, globs, and readability",
+      "h": 295,
+      "actors": [
+        { "id": "bad_h", "k": "tag", "x": 25, "y": 8, "e": "🚫", "t": "strings", "tone": "bad", "c": "sm" },
+        { "id": "bad_c", "k": "chip", "x": 25, "y": 18, "t": "os.path.join", "c": "sm", "tone": "bad" },
+        { "id": "good_h", "k": "tag", "x": 75, "y": 8, "e": "✓", "t": "pathlib", "tone": "good", "c": "sm" },
+        { "id": "slash", "k": "chip", "x": 75, "y": 18, "e": "/", "t": "operator", "c": "sm", "tone": "accent" },
+        { "id": "path_box", "k": "panel", "x": 50, "y": 38, "w": 84, "h": 16 },
+        { "id": "path_txt", "k": "tag", "x": 50, "y": 42, "t": "data/raw/users.json", "c": "sm" },
+        { "id": "read", "k": "chip", "x": 25, "y": 62, "t": ".read_text()", "c": "sm" },
+        { "id": "glob", "k": "chip", "x": 50, "y": 72, "t": ".glob()", "c": "sm" },
+        { "id": "exists", "k": "chip", "x": 75, "y": 62, "t": ".exists()", "c": "sm" },
+        { "id": "cross_plat", "k": "tag", "x": 50, "y": 82, "t": "one code path ✓", "tone": "good", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "never manipulate file paths as strings", "do": [["show", "bad_h"], ["show", "bad_c"]] },
+        { "at": "slash operator", "do": [["show", "good_h"], ["show", "slash"], ["hot", "slash"]] },
+        { "at": "reads text in one call", "do": [["show", "path_box"], ["show", "path_txt"], ["show", "read"]] },
+        { "at": "glob patterns", "do": [["show", "glob"]] },
+        { "at": "Windows, Mac, Linux — one code path", "do": [["show", "exists"], ["show", "cross_plat"], ["tone", "path_box", "good"]] }
+      ],
       "narration": "New rule: never manipulate file paths as strings. Pathlib's Path object joins with a slash operator, reads text in one call, lists directories with glob patterns, and never has a double-slash bug. It reads like the problem: data folder slash file dot json. Windows, Mac, Linux — one code path. This is the modern standard, and it's been built in since 3.4."
     },
     {
@@ -87,11 +122,34 @@
       "narration": "Your daily set: build with slash, read with dot read text, write with dot write text — always specify utf-8 encoding, by the way; that's the most common cross-platform bug. Then glob for patterns — all CSVs, all JSONs — exists for checks, and mkdir with parents equals true to create folders. Every path operation you'll need lives on Path."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · JSON",
       "title": "JSON: Python's **native dialect**",
       "sub": "dict ↔ JSON round-trips in two calls",
+      "h": 295,
+      "actors": [
+        { "id": "json_h", "k": "tag", "x": 25, "y": 8, "e": "📄", "t": "JSON", "c": "sm" },
+        { "id": "py_h", "k": "tag", "x": 75, "y": 8, "e": "🐍", "t": "Python", "c": "sm" },
+        { "id": "obj_j", "k": "chip", "x": 25, "y": 18, "t": "{...}", "c": "sm" },
+        { "id": "obj_p", "k": "chip", "x": 75, "y": 18, "t": "dict", "c": "sm" },
+        { "id": "arr_j", "k": "chip", "x": 25, "y": 28, "t": "[...]", "c": "sm" },
+        { "id": "arr_p", "k": "chip", "x": 75, "y": 28, "t": "list", "c": "sm" },
+        { "id": "t_string", "k": "tag", "x": 20, "y": 50, "t": "string", "c": "sm" },
+        { "id": "t_num", "k": "tag", "x": 50, "y": 50, "t": "number", "c": "sm" },
+        { "id": "t_bool", "k": "tag", "x": 80, "y": 50, "t": "bool", "c": "sm" },
+        { "id": "t_null", "k": "tag", "x": 50, "y": 60, "t": "null → None", "c": "sm" },
+        { "id": "loads_c", "k": "chip", "x": 25, "y": 75, "e": "📥", "t": "loads", "tone": "accent" },
+        { "id": "dumps_c", "k": "chip", "x": 75, "y": 75, "e": "📤", "t": "dumps", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "JSON is the lingua franca", "do": [["show", "json_h"], ["show", "obj_j"], ["show", "arr_j"]] },
+        { "at": "maps it perfectly", "do": [["show", "py_h"], ["show", "obj_p"], ["show", "arr_p"]] },
+        { "at": "JSON objects become dicts", "do": [["hot", "obj_j"], ["hot", "obj_p"]] },
+        { "at": "arrays become lists", "do": [["hot", "arr_j"], ["hot", "arr_p"]] },
+        { "at": "converts with two calls", "do": [["show", "t_string"], ["show", "t_num"], ["show", "t_bool"], ["show", "t_null"]] },
+        { "at": "loads for strings, dumps for output", "do": [["show", "loads_c"], ["show", "dumps_c"]] }
+      ],
       "narration": "JSON is the lingua franca of every API you'll touch, and Python maps it perfectly: JSON objects become dicts, arrays become lists, strings, numbers, booleans, and null becomes None. The json module converts with two calls — loads for strings, dumps for output. Every LLM response you receive and every request you send goes through these two functions."
     },
     {

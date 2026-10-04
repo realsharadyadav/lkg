@@ -31,11 +31,30 @@
       "narration": "The syntax: name colon type, and an arrow before the return type. Collections take parameters in square brackets — list of string, dict of string to int. And a modernization note: before Python 3.9 you imported capital-L List from typing; today lowercase builtins are the standard. If you see capital versions in older codebases, that's the reason."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · OPTIONAL & UNION",
       "title": "**Optional[X]** = X or None",
       "sub": "The nullable you must declare",
+      "h": 300,
+      "actors": [
+        { "id": "fn_str", "k": "panel", "x": 25, "y": 28, "w": 32, "h": 20, "t": "str" },
+        { "id": "fn_opt", "k": "panel", "x": 75, "y": 28, "w": 32, "h": 20, "t": "Optional[str]" },
+        { "id": "val_str", "k": "chip", "x": 25, "y": 58, "e": "\"", "t": "\"Alice\"", "c": "sm" },
+        { "id": "val_none", "k": "chip", "x": 75, "y": 58, "e": "ø", "t": "None", "c": "sm" },
+        { "id": "ok_str", "k": "tag", "x": 25, "y": 70, "e": "✓", "t": "OK" },
+        { "id": "err_str", "k": "tag", "x": 25, "y": 80, "e": "✗", "t": "error", "tone": "bad" },
+        { "id": "ok_none", "k": "tag", "x": 75, "y": 80, "e": "✓", "t": "handled", "tone": "good" },
+        { "id": "guard", "k": "tag", "x": 75, "y": 70, "t": "if x is not None:" },
+        { "id": "title", "k": "tag", "x": 50, "y": 10, "e": "🔍", "t": "checker enforces" }
+      ],
+      "steps": [
+        { "at": "In Python-with-hints", "do": [["show", "title"], ["show", "fn_str"], ["show", "fn_opt"]] },
+        { "at": "does not accept None", "do": [["show", "val_str"], ["show", "val_none"], ["show", "ok_str"], ["show", "err_str"]] },
+        { "at": "if None is legal", "do": [["tone", "fn_opt", "good"], ["dim", "err_str"]] },
+        { "at": "you must say Optional of string", "do": [["hot", "fn_opt"]] },
+        { "at": "checker will then force every caller", "do": [["show", "guard"], ["show", "ok_none"], ["tone", "fn_str", "bad"]] }
+      ],
       "narration": "In C sharp, string can be null unless you enable nullable reference types. In Python-with-hints, the rule is explicit: a parameter typed string does not accept None — if None is legal, you must say Optional of string, which means string or None. The checker will then force every caller to handle the None case. This one annotation eliminates the most common runtime crash in the language."
     },
     {
@@ -49,11 +68,28 @@
       "narration": "Unions say 'either'. Modern syntax: string pipe int. The checker tracks every path: if a value might be None, calling a string method on it is a red squiggle, not a production incident. Combined with isinstance narrowing — if isinstance of x comma string — the checker understands your guard and clears the error. It genuinely feels like getting the compiler back."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · GENERICS & TYPEDDICT",
       "title": "Generics: **write once, type forever**",
       "sub": "TypedDict: give your dicts a shape",
+      "h": 300,
+      "actors": [
+        { "id": "schema", "k": "panel", "x": 25, "y": 28, "w": 36, "h": 18, "e": "{}", "t": "TypedDict" },
+        { "id": "model_key", "k": "chip", "x": 25, "y": 55, "t": "model: str", "c": "sm" },
+        { "id": "content_key", "k": "chip", "x": 25, "y": 65, "t": "content: str", "c": "sm" },
+        { "id": "tokens_key", "k": "chip", "x": 25, "y": 75, "t": "tokens: int", "c": "sm" },
+        { "id": "response", "k": "term", "x": 75, "y": 45, "w": 36, "h": 46 },
+        { "id": "gem_tag", "k": "tag", "x": 25, "y": 10, "e": "💎", "t": "daily use" },
+        { "id": "payload_tag", "k": "tag", "x": 75, "y": 10, "e": "📦", "t": "API response" }
+      ],
+      "steps": [
+        { "at": "And TypedDict", "do": [["show", "schema"], ["show", "gem_tag"]] },
+        { "at": "gives a dictionary a fixed schema", "do": [["tone", "schema", "good"]] },
+        { "at": "which keys exist", "do": [["show", "model_key"], ["show", "content_key"], ["show", "tokens_key"]] },
+        { "at": "what types they hold", "do": [["hot", "model_key"], ["hot", "content_key"], ["hot", "tokens_key"]] },
+        { "at": "shape of every LLM API payload", "do": [["show", "response"], ["show", "payload_tag"], ["text", "response", "{\n  \"model\":\n    \"gpt-4o\",\n  \"content\":\n    \"hi\",\n  \"tokens\": 12\n}"]] }
+      ],
       "narration": "Generics parameterize functions and classes over types — T in C sharp, TypeVar in Python. One function, first of list of T, type-checks for lists of anything while keeping the element type. And TypedDict is the gem you'll actually use daily: it gives a dictionary a fixed schema — which keys exist, what types they hold — which is precisely the shape of every LLM API payload you'll handle."
     },
     {

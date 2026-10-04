@@ -40,11 +40,28 @@
       "narration": "Now the most famous bug in Python. A default value is evaluated once — when the function is defined — not each call. So a default of empty list means every call shares the same list. Add an item in one call, and it's still there in the next. C sharp devs never see this because params can't have defaults backed by mutable state like this."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 1,
-      "cards": [
-        { "e": "🐛", "t": "def f(items=[])", "s": "The list is created once. Items leak between calls. Silent data corruption." },
-        { "e": "✅", "t": "def f(items=None):\n  if items is None: items = []", "s": "None default → fresh list per call. The universal safe pattern.", "win": true }
+      "h": 290,
+      "actors": [
+        { "id": "bad_fn", "k": "panel", "x": 25, "y": 25, "w": 35, "h": 18, "t": "def f(items=[])", "tone": "bad" },
+        { "id": "bad_c1", "k": "chip", "x": 12, "y": 55, "t": "call 1", "c": "sm", "tone": "bad" },
+        { "id": "bad_list1", "k": "tag", "x": 12, "y": 70, "t": "[1]" },
+        { "id": "bad_c2", "k": "chip", "x": 38, "y": 55, "t": "call 2", "c": "sm", "tone": "bad" },
+        { "id": "bad_list2", "k": "tag", "x": 38, "y": 70, "t": "[1, 2]" },
+        { "id": "bad_warn", "k": "tag", "x": 25, "y": 85, "e": "💥", "t": "same list!", "tone": "bad" },
+        { "id": "good_fn", "k": "panel", "x": 75, "y": 25, "w": 35, "h": 18, "t": "def f(items=None)", "tone": "good" },
+        { "id": "good_c1", "k": "chip", "x": 62, "y": 55, "t": "call 1", "c": "sm", "tone": "good" },
+        { "id": "good_list1", "k": "tag", "x": 62, "y": 70, "t": "[1]" },
+        { "id": "good_c2", "k": "chip", "x": 88, "y": 55, "t": "call 2", "c": "sm", "tone": "good" },
+        { "id": "good_list2", "k": "tag", "x": 88, "y": 70, "t": "[2]" },
+        { "id": "good_ok", "k": "tag", "x": 75, "y": 85, "e": "✓", "t": "fresh lists", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "default of empty list", "do": [["show", "bad_fn"]] },
+        { "at": "accumulate across calls", "do": [["show", "bad_c1"], ["show", "bad_list1"], ["show", "bad_c2"], ["show", "bad_list2"], ["show", "bad_warn"]] },
+        { "at": "default of None", "do": [["show", "good_fn"]] },
+        { "at": "fresh list inside", "do": [["show", "good_c1"], ["show", "good_list1"], ["show", "good_c2"], ["show", "good_list2"], ["show", "good_ok"]] }
       ],
       "narration": "Wrong: default of empty list — items accumulate across calls. Right: default of None, then create a fresh list inside. It's the universal safe pattern, and every experienced Python dev writes it automatically. When you review agent code that keeps 'remembering' things it shouldn't — check for mutable defaults first."
     },
@@ -67,11 +84,26 @@
       "narration": "Practical rules. Sorted with a lambda key — shortest models first — is the everyday use. Closures capture the variable, not a snapshot — the classic bug is lambdas in a loop all seeing the last value; fix it by binding the loop variable as a default argument. And style: one expression is the limit — anything bigger deserves a name."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · DECORATORS",
       "title": "Decorators: **middleware** for functions",
       "sub": "@retry  @log  @require_auth — wrap without touching",
+      "h": 290,
+      "actors": [
+        { "id": "fn_raw", "k": "chip", "x": 50, "y": 20, "t": "call_api()", "c": "sm" },
+        { "id": "retry_dec", "k": "tag", "x": 30, "y": 45, "e": "🔄", "t": "@retry" },
+        { "id": "log_dec", "k": "tag", "x": 70, "y": 45, "e": "📝", "t": "@log" },
+        { "id": "fn_wrapped", "k": "chip", "x": 50, "y": 70, "t": "wrapped call_api()", "c": "sm", "tone": "accent" },
+        { "id": "behavior", "k": "tag", "x": 50, "y": 85, "t": "retry on fail + logging" }
+      ],
+      "steps": [
+        { "at": "decorator wraps a function", "do": [["show", "fn_raw"]] },
+        { "at": "with extra behavior", "do": [["show", "retry_dec"]] },
+        { "at": "at-sign retry", "do": [["hot", "retry_dec"]] },
+        { "at": "every call now retries", "do": [["show", "fn_wrapped"]] },
+        { "at": "decorators add logging, timing", "do": [["show", "log_dec"], ["show", "behavior"]] }
+      ],
       "narration": "A decorator wraps a function with extra behavior — the exact shape of ASP dot net middleware or an ActionFilter. You write at-sign retry above a function, and every call now retries on failure. The mechanism is beautifully simple: a function that takes a function and returns a wrapped function. In agent systems, decorators add logging, timing, and rate-limit handling to every tool."
     },
     {
@@ -85,11 +117,27 @@
       "narration": "Mechanics: at-sign name above a function is sugar for passing the function through the decorator. Use functools dot wraps so the wrapper keeps the original name and docstring — otherwise your stack traces all say 'wrapper'. And decorators stack, applied bottom-up: validate, then retry, then log — each one wrapping the previous."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · GENERATORS",
       "title": "yield = **IEnumerable** that pauses",
       "sub": "Stream a million rows with 4 lines",
+      "h": 295,
+      "actors": [
+        { "id": "gen_fn", "k": "chip", "x": 50, "y": 18, "t": "def gen():", "c": "sm", "e": "🌊" },
+        { "id": "y1", "k": "tag", "x": 25, "y": 48, "t": "yield 1" },
+        { "id": "y2", "k": "tag", "x": 50, "y": 48, "t": "yield 2" },
+        { "id": "y3", "k": "tag", "x": 75, "y": 48, "t": "yield 3" },
+        { "id": "bad_way", "k": "chip", "x": 20, "y": 72, "t": "bulk load", "c": "sm", "tone": "bad" },
+        { "id": "good_way", "k": "chip", "x": 80, "y": 72, "t": "on demand", "c": "sm", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "yields values one at a time", "do": [["show", "gen_fn"]] },
+        { "at": "pauses between them", "do": [["show", "y1"], ["show", "y2"], ["show", "y3"]] },
+        { "at": "No list in memory", "do": [["show", "bad_way"], ["show", "good_way"]] },
+        { "at": "no index bookkeeping", "do": [["tone", "good_way", "good"], ["pulse", "good_way"]] },
+        { "at": "stream LLM responses token by token", "do": [["hot", "gen_fn"], ["tone", "bad_way", "bad"]] }
+      ],
       "narration": "A generator is a function that yields values one at a time and pauses between them — Python's IEnumerable, but written as an ordinary function. Each yield hands out one item and freezes the function's state until the next call. No list in memory, no index bookkeeping. This is how you stream LLM responses token by token and process gigabyte files on a laptop."
     },
     {

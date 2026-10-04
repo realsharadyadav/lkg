@@ -45,11 +45,28 @@
       "narration": "Mechanics: init runs at construction. Attributes just appear when you assign them — no declaration block, no types required. And privacy is by honor: underscore prefix says 'internal', double underscore makes the compiler rename it so subclasses can't collide. Python trusts you more than C sharp does — that includes trusting you not to break things."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · DUNDER METHODS",
       "title": "**Dunder** = the interface protocol",
       "sub": "__len__, __eq__, __str__ — Python's operator overloading",
+      "h": 290,
+      "actors": [
+        { "id": "cls", "k": "panel", "x": 25, "y": 50, "w": 32, "h": 60, "e": "⚙️", "t": "MyList class" },
+        { "id": "m_len", "k": "chip", "x": 25, "y": 36, "e": "📏", "t": "__len__", "c": "sm" },
+        { "id": "m_eq", "k": "chip", "x": 25, "y": 48, "e": "✅", "t": "__eq__", "c": "sm" },
+        { "id": "m_str", "k": "chip", "x": 25, "y": 60, "e": "🖨️", "t": "__str__", "c": "sm" },
+        { "id": "op_len", "k": "tag", "x": 80, "y": 36, "t": "len(obj) works" },
+        { "id": "op_eq", "k": "tag", "x": 80, "y": 48, "t": "== works" },
+        { "id": "op_str", "k": "tag", "x": 80, "y": 60, "t": "print() shows" }
+      ],
+      "steps": [
+        { "at": "Dunder means", "do": [["show", "cls"]] },
+        { "at": "plug your class", "do": [["show", "m_len"], ["show", "m_eq"], ["show", "m_str"], ["show", "op_len"], ["show", "op_eq"], ["show", "op_str"]] },
+        { "at": "Implement len", "do": [["hot", "m_len"], ["hot", "op_len"]] },
+        { "at": "Implement eq", "do": [["unhot", "m_len"], ["unhot", "op_len"], ["hot", "m_eq"], ["hot", "op_eq"]] },
+        { "at": "Implement str", "do": [["unhot", "m_eq"], ["unhot", "op_eq"], ["hot", "m_str"], ["hot", "op_str"]] }
+      ],
       "narration": "Dunder means double underscore. These methods plug your class into Python's own syntax. Implement len and len of your object works. Implement eq and double-equals works. Implement str and print shows something human. It's C sharp's operator overloading plus interfaces plus ToString — one mechanism, everywhere, no ceremony."
     },
     {
@@ -105,11 +122,28 @@
       "narration": "Syntax: class Tool, parenthesis Base Tool. Super with empty parens calls the parent — cleaner than C sharp's base keyword. And a Python specialty: mixins — tiny classes that add one capability, composed together. Agent frameworks love them: one mixin for logging, one for retries, one for schema — stack them, stay flat."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · DATACLASSES",
       "title": "dataclass = **record type**, built in",
       "sub": "@dataclass writes __init__, __eq__, __repr__ for you",
+      "h": 290,
+      "actors": [
+        { "id": "deco", "k": "tag", "x": 18, "y": 15, "t": "@dataclass", "c": "sm" },
+        { "id": "code", "k": "panel", "x": 50, "y": 40, "w": 32, "h": 35, "e": "📝", "t": "Config" },
+        { "id": "name_f", "k": "tag", "x": 50, "y": 33, "t": "name: str", "c": "sm" },
+        { "id": "val_f", "k": "tag", "x": 50, "y": 42, "t": "value: int", "c": "sm" },
+        { "id": "init", "k": "chip", "x": 50, "y": 65, "e": "🔧", "t": "__init__", "tone": "good", "c": "sm" },
+        { "id": "eq", "k": "chip", "x": 50, "y": 75, "e": "✅", "t": "__eq__", "tone": "good", "c": "sm" },
+        { "id": "repr", "k": "chip", "x": 50, "y": 85, "e": "📋", "t": "__repr__", "tone": "good", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Here's the class", "do": [["show", "code"], ["show", "deco"], ["show", "name_f"], ["show", "val_f"]] },
+        { "at": "Put at-dataclass", "do": [["hot", "deco"]] },
+        { "at": "generates the constructor", "do": [["show", "init"]] },
+        { "at": "equality", "do": [["show", "eq"]] },
+        { "at": "clean repr", "do": [["show", "repr"]] }
+      ],
       "narration": "Here's the class you'll actually write most. Put at-dataclass above a class, list fields with type hints, and Python generates the constructor, equality, and a clean repr automatically. It's C sharp's record types — constructor, equality, ToString — with one decorator. Defaults, mutable defaults done safely, even frozen for immutability."
     },
     {
@@ -135,11 +169,33 @@
       "narration": "The essentials: at-dataclass, then fields as class annotations with defaults. Frozen equals true makes it immutable — perfect for config and value objects. And field with default factory creates fresh mutable values per instance — the mutable-default trap, solved by design. When you outgrow dataclasses, Pydantic models are the next step — that's Reel 9."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · INTERFACES",
       "title": "Interfaces: **Protocol beats ABC**",
       "sub": "Duck typing + static checking = structural interfaces",
+      "h": 290,
+      "actors": [
+        { "id": "abc_label", "k": "tag", "x": 20, "y": 8, "t": "ABC (nominal)", "c": "sm" },
+        { "id": "abc_base", "k": "panel", "x": 20, "y": 28, "w": 28, "h": 12 },
+        { "id": "abc_base_t", "k": "tag", "x": 20, "y": 16, "t": "BaseStorage", "c": "sm" },
+        { "id": "abc_impl", "k": "panel", "x": 20, "y": 62, "w": 28, "h": 12 },
+        { "id": "abc_impl_t", "k": "tag", "x": 20, "y": 50, "t": "FileStore", "c": "sm" },
+        { "id": "abc_arrow", "k": "tag", "x": 20, "y": 42, "e": "↓", "t": "inherits", "tone": "bad", "c": "sm" },
+        { "id": "proto_label", "k": "tag", "x": 72, "y": 8, "t": "Protocol (structural)", "c": "sm" },
+        { "id": "proto_def", "k": "panel", "x": 72, "y": 28, "w": 28, "h": 12 },
+        { "id": "proto_def_t", "k": "tag", "x": 72, "y": 16, "t": "Storage", "c": "sm" },
+        { "id": "proto_impl", "k": "panel", "x": 72, "y": 62, "w": 28, "h": 12 },
+        { "id": "proto_impl_t", "k": "tag", "x": 72, "y": 50, "t": "MemoryStore", "c": "sm" },
+        { "id": "proto_duck", "k": "tag", "x": 72, "y": 42, "e": "🦆", "t": "duck type!", "tone": "good", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Python has two options", "do": [["show", "abc_label"], ["show", "proto_label"]] },
+        { "at": "Abstract base classes", "do": [["show", "abc_base"], ["show", "abc_base_t"]] },
+        { "at": "explicit inheritance", "do": [["show", "abc_impl"], ["show", "abc_impl_t"], ["show", "abc_arrow"]] },
+        { "at": "Protocols", "do": [["show", "proto_def"], ["show", "proto_def_t"]] },
+        { "at": "any class that happens to implement", "do": [["show", "proto_impl"], ["show", "proto_impl_t"], ["show", "proto_duck"]] }
+      ],
       "narration": "C sharp interfaces are nominal — you declare them. Python has two options. Abstract base classes: the C sharp way, explicit inheritance. Protocols: the modern way — you define the methods you expect, and any class that happens to implement them automatically satisfies the protocol. No inheritance needed. It's structural typing, exactly like TypeScript."
     },
     {

@@ -13,11 +13,23 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · BASEMODEL",
       "title": "Parse, don't **pray**",
       "sub": "BaseModel validates at the boundary — bad data dies early",
+      "h": 290,
+      "actors": [
+        { "id": "code", "k": "term", "x": 50, "y": 25, "w": 96, "h": 35 },
+        { "id": "error", "k": "tag", "x": 50, "y": 75, "e": "❌", "t": "ValidationError" }
+      ],
+      "steps": [
+        { "at": "Here's the single most valuable library", "do": [["show", "code"], ["text", "code", "class Config(BaseModel):\n  model: str\n  prompt: str"]] },
+        { "at": "every field is declared with a type", "do": [["text", "code", "class Config(BaseModel):\n  model: str\n  prompt: str\n  temp: float"]] },
+        { "at": "when you construct it from raw data", "do": [["text", "code", "data = {\"model\": 42,\n        \"temp\": \"foo\"}"]] },
+        { "at": "String where an int belongs", "do": [["show", "error"], ["pulse", "error"]] },
+        { "at": "parse, don't pray", "do": [["text", "code", ">>> Config(**data)\nValidationError: 2 errors\n  model [type=int_type]"]] }
+      ],
       "narration": "Here's the single most valuable library for your GenAI work. Pydantic's BaseModel is a class where every field is declared with a type — and when you construct it from raw data, every value is validated and coerced. String where an int belongs? Error, immediately, with a readable message. Missing required field? Error. This is the difference between hoping JSON is well-formed and knowing it — parse, don't pray."
     },
     {
@@ -31,11 +43,27 @@
       "narration": "The workflow: declare your model with type-annotated fields — same syntax as a dataclass. Then parse incoming data with model validate, or construct directly from a dict. Coercion is smart: the string forty-two becomes an integer if the field says int. And when validation fails, you get one ValidationError listing every problem — which is exactly what you show an LLM in the retry loop."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · VALIDATORS",
       "title": "Your rules, **not just types**",
       "sub": "@field_validator — temperature between 0 and 2, not just 'a float'",
+      "h": 290,
+      "actors": [
+        { "id": "field", "k": "chip", "x": 50, "y": 18, "t": "temperature: float", "c": "sm" },
+        { "id": "bad_val", "k": "chip", "x": 25, "y": 45, "e": "❌", "t": "900", "c": "sm" },
+        { "id": "good_val", "k": "chip", "x": 75, "y": 45, "e": "✓", "t": "0.7", "c": "sm" },
+        { "id": "validator", "k": "panel", "x": 50, "y": 65, "w": 60, "h": 30, "t": "@field_validator", "e": "🔍" },
+        { "id": "rule", "k": "tag", "x": 50, "y": 73, "t": "0 ≤ temp ≤ 2" }
+      ],
+      "steps": [
+        { "at": "Types catch wrong shapes", "do": [["show", "field"]] },
+        { "at": "validators catch wrong values", "do": [["show", "validator"], ["show", "rule"]] },
+        { "at": "A temperature of nine hundred", "do": [["show", "bad_val"]] },
+        { "at": "perfectly good float", "do": [["tone", "bad_val", "good"]] },
+        { "at": "check the range", "do": [["show", "good_val"], ["tone", "good_val", "good"]] },
+        { "at": "every parse enforces it", "do": [["pulse", "rule"]] }
+      ],
       "narration": "Types catch wrong shapes; validators catch wrong values. A temperature of nine hundred is a perfectly good float and a completely broken model call. Pydantic lets you attach validation functions to fields — check the range, check the format, check that the model name is one you actually support. Write the rule once, and every parse enforces it, everywhere, forever."
     },
     {
@@ -49,11 +77,30 @@
       "narration": "Two levels. Field validators run per field — range checks, membership in an allowed set. Raise ValueError and Pydantic wraps it into the validation report. Model validators see the whole object for cross-field logic — max must beat min, end date after start date. For agents, the killer use is whitelisting: only model names you've tested, only tools that exist. Garbage gets stopped at the door."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · SETTINGS",
       "title": "Config that **validates itself**",
       "sub": "pydantic-settings: env vars → typed, validated settings object",
+      "h": 290,
+      "actors": [
+        { "id": "env_label", "k": "chip", "x": 25, "y": 15, "t": ".env", "c": "sm" },
+        { "id": "env1", "k": "chip", "x": 25, "y": 30, "t": "API_KEY", "c": "sm" },
+        { "id": "env2", "k": "chip", "x": 25, "y": 40, "t": "MODEL", "c": "sm" },
+        { "id": "env3", "k": "chip", "x": 25, "y": 50, "t": "RETRIES", "c": "sm" },
+        { "id": "arrow", "k": "tag", "x": 50, "y": 40, "e": "→" },
+        { "id": "settings_label", "k": "chip", "x": 75, "y": 15, "t": "Settings", "c": "sm" },
+        { "id": "s1", "k": "chip", "x": 75, "y": 30, "t": "api_key", "c": "sm" },
+        { "id": "s2", "k": "chip", "x": 75, "y": 40, "t": "model", "c": "sm" },
+        { "id": "s3", "k": "chip", "x": 75, "y": 50, "t": "retries", "c": "sm" },
+        { "id": "ok", "k": "tag", "x": 50, "y": 75, "e": "✓", "t": "validated at boot", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Remember environment variables", "do": [["show", "env_label"], ["show", "env1"], ["show", "env2"], ["show", "env3"]] },
+        { "at": "a BaseSettings subclass", "do": [["show", "settings_label"], ["show", "s1"], ["show", "s2"], ["show", "s3"], ["show", "arrow"]] },
+        { "at": "fields populate from environment variables automatically", "do": [["pulse", "arrow"]] },
+        { "at": "with names, prefixes, defaults, and full validation", "do": [["tone", "s1", "good"], ["tone", "s2", "good"], ["tone", "s3", "good"], ["show", "ok"]] }
+      ],
       "narration": "Remember environment variables from Reel 7? pydantic-settings upgrades that pattern: a BaseSettings subclass whose fields populate from environment variables automatically — with names, prefixes, defaults, and full validation. Twelve-factor config, but typed. A missing required key fails at startup with a clear message instead of failing three API calls later. This is how every service you'll build should boot."
     },
     {

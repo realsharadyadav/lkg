@@ -31,11 +31,29 @@
       "narration": "Three import styles. Import the full path — most explicit. From-import — shorter at call sites, and the style you'll use for packages you own. And aliases: numpy as np, pandas as pd — these aren't optional style; the whole ecosystem expects them. One rule: import the module when names might collide, import the name when it won't."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · LAYOUT",
       "title": "The **src layout** — learn it once",
       "sub": "Code in src/, tests beside it, config at root",
+      "h": 290,
+      "actors": [
+        { "id": "src", "k": "panel", "x": 22, "y": 45, "w": 35, "h": 50, "e": "📦", "t": "src/" },
+        { "id": "pkg", "k": "chip", "x": 22, "y": 32, "e": "📦", "t": "myproject/", "c": "sm" },
+        { "id": "init", "k": "chip", "x": 18, "y": 54, "t": "init.py", "c": "sm", "on": false },
+        { "id": "services", "k": "chip", "x": 18, "y": 64, "e": "🧩", "t": "svc/", "c": "sm", "on": false },
+        { "id": "tests", "k": "panel", "x": 78, "y": 45, "w": 30, "h": 50, "e": "🧪", "t": "tests/" },
+        { "id": "test_file", "k": "chip", "x": 78, "y": 62, "t": "test.py", "c": "sm", "on": false },
+        { "id": "config", "k": "tag", "x": 50, "y": 8, "t": "root: pyproject.toml · .env" },
+        { "id": "good_mark", "k": "tag", "x": 50, "y": 80, "e": "🔒", "t": "forced imports", "tone": "good", "on": false }
+      ],
+      "steps": [
+        { "at": "Here's the folder layout", "do": [["show", "config"], ["show", "src"], ["show", "pkg"]] },
+        { "at": "A src folder holding your package", "do": [["show", "init"], ["show", "services"]] },
+        { "at": "this matters because it forces imports", "do": [["show", "good_mark"], ["tone", "src", "accent"], ["hot", "src"]] },
+        { "at": "Tests in their own tree", "do": [["show", "tests"], ["show", "test_file"]] },
+        { "at": "Configuration — pyproject, readmes, dot env — at the root", "do": [["tone", "config", "accent"]] }
+      ],
       "narration": "Here's the folder layout the ecosystem converged on. A src folder holding your package — this matters because it forces imports to go through the installed package instead of accidently importing from the current folder. Tests in their own tree. Configuration — pyproject, readmes, dot env — at the root. Small projects can skip src, but start with it and you'll never have the 'works from one folder but not another' disease."
     },
     {
@@ -50,11 +68,30 @@
       "narration": "Picture it top to bottom. The project root holds configuration, readme, environment. Inside, src contains your actual package — always imported by its full name, myproject dot services dot users. Each module owns one domain. And tests mirror the package tree, one test file per module. This shape works for a hundred-line tool and a ten-thousand-line service."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · IMPORT PITFALLS",
       "title": "Relative imports: **avoid them**",
       "sub": "Absolute imports always — circular imports bite silently",
+      "h": 290,
+      "actors": [
+        { "id": "rel_import", "k": "tag", "x": 50, "y": 12, "t": "from . import X", "tone": "bad" },
+        { "id": "intro", "k": "tag", "x": 50, "y": 12, "t": "A ↔ B", "tone": "bad", "on": false },
+        { "id": "mod_a", "k": "chip", "x": 18, "y": 50, "e": "📦", "t": "module A", "c": "sm" },
+        { "id": "mod_b", "k": "chip", "x": 82, "y": 50, "e": "📦", "t": "module B", "c": "sm" },
+        { "id": "link_a", "k": "tag", "x": 42, "y": 45, "t": "→", "c": "sm", "on": false },
+        { "id": "link_b", "k": "tag", "x": 58, "y": 55, "t": "←", "c": "sm", "tone": "bad", "on": false },
+        { "id": "cycle_bad", "k": "tag", "x": 50, "y": 28, "e": "⭕", "t": "circular!", "tone": "bad", "on": false },
+        { "id": "mod_c", "k": "chip", "x": 50, "y": 75, "e": "📦", "t": "module C", "c": "sm", "on": false },
+        { "id": "link_ac", "k": "tag", "x": 35, "y": 65, "t": "→", "c": "sm", "tone": "good", "on": false },
+        { "id": "link_bc", "k": "tag", "x": 65, "y": 65, "t": "←", "c": "sm", "tone": "good", "on": false },
+        { "id": "fixed_tag", "k": "tag", "x": 50, "y": 88, "e": "✓", "t": "solved", "tone": "good", "on": false }
+      ],
+      "steps": [
+        { "at": "Python allows relative imports", "do": [["show", "rel_import"]] },
+        { "at": "circular imports", "do": [["hide", "rel_import"], ["show", "intro"], ["show", "mod_a"], ["show", "mod_b"], ["show", "link_a"], ["show", "link_b"], ["show", "cycle_bad"]] },
+        { "at": "extract the shared piece", "do": [["show", "mod_c"], ["show", "link_ac"], ["show", "link_bc"], ["hide", "intro"], ["hide", "link_a"], ["hide", "link_b"], ["hide", "cycle_bad"], ["show", "fixed_tag"]] }
+      ],
       "narration": "Python allows relative imports — dot dot for parent, single dot for sibling. They work, until you move a file or run a script directly, and then they explode. The community rule: absolute imports, always — from myproject dot services import users. The second classic failure is circular imports — module A imports B, B imports A. Python handles some cycles, but the fix is architectural: extract the shared piece into a third module both import."
     },
     {
@@ -68,11 +105,27 @@
       "narration": "Memorize the left column as don't, the right as do. And when you see an import error that mentions partially initialized module — that's the circular import. The cure isn't reordering imports; it's moving the shared code — usually models or constants — into its own module that both sides import. Dependencies then flow one direction, always."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · ENTRY POINTS",
       "title": "if __name__ == \"__main__\"",
       "sub": "The most-typed line in Python, explained in 30 seconds",
+      "h": 290,
+      "actors": [
+        { "id": "file", "k": "chip", "x": 50, "y": 12, "e": "🐍", "t": "cli.py", "c": "sm" },
+        { "id": "code", "k": "term", "x": 50, "y": 32, "w": 92, "h": 28 },
+        { "id": "direct_run", "k": "tag", "x": 25, "y": 70, "e": "▶", "t": "Run directly" },
+        { "id": "direct_val", "k": "tag", "x": 25, "y": 82, "t": "__main__", "c": "sm", "tone": "good", "on": false },
+        { "id": "imported_run", "k": "tag", "x": 75, "y": 70, "e": "📥", "t": "When imported" },
+        { "id": "import_val", "k": "tag", "x": 75, "y": 82, "t": "cli", "c": "sm", "tone": "dashed", "on": false }
+      ],
+      "steps": [
+        { "at": "Every module has a hidden variable, dunder name", "do": [["show", "file"], ["show", "code"]] },
+        { "at": "When Python runs a file directly", "do": [["show", "direct_run"], ["text", "code", "# Every .py file: __name__"]] },
+        { "at": "that variable equals the string main", "do": [["show", "direct_val"], ["text", "code", "# When run directly:\n# __name__ == \"__main__\""]] },
+        { "at": "When the file is imported instead", "do": [["show", "imported_run"], ["show", "import_val"], ["text", "code", "# When imported:\n# __name__ == \"cli\""]] },
+        { "at": "if name equals main wraps code", "do": [["text", "code", "if __name__ == \"__main__\":\n    main()  # runs only directly"], ["hot", "direct_val"]] }
+      ],
       "narration": "Every module has a hidden variable, dunder name. When Python runs a file directly, that variable equals the string main. When the file is imported instead, it equals the module's name. So the idiom if name equals main wraps code that should only run as a script — demos, test data, CLI behavior. It's how one file can be both an importable library and a runnable tool."
     },
     {

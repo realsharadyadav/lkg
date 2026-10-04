@@ -43,10 +43,19 @@ How to convert a reel:
    - Steps are STATES (replayed from the top when the user scrubs back), never one-shot effects.
    - `at` must be an exact phrase of the narration (case-insensitive); a missing one logs a console warning.
      Cue on the first words of what is being said; the engine fires slightly early on purpose.
-4. Keep everything inside the stage and clear of the right-hand button rail (x <= ~92%). Reuse pieces; only
-   add a new actor kind if nothing fits.
-5. Verify visually: Playwright, open `/?reel=<ID>`, jump to the scene (`pl.sceneIdx=i; pl._scene()`), call
-   `SS.feed.activePlayer()._cue(f)` for several f in 0..1 and screenshot. Then `node tests/smoke.js`
-   (the `#courseProgress` click step is flaky on baseline too — rerun before blaming your change).
+4. The real stage is only ~0.81 x the phone width: 292px on a 360px phone, 316 on 390, 348 on 430. Design
+   for 292px. Sizes: chip ~7px/char + 50px (`"c":"sm"`: 6.2px/char + 42px), tag ~5.8px/char + 42px, emoji +20px.
+   Shorten texts, drop emoji, use two rows rather than five items in a row. Keep x within ~8-90 (a button rail
+   covers the far right). Reuse the existing pieces; only add a new actor kind if nothing fits.
+5. Verify WITHOUT screenshots (cheap) — both must report 0 errors:
+   - `python3 scripts/set-story.py <ID> <scene idx> story.json` writes one scene (touches only that scene's text,
+     keeps narration/chapter/kicker/title/sub); story.json = {"h","actors","steps"}.
+   - `node scripts/check-story.js <ID>` — static: cue phrases exist, ops/ids valid, actors on stage, no overlap,
+     narration/scene order unchanged vs git HEAD.
+   - `NODE_PATH=$(npm root -g) CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome VW=360 VH=740 node scripts/measure-story.js <ID>`
+     — opens a real browser and MEASURES actors (OFF / CLIP / OVERLAP). This is the ground truth; a subagent's
+     "0 errors" report is not enough, re-run it yourself. Then `node tests/smoke.js` (its `#courseProgress`
+     click step is flaky on baseline too — rerun before blaming your change).
+   A screenshot (jump to the scene, `SS.feed.activePlayer()._cue(f)`) is only for judging how it LOOKS.
 6. Keep the JSON's existing formatting (arrays of objects inline, one per line) so diffs stay small.
 7. `scripts/bump-build.sh`, commit, and only push to `main` when the user says so.
