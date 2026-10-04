@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: SOP-to-Excel Agent — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Capstone project one: an agent that reads a Standard Operating Procedure and safely updates Excel workbooks — every discipline from Stages 6–8 in one build. Learn Project: SOP-to-Excel Agent (Parse the SOP, Plan the changes, Execute via Excel MCP, Verify, approve, roll back) in a short animated r…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-21.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Project: SOP-to-Excel Agent — Agentic AI for software architects | LKG School"><meta property="og:description" content="Capstone project one: an agent that reads a Standard Operating Procedure and safely updates Excel workbooks — every discipline from Stages 6–8 in one build. Learn Project: SOP-to-Excel Agent (Parse the SOP, Plan the changes, Execute via Excel MCP, Verify, approve, roll back) in a short animated r…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-21.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Project: SOP-to-Excel Agent", "description": "Capstone project one: an agent that reads a Standard Operating Procedure and safely updates Excel workbooks — every discipline from Stages 6–8 in one build. Learn Project: SOP-to-Excel Agent (Parse the SOP, Plan the changes, Execute via Excel MCP, Verify, approve, roll back) in a short animated r…", "url": "https://lkgschool.in/learn/AG-21.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Parse the SOP", "Plan the changes", "Execute via Excel MCP", "Verify, approve, roll back"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Project: SOP-to-Excel Agent", "item": "https://lkgschool.in/learn/AG-21.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Hands-on Projects › Reel 69</nav>
+<h1>Project: SOP-to-Excel Agent</h1>
+<p class="lede">Capstone project one: an agent that reads a Standard Operating Procedure and <strong>safely updates Excel workbooks</strong> — every discipline from Stages 6–8 in one build.</p>
+<a class="cta" href="/?reel=AG-21">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Parse the SOP</li><li>Plan the changes</li><li>Execute via Excel MCP</li><li>Verify, approve, roll back</li></ol>
+<h2>Remember this</h2><ul><li>Parse: structured rule extraction with source quotes, validation of targets before planning, exception queue for the ambiguous</li><li>Plan: cell-level diffs with formula-impact analysis and conflict detection, rendered for human approval — preview before power</li><li>Execute: only through the guarded Excel MCP tools, write-then-verify per change, durable checkpoints, per-file audit; rollback drilled monthly; evidence package as the deliverable</li></ul>
+<section class="notes"><h2>Parse</h2>
+<ul>
+<li>Structured rule extraction (Pydantic models) · completeness self-check.</li>
+<li>source_quote per rule (review = check the quote).</li>
+<li>Validate targets before planning · exception queue for ambiguous.</li>
+</ul>
+<h2>Plan</h2>
+<ul>
+<li>Cell-level diffs as data · formula-impact analysis · conflict detection.</li>
+<li>Human review doc in consequences (what-not-which) · approval binds token to diff.</li>
+<li>Idempotent skips are successes.</li>
+</ul>
+<h2>Execute</h2>
+<ul>
+<li>Excel MCP tools ONLY mutation path · backup → token write → read-back verify.</li>
+<li>Durable checkpoints per file · per-file audit with backup refs.</li>
+</ul>
+<h2>Verify &amp; govern</h2>
+<ul>
+<li>Sampled re-reads + formula recomputation vs preview.</li>
+<li>Rollback = backup restore, DRILLED monthly (canary).</li>
+<li>Deliverable: evidence package (SOP→rules→approvals→diffs→execution→verification).</li>
+</ul>
+<p><strong>Build order: MCP server → extraction recall → plan renderer (owner-approved) → execution → verification drill.</strong></p></section>
+<h2>Code: The pipeline, end to end</h2><pre><code>async def sop_to_excel(sop_text: str, approver: User):
+    # 1 · PARSE → structured rules (with quotes, validated targets)
+    rules = await parse_sop(sop_text)
+
+    # 2 · PLAN → per-file diffs + formula impact + conflicts
+    plan = await build_plan(rules)
+    report = render_review(plan)                    # human language
+    token = await human_approve(report, approver)   # AG-17 gate
+
+    # 3 · EXECUTE via Excel MCP (AG-09 tools only)
+    for fchange in plan.files:                      # durable, checkpointed
+        backup = excel.preview_write(...)           # backup + dry-run
+        excel.write_cells(..., confirm_token=token)
+        assert read_back(fchange) == fchange.planned   # verify
+        audit.log(file=fchange.name, backup=backup)
+
+    # 4 · VERIFY + package
+    discrepancies = sample_verify(plan)
+    return evidence_package(rules, plan, audit, discrepancies)</code></pre>
+<nav class="pn"><a href="/learn/PY-23.html">← Packaging &amp; Deployment</a><a href="/learn/AG-22.html">Project: Data Analyst Agent →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

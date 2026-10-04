@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What is an Agent — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Chatbot answers. Workflow follows. Agent decides. The autonomy spectrum — and the honest guide to when NOT to use agents. Learn What is an Agent (The autonomy spectrum, The agent loop, Anatomy of an agent, When NOT to use agents) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-01.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="What is an Agent — Agentic AI for software architects | LKG School"><meta property="og:description" content="Chatbot answers. Workflow follows. Agent decides. The autonomy spectrum — and the honest guide to when NOT to use agents. Learn What is an Agent (The autonomy spectrum, The agent loop, Anatomy of an agent, When NOT to use agents) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-01.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "What is an Agent", "description": "Chatbot answers. Workflow follows. Agent decides. The autonomy spectrum — and the honest guide to when NOT to use agents. Learn What is an Agent (The autonomy spectrum, The agent loop, Anatomy of an agent, When NOT to use agents) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/AG-01.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The autonomy spectrum", "The agent loop", "Anatomy of an agent", "When NOT to use agents"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "What is an Agent", "item": "https://lkgschool.in/learn/AG-01.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 41</nav>
+<h1>What is an Agent</h1>
+<p class="lede">Chatbot answers. Workflow follows. <strong>Agent decides.</strong> The autonomy spectrum — and the honest guide to when NOT to use agents.</p>
+<a class="cta" href="/?reel=AG-01">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The autonomy spectrum</li><li>The agent loop</li><li>Anatomy of an agent</li><li>When NOT to use agents</li></ol>
+<h2>Remember this</h2><ul><li>The litmus test: who picks the next step — programmer (workflow) or model (agent)?</li><li>The agent loop = think → act → observe → repeat, bounded by budgets; agents re-plan, workflows replay</li><li>Anatomy: model + instructions + tools + memory; use workflows for known paths and auditability, start single-agent</li></ul>
+<section class="notes"><h2>Autonomy spectrum</h2>
+<ul>
+<li><strong>Chatbot</strong>: responds, human acts.</li>
+<li><strong>Workflow</strong>: code controls flow; model is a step. Testable, cheap, rigid.</li>
+<li><strong>Agent</strong>: model picks next step via tools. Flexible, adaptive, costly.</li>
+<li>Litmus: who decides the next step?</li>
+</ul>
+<h2>The loop (ReAct)</h2>
+<ul>
+<li>Think → act (tool call) → observe (result as message) → repeat.</li>
+<li>Stops on: final answer / budgets (iterations, time, cost).</li>
+<li>The power: re-planning after every observation. The cost: LLM call per decision.</li>
+</ul>
+<h2>Anatomy</h2>
+<ul>
+<li>Model · instructions (cheapest quality lever) · tools (AG-02) · memory (context = short-term; store = long-term).</li>
+</ul>
+<h2>When NOT to use agents</h2>
+<ul>
+<li>Steps known · auditability required · latency/cost sensitive → workflow.</li>
+<li>Start single-agent; escalate to multi-agent only on proven need.</li>
+<li>Credibility check: name the decision the model must make that code cannot.</li>
+</ul></section>
+<h2>Code: The agent loop in ~30 lines</h2><pre><code>from dataclasses import dataclass
+
+@dataclass
+class Agent:
+    model: LLM
+    instructions: str
+    tools: dict[str, callable]      # name -&gt; function
+    max_iters: int = 10             # the budget
+
+    def run(self, goal: str) -&gt; str:
+        messages = [
+            {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: self.instructions},
+            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: goal},
+        ]
+        for _ in range(self.max_iters):        # hard stop
+            resp = self.model.chat(
+                messages, tools=schema(self.tools))
+            msg = resp.choices[0].message
+            messages.append(msg)
+
+            if not msg.tool_calls:               # done: final answer
+                return msg.content
+
+            for call in msg.tool_calls:          # act + observe
+                try:
+                    result = self.tools[call.name](**call.args)
+                except Exception as e:
+                    result = f&quot;ERROR: {e}&quot;      # errors go back as observations
+                messages.append({&quot;role&quot;: &quot;tool&quot;,
+                                 &quot;content&quot;: str(result)})
+        return &quot;Stopped: iteration budget exhausted.&quot;</code></pre>
+<nav class="pn"><a href="/learn/GA-21.html">← RAG &amp; LLM Metrics</a><a href="/learn/AG-02.html">Tool Design →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

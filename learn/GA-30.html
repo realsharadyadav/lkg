@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architect Toolkit — Generative AI for software architects | LKG School</title>
+<meta name="description" content="GenAI architecture isn&#x27;t a technology problem — it&#x27;s a judgment problem. This reel hands you the working architect&#x27;s kit: selection matrices, NFR checklists, cost models, and the gates between POC and production. Learn Architect Toolkit (Choosing &amp; justifying, Architecture patterns, NFRs &amp; cost m…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-30.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Architect Toolkit — Generative AI for software architects | LKG School"><meta property="og:description" content="GenAI architecture isn&#x27;t a technology problem — it&#x27;s a judgment problem. This reel hands you the working architect&#x27;s kit: selection matrices, NFR checklists, cost models, and the gates between POC and production. Learn Architect Toolkit (Choosing &amp; justifying, Architecture patterns, NFRs &amp; cost m…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-30.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Architect Toolkit", "description": "GenAI architecture isn't a technology problem — it's a judgment problem. This reel hands you the working architect's kit: selection matrices, NFR checklists, cost models, and the gates between POC and production. Learn Architect Toolkit (Choosing & justifying, Architecture patterns, NFRs & cost m…", "url": "https://lkgschool.in/learn/GA-30.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Choosing & justifying", "Architecture patterns", "NFRs & cost model", "POC to production"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Architect Toolkit", "item": "https://lkgschool.in/learn/GA-30.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 74</nav>
+<h1>Architect Toolkit</h1>
+<p class="lede">GenAI architecture isn&#x27;t a technology problem — it&#x27;s a judgment problem. <strong>This reel hands you the working architect&#x27;s kit: selection matrices, NFR checklists, cost models, and the gates between POC and production.</strong></p>
+<a class="cta" href="/?reel=GA-30">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Choosing &amp; justifying</li><li>Architecture patterns</li><li>NFRs &amp; cost model</li><li>POC to production</li></ol>
+<h2>Remember this</h2><ul><li>Select use-cases on value x feasibility — kill weak ones in the meeting; high-value + low-feasibility needs a human checkpoint first</li><li>Every GenAI system composes five blocks — model, retrieval, orchestration, guardrails, observability; buy undifferentiated blocks, build the one you win on</li><li>GenAI&#x27;s NFR triangle: accuracy SLO (evals in CI), latency (TTFT + streaming), cost per completed task — optimize one, budget the other two</li><li>POC to production runs through gates — eval, safety, scale, operate — each with an owner; demo failure modes on purpose to earn trust</li></ul>
+<section class="notes"><h2>Use-case selection</h2>
+<ul>
+<li>Axes: <strong>value</strong> (measurable baseline, owner, annualized impact) x <strong>feasibility</strong> (verifiability, error tolerance + human loop, data readiness, latency fit).</li>
+<li>High value + low feasibility → don&#x27;t kill, add a human checkpoint and re-score.</li>
+<li>Kill low-value on the record — it buys credibility for the real &#x27;yes&#x27;.</li>
+</ul>
+<h2>Reference architecture</h2>
+<p>Five blocks: model endpoint · retrieval · orchestration · guardrails · observability. Build-vs-buy per block: undifferentiated → buy; standard-needs-assembly → configure; differentiating → build. Record reasons.</p>
+<h2>NFRs (GenAI-specific)</h2>
+<ul>
+<li><strong>Accuracy</strong>: SLO on a golden eval set (AG-21); evals in CI.</li>
+<li><strong>Latency</strong>: TTFT + tokens/sec are user-visible (GA-07); streaming is standard; budget per interaction type.</li>
+<li><strong>Cost</strong>: per completed task = LLM calls + retrieval + guardrails + infra; compare to human baseline.</li>
+<li>Triangle: improve one, budget the other two explicitly.</li>
+</ul>
+<h2>POC → production gates</h2>
+<p>G1 eval · G2 safety · G3 scale · G4 operate — each with an OWNER. Risk register: likelihood x impact → named mitigation → cites the reel that teaches it. Client communication: demo the failure modes on purpose. Confidence is the deliverable.</p>
+<h2>Cross-links</h2>
+<p>GA-01 (probabilistic nature → feasibility), GA-07 (latency anatomy), GA-09/10 (guardrails + RAG), GA-29 (buy options), AG-21/22 (evals, red-team), AG-23 (cost discipline). AG-25 reuses this whole kit for agents.</p></section>
+<h2>Code: The architect&#x27;s one-page scorecard</h2><pre><code>USE-CASE      value  feas.  decision   owner
+support-triage  11     17     POC ✓      VP Support
+contract-draft  14     11     +human HITL Legal
+auto-approvals  13      6     KILL       (recorded)
+
+GATES:  G1 eval ✓  G2 safety ✓  G3 scale ✓  G4 operate ✓
+NFRs:   accuracy ≥ 92% on golden set (CI-gated)
+        TTFT &lt; 800ms, streaming on
+        cost/task ≤ $0.08 @ 40k tasks/mo
+RISKS:  5 open, 4 mitigated — each cites a reel
+
+One page. Defensible. Signed.</code></pre>
+<nav class="pn"><a href="/learn/GA-29.html">← Azure AI Services</a><a href="/learn/AG-25.html">Architect Toolkit →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

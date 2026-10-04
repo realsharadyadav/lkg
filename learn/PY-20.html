@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL from Python — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Your data lives in SQL Server today — and Postgres tomorrow. Python speaks both, and one skill transfers. Learn SQL from Python (SQLAlchemy Core &amp; ORM, pyodbc &amp; SQL Server, Connection pooling, Alembic migrations) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-20.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="SQL from Python — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Your data lives in SQL Server today — and Postgres tomorrow. Python speaks both, and one skill transfers. Learn SQL from Python (SQLAlchemy Core &amp; ORM, pyodbc &amp; SQL Server, Connection pooling, Alembic migrations) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-20.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "SQL from Python", "description": "Your data lives in SQL Server today — and Postgres tomorrow. Python speaks both, and one skill transfers. Learn SQL from Python (SQLAlchemy Core & ORM, pyodbc & SQL Server, Connection pooling, Alembic migrations) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-20.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["SQLAlchemy Core & ORM", "pyodbc & SQL Server", "Connection pooling", "Alembic migrations", "Postgres basics", "pgvector intro"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "SQL from Python", "item": "https://lkgschool.in/learn/PY-20.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 24</nav>
+<h1>SQL from Python</h1>
+<p class="lede">Your data lives in SQL Server today — and Postgres tomorrow. Python speaks both, and one skill transfers.</p>
+<a class="cta" href="/?reel=PY-20">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>SQLAlchemy Core &amp; ORM</li><li>pyodbc &amp; SQL Server</li><li>Connection pooling</li><li>Alembic migrations</li><li>Postgres basics</li><li>pgvector intro</li></ol>
+<h2>Remember this</h2><ul><li>SQLAlchemy = Core (SQL builder) + ORM (EF twin); pyodbc/MSSQL and Postgres share both</li><li>One pooled engine app-wide (pre_ping=True); Alembic = EF Migrations for schema</li><li>Postgres + pgvector: rows, filters, permissions, and embeddings in one database</li></ul>
+<section class="notes"><h2>SQLAlchemy</h2>
+<ul>
+<li><strong>Core</strong>: SQL expression builder — composable, parameterized (Dapper-plus).</li>
+<li><strong>ORM</strong>: declarative classes + session — the EF Core twin.</li>
+<li><code>create_engine(url)</code> once, app-wide.</li>
+</ul>
+<h2>SQL Server from Python</h2>
+<ul>
+<li><code>mssql+pyodbc://…</code> (ODBC Driver 18+); Trusted_Connection / Entra auth via ODBC.</li>
+<li>The ORM protects you from injection; raw SQL needs bound params — always.</li>
+</ul>
+<h2>Pooling</h2>
+<ul>
+<li><code>pool_size=5, max_overflow=10, pool_pre_ping=True</code> — sane baseline.</li>
+<li>More replicas &gt; bigger pools. Databases like many small polite clients.</li>
+</ul>
+<h2>Alembic</h2>
+<ul>
+<li><code>alembic revision --autogenerate</code> → review → commit → <code>upgrade head</code> in CI/CD.</li>
+<li>Downgrade functions are your 3am rollback drill. EF Migrations, same religion.</li>
+</ul>
+<h2>Postgres</h2>
+<ul>
+<li>The AI-era default: free, ubiquitous, extension-rich. <code>postgresql+psycopg://…</code>.</li>
+</ul>
+<h2>pgvector</h2>
+<ul>
+<li><code>vector(1536)</code> column + HNSW index → <code>ORDER BY embedding &lt;=&gt; $1 LIMIT k</code>.</li>
+<li>Vectors + relational filters + tenant isolation in ONE database — no sync, one backup.</li>
+<li>Limits vs dedicated stores: GA-10.</li>
+</ul></section>
+<h2>Code: SQLAlchemy + Postgres/pgvector in one script</h2><pre><code>from sqlalchemy import create_engine, text
+
+# Same code against SQL Server — only the URL changes:
+# engine = create_engine(&quot;mssql+pyodbc://user:pw@server/db?driver=ODBC+Driver+18+for+SQL+Server&quot;)
+engine = create_engine(
+    &quot;postgresql+psycopg://postgres:pw@localhost:5432/app&quot;,
+    pool_size=5, max_overflow=10, pool_pre_ping=True,
+)
+
+# pgvector setup (once)
+with engine.begin() as conn:
+    conn.execute(text(&quot;CREATE EXTENSION IF NOT EXISTS vector&quot;))
+    conn.execute(text(&quot;&quot;&quot;
+        CREATE TABLE IF NOT EXISTS docs (
+          id BIGSERIAL PRIMARY KEY,
+          tenant_id TEXT NOT NULL,
+          body TEXT,
+          embedding vector(1536)
+        )&quot;&quot;&quot;))
+    conn.execute(text(&quot;&quot;&quot;
+        CREATE INDEX IF NOT EXISTS docs_emb_idx
+        ON docs USING hnsw (embedding vector_cosine_ops)&quot;&quot;&quot;))
+
+# Insert with vector (psycopg adapts np arrays)
+with engine.begin() as conn:
+    conn.execute(text(&quot;&quot;&quot;
+        INSERT INTO docs (tenant_id, body, embedding)
+        VALUES (:t, :b, :e)&quot;&quot;&quot;),
+        {&quot;t&quot;: &quot;acme&quot;, &quot;b&quot;: text_, &quot;e&quot;: vec})
+
+# Semantic search + tenant filter in ONE query
+with engine.connect() as conn:
+    rows = conn.execute(text(&quot;&quot;&quot;
+        SELECT id, body FROM docs
+        WHERE tenant_id = :t
+        ORDER BY embedding &lt;=&gt; :q
+        LIMIT 5&quot;&quot;&quot;),
+        {&quot;t&quot;: &quot;acme&quot;, &quot;q&quot;: query_vec}).all()
+
+# Migrations: alembic revision --autogenerate -m &quot;init&quot;</code></pre>
+<nav class="pn"><a href="/learn/GA-08.html">← Embedding Models</a><a href="/learn/GA-09.html">Vector DB Fundamentals →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

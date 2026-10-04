@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure AI Services — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Your GenAI system is built — now run it where the enterprise already lives. Azure&#x27;s AI stack is the most complete commercial offering on earth — and this reel is the architect&#x27;s map of it. Learn Azure AI Services (Azure OpenAI &amp; Foundry, AI Search &amp; documents, Safety &amp; the boundary, Identity, net…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-29.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Azure AI Services — Generative AI for software architects | LKG School"><meta property="og:description" content="Your GenAI system is built — now run it where the enterprise already lives. Azure&#x27;s AI stack is the most complete commercial offering on earth — and this reel is the architect&#x27;s map of it. Learn Azure AI Services (Azure OpenAI &amp; Foundry, AI Search &amp; documents, Safety &amp; the boundary, Identity, net…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-29.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Azure AI Services", "description": "Your GenAI system is built — now run it where the enterprise already lives. Azure's AI stack is the most complete commercial offering on earth — and this reel is the architect's map of it. Learn Azure AI Services (Azure OpenAI & Foundry, AI Search & documents, Safety & the boundary, Identity, net…", "url": "https://lkgschool.in/learn/GA-29.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Azure OpenAI & Foundry", "AI Search & documents", "Safety & the boundary", "Identity, network & Copilots"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Azure AI Services", "item": "https://lkgschool.in/learn/GA-29.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 73</nav>
+<h1>Azure AI Services</h1>
+<p class="lede">Your GenAI system is built — now run it where the enterprise already lives. <strong>Azure&#x27;s AI stack is the most complete commercial offering on earth</strong> — and this reel is the architect&#x27;s map of it.</p>
+<a class="cta" href="/?reel=GA-29">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Azure OpenAI &amp; Foundry</li><li>AI Search &amp; documents</li><li>Safety &amp; the boundary</li><li>Identity, network &amp; Copilots</li></ol>
+<h2>Remember this</h2><ul><li>Azure OpenAI = OpenAI models inside YOUR tenancy: version-pinned deployments, quota per deployment, data out of training — the InfoSec fast-track</li><li>Azure AI Search gives GA-10&#x27;s whole retrieval stack as a service: vectors, hybrid BM25+vector fusion, and an LLM semantic ranker</li><li>Document Intelligence decides RAG quality at ingestion; Content Safety is AG-09&#x27;s guardrail as an API — screen input AND output</li><li>Managed identity + private endpoints answer the three security questions before they&#x27;re asked — and M365 Copilot shares the same stack</li></ul>
+<section class="notes"><h2>The stack in one view</h2>
+<table><tr><th>Layer</th><th>Service</th><th>Replaces (our hand-built)</th></tr><tr><td>Models</td><td>Azure OpenAI / AI Foundry</td><td>public OpenAI API + model management</td></tr><tr><td>Retrieval</td><td>Azure AI Search</td><td>pgvector + retriever (GA-10)</td></tr><tr><td>Ingestion</td><td>Document Intelligence</td><td>PDF parsing, layout, tables</td></tr><tr><td>Safety</td><td>Content Safety</td><td>guardrail classifiers (AG-09)</td></tr><tr><td>Identity</td><td>Managed Identity + RBAC</td><td>API keys in config (AG-23)</td></tr><tr><td>Network</td><td>Private Endpoints</td><td>public API surface</td></tr></table>
+<h2>Azure OpenAI vs public OpenAI API</h2>
+<ul>
+<li><strong>Tenancy</strong>: prompts/completions stay in your boundary; never train OpenAI models.</li>
+<li><strong>Deployments</strong>: named, version-pinned; upgrades are deliberate.</li>
+<li><strong>Quota</strong>: tokens-per-minute per deployment — size it like compute.</li>
+<li><strong>AI Foundry</strong>: portal + SDK control plane — model catalog, playgrounds, eval, tracing.</li>
+</ul>
+<h2>Azure AI Search</h2>
+<ul>
+<li>Vectors (HNSW), hybrid text+vector with score fusion, semantic ranker (LLM re-rank top-N).</li>
+<li>Rule from GA-10 holds: hybrid is the production default; exact terms need BM25.</li>
+</ul>
+<h2>Document Intelligence &amp; Content Safety</h2>
+<ul>
+<li>Extraction quality decides RAG quality. Scan → layout → tables → clean text.</li>
+<li>Screen input AND output (AG-09&#x27;s boundary as an API). Indirect-injection detector for retrieved docs (AG-22).</li>
+</ul>
+<h2>Enterprise mechanics</h2>
+<ul>
+<li>Managed identity: no keys, no rotation; RBAC scoped per deployment.</li>
+<li>Private endpoints: no public traffic.</li>
+<li>M365 Copilot shares the stack — Graph connectors let your app and Copilot share indexes.</li>
+</ul>
+<h2>Decision heuristic</h2>
+<p>Pick Azure when the enterprise already lives there. The integration tax of a separate vendor stack (identity, network, compliance sign-off) usually exceeds any model-price difference.</p></section>
+<h2>Code: The Azure GenAI reference call</h2><pre><code>from azure.identity import DefaultAzureCredential
+from openai import AzureOpenAI
+
+# Identity: managed identity — no keys in config
+# Model: version-pinned deployment
+# Data: inside your tenancy, never training
+client = AzureOpenAI(
+    azure_endpoint=&quot;https://my-resource.openai.azure.com/&quot;,
+    azure_ad_token_provider=lambda: DefaultAzureCredential()
+        .get_token(&quot;https://cognitiveservices.azure.com/.default&quot;).token,
+    api_version=&quot;2024-12-01-preview&quot;,
+)
+
+resp = client.chat.completions.create(
+    model=&quot;my-gpt4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: question}],
+)
+# Retrieval, safety, documents: sibling services on the
+# same identity — one boundary, one compliance story.</code></pre>
+<nav class="pn"><a href="/learn/AG-24.html">← Project: Messaging Assistant</a><a href="/learn/GA-30.html">Architect Toolkit →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

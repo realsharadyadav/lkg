@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ML Basics — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="You won&#x27;t train models — but you&#x27;ll evaluate them, daily. Five concepts make that possible. Learn ML Basics (Supervised vs unsupervised, Train/test split &amp; overfitting, Metrics: accuracy, precision, recall, F1, scikit-learn basics) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-25.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="ML Basics — Python for C# / .NET developers | LKG School"><meta property="og:description" content="You won&#x27;t train models — but you&#x27;ll evaluate them, daily. Five concepts make that possible. Learn ML Basics (Supervised vs unsupervised, Train/test split &amp; overfitting, Metrics: accuracy, precision, recall, F1, scikit-learn basics) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-25.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "ML Basics", "description": "You won't train models — but you'll evaluate them, daily. Five concepts make that possible. Learn ML Basics (Supervised vs unsupervised, Train/test split & overfitting, Metrics: accuracy, precision, recall, F1, scikit-learn basics) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-25.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Supervised vs unsupervised", "Train/test split & overfitting", "Metrics: accuracy, precision, recall, F1", "scikit-learn basics", "Neural network intuition"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "ML Basics", "item": "https://lkgschool.in/learn/PY-25.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 17</nav>
+<h1>ML Basics</h1>
+<p class="lede">You won&#x27;t train models — but you&#x27;ll <strong>evaluate</strong> them, daily. Five concepts make that possible.</p>
+<a class="cta" href="/?reel=PY-25">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Supervised vs unsupervised</li><li>Train/test split &amp; overfitting</li><li>Metrics: accuracy, precision, recall, F1</li><li>scikit-learn basics</li><li>Neural network intuition</li></ol>
+<h2>Remember this</h2><ul><li>Supervised = labeled prediction; unsupervised = structure discovery — you&#x27;ll mostly evaluate, not train</li><li>Overfitting = memorized noise; sacred test set, tune on dev — same law as LLM evals</li><li>Precision = trust, recall = coverage; sklearn&#x27;s fit/predict/score builds cheap baselines before LLMs</li></ul>
+<section class="notes"><h2>Supervised vs unsupervised</h2>
+<ul>
+<li><strong>Supervised</strong>: labeled data → classification / regression.</li>
+<li><strong>Unsupervised</strong>: clustering, embeddings, topics.</li>
+</ul>
+<blockquote>Your role: mostly evaluate and consume models.</blockquote>
+<h2>Train/test split &amp; overfitting</h2>
+<ul>
+<li>Overfitting = memorized noise → fails on new data.</li>
+<li>Train / <strong>dev</strong> (tuning) / <strong>test</strong> (report once, sacred).</li>
+<li>LLM echo: benchmark contamination = same disease.</li>
+</ul>
+<h2>Metrics</h2>
+<table><tr><th>Metric</th><th>Answers</th></tr><tr><td>Accuracy</td><td>overall correct — misleading with rare classes</td></tr><tr><td>Precision</td><td>of flagged, how many right? (trust)</td></tr><tr><td>Recall</td><td>of real ones, how many caught? (coverage)</td></tr><tr><td>F1</td><td>balance of both</td></tr></table>
+<ul>
+<li>Optimize by business cost: false alarm vs miss.</li>
+</ul>
+<h2>scikit-learn</h2>
+<ul>
+<li>Universal API: <code>fit</code> / <code>predict</code> / <code>score</code>.</li>
+<li><strong>Baseline first</strong>: tf-idf + logistic regression ≈ strong text classifier.</li>
+<li><code>Pipeline(vectorizer, model)</code> — no preprocessing leakage.</li>
+</ul>
+<h2>Neural network intuition</h2>
+<ul>
+<li>Layers of weighted sums + nonlinearities.</li>
+<li>Loop: predict → loss → backprop nudges weights downhill → repeat × millions.</li>
+<li>Transformers are this loop at trillion-token scale.</li>
+</ul></section>
+<h2>Code: Eval vocabulary + a real baseline, runnable</h2><pre><code>from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+# --- the honest split ------------------------------------------
+(train, test) = (
+    fetch_20newsgroups(subset=&quot;train&quot;, categories=[&quot;sci.space&quot;, &quot;rec.sport.baseball&quot;]),
+    fetch_20newsgroups(subset=&quot;test&quot;,  categories=[&quot;sci.space&quot;, &quot;rec.sport.baseball&quot;]),
+)
+
+# --- baseline before any LLM ------------------------------------
+pipe = Pipeline([
+    (&quot;tfidf&quot;, TfidfVectorizer()),
+    (&quot;clf&quot;,   LogisticRegression(max_iter=1000)),
+])
+pipe.fit(train.data, train.target)
+pred = pipe.predict(test.data)
+
+# --- the metrics that matter ------------------------------------
+print(f&quot;precision {precision_score(test.target, pred):.3f}&quot;)
+print(f&quot;recall    {recall_score(test.target, pred):.3f}&quot;)
+print(f&quot;f1        {f1_score(test.target, pred):.3f}&quot;)
+
+# 2 categories, ~1,900 docs — trains in seconds.
+# When THIS baseline fails your eval set, an LLM is justified.
+# Until then, you ship this.</code></pre>
+<nav class="pn"><a href="/learn/PY-24.html">← NumPy &amp; Vectors</a><a href="/learn/PY-15.html">pandas →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

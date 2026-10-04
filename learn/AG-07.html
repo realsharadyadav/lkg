@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Security — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="MCP servers hold credentials and take actions — that&#x27;s power an attacker wants. Four threat classes every agent architect must design against: poisoning, over-permission, token leaks, and rogue servers. Learn MCP Security (Tool poisoning, Over-permissioned servers, Token &amp; credential handling, De…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-07.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="MCP Security — Agentic AI for software architects | LKG School"><meta property="og:description" content="MCP servers hold credentials and take actions — that&#x27;s power an attacker wants. Four threat classes every agent architect must design against: poisoning, over-permission, token leaks, and rogue servers. Learn MCP Security (Tool poisoning, Over-permissioned servers, Token &amp; credential handling, De…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-07.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "MCP Security", "description": "MCP servers hold credentials and take actions — that's power an attacker wants. Four threat classes every agent architect must design against: poisoning, over-permission, token leaks, and rogue servers. Learn MCP Security (Tool poisoning, Over-permissioned servers, Token & credential handling, De…", "url": "https://lkgschool.in/learn/AG-07.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Tool poisoning", "Over-permissioned servers", "Token & credential handling", "Defense in depth"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "MCP Security", "item": "https://lkgschool.in/learn/AG-07.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 49</nav>
+<h1>MCP Security</h1>
+<p class="lede">MCP servers hold credentials and take actions — that&#x27;s power an attacker wants. Four threat classes every agent architect must design against: <strong>poisoning, over-permission, token leaks, and rogue servers</strong>.</p>
+<a class="cta" href="/?reel=AG-07">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Tool poisoning</li><li>Over-permissioned servers</li><li>Token &amp; credential handling</li><li>Defense in depth</li></ol>
+<h2>Remember this</h2><ul><li>Tool poisoning hides instructions in descriptions and resources — anything in context is code; surface tool lists to users and confirm side effects</li><li>Least privilege per server AND per tool bounds every blast radius; never let secrets be tool arguments; redact at log boundaries</li><li>Defense in depth: vet → scope → confirm → monitor → respond; no layer is expensive, and each defeats a different failure</li></ul>
+<section class="notes"><h2>Tool poisoning</h2>
+<ul>
+<li>Instructions hidden in tool metadata / resource content / post-approval updates.</li>
+<li>Defenses: surface tools to users, sanitize resource content, confirm side effects, least privilege.</li>
+</ul>
+<h2>Over-permissioned servers</h2>
+<ul>
+<li>Least privilege per server AND per tool; split write tools onto separate credentials.</li>
+<li>Audit and narrow grants — permissions drift up by default.</li>
+</ul>
+<h2>Token handling</h2>
+<ul>
+<li>Never plaintext tokens in configs/dotfiles; env refs / keychain.</li>
+<li>Never secrets as tool arguments — resolve inside the server.</li>
+<li>Redact at log boundaries; TLS; verify OAuth issuers (RFC 9207); short-lived tokens; rotation playbooks.</li>
+</ul>
+<h2>Defense in depth</h2>
+<p>Vet → scope → confirm → monitor → respond. Keep current with official MCP security advisories.</p></section>
+<h2>Code: A side-effect gate: confirmation before consequence</h2><pre><code>SIDE_EFFECTS = {&quot;send_email&quot;, &quot;delete_file&quot;, &quot;update_record&quot;, &quot;make_payment&quot;}
+
+async def guarded_call(server, tool_name, args, user):
+    call = audit.log(user, server, tool_name, args)   # always log
+
+    if tool_name in SIDE_EFFECTS:
+        # Show WHAT, not just which tool:
+        summary = await describe_action(server, tool_name, args)
+        approved = await ui.confirm(
+            f&quot;{user.name}: allow &#x27;{tool_name}&#x27;?\n\n{summary}\n\n&quot;
+            f&quot;Args: {redact_secrets(args)}&quot;)          # scrub before display
+        if not approved:
+            audit.log_denied(call)
+            return ToolError(&quot;denied by user — do NOT retry; &quot;
+                             &quot;ask the user what they&#x27;d like instead&quot;)
+    return await server.call(tool_name, args)
+
+# Notes:
+# - redact_secrets() runs on EVERY display/log path — defense at the sink
+# - denial messages tell the model not to retry (no permission-loops)
+# - the audit record exists whether approved or not</code></pre>
+<nav class="pn"><a href="/learn/AG-06.html">← Using Existing MCP Servers</a><a href="/learn/AG-08.html">MCP Server Development →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

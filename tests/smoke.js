@@ -70,6 +70,8 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await p.mouse.click(195, 400); await p.waitForTimeout(1200);
   ok(!!saved && await p.evaluate(i => SS.feed.activePlayer().sceneIdx === i, saved && saved.idx), 'reload resumes the exact scene (' + (saved && saved.idx) + ')');
   ok(await p.evaluate(() => !!SS.state.getLastReel()), 'last reel remembered across reload');
+  await p.goto(url + '?reel=PY-05'); await p.waitForTimeout(1800);
+  ok(await p.evaluate(() => SS.state.getLastReel() === 'PY-05'), 'deep link /?reel=PY-05 opens that reel');
   ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); server.close();
   process.exit(fails ? 1 : 0);

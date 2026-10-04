@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Built-in Capabilities — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Before building custom tools, know the powers models bring in the box: code execution, live web access, computer use, file systems — each a superpower with a sharp edge. Learn Built-in Capabilities (Code execution, Web search &amp; fetch, Computer &amp; browser use, File system access) in a short animate…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-03.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Built-in Capabilities — Agentic AI for software architects | LKG School"><meta property="og:description" content="Before building custom tools, know the powers models bring in the box: code execution, live web access, computer use, file systems — each a superpower with a sharp edge. Learn Built-in Capabilities (Code execution, Web search &amp; fetch, Computer &amp; browser use, File system access) in a short animate…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-03.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Built-in Capabilities", "description": "Before building custom tools, know the powers models bring in the box: code execution, live web access, computer use, file systems — each a superpower with a sharp edge. Learn Built-in Capabilities (Code execution, Web search & fetch, Computer & browser use, File system access) in a short animate…", "url": "https://lkgschool.in/learn/AG-03.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Code execution", "Web search & fetch", "Computer & browser use", "File system access"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Built-in Capabilities", "item": "https://lkgschool.in/learn/AG-03.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 43</nav>
+<h1>Built-in Capabilities</h1>
+<p class="lede">Before building custom tools, know the powers models bring in the box: <strong>code execution, live web access, computer use, file systems</strong> — each a superpower with a sharp edge.</p>
+<a class="cta" href="/?reel=AG-03">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Code execution</li><li>Web search &amp; fetch</li><li>Computer &amp; browser use</li><li>File system access</li></ol>
+<h2>Remember this</h2><ul><li>Sandboxed code execution gives agents precision — no network, allow-listed reads, resource limits, ephemeral disk</li><li>Search + fetch close the freshness gap; synthesize with as-of dates and source triage</li><li>Computer/browser use is the no-API last resort — slow, brittle, and guarded by dedicated accounts + human confirmation; file tools live behind path-scoping</li></ul>
+<section class="notes"><h2>Code execution sandbox</h2>
+<ul>
+<li>Model writes code → sandbox runs → stdout/artifacts as observations.</li>
+<li>Sandbox: no network, allow-listed reads, CPU/mem/time limits, ephemeral disk.</li>
+<li>Working dir per session; truncate outputs; artifacts stored + linkable.</li>
+</ul>
+<h2>Web search &amp; fetch</h2>
+<ul>
+<li>search: landscape; fetch: clean-text page → observation.</li>
+<li>Discipline: source triage, as-of dates, truncation (summary-first), ToS.</li>
+</ul>
+<h2>Computer / browser use</h2>
+<ul>
+<li>For systems with NO API. Screenshots→actions (computer) or DOM (browser).</li>
+<li>Slow, brittle; dedicated accounts, least privilege, human-confirm irreversibles.</li>
+</ul>
+<h2>File system tools</h2>
+<ul>
+<li>Workspace pattern: resolve()+prefix check, ext allow-list, read caps.</li>
+<li>Composes with sandbox → full agent workshop (write/run/read/iterate).</li>
+</ul></section>
+<h2>Code: Capability stack: what to enable, in order of caution</h2><pre><code># Enable in this order — each step adds power AND guardrail work:
+
+# 1 · SANDBOXED CODE EXECUTION   (start here)
+#    e2b / daytona / local container
+#    no-net, read-only mounts, 30s timeout, 512MB RAM
+
+# 2 · FILE TOOLS on a workspace  (add when artifacts matter)
+#    path-scope (slide 4), ext allow-list, size caps
+
+# 3 · WEB SEARCH + FETCH         (add for freshness)
+#    search API w/ quota · fetch w/ truncation + ToS care
+
+# 4 · BROWSER/COMPUTER USE       (last resort, most guarded)
+#    dedicated account · human-confirm irreversibles · step budgets
+
+# Anti-pattern: enabling 2-4 BEFORE 1&#x27;s sandbox exists.
+# Generated code + unrestricted files = exfiltration path.</code></pre>
+<nav class="pn"><a href="/learn/AG-02.html">← Tool Design</a><a href="/learn/GA-18.html">Text-to-SQL →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

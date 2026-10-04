@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTTP Clients — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Every LLM call you make travels over HTTP. Auth headers, retries on 429s, pagination, streaming — the client layer decides whether your app is robust or fragile. Learn HTTP Clients (requests vs httpx, Auth &amp; headers, Retries &amp; backoff, Pagination &amp; streaming) in a short animated reel with notes, …">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-12.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="HTTP Clients — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Every LLM call you make travels over HTTP. Auth headers, retries on 429s, pagination, streaming — the client layer decides whether your app is robust or fragile. Learn HTTP Clients (requests vs httpx, Auth &amp; headers, Retries &amp; backoff, Pagination &amp; streaming) in a short animated reel with notes, …">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-12.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "HTTP Clients", "description": "Every LLM call you make travels over HTTP. Auth headers, retries on 429s, pagination, streaming — the client layer decides whether your app is robust or fragile. Learn HTTP Clients (requests vs httpx, Auth & headers, Retries & backoff, Pagination & streaming) in a short animated reel with notes, …", "url": "https://lkgschool.in/learn/PY-12.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["requests vs httpx", "Auth & headers", "Retries & backoff", "Pagination & streaming"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "HTTP Clients", "item": "https://lkgschool.in/learn/PY-12.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 36</nav>
+<h1>HTTP Clients</h1>
+<p class="lede">Every LLM call you make travels over HTTP. Auth headers, retries on 429s, pagination, streaming — the client layer decides whether your app is <strong>robust or fragile</strong>.</p>
+<a class="cta" href="/?reel=PY-12">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>requests vs httpx</li><li>Auth &amp; headers</li><li>Retries &amp; backoff</li><li>Pagination &amp; streaming</li></ol>
+<h2>Remember this</h2><ul><li>httpx for everything new: one API for sync and async, HTTP/2, enforced timeouts — requests blocks the event loop</li><li>Auth dialects: x-api-key, Bearer tokens, full OAuth for user-delegation; secrets from env, never code</li><li>Retry only transient statuses with exponential backoff + jitter; paginate via opaque cursors; stream LLM tokens with client.stream for instant UX</li></ul>
+<section class="notes"><h2>requests vs httpx</h2>
+<ul>
+<li>requests: sync-only → blocks event loops. Legacy scripts only.</li>
+<li>httpx: same API, sync + async, HTTP/2, strict default timeouts.</li>
+<li>Shared client instance: connection pooling; never client-per-request.</li>
+</ul>
+<h2>Auth</h2>
+<ul>
+<li>Dialects: <code>x-api-key</code> header · <code>Authorization: Bearer</code> · OAuth2 (user-delegation flows).</li>
+<li>Service-to-service: env-var key/bearer. Never hardcode; secrets manager in prod.</li>
+<li><code>raise_for_status()</code> everywhere — silent failures are worse than crashes.</li>
+</ul>
+<h2>Retries</h2>
+<ul>
+<li>Transient only: 429, 500/502/503. 4xx fails fast.</li>
+<li>Exponential backoff + jitter; respect Retry-After; cap attempts; tenacity.</li>
+</ul>
+<h2>Pagination &amp; streaming</h2>
+<ul>
+<li>Cursor-based (opaque next_cursor) &gt; offset for changing data.</li>
+<li>SSE via <code>client.stream</code> + <code>aiter_lines()</code>; parse <code>data: </code> prefix; blank lines are heartbeats.</li>
+<li>Streaming = sub-second time-to-first-token UX.</li>
+</ul></section>
+<h2>Code: The resilient LLM client, assembled</h2><pre><code>import os, httpx, tenacity
+
+client = httpx.AsyncClient(
+    base_url=&quot;https://api.llm-provider.com/v1&quot;,
+    headers={&quot;Authorization&quot;: f&quot;Bearer {os.environ[&#x27;LLM_KEY&#x27;]}&quot;},
+    timeout=httpx.Timeout(60.0, connect=5.0),
+    limits=httpx.Limits(max_connections=100),  # pool cap
+)
+
+def transient(e: BaseException) -&gt; bool:
+    return isinstance(e, httpx.HTTPStatusError) \
+        and e.response.status_code in (429, 500, 502, 503)
+
+@tenacity.retry(retry=tenacity.retry_if_exception(transient),
+                wait=tenacity.wait_exponential(1, max=30)
+                     + tenacity.wait_random(0, 1),
+                stop=tenacity.stop_after_attempt(5), reraise=True)
+async def complete(prompt: str) -&gt; str:
+    r = await client.post(&quot;/chat&quot;, json={&quot;prompt&quot;: prompt})
+    r.raise_for_status()
+    return r.json()[&quot;text&quot;]
+
+async def complete_stream(prompt: str):
+    async with client.stream(&quot;POST&quot;, &quot;/chat&quot;,
+                             json={&quot;prompt&quot;: prompt}) as r:
+        async for line in r.aiter_lines():
+            if line.startswith(&quot;data: &quot;) and line != &quot;data: [DONE]&quot;:
+                yield json.loads(line[6:])[&quot;token&quot;]
+
+# One client, two personalities: buffered complete + live stream</code></pre>
+<nav class="pn"><a href="/learn/PY-11.html">← Threads vs Processes</a><a href="/learn/PY-13.html">FastAPI →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

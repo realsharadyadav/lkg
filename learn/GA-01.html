@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How LLMs Work — Generative AI for software architects | LKG School</title>
+<meta name="description" content="You don&#x27;t need a PhD. You need six intuitions. That&#x27;s genuinely all it takes to use LLMs well. Learn How LLMs Work (What is GenAI, Transformer &amp; attention intuition, Tokens &amp; tokenization, Context window) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-01.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="How LLMs Work — Generative AI for software architects | LKG School"><meta property="og:description" content="You don&#x27;t need a PhD. You need six intuitions. That&#x27;s genuinely all it takes to use LLMs well. Learn How LLMs Work (What is GenAI, Transformer &amp; attention intuition, Tokens &amp; tokenization, Context window) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-01.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "How LLMs Work", "description": "You don't need a PhD. You need six intuitions. That's genuinely all it takes to use LLMs well. Learn How LLMs Work (What is GenAI, Transformer & attention intuition, Tokens & tokenization, Context window) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-01.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["What is GenAI", "Transformer & attention intuition", "Tokens & tokenization", "Context window", "Sampling parameters", "Training stages"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "How LLMs Work", "item": "https://lkgschool.in/learn/GA-01.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › LLM Basics + API › Reel 10</nav>
+<h1>How LLMs Work</h1>
+<p class="lede">You don&#x27;t need a PhD. You need <strong>six intuitions</strong>. That&#x27;s genuinely all it takes to use LLMs well.</p>
+<a class="cta" href="/?reel=GA-01">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>What is GenAI</li><li>Transformer &amp; attention intuition</li><li>Tokens &amp; tokenization</li><li>Context window</li><li>Sampling parameters</li><li>Training stages</li></ol>
+<h2>Remember this</h2><ul><li>Generative = predictive AI with a huge token vocabulary — steer a prediction engine</li><li>Tokens are the meter; context window is the desk — plan its budget, mind lost-in-the-middle</li><li>temperature 0 = deterministic; training = pretrain → fine-tune → align</li></ul>
+<section class="notes"><h2>Generative vs predictive</h2>
+<ul>
+<li>Predictive: input → label/score (fraud? 94%).</li>
+<li>Generative: input → new text, one token at a time.</li>
+</ul>
+<blockquote>Architect&#x27;s take: it&#x27;s a prediction engine with a ~100k-token output alphabet — steering (schemas, sampling) works because of that.</blockquote>
+<h2>Transformer &amp; attention</h2>
+<ul>
+<li>2017: <em>Attention Is All You Need</em>.</li>
+<li>Self-attention: every token weighs every other token (&#x27;it&#x27; ← &#x27;animal&#x27;).</li>
+<li>Nothing is programmed; grammar/facts emerge from next-token prediction at scale.</li>
+</ul>
+<h2>Tokens</h2>
+<ul>
+<li>~4 chars each (~¾ word). Prompt + output are billed per token.</li>
+<li>Generation = probability list → sample → append → repeat.</li>
+</ul>
+<h2>Context window</h2>
+<ul>
+<li>Everything (system + history + docs + question) shares one token budget.</li>
+<li><strong>Lost in the middle</strong>: attention fades mid-context → key instructions first AND last.</li>
+</ul>
+<h2>Sampling</h2>
+<table><tr><th>Param</th><th>Effect</th></tr><tr><td>temperature=0</td><td>deterministic (extraction, code)</td></tr><tr><td>~0.7–1</td><td>varied phrasing (drafting)</td></tr><tr><td>top_p</td><td>trims low-probability tail</td></tr><tr><td>max_tokens</td><td>hard cost/length ceiling</td></tr></table>
+<h2>Training stages</h2>
+<p>1. <strong>Pretraining</strong> — web-scale next-token prediction (the expensive one). 2. <strong>Fine-tuning</strong> — curated datasets for domains/formats/tools. 3. <strong>Alignment (RLHF)</strong> — preference ranking → helpful/safe behavior.</p></section>
+<h2>Code: Your first LLM call — with eyes open</h2><pre><code>from openai import OpenAI
+
+client = OpenAI()
+
+# The three dials from Chapter 5 — set them ON PURPOSE
+resp = client.chat.completions.create(
+    model=&quot;gpt-4o-mini&quot;,
+    messages=[
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: &quot;You extract keywords. Reply with JSON only.&quot;},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Extract keywords from: &#x27;RAG pipelines need chunking&#x27;&quot;},
+    ],
+    temperature=0,        # deterministic: same input → same JSON
+    max_tokens=60,        # cost ceiling
+    top_p=0.9,            # trim the nonsense tail
+)
+
+print(resp.usage)         # prompt_tokens / completion_tokens — THE METER
+print(resp.choices[0].message.content)
+
+# Architect&#x27;s take: log usage on every call in production.
+# Cost = (prompt_tokens × input price) + (completion_tokens × output price),
+# both quoted per 1M tokens — and output is usually 3-5x pricier.</code></pre>
+<nav class="pn"><a href="/learn/PY-09.html">← Pydantic</a><a href="/learn/GA-02.html">Model Landscape →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

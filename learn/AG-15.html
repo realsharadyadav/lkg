@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Framework Landscape — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="2026&#x27;s framework map was redrawn in eight months — AutoGen and Semantic Kernel merged into Microsoft Agent Framework, LangGraph went 1.0, first-party SDKs matured. The tour, honestly given. Learn Framework Landscape (The consolidation, The main contenders, Vendor SDKs &amp; the no-framework path, Sta…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-15.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Framework Landscape — Agentic AI for software architects | LKG School"><meta property="og:description" content="2026&#x27;s framework map was redrawn in eight months — AutoGen and Semantic Kernel merged into Microsoft Agent Framework, LangGraph went 1.0, first-party SDKs matured. The tour, honestly given. Learn Framework Landscape (The consolidation, The main contenders, Vendor SDKs &amp; the no-framework path, Sta…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-15.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Framework Landscape", "description": "2026's framework map was redrawn in eight months — AutoGen and Semantic Kernel merged into Microsoft Agent Framework, LangGraph went 1.0, first-party SDKs matured. The tour, honestly given. Learn Framework Landscape (The consolidation, The main contenders, Vendor SDKs & the no-framework path, Sta…", "url": "https://lkgschool.in/learn/AG-15.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The consolidation", "The main contenders", "Vendor SDKs & the no-framework path", "Status table"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Framework Landscape", "item": "https://lkgschool.in/learn/AG-15.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 57</nav>
+<h1>Framework Landscape</h1>
+<p class="lede">2026&#x27;s framework map was redrawn in eight months — AutoGen and Semantic Kernel merged into <strong>Microsoft Agent Framework</strong>, LangGraph went 1.0, first-party SDKs matured. The tour, honestly given.</p>
+<a class="cta" href="/?reel=AG-15">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The consolidation</li><li>The main contenders</li><li>Vendor SDKs &amp; the no-framework path</li><li>Status table</li></ol>
+<h2>Remember this</h2><ul><li>2026 consolidation: AutoGen + Semantic Kernel → Microsoft Agent Framework 1.0 (Apr 2026); LangGraph 1.0; first-party SDKs matured; MCP/A2A open protocols changed the switching math</li><li>Three philosophies: LangGraph = explicit graphs you control · MAF = unified enterprise SDK (.NET+Python, MCP+A2A) · CrewAI = fastest role-based crews</li><li>Verify before committing: repo pulse, protocol support, ecosystem — and start no-framework for narrow tasks; Swarm is archived, AutoGen/SK are maintenance-mode</li></ul>
+<section class="notes"><h2>Consolidation</h2>
+<ul>
+<li>Oct 2025: AutoGen + Semantic Kernel → maintenance mode; LangChain/LangGraph 1.0.</li>
+<li>Apr 3, 2026: <strong>Microsoft Agent Framework 1.0</strong> (Python + .NET), native MCP + A2A.</li>
+<li>Mar 2026: OpenAI Agents SDK GA (Swarm archived). Google ADK 2.0 multi-language.</li>
+<li>MCP → Linux Foundation; A2A 150+ orgs. Shorthand: <strong>MCP = tools, A2A = agents</strong>.</li>
+</ul>
+<h2>Contenders</h2>
+<ul>
+<li><strong>LangGraph</strong>: explicit state graphs, checkpoints, interrupts, LangSmith.</li>
+<li><strong>MAF</strong>: unified enterprise; .NET+Python cross-runtime; telemetry, sessions.</li>
+<li><strong>CrewAI</strong>: roles/crews, fastest start, largest standalone community.</li>
+<li>Also: Pydantic AI (typed), Mastra (TS), Claude Agent SDK (safety-first).</li>
+</ul>
+<h2>Status board</h2>
+<ul>
+<li>Build on: LangGraph · MAF · CrewAI · Agents SDK · ADK · Pydantic AI · Mastra.</li>
+<li>Migrate from: AutoGen (→MAF/AG2) · Semantic Kernel (→MAF).</li>
+<li>Never start: Swarm.</li>
+<li>Verify: repo pulse, protocol support, ecosystem — record evaluations with dates.</li>
+</ul></section>
+<h2>Code: The same tiny agent, three ways (shape comparison)</h2><pre><code># --- 1 · Plain loop (no framework) -------------------------------
+while not done and iters &lt; 10:
+    msg = llm(messages, tools=TOOLS)
+    messages += run_tools(msg)          # ~30 lines total
+
+# --- 2 · LangGraph (explicit graph) -------------------------------
+from langgraph.graph import StateGraph
+ g = StateGraph(AgentState)
+ g.add_node(&quot;think&quot;, think)
+ g.add_node(&quot;act&quot;, act)
+ g.add_conditional_edges(&quot;think&quot;, route)   # loops visible
+ g.add_edge(&quot;act&quot;, &quot;think&quot;)
+ graph = g.compile(checkpointer=memory)    # durable + resumable
+
+# --- 3 · Microsoft Agent Framework (conversational) ---------------
+from agent_framework.azure import AzureOpenAIChatClient
+ agent = AzureOpenAIChatClient().create_agent(
+     instructions=&quot;…&quot;, tools=[…])       # orchestration built-in
+
+# The loop is identical inside all three —
+# frameworks differ in who owns the control flow and what comes
+# built in (checkpoints, telemetry, handoffs), not in kind.</code></pre>
+<nav class="pn"><a href="/learn/AG-14.html">← Architectures</a><a href="/learn/AG-16.html">Framework Selection →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

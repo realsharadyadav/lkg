@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Core Techniques — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Prompts are code — versioned, tested, engineered. Six techniques that separate &#x27;it sometimes works&#x27; from &#x27;it ships.&#x27; Learn Core Techniques (Clear instructions &amp; role, Few-shot examples, Chain-of-thought, XML / delimiters) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-05.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Core Techniques — Generative AI for software architects | LKG School"><meta property="og:description" content="Prompts are code — versioned, tested, engineered. Six techniques that separate &#x27;it sometimes works&#x27; from &#x27;it ships.&#x27; Learn Core Techniques (Clear instructions &amp; role, Few-shot examples, Chain-of-thought, XML / delimiters) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-05.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Core Techniques", "description": "Prompts are code — versioned, tested, engineered. Six techniques that separate 'it sometimes works' from 'it ships.' Learn Core Techniques (Clear instructions & role, Few-shot examples, Chain-of-thought, XML / delimiters) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-05.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Clear instructions & role", "Few-shot examples", "Chain-of-thought", "XML / delimiters", "Output format control", "Negative instructions"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Core Techniques", "item": "https://lkgschool.in/learn/GA-05.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › LLM Basics + API › Reel 14</nav>
+<h1>Core Techniques</h1>
+<p class="lede">Prompts are <strong>code</strong> — versioned, tested, engineered. Six techniques that separate &#x27;it sometimes works&#x27; from &#x27;it ships.&#x27;</p>
+<a class="cta" href="/?reel=GA-05">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Clear instructions &amp; role</li><li>Few-shot examples</li><li>Chain-of-thought</li><li>XML / delimiters</li><li>Output format control</li><li>Negative instructions</li></ol>
+<h2>Remember this</h2><ul><li>Role + task (verbs) + format + constraints — specificity is the #1 quality lever</li><li>Few-shot examples beat descriptions; chain-of-thought for multi-step problems</li><li>Tag data with XML; spec outputs field-by-field; phrase constraints as positive behavior</li></ul>
+<section class="notes"><h2>Clear instructions &amp; role</h2>
+<ul>
+<li>Structure: <strong>role</strong> → <strong>task (verbs)</strong> → <strong>format</strong> → <strong>constraints</strong>.</li>
+<li>Vague prompts leave degrees of freedom that become surprises.</li>
+</ul>
+<h2>Few-shot</h2>
+<ul>
+<li>2–5 input→output examples teach tone, format, boundaries.</li>
+<li>Order simple → tricky; keep examples perfectly consistent.</li>
+<li>Almost-right output? Add the almost-wrong case done correctly.</li>
+</ul>
+<h2>Chain-of-thought</h2>
+<ul>
+<li>&#x27;Think step by step&#x27; / scaffolded steps for multi-step problems.</li>
+<li>Costs tokens + latency; reasoning can still be wrong → verify finals.</li>
+</ul>
+<h2>XML / delimiters</h2>
+<ul>
+<li>Wrap external content: <code>&lt;document&gt;</code>, <code>&lt;transcript&gt;</code>, <code>&lt;user_input untrusted=&quot;true&quot;&gt;</code>.</li>
+<li>Semantic tag names steer attention; tagged data blurs less into instructions.</li>
+</ul>
+<h2>Output format control</h2>
+<ul>
+<li>Field-by-field specs · length in real units (words/items, not &#x27;be concise&#x27;).</li>
+<li>Feeding a machine? Use structured output schema (GA-04) to enforce.</li>
+</ul>
+<h2>Negative instructions</h2>
+<ul>
+<li>&#x27;Don&#x27;t X&#x27; mentions X. Pair prohibitions with positive, concrete replacements — placed last.</li>
+</ul></section>
+<h2>Code: A production-grade prompt template</h2><pre><code>PROMPT = &quot;&quot;&quot;You are a senior support triage engineer.
+
+Classify each ticket by urgency.
+
+&lt;rules&gt;
+- P1: money lost or service down
+- P2: degraded but usable
+- P3: feature requests and questions
+&lt;/rules&gt;
+
+&lt;examples&gt;
+Q: app crashes on login
+A: {&quot;urgency&quot;: &quot;P1&quot;, &quot;reason&quot;: &quot;service unusable&quot;}
+
+Q: report export is slow
+A: {&quot;urgency&quot;: &quot;P2&quot;, &quot;reason&quot;: &quot;degraded, workaround exists&quot;}
+&lt;/examples&gt;
+
+Answer with JSON only: {&quot;urgency&quot;: &quot;...&quot;, &quot;reason&quot;: &quot;one sentence&quot;}.
+Reason in at most 2 short steps, then the JSON.
+
+&lt;ticket untrusted=&quot;true&quot;&gt;
+{ticket}
+&lt;/ticket&gt;
+&quot;&quot;&quot;
+
+# Usage — THIS is a prompt template (GA-06 versions it):
+ticket = &quot;charged twice for one order&quot;
+messages = [{&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: PROMPT.replace(&quot;{ticket}&quot;, ticket)}]</code></pre>
+<nav class="pn"><a href="/learn/GA-04.html">← Structured Output &amp; Tools</a><a href="/learn/GA-06.html">Prompt Lifecycle →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

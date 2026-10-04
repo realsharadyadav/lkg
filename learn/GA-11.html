@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operations — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Demo day is easy. Day 400 is the job — upserts, sizing, tenants, and the restore you pray you&#x27;ll never need. Learn Operations (Indexing &amp; updates, Sizing &amp; cost, Multi-tenancy &amp; security, Backup &amp; DR) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-11.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Operations — Generative AI for software architects | LKG School"><meta property="og:description" content="Demo day is easy. Day 400 is the job — upserts, sizing, tenants, and the restore you pray you&#x27;ll never need. Learn Operations (Indexing &amp; updates, Sizing &amp; cost, Multi-tenancy &amp; security, Backup &amp; DR) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-11.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Operations", "description": "Demo day is easy. Day 400 is the job — upserts, sizing, tenants, and the restore you pray you'll never need. Learn Operations (Indexing & updates, Sizing & cost, Multi-tenancy & security, Backup & DR) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-11.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Indexing & updates", "Sizing & cost", "Multi-tenancy & security", "Backup & DR"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Operations", "item": "https://lkgschool.in/learn/GA-11.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 27</nav>
+<h1>Operations</h1>
+<p class="lede">Demo day is easy. <strong>Day 400</strong> is the job — upserts, sizing, tenants, and the restore you pray you&#x27;ll never need.</p>
+<a class="cta" href="/?reel=GA-11">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Indexing &amp; updates</li><li>Sizing &amp; cost</li><li>Multi-tenancy &amp; security</li><li>Backup &amp; DR</li></ol>
+<h2>Remember this</h2><ul><li>Deterministic IDs + upserts make re-ingestion idempotent; CDC beats rebuilds; deletes need budget</li><li>Size: N × dims × bytes × index overhead × 2 headroom; shard before the node fills; tenancy enforced in one code path</li><li>Source docs are the crown jewels; index is derived — snapshot for RTO, rehearse the restore</li></ul>
+<section class="notes"><h2>Indexing &amp; updates</h2>
+<ul>
+<li><strong>Upsert</strong> by deterministic ID (<code>sha1(doc_id:chunk_idx)</code>) → idempotent re-ingestion.</li>
+<li>Deletes: ANN graph repair is costly → tombstone + scheduled compact.</li>
+<li><strong>CDC</strong> (source events) over periodic rebuilds; full rebuild = fallback.</li>
+</ul>
+<h2>Sizing &amp; cost</h2>
+<ul>
+<li>Memory = N × dims × bytes × (1 + HNSW ~0.3-0.5) × 2 (headroom).</li>
+<li>Quantization (float16 / PQ) when memory bites — gate on golden-set recall.</li>
+<li>Plan sharding before the node fills; resharding full stores is surgery.</li>
+</ul>
+<h2>Multi-tenancy &amp; security</h2>
+<ul>
+<li>Filter-based: cheap, one forgotten WHERE from a breach → enforce centrally + test.</li>
+<li>Per-tenant collections: structural isolation, moderate overhead — most SaaS tiers.</li>
+<li>Per-tenant DB/cluster: regulated tiers, cost follows assurance.</li>
+</ul>
+<h2>Backup &amp; DR</h2>
+<ul>
+<li><strong>Source docs = crown jewels</strong> (PIT recovery). Embeddings/index = derived → snapshots for RTO.</li>
+<li>Rehearse restores quarterly, time them against the promised RTO.</li>
+<li>Untested backup = rumor.</li>
+</ul></section>
+<h2>Code: The operations layer — writes, tenancy, restore drill</h2><pre><code>from hashlib import sha1
+
+# --- 1. Deterministic upserts --------------------------------------
+def chunk_id(doc_id: str, idx: int) -&gt; str:
+    return sha1(f&quot;{doc_id}:{idx}&quot;.encode()).hexdigest()[:16]
+
+for doc in changed_docs():              # from CDC events, not a rebuild
+    for i, chunk in enumerate(chunk(doc.text)):
+        store.upsert(id=chunk_id(doc.id, i),
+                     vec=embed(chunk),
+                     payload={&quot;doc_id&quot;: doc.id, &quot;v&quot;: doc.version,
+                              &quot;tenant&quot;: doc.tenant, &quot;text&quot;: chunk})
+
+# --- 2. Tenant enforcement (one path, tested) ----------------------
+def search(q, tenant: str, k=5):
+    assert tenant, &quot;tenant is mandatory&quot;
+    return store.search(embed(q), k=k, where={&quot;tenant&quot;: tenant})
+
+# test:  search(q, tenant=None) must raise — CI enforces it
+
+# --- 3. Restore drill (quarterly, timed) ---------------------------
+def restore_drill():
+    t0 = time.time()
+    for doc in source_store.list_all():          # the crown jewels
+        reindex(doc)                              # embed + upsert
+    elapsed = time.time() - t0
+    assert elapsed &lt; RTO_SECONDS, f&quot;rebuild {elapsed:.0f}s &gt; RTO&quot;
+    # Snapshot alternative: store.snapshot() → restore in minutes
+
+# --- 4. Delete = tombstone + compact -------------------------------
+# store.delete(ids) marks; a scheduled job runs store.compact()
+# off-peak — latency stays smooth, graph gets repaired.</code></pre>
+<nav class="pn"><a href="/learn/GA-10.html">← Vector DB Options</a><a href="/learn/GA-12.html">Vector vs Parquet/SQL Decision →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

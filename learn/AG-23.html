@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: Document Processing Agent — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Capstone three: PDFs in, structured fields out, low-confidence cases to humans, results into your systems — extraction at scale with honesty built in. Learn Project: Document Processing Agent (Field extraction, Validation &amp; exception queue, Integration writes, The whole loop) in a short animated …">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-23.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Project: Document Processing Agent — Agentic AI for software architects | LKG School"><meta property="og:description" content="Capstone three: PDFs in, structured fields out, low-confidence cases to humans, results into your systems — extraction at scale with honesty built in. Learn Project: Document Processing Agent (Field extraction, Validation &amp; exception queue, Integration writes, The whole loop) in a short animated …">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-23.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Project: Document Processing Agent", "description": "Capstone three: PDFs in, structured fields out, low-confidence cases to humans, results into your systems — extraction at scale with honesty built in. Learn Project: Document Processing Agent (Field extraction, Validation & exception queue, Integration writes, The whole loop) in a short animated …", "url": "https://lkgschool.in/learn/AG-23.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Field extraction", "Validation & exception queue", "Integration writes", "The whole loop"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Project: Document Processing Agent", "item": "https://lkgschool.in/learn/AG-23.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Hands-on Projects › Reel 71</nav>
+<h1>Project: Document Processing Agent</h1>
+<p class="lede">Capstone three: PDFs in, structured fields out, low-confidence cases to humans, results into your systems — <strong>extraction at scale with honesty built in</strong>.</p>
+<a class="cta" href="/?reel=AG-23">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Field extraction</li><li>Validation &amp; exception queue</li><li>Integration writes</li><li>The whole loop</li></ol>
+<h2>Remember this</h2><ul><li>Extraction is contract-driven: typed schemas with code validators, two-pass extraction with text-support verification, confidence computed from independent signals</li><li>The exception queue routes by computed confidence and serves side-by-side review packages; corrections feed the golden set and pipeline improvements</li><li>Integration writes are idempotent upserts with per-record results, full provenance, and reversibility; the whole loop is a content-agnostic template for every extraction problem</li></ul>
+<section class="notes"><h2>Extraction</h2>
+<ul>
+<li>Parse layer (pdfplumber/OCR) upstream · typed schema contract (Pydantic + code validators).</li>
+<li>Two-pass: extract then verify text-support · confidence computed (validation + verification + parse quality).</li>
+</ul>
+<h2>Exception queue</h2>
+<ul>
+<li>Computed-confidence routing · side-by-side packages with per-field issues · corrections → golden cases + pipeline fixes.</li>
+<li>Metrics: exception rate, issue classes, correction rate · sampled audit of auto-accepts.</li>
+</ul>
+<h2>Integration</h2>
+<ul>
+<li>Idempotent upserts (natural keys) · per-record results · full provenance audit · reversibility.</li>
+<li>Queue-driven throughput · daily reconciliation (in = out + queued).</li>
+</ul>
+<h2>Template</h2>
+<ul>
+<li>Content-agnostic: parse / contract / confidence layers · instantiate per document type (claims, onboarding, filings).</li>
+<li>Build order: parse → one schema E2E → confidence tuning → review UI → writes + reconciliation → evals.</li>
+</ul></section>
+<h2>Code: The extraction loop, one function</h2><pre><code>async def process_document(pdf_path: str) -&gt; Route:
+    pages = parse_layer.extract(pdf_path)          # text + quality flags
+    record, issues = await extract_and_verify(pages)
+    conf = confidence(record_valid=record is not None,
+                      verify_issues=issues,
+                      parse_quality=pages.quality)
+
+    if conf &gt;= AUTO_ACCEPT and record:
+        result = await systems.upsert(record, key=record.natural_key())
+        audit.log(hash(pdf_path), record, conf, result)
+        return Route(&quot;written&quot;, result)
+
+    package = review_package(pdf=pdf_path, record=record,
+                             issues=issues, confidence=conf)
+    await exception_queue.push(package)            # human decides
+    audit.log(hash(pdf_path), record, conf, &quot;queued&quot;)
+    return Route(&quot;review&quot;, package.id)
+
+# Invariants: idempotent (natural keys) · complete (reconciled counts) ·
+# provenance (audit from byte to row) · learning (corrections → gold).</code></pre>
+<nav class="pn"><a href="/learn/AG-22.html">← Project: Data Analyst Agent</a><a href="/learn/AG-24.html">Project: Messaging Assistant →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

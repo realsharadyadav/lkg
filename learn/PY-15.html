@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pandas — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="pandas is LINQ + DataTables, rebuilt for the real world. If you know SQL, you already know 70%. Learn pandas (DataFrame &amp; Series, Select, filter, sort, groupby &amp; aggregate, merge / join) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-15.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="pandas — Python for C# / .NET developers | LKG School"><meta property="og:description" content="pandas is LINQ + DataTables, rebuilt for the real world. If you know SQL, you already know 70%. Learn pandas (DataFrame &amp; Series, Select, filter, sort, groupby &amp; aggregate, merge / join) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-15.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "pandas", "description": "pandas is LINQ + DataTables, rebuilt for the real world. If you know SQL, you already know 70%. Learn pandas (DataFrame & Series, Select, filter, sort, groupby & aggregate, merge / join) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-15.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["DataFrame & Series", "Select, filter, sort", "groupby & aggregate", "merge / join", "Missing data & dtypes", "Memory & performance"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "pandas", "item": "https://lkgschool.in/learn/PY-15.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 18</nav>
+<h1>pandas</h1>
+<p class="lede">pandas is <strong>LINQ + DataTables</strong>, rebuilt for the real world. If you know SQL, you already know 70%.</p>
+<a class="cta" href="/?reel=PY-15">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>DataFrame &amp; Series</li><li>Select, filter, sort</li><li>groupby &amp; aggregate</li><li>merge / join</li><li>Missing data &amp; dtypes</li><li>Memory &amp; performance</li></ol>
+<h2>Remember this</h2><ul><li>DataFrame = table, Series = column; boolean masks = WHERE; loc = SELECT…WHERE</li><li>groupby.agg = SQL GROUP BY; merge needs explicit on/how/validate — trust nothing</li><li>isna first, fillna as a documented claim, category dtype + vectorization for scale</li></ul>
+<section class="notes"><h2>DataFrame &amp; Series</h2>
+<ul>
+<li>DataFrame = labeled table; Series = one column. Built on NumPy → vectorized.</li>
+<li>First moves: <code>read_*</code> → <code>.shape</code> / <code>.dtypes</code> / <code>.isna().sum()</code>.</li>
+</ul>
+<h2>Select / filter / sort</h2>
+<table><tr><th>SQL</th><th>pandas</th></tr><tr><td>WHERE</td><td><code>df[df[&quot;x&quot;] &gt; 1]</code> (boolean mask; <code>&amp;</code> `</td><td>` need parens)</td></tr><tr><td>SELECT cols</td><td><code>df.loc[mask, [&quot;a&quot;, &quot;b&quot;]]</code></td></tr><tr><td>ORDER BY … LIMIT</td><td><code>.sort_values(&quot;x&quot;, ascending=False).head(10)</code></td></tr></table>
+<h2>groupby &amp; aggregate</h2>
+<ul>
+<li><code>df.groupby(&quot;k&quot;)[&quot;v&quot;].mean()</code> · <code>.agg(total=(&quot;v&quot;,&quot;sum&quot;), n=(&quot;id&quot;,&quot;count&quot;))</code>.</li>
+</ul>
+<h2>merge / join</h2>
+<ul>
+<li><code>df.merge(other, on=&quot;key&quot;, how=&quot;left&quot;, validate=&quot;m:1&quot;, indicator=True)</code>.</li>
+<li>Defaults differ from SQL: inner join + shared-column keys → always be explicit.</li>
+<li>Duplicated keys silently multiply rows → validate + row-count checks.</li>
+</ul>
+<h2>Missing data &amp; dtypes</h2>
+<ul>
+<li><code>isna</code> → know the holes · <code>fillna</code> = a documented claim · <code>dropna</code>.</li>
+<li><code>pd.to_datetime</code> / <code>pd.to_numeric(errors=&quot;coerce&quot;)</code> early; codify dtypes in a schema.</li>
+</ul>
+<h2>Memory &amp; performance</h2>
+<ul>
+<li><code>astype(&quot;category&quot;)</code> for low-cardinality strings (~10x).</li>
+<li>Avoid <code>.apply(f)</code> — vectorize with masks / np.where / merges.</li>
+<li>Bigger than RAM: <code>read_csv(chunksize=…)</code> — or Parquet + DuckDB (next reels).</li>
+</ul></section>
+<h2>Code: pandas for the SQL-brained — one realistic pipeline</h2><pre><code>import pandas as pd
+
+# --- load + orient ------------------------------------------------
+df = pd.read_csv(&quot;tickets.csv&quot;)
+print(df.shape, df.dtypes, df.isna().sum(), sep=&quot;\n&quot;)
+
+# --- clean (documented claims!) ------------------------------------
+df[&quot;created&quot;] = pd.to_datetime(df[&quot;created&quot;], errors=&quot;coerce&quot;)
+df[&quot;amount&quot;] = pd.to_numeric(df[&quot;amount&quot;], errors=&quot;coerce&quot;)
+df[&quot;amount&quot;] = df[&quot;amount&quot;].fillna(0)          # claim: missing = free ticket
+
+# --- WHERE + ORDER BY ----------------------------------------------
+hot = (df[(df[&quot;priority&quot;] == &quot;P1&quot;) &amp; (df[&quot;status&quot;] == &quot;open&quot;)]
+         .sort_values(&quot;created&quot;))
+
+# --- GROUP BY (named aggs) -----------------------------------------
+summary = (df.groupby([&quot;priority&quot;, &quot;status&quot;])
+             .agg(total=(&quot;amount&quot;, &quot;sum&quot;),
+                  n=(&quot;id&quot;, &quot;count&quot;),
+                  avg=(&quot;amount&quot;, &quot;mean&quot;))
+             .reset_index())
+
+# --- JOIN (explicit everything) ------------------------------------
+agents = pd.read_csv(&quot;agents.csv&quot;)[[&quot;agent_id&quot;, &quot;team&quot;]]
+report = (df.merge(agents, on=&quot;agent_id&quot;, how=&quot;left&quot;, validate=&quot;m:1&quot;)
+           .groupby(&quot;team&quot;)[&quot;amount&quot;].sum())
+
+# --- memory trick ----------------------------------------------------
+df[&quot;status&quot;] = df[&quot;status&quot;].astype(&quot;category&quot;)
+
+report.to_csv(&quot;team_report.csv&quot;)</code></pre>
+<nav class="pn"><a href="/learn/PY-25.html">← ML Basics</a><a href="/learn/PY-17.html">File Formats →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: Messaging Assistant — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Capstone four: an agent living in Telegram or Slack — personalized through memory, guarded at the boundary, monitored like production. The front door of everything you&#x27;ve built. Learn Project: Messaging Assistant (The bot surface, Tools &amp; memory, Safety in a chat, Deploy &amp; monitor) in a short ani…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-24.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Project: Messaging Assistant — Agentic AI for software architects | LKG School"><meta property="og:description" content="Capstone four: an agent living in Telegram or Slack — personalized through memory, guarded at the boundary, monitored like production. The front door of everything you&#x27;ve built. Learn Project: Messaging Assistant (The bot surface, Tools &amp; memory, Safety in a chat, Deploy &amp; monitor) in a short ani…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-24.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Project: Messaging Assistant", "description": "Capstone four: an agent living in Telegram or Slack — personalized through memory, guarded at the boundary, monitored like production. The front door of everything you've built. Learn Project: Messaging Assistant (The bot surface, Tools & memory, Safety in a chat, Deploy & monitor) in a short ani…", "url": "https://lkgschool.in/learn/AG-24.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The bot surface", "Tools & memory", "Safety in a chat", "Deploy & monitor"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Project: Messaging Assistant", "item": "https://lkgschool.in/learn/AG-24.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Hands-on Projects › Reel 72</nav>
+<h1>Project: Messaging Assistant</h1>
+<p class="lede">Capstone four: an agent living in Telegram or Slack — <strong>personalized through memory, guarded at the boundary, monitored like production.</strong> The front door of everything you&#x27;ve built.</p>
+<a class="cta" href="/?reel=AG-24">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The bot surface</li><li>Tools &amp; memory</li><li>Safety in a chat</li><li>Deploy &amp; monitor</li></ol>
+<h2>Remember this</h2><ul><li>Webhook receivers validate, enqueue, and answer in milliseconds; platform redeliveries dedupe on message IDs; placeholder-edit UX manages perceived latency</li><li>Memory personalizes: per-user namespaces, write gates at thread end, inspectable/erasable memory as a trust feature; group chats need per-sender trust ladders and mention-gating</li><li>Chat is the most exposed surface: untrusted inbound content, narrow egress, gated tools, per-user budgets — and reaction buttons close the quality feedback loop natively</li></ul>
+<section class="notes"><h2>Surface</h2>
+<ul>
+<li>Webhook: validate signature → filter (bots, non-text) → idempotent enqueue (message-ID keys) → 200 in ms.</li>
+<li>Placeholder message + edit = chat&#x27;s streaming UX; edits are rate-limited — batch.</li>
+</ul>
+<h2>Tools &amp; memory</h2>
+<ul>
+<li>AG-12 registers chat-sized: compaction for long threads, per-user namespaces, end-of-thread write gates.</li>
+<li>Group chats: mention-gating, per-sender trust ladder (known → suggest → basic), cross-user disclosure = incident.</li>
+<li>User commands: &#x27;what do you remember&#x27; / &#x27;forget that&#x27; — memory as a trust feature.</li>
+</ul>
+<h2>Safety</h2>
+<ul>
+<li>Untrusted inbound content; narrow egress; inline-button confirmations; per-user daily budgets.</li>
+</ul>
+<h2>Deploy &amp; monitor</h2>
+<ul>
+<li>Tiny always-on receiver + queue-driven workers; PY-23 pipeline with conversation golden set.</li>
+<li>👍👎 reactions = native feedback loop; abuse-signal alerts; pilot with 5 friendly users, then widen.</li>
+</ul></section>
+<h2>Code: The chat worker: loop + memory + gates, compact</h2><pre><code>async def handle_chat(job: ChatJob):
+    user = users.for_platform(job.user_id)
+    trust = user.trust_level(job.chat_type)      # known/unknown/group
+
+    ctx = context.build(
+        system=CHAT_SYSTEM,                      # untrusted-content rules
+        memory=memory.recall(job.text, user.id,  # threshold-gated
+                             k=4),
+        recent=recent_turns(job.chat_id, cap=8_000),
+    )
+    async with budget(user.daily_budget.remaining()):
+        result = await agent_loop(ctx, tools=tools_for(trust))
+
+    if result.needs_confirmation:                # inline buttons
+        await send_buttons(job.chat_id, result.preview,
+                           [Send, Edit, Cancel])
+        return
+
+    await telegram.edit(job.placeholder, result.reply)
+    await react_buttons(job.chat_id)             # 👍👎 feedback
+    memory.consider_write(user.id, job.thread)   # end-of-thread gate</code></pre>
+<nav class="pn"><a href="/learn/AG-23.html">← Project: Document Processing Agent</a><a href="/learn/GA-29.html">Azure AI Services →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

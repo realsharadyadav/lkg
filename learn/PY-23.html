@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Packaging &amp; Deployment — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="The FastAPI service from PY-13 needs a home: Docker images, Azure pipelines, and secrets that never touch a config file. The final mile of Stage 8. Learn Packaging &amp; Deployment (Dockerizing Python, CI/CD in Azure DevOps, Azure deploy targets, Key Vault &amp; managed identity) in a short animated reel…">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-23.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Packaging &amp; Deployment — Python for C# / .NET developers | LKG School"><meta property="og:description" content="The FastAPI service from PY-13 needs a home: Docker images, Azure pipelines, and secrets that never touch a config file. The final mile of Stage 8. Learn Packaging &amp; Deployment (Dockerizing Python, CI/CD in Azure DevOps, Azure deploy targets, Key Vault &amp; managed identity) in a short animated reel…">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-23.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Packaging & Deployment", "description": "The FastAPI service from PY-13 needs a home: Docker images, Azure pipelines, and secrets that never touch a config file. The final mile of Stage 8. Learn Packaging & Deployment (Dockerizing Python, CI/CD in Azure DevOps, Azure deploy targets, Key Vault & managed identity) in a short animated reel…", "url": "https://lkgschool.in/learn/PY-23.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Dockerizing Python", "CI/CD in Azure DevOps", "Azure deploy targets", "Key Vault & managed identity"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Packaging & Deployment", "item": "https://lkgschool.in/learn/PY-23.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 68</nav>
+<h1>Packaging &amp; Deployment</h1>
+<p class="lede">The FastAPI service from PY-13 needs a home: <strong>Docker images, Azure pipelines, and secrets that never touch a config file.</strong> The final mile of Stage 8.</p>
+<a class="cta" href="/?reel=PY-23">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Dockerizing Python</li><li>CI/CD in Azure DevOps</li><li>Azure deploy targets</li><li>Key Vault &amp; managed identity</li></ol>
+<h2>Remember this</h2><ul><li>Docker done right: multi-stage, slim pinned bases, locked deps, non-root, health-checked, scanned, labeled</li><li>Pipelines gate quality, not just code: eval suites block promotion; App Service / Container Apps / Functions matched to workload shape</li><li>Key Vault + managed identity: secrets fetched by platform vouching — never in code, config, or pipeline variables; rotation without deployment</li></ul>
+<section class="notes"><h2>Docker</h2>
+<ul>
+<li>Multi-stage (no toolchain in runtime) · slim base PINNED by digest · locked deps (uv.lock --frozen) · non-root · HEALTHCHECK · scan + OCI labels.</li>
+</ul>
+<h2>Azure DevOps pipelines</h2>
+<ul>
+<li>Build → EvalGate (golden set, faithfulness, agent regressions) → Scan (image CVEs, deps, secrets) → Deploy with env approvals.</li>
+<li>Fast PR gates + nightly full suites; everything as YAML in the repo.</li>
+</ul>
+<h2>Azure targets</h2>
+<ul>
+<li>App Service: steady stateless APIs. Container Apps: queue/event-driven agents, scale-to-zero. Functions: event glue.</li>
+<li>Slots for blue-green + shadow eval before swap.</li>
+</ul>
+<h2>Key Vault &amp; managed identity</h2>
+<ul>
+<li>Secrets fetched via DefaultAzureCredential — no credential in code/config/pipeline.</li>
+<li>Rotation = Key Vault operation; access policies reviewable; audit of every read.</li>
+</ul></section>
+<h2>Code: The pipeline definition — the whole reel in YAML</h2><pre><code># azure-pipelines.yml — build, gate, scan, deploy
+trigger: [main]
+
+stages:
+  - stage: Build
+    jobs:
+      - script: |
+          pip install uv &amp;&amp; uv sync --frozen
+          uv run ruff check --fix . &amp;&amp; uv run black --check .
+          uv run pytest tests/unit -q          # PY-22 suites + Fakes
+        displayName: lint + unit tests
+      - script: docker build -t $(acr)/app:$(Build.SourceVersion) .
+        displayName: build image (SHA-tagged)
+
+  - stage: EvalGate                 # the AI difference
+    dependsOn: Build
+    jobs:
+      - script: uv run pytest tests/evals -q   # golden set, faithfulness,
+        displayName: eval gates                # agent regressions (AG-18)
+
+  - stage: Scan
+    dependsOn: EvalGate
+    jobs:
+      - script: trivy image --severity HIGH,CRITICAL --exit-code 1 $(acr)/app:$(Build.SourceVersion)
+        displayName: image CVE gate
+
+  - stage: DeployProd
+    dependsOn: Scan
+    condition: succeeded()
+    jobs:
+      - deployment: swap
+        environment: production              # approval gate here
+        strategy: runOnce:
+          deploy:
+            steps:
+              - script: az webapp deployment slot swap -g $(rg) -n $(app) --slot staging --target-slot production</code></pre>
+<nav class="pn"><a href="/learn/AG-20.html">← Threat Model</a><a href="/learn/AG-21.html">Project: SOP-to-Excel Agent →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

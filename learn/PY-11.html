@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threads vs Processes — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="asyncio, threads, processes — three ways to do &quot;at the same time&quot;, each right for a different enemy: waiting, latency, and the GIL. Learn Threads vs Processes (The GIL, Threads for I/O, Processes for CPU, Choosing &amp; executors) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-11.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Threads vs Processes — Python for C# / .NET developers | LKG School"><meta property="og:description" content="asyncio, threads, processes — three ways to do &quot;at the same time&quot;, each right for a different enemy: waiting, latency, and the GIL. Learn Threads vs Processes (The GIL, Threads for I/O, Processes for CPU, Choosing &amp; executors) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-11.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Threads vs Processes", "description": "asyncio, threads, processes — three ways to do \"at the same time\", each right for a different enemy: waiting, latency, and the GIL. Learn Threads vs Processes (The GIL, Threads for I/O, Processes for CPU, Choosing & executors) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-11.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The GIL", "Threads for I/O", "Processes for CPU", "Choosing & executors"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Threads vs Processes", "item": "https://lkgschool.in/learn/PY-11.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 35</nav>
+<h1>Threads vs Processes</h1>
+<p class="lede">asyncio, threads, processes — three ways to do &quot;at the same time&quot;, each right for a different enemy: <strong>waiting, latency, and the GIL</strong>.</p>
+<a class="cta" href="/?reel=PY-11">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The GIL</li><li>Threads for I/O</li><li>Processes for CPU</li><li>Choosing &amp; executors</li></ol>
+<h2>Remember this</h2><ul><li>GIL: one thread executes Python bytecode at a time — threads never parallelize pure-Python CPU work, but the lock releases on I/O and C extensions</li><li>Threads: shared memory, good for I/O waits and wrapping blocking libraries; still need locks for shared mutable state</li><li>Processes: separate interpreters = true multi-core for CPU-bound work; pay in memory duplication and pickling overhead — chunk tasks, not data</li></ul>
+<section class="notes"><h2>The GIL</h2>
+<ul>
+<li>Global Interpreter Lock: one thread runs Python bytecode at a time.</li>
+<li>Released during I/O and C-extension calls (NumPy, crypto, DB drivers).</li>
+<li>Threads ≠ CPU parallelism in Python; processes = own GIL per interpreter.</li>
+</ul>
+<h2>Threads — I/O-bound</h2>
+<ul>
+<li>Overlap waits; simple; GIL released during blocking I/O.</li>
+<li>Use to wrap blocking libs inside async apps (<code>run_in_executor</code>).</li>
+<li>Shared mutable state still needs <code>threading.Lock</code>.</li>
+</ul>
+<h2>Processes — CPU-bound</h2>
+<ul>
+<li>True multi-core; costs: RAM per worker, pickling IPC.</li>
+<li><code>ProcessPoolExecutor.map(fn, items, chunksize=64)</code> — batch tasks.</li>
+<li>Mapped fn must be module-level (picklable by reference).</li>
+</ul>
+<h2>Decision</h2>
+<ul>
+<li>Bottleneck = waiting → asyncio; = blocking lib → threads; = computing → processes.</li>
+<li>Hybrid is normal: async app + thread/process adapters per pipeline stage.</li>
+</ul></section>
+<h2>Code: The hybrid reality: async app + thread/process adapters</h2><pre><code>import asyncio
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+# blocking sync SDK you CANNOT change
+def legacy_translate(text: str) -&gt; str:
+    return old_sdk.translate(text)   # blocks, no async version
+
+def cpu_heavy_score(text: str) -&gt; float:
+    return sum(ord(c) for c in text) % 100 / 100  # pretend: pure-Python math
+
+async def pipeline(texts: list[str]) -&gt; list[str]:
+    loop = asyncio.get_running_loop()
+
+    with ThreadPoolExecutor(8) as tpool, ProcessPoolExecutor(4) as ppool:
+        # 1 · blocking SDK off the event loop (threads)
+        translations = await loop.run_in_executor(
+            tpool, lambda: list(map(legacy_translate, texts)))
+
+        # 2 · CPU math on real cores (processes)
+        scores = await loop.run_in_executor(
+            ppool, lambda: list(ppool.map(cpu_heavy_score, texts)))
+
+    # 3 · back on the loop: async I/O continues
+    return await asyncio.gather(
+        *[notify_api(t, s) for t, s in zip(translations, scores)])</code></pre>
+<nav class="pn"><a href="/learn/PY-10.html">← asyncio</a><a href="/learn/PY-12.html">HTTP Clients →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

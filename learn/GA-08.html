@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedding Models — Generative AI for software architects | LKG School</title>
+<meta name="description" content="The embedding model is a 10-year mortgage on your data. Choose with the exit cost in mind. Learn Embedding Models (Choosing a model, Multilingual needs, Cost &amp; batching, Re-embedding migrations) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-08.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Embedding Models — Generative AI for software architects | LKG School"><meta property="og:description" content="The embedding model is a 10-year mortgage on your data. Choose with the exit cost in mind. Learn Embedding Models (Choosing a model, Multilingual needs, Cost &amp; batching, Re-embedding migrations) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-08.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Embedding Models", "description": "The embedding model is a 10-year mortgage on your data. Choose with the exit cost in mind. Learn Embedding Models (Choosing a model, Multilingual needs, Cost & batching, Re-embedding migrations) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-08.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Choosing a model", "Multilingual needs", "Cost & batching", "Re-embedding migrations"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Embedding Models", "item": "https://lkgschool.in/learn/GA-08.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 23</nav>
+<h1>Embedding Models</h1>
+<p class="lede">The embedding model is a <strong>10-year mortgage</strong> on your data. Choose with the exit cost in mind.</p>
+<a class="cta" href="/?reel=GA-08">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Choosing a model</li><li>Multilingual needs</li><li>Cost &amp; batching</li><li>Re-embedding migrations</li></ol>
+<h2>Remember this</h2><ul><li>Shortlist from MTEB, decide on YOUR 30-50 relevance pairs (hit@5)</li><li>Multilingual corpora need the translation-pair + cross-lingual + code-switch tests</li><li>Embedding is cheap: batch inputs, consider reduced dimensions; model switches = full re-embed — store source text and version every vector</li></ul>
+<section class="notes"><h2>Choosing</h2>
+<ul>
+<li>Shortlist: <strong>MTEB leaderboard</strong> → decide: your 30–50 query→doc pairs, score <strong>hit@5</strong>.</li>
+<li>API (OpenAI/Cohere/Voyage): zero ops. Self-hosted (sentence-transformers): privacy, GPU cost.</li>
+</ul>
+<h2>Multilingual (EN + HI)</h2>
+<ul>
+<li>Translation-pair test: EN↔HI pairs, median cosine ≥ ~0.7.</li>
+<li>Cross-lingual hit@5 BOTH directions.</li>
+<li>Code-switched queries (&quot;मुझे refund chahiye&quot;) — evaluate on real mixed usage.</li>
+</ul>
+<h2>Cost &amp; batching</h2>
+<ul>
+<li>Embedding is cheap: do the token math once (usually small $).</li>
+<li>Batch thousands of texts per call; Batch API for big backfills.</li>
+<li><code>dimensions=512/1024</code> (Matryoshka) → ~⅓ storage for ~1-2% quality.</li>
+<li>Reads are free — embed once, store forever.</li>
+</ul>
+<h2>Migration (re-embedding)</h2>
+<ul>
+<li>Different model = different space → full re-embed, no in-place upgrade.</li>
+<li><strong>Store raw text</strong> (the asset) + version every vector (embed_model, version).</li>
+<li>Dual-run eval on both models before cutover.</li>
+</ul></section>
+<h2>Code: Embedding selection + backfill, done right</h2><pre><code>import numpy as np
+from openai import OpenAI
+
+client = OpenAI()
+
+# --- 1. Your relevance eval (the ONLY decision metric) ------------
+GOLDEN = [
+    (&quot;refund policy for damaged goods&quot;, &quot;policy_returns_v2.pdf#3&quot;),
+    (&quot;remote work allowance rules&quot;, &quot;hr_policy_2026.pdf#7&quot;),
+]
+DOCS = {id_: text for id_, text in load_corpus().items()}
+
+def hit_at5(model: str) -&gt; float:
+    doc_ids = list(DOCS)
+    doc_vecs = embed_all(DOCS.values(), model=model)     # batched
+    hits = 0
+    for q, want in GOLDEN:
+        qv = embed_all([q], model=model)[0]
+        sims = doc_vecs @ (qv / np.linalg.norm(qv))
+        top5 = [doc_ids[i] for i in np.argsort(sims)[::-1][:5]]
+        hits += want in top5
+    return hits / len(GOLDEN)
+
+for m in [&quot;text-embedding-3-small&quot;, &quot;text-embedding-3-large&quot;]:
+    print(m, hit_at5(m))     # pick the cheapest model at hit@5 == 1.0
+
+# --- 2. Bulk backfill: batch + version ---------------------------
+def embed_all(texts, model, batch=1000):
+    vecs = []
+    texts = list(texts)
+    for i in range(0, len(texts), batch):
+        r = client.embeddings.create(model=model, input=texts[i:i+batch])
+        vecs.extend(d.embedding for d in r.data)
+    return np.array(vecs)
+
+# store per record: {text, vector, embed_model: &quot;text-embedding-3-small&quot;,
+#                    embed_version: 1, dims: 1536}</code></pre>
+<nav class="pn"><a href="/learn/GA-07.html">← Embedding Concepts</a><a href="/learn/PY-20.html">SQL from Python →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

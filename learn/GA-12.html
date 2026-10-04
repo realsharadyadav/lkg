@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector vs Parquet/SQL Decision — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Not every question needs meaning. The wrong index wastes money and lies politely. Choose per question. Learn Vector vs Parquet/SQL Decision (Structured questions, Semantic questions, Hybrid architecture, Anti-patterns) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-12.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Vector vs Parquet/SQL Decision — Generative AI for software architects | LKG School"><meta property="og:description" content="Not every question needs meaning. The wrong index wastes money and lies politely. Choose per question. Learn Vector vs Parquet/SQL Decision (Structured questions, Semantic questions, Hybrid architecture, Anti-patterns) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-12.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Vector vs Parquet/SQL Decision", "description": "Not every question needs meaning. The wrong index wastes money and lies politely. Choose per question. Learn Vector vs Parquet/SQL Decision (Structured questions, Semantic questions, Hybrid architecture, Anti-patterns) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-12.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Structured questions", "Semantic questions", "Hybrid architecture", "Anti-patterns"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Vector vs Parquet/SQL Decision", "item": "https://lkgschool.in/learn/GA-12.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 28</nav>
+<h1>Vector vs Parquet/SQL Decision</h1>
+<p class="lede">Not every question needs meaning. <strong>The wrong index wastes money and lies politely.</strong> Choose per question.</p>
+<a class="cta" href="/?reel=GA-12">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Structured questions</li><li>Semantic questions</li><li>Hybrid architecture</li><li>Anti-patterns</li></ol>
+<h2>Remember this</h2><ul><li>SQL owns exactness: aggregates, filters, joins — computed answers that must be complete</li><li>Vectors own meaning: similarity, intent, retrieval — ranked answers where &#x27;close enough&#x27; is correct</li><li>Hybrid architecture with a router (or agent tool-calling); never vectorize exact data</li></ul>
+<section class="notes"><h2>Structured questions → SQL</h2>
+<ul>
+<li>Aggregates, exact filters, joins, time-series/reporting.</li>
+<li>Answers must be COMPLETE and EXACT — similarity is a category error.</li>
+<li>Tools: Postgres / SQL Server / DuckDB over Parquet (Stage 3).</li>
+</ul>
+<h2>Semantic questions → vectors</h2>
+<ul>
+<li>Find-similar, dedupe, intent/concept search, RAG retrieval.</li>
+<li>Answers are ranked, approximate, top-k — &#x27;close enough&#x27; is correct.</li>
+<li>Tools: pgvector / Qdrant / etc. (GA-09–GA-11).</li>
+</ul>
+<h2>Hybrid architecture</h2>
+<ul>
+<li>Router (classifier or agent tool-calling) → SQL leg and/or vector leg → fuse.</li>
+<li>Commonest real pattern: vectors fetch candidates → SQL applies exact filters.</li>
+</ul>
+<h2>Anti-patterns</h2>
+<ul>
+<li>❌ Vectorizing exact data (SKUs, ledgers) — neighbors are wrong answers.</li>
+<li>❌ Paying embedding+index costs for questions SQL answers free.</li>
+<li>✅ The one-question test: <strong>is an approximate ranked answer acceptable?</strong> No → SQL. Yes → vectors. Both → hybrid.</li>
+</ul></section>
+<h2>Code: The routing query layer — SQL leg, vector leg, one interface</h2><pre><code>from typing import Protocol
+
+class QueryEngine(Protocol):
+    def run(self, question: str, ctx: dict) -&gt; Answer: ...
+
+class SqlEngine:
+    &quot;&quot;&quot;Structured questions — DuckDB/SQL over the warehouse.&quot;&quot;&quot;
+    def run(self, question, ctx):
+        sql = llm_to_sql(question, schema=WAREHOUSE_SCHEMA)   # text-to-SQL,
+        rows = duckdb.sql(sql, params=ctx.get(&quot;params&quot;))       # validated before exec
+        return Answer(kind=&quot;table&quot;, data=rows.df())
+
+class VectorEngine:
+    &quot;&quot;&quot;Semantic questions — top-k retrieval.&quot;&quot;&quot;
+    def run(self, question, ctx):
+        hits = retriever.search(embed(question), k=20,
+                                where=ctx.get(&quot;filters&quot;))
+        return Answer(kind=&quot;docs&quot;, data=[h.payload[&quot;text&quot;] for h in hits])
+
+ROUTER = [(&quot;structured&quot;, SqlEngine()), (&quot;semantic&quot;, VectorEngine())]
+
+def answer(question: str, ctx: dict) -&gt; Answer:
+    kind = classify(question)          # cheap classifier or LLM routing
+    engine = dict(ROUTER)[kind]
+    result = engine.run(question, ctx)
+    if kind == &quot;semantic&quot; and ctx.get(&quot;must_filter&quot;):
+        # hybrid: vector candidates + exact SQL filtering
+        return sql_filter(result, ctx[&quot;must_filter&quot;])
+    return result
+
+# The agent version (Stage 6): the LLM picks sql_query vs vector_search
+# as TOOLS — same two engines, routed by the model.</code></pre>
+<nav class="pn"><a href="/learn/GA-11.html">← Operations</a><a href="/learn/GA-13.html">RAG Architecture →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

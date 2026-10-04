@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observability — Generative AI for software architects | LKG School</title>
+<meta name="description" content="LLM systems fail silently — quality decays, costs creep, latency spikes. You can&#x27;t fix what you can&#x27;t see: traces, cost dashboards, and quality monitoring. Learn Observability (Tracing LLM calls, Cost dashboards, Quality monitoring, Tooling) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-24.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Observability — Generative AI for software architects | LKG School"><meta property="og:description" content="LLM systems fail silently — quality decays, costs creep, latency spikes. You can&#x27;t fix what you can&#x27;t see: traces, cost dashboards, and quality monitoring. Learn Observability (Tracing LLM calls, Cost dashboards, Quality monitoring, Tooling) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-24.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Observability", "description": "LLM systems fail silently — quality decays, costs creep, latency spikes. You can't fix what you can't see: traces, cost dashboards, and quality monitoring. Learn Observability (Tracing LLM calls, Cost dashboards, Quality monitoring, Tooling) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-24.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Tracing LLM calls", "Cost dashboards", "Quality monitoring", "Tooling"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Observability", "item": "https://lkgschool.in/learn/GA-24.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 61</nav>
+<h1>Observability</h1>
+<p class="lede">LLM systems fail silently — quality decays, costs creep, latency spikes. <strong>You can&#x27;t fix what you can&#x27;t see:</strong> traces, cost dashboards, and quality monitoring.</p>
+<a class="cta" href="/?reel=GA-24">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Tracing LLM calls</li><li>Cost dashboards</li><li>Quality monitoring</li><li>Tooling</li></ol>
+<h2>Remember this</h2><ul><li>Traces are the flight recorder: correlated IDs, sampled errors fully, PII-shaped storage, span-level detail that localizes failures to retrieval or generation</li><li>Cost dashboards slice spend per user/feature/model with delta alerts, runtime caps, and cost-quality pairing on the same time axis</li><li>Quality monitoring closes the loop: feedback and shadow evals feed the golden set through SME triage; pick observability per ecosystem with OpenTelemetry underneath</li></ul>
+<section class="notes"><h2>Tracing</h2>
+<ul>
+<li>One trace per request: retrieval/generation/tool spans, correlated IDs.</li>
+<li>100% of errors + sampled successes; golden-set runs always traced.</li>
+<li>PII-shaped storage: hashes, access control, retention.</li>
+</ul>
+<h2>Cost dashboards</h2>
+<ul>
+<li>Dollars per user/tenant · per feature · per model/prompt version.</li>
+<li>Delta alerts + runtime caps; cost×quality on one axis; forecasting run-rate.</li>
+</ul>
+<h2>Quality monitoring</h2>
+<ul>
+<li>Feedback → triage (traces localize the span) → SME-confirmed golden cases → gated fixes.</li>
+<li>Shadow evals on sampled traffic; input-drift watch predicts quality drift.</li>
+</ul>
+<h2>Tooling</h2>
+<ul>
+<li>Langfuse (OSS/self-host) · LangSmith (LangGraph) · Azure Monitor (MAF) — ecosystem match.</li>
+<li>Always emit OpenTelemetry underneath; keep the provider replaceable.</li>
+</ul></section>
+<h2>Code: Minimal trace decorator — the whole instrumentation habit</h2><pre><code>import time, uuid, functools
+
+def traced(span_name):
+    def deco(fn):
+        @functools.wraps(fn)
+        async def wrapper(*args, **kw):
+            span = {
+                &quot;trace_id&quot;: kw.pop(&quot;trace_id&quot;, str(uuid.uuid4())),
+                &quot;span&quot;: span_name,
+                &quot;start&quot;: time.perf_counter(),
+                &quot;model&quot;: kw.get(&quot;model&quot;), &quot;prompt_hash&quot;: h(kw.get(&quot;prompt&quot;)),
+            }
+            try:
+                result = await fn(*args, **kw)
+                span.update(ok=True, tokens=getattr(result, &quot;usage&quot;, None))
+                return result
+            except Exception as e:
+                span.update(ok=False, error=str(e)[:200])
+                raise
+            finally:
+                span[&quot;ms&quot;] = round((time.perf_counter() - span[&quot;start&quot;]) * 1000)
+                emitter.send(span)          # OTLP or Langfuse/etc.
+        return wrapper
+    return deco
+
+# @traced(&quot;retrieval&quot;) on search · @traced(&quot;generation&quot;) on complete —
+# three decorators and your pipeline is observable end to end.</code></pre>
+<nav class="pn"><a href="/learn/GA-23.html">← Controls</a><a href="/learn/GA-25.html">Performance &amp; Cost →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Reasoning — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Four reasoning strategies — ReAct, plan-and-execute, reflection, decomposition — the difference between an agent that lunges and an agent that thinks. Learn Agent Reasoning (ReAct, Plan-and-execute, Reflection &amp; self-critique, Task decomposition) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-11.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Agent Reasoning — Agentic AI for software architects | LKG School"><meta property="og:description" content="Four reasoning strategies — ReAct, plan-and-execute, reflection, decomposition — the difference between an agent that lunges and an agent that thinks. Learn Agent Reasoning (ReAct, Plan-and-execute, Reflection &amp; self-critique, Task decomposition) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-11.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Agent Reasoning", "description": "Four reasoning strategies — ReAct, plan-and-execute, reflection, decomposition — the difference between an agent that lunges and an agent that thinks. Learn Agent Reasoning (ReAct, Plan-and-execute, Reflection & self-critique, Task decomposition) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/AG-11.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["ReAct", "Plan-and-execute", "Reflection & self-critique", "Task decomposition"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Agent Reasoning", "item": "https://lkgschool.in/learn/AG-11.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 53</nav>
+<h1>Agent Reasoning</h1>
+<p class="lede">Four reasoning strategies — <strong>ReAct, plan-and-execute, reflection, decomposition</strong> — the difference between an agent that lunges and an agent that thinks.</p>
+<a class="cta" href="/?reel=AG-11">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>ReAct</li><li>Plan-and-execute</li><li>Reflection &amp; self-critique</li><li>Task decomposition</li></ol>
+<h2>Remember this</h2><ul><li>ReAct interleaves reasoning and acting — grounded but myopic and costly per step; plan-and-execute sees the whole board and needs budgeted re-planning</li><li>Reflection improves drafts but can&#x27;t see its own blind spots — pair with external verification; process reflection seeds memory</li><li>Decomposition: verifiable artifacts, explicit dependency DAGs, one-context steps, riskiest-first ordering</li></ul>
+<section class="notes"><h2>ReAct</h2>
+<ul>
+<li>Reason ↔ act interleaved; grounded in fresh observations.</li>
+<li>Weaknesses: per-step cost, short-horizon myopia, reasoning drift.</li>
+</ul>
+<h2>Plan-and-execute</h2>
+<ul>
+<li>Plan (ordered, dependency-aware, reviewable) → execute cheaply → re-plan on failure (budgeted).</li>
+<li>Long horizons; hybrid: plan milestones, ReAct within.</li>
+</ul>
+<h2>Reflection</h2>
+<ul>
+<li>Structured critique (dimensions, artifact-not-intention) → revise.</li>
+<li>Blind spots survive self-review → external verification.</li>
+<li>Process reflection → durable notes → memory (AG-12).</li>
+</ul>
+<h2>Task decomposition</h2>
+<ul>
+<li>Verifiable artifacts · explicit dependency DAG · one-context steps.</li>
+<li>MECE; reformulate the goal; riskiest step first.</li>
+</ul></section>
+<h2>Code: Hybrid reasoning: plan milestones, ReAct within, reflect at the end</h2><pre><code>async def run_hybrid(goal: str):
+    # 1 · PLAN — global view, machine-readable steps
+    plan = await llm(PLAN_PROMPT, goal=goal,
+                     schema=&quot;list[{step, depends_on, verify_by}]&quot;)
+    await human_review(plan)                       # checkpoint
+
+    for step in topological_order(plan):
+        # 2 · EXECUTE — ReAct within the milestone
+        artifact = await react_loop(
+            f&quot;{goal}\nCurrent step: {step.step}&quot;,
+            tools=tools_for(step), max_iters=8)
+
+        # 3 · VERIFY per step — the plan&#x27;s own verification hook
+        if not verify(step.verify_by, artifact):
+            plan = await replan(plan, failed=step, state=artifact)
+
+    # 4 · MACRO-REFLECTION — durable lessons into memory
+    lessons = await llm(&quot;What worked? What failed? Rules for next time?&quot;,
+                        transcript=full_history())
+    memory.store(goal_domain(goal), lessons)
+    return collect_artifacts(plan)</code></pre>
+<nav class="pn"><a href="/learn/AG-10.html">← Workflow Patterns</a><a href="/learn/AG-12.html">Memory Types →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

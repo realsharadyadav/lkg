@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pydantic — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="LLMs speak JSON. JSON lies sometimes. Pydantic is the lie detector every GenAI app runs on. Learn Pydantic (BaseModel, Field validators, pydantic-settings, JSON Schema export) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-09.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Pydantic — Python for C# / .NET developers | LKG School"><meta property="og:description" content="LLMs speak JSON. JSON lies sometimes. Pydantic is the lie detector every GenAI app runs on. Learn Pydantic (BaseModel, Field validators, pydantic-settings, JSON Schema export) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-09.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Pydantic", "description": "LLMs speak JSON. JSON lies sometimes. Pydantic is the lie detector every GenAI app runs on. Learn Pydantic (BaseModel, Field validators, pydantic-settings, JSON Schema export) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-09.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["BaseModel", "Field validators", "pydantic-settings", "JSON Schema export"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Pydantic", "item": "https://lkgschool.in/learn/PY-09.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 9</nav>
+<h1>Pydantic</h1>
+<p class="lede">LLMs speak JSON. JSON <strong>lies</strong> sometimes. Pydantic is the lie detector every GenAI app runs on.</p>
+<a class="cta" href="/?reel=PY-09">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>BaseModel</li><li>Field validators</li><li>pydantic-settings</li><li>JSON Schema export</li></ol>
+<h2>Remember this</h2><ul><li>BaseModel validates at the boundary — parse LLM JSON instead of hoping</li><li>field_validator/model_validator enforce value rules, not just types</li><li>model_json_schema() feeds structured output — one model, end to end</li></ul>
+<section class="notes"><h2>BaseModel</h2>
+<pre><code>class ChatRequest(BaseModel):
+    model: str
+    prompt: str
+    temperature: float = 0.7
+req = ChatRequest(**json_from_llm)   # validates + coerces</code></pre>
+<ul>
+<li>Bad data → <code>ValidationError</code> with every problem listed.</li>
+</ul>
+<h2>Validators</h2>
+<ul>
+<li><code>Field(ge=, le=, min_length=, ...)</code> for simple rules.</li>
+<li><code>@field_validator(&quot;model&quot;)</code> — per-field; raise ValueError to reject.</li>
+<li><code>@model_validator</code> — cross-field rules.</li>
+</ul>
+<h2>pydantic-settings</h2>
+<pre><code>class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix=&quot;APP_&quot;)
+    openai_api_key: str</code></pre>
+<ul>
+<li>Env vars → typed, validated config; crashes at boot when required keys are missing.</li>
+</ul>
+<h2>JSON Schema export</h2>
+<pre><code>schema = ChatRequest.model_json_schema()
+reply  = ChatRequest.model_validate_json(raw)</code></pre>
+<ul>
+<li><strong>The structured-output loop</strong>: define once → constrain the LLM → validate the reply. Backbone of Stage 2+.</li>
+</ul></section>
+<h2>Code: Pydantic — the GenAI backbone pattern</h2><pre><code>from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# --- 1. BaseModel: parse, don&#x27;t pray ---------------------------
+class ChatRequest(BaseModel):
+    model: str
+    prompt: str
+    temperature: float = 0.7
+    max_tokens: int = Field(default=1000, ge=1, le=128_000)
+
+req = ChatRequest(**{&quot;model&quot;: &quot;gpt-4o&quot;, &quot;prompt&quot;: &quot;hi&quot;, &quot;temperature&quot;: &quot;0.2&quot;})
+
+# --- 2. Validators: value rules --------------------------------
+ALLOWED = {&quot;gpt-4o&quot;, &quot;claude-sonnet&quot;, &quot;llama-3&quot;}
+
+@field_validator(&quot;model&quot;)
+@classmethod
+def model_must_be_supported(cls, v: str) -&gt; str:
+    if v not in ALLOWED:
+        raise ValueError(f&quot;unsupported model: {v}&quot;)
+    return v
+
+# --- 3. Settings: validated env config -------------------------
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix=&quot;APP_&quot;)
+    openai_api_key: str
+    model: str = &quot;gpt-4o&quot;
+    max_retries: int = 3
+
+# export APP_OPENAI_API_KEY=sk-...
+# settings = Settings()   # crashes loudly if the key is missing
+
+# --- 4. JSON Schema: structured output --------------------------
+print(ChatRequest.model_json_schema())
+# → the schema you pass as response_format / tool parameters
+
+# reply = client.chat(..., response_format=ChatRequestSchema)
+# parsed = ChatRequest.model_validate_json(reply)</code></pre>
+<nav class="pn"><a href="/learn/PY-08.html">← Type Hints</a><a href="/learn/GA-01.html">How LLMs Work →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

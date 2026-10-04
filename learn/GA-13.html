@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG Architecture — Generative AI for software architects | LKG School</title>
+<meta name="description" content="RAG: the highest-ROI pattern in GenAI. One pipeline: ingest, chunk, embed, retrieve, generate. This reel is the map. Learn RAG Architecture (Why RAG, End-to-end pipeline, Naive vs advanced RAG, RAG vs long context) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-13.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="RAG Architecture — Generative AI for software architects | LKG School"><meta property="og:description" content="RAG: the highest-ROI pattern in GenAI. One pipeline: ingest, chunk, embed, retrieve, generate. This reel is the map. Learn RAG Architecture (Why RAG, End-to-end pipeline, Naive vs advanced RAG, RAG vs long context) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-13.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "RAG Architecture", "description": "RAG: the highest-ROI pattern in GenAI. One pipeline: ingest, chunk, embed, retrieve, generate. This reel is the map. Learn RAG Architecture (Why RAG, End-to-end pipeline, Naive vs advanced RAG, RAG vs long context) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-13.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Why RAG", "End-to-end pipeline", "Naive vs advanced RAG", "RAG vs long context"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "RAG Architecture", "item": "https://lkgschool.in/learn/GA-13.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 29</nav>
+<h1>RAG Architecture</h1>
+<p class="lede"><strong>RAG</strong>: the highest-ROI pattern in GenAI. One pipeline: ingest, chunk, embed, retrieve, generate. This reel is the map.</p>
+<a class="cta" href="/?reel=GA-13">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Why RAG</li><li>End-to-end pipeline</li><li>Naive vs advanced RAG</li><li>RAG vs long context</li></ol>
+<h2>Remember this</h2><ul><li>RAG = fresh + private + grounded answers without retraining; evidence is inspectable</li><li>Pipeline: ingest → chunk → embed → retrieve → generate — each stage separable and measurable</li><li>Naive RAG fails predictably (chunks, ambiguity, depth); long context complements rather than replaces retrieval</li></ul>
+<section class="notes"><h2>Why RAG</h2>
+<ul>
+<li>LLM knowledge: frozen at training, outside your perimeter, fills gaps with invention.</li>
+<li>RAG: retrieve relevant facts at query time → prompt with evidence.</li>
+<li><strong>Freshness</strong> (re-index = current) · <strong>Privacy</strong> (data stays home) · <strong>Grounding</strong> (answers cite real text — inspectable).</li>
+</ul>
+<h2>End-to-end pipeline</h2>
+<p>1. <strong>Ingest</strong> — sources → documents (formats: GA-14) 2. <strong>Chunk</strong> — documents → pieces + metadata (highest-leverage craft) 3. <strong>Embed &amp; store</strong> — chunks → vectors → vector DB 4. <strong>Retrieve</strong> — question → top-k (hybrid/rerank: GA-15) 5. <strong>Generate</strong> — question + context → cited answer (GA-16)</p>
+<blockquote>Each stage separately measurable → you know WHICH stage fails.</blockquote>
+<h2>Naive vs advanced</h2>
+<ul>
+<li>Naive: fixed chunks + one vector search. Fails on: chunking, ambiguous queries, multi-doc/multi-hop answers.</li>
+<li>Advanced = diagnosed failure mode → named fix (better chunks, rewrite, hybrid, rerank, agentic loop).</li>
+</ul>
+<h2>RAG vs long context</h2>
+<ul>
+<li>Stuffing wins: small bounded corpus, task needs most of it.</li>
+<li>RAG wins: large corpus, slice per question — cost, latency, attention quality.</li>
+<li>Hybrid: retrieve broadly → stuff winners into the long window.</li>
+</ul></section>
+<h2>Code: RAG, end to end — the whole pipeline in one file</h2><pre><code>from openai import OpenAI
+
+client = OpenAI()
+COLLECTION = &quot;handbook&quot;
+
+# --- ingest + chunk + embed (offline, incremental) ----------------
+def index_document(doc_id: str, text: str):
+    for i, chunk in enumerate(recursive_chunks(text, size=500, overlap=80)):
+        vec = client.embeddings.create(
+            model=&quot;text-embedding-3-small&quot;, input=chunk).data[0].embedding
+        store.upsert(
+            id=f&quot;{doc_id}:{i}&quot;,
+            vector=vec,
+            payload={&quot;doc_id&quot;: doc_id, &quot;chunk&quot;: i, &quot;text&quot;: chunk,
+                     &quot;source&quot;: doc_id, &quot;version&quot;: doc_version(doc_id)},
+        )
+
+# --- retrieve (hybrid + filter, per GA-09/GA-15) ------------------
+def retrieve(question: str, k: int = 8) -&gt; list[str]:
+    qv = client.embeddings.create(
+        model=&quot;text-embedding-3-small&quot;, input=question).data[0].embedding
+    hits = store.search(qv, k=k, where={&quot;tenant&quot;: current_tenant()})
+    return [h.payload[&quot;text&quot;] for h in rerank(question, hits)[:k]]
+
+# --- generate (grounded + cited) -----------------------------------
+def ask(question: str) -&gt; str:
+    context = retrieve(question)
+    prompt = f&quot;&quot;&quot;Answer using ONLY the context below.
+If the answer isn&#x27;t there, say &quot;I don&#x27;t have that information.&quot;
+Cite sources as [source].
+
+&lt;context&gt;
+{&#x27;&#x27;.join(f&#x27;&lt;doc src=&quot;{i}&quot;&gt;{c}&lt;/doc&gt;&#x27; for i, c in enumerate(context))}
+&lt;/context&gt;
+
+Question: {question}&quot;&quot;&quot;
+    return client.chat.completions.create(
+        model=&quot;gpt-4o&quot;, temperature=0,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+    ).choices[0].message.content
+
+# That&#x27;s the whole pattern. Everything after this reel improves
+# one stage at a time — measure before you tune.</code></pre>
+<nav class="pn"><a href="/learn/GA-12.html">← Vector vs Parquet/SQL Decision</a><a href="/learn/GA-14.html">Ingestion &amp; Chunking →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

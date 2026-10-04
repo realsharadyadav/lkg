@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>asyncio — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="One LLM call takes 2 seconds. Fifty in a row take 100. Fifty concurrently take 4. asyncio is the single highest-leverage Python skill for GenAI apps. Learn asyncio (async / await, The event loop, gather &amp; semaphores, Timeouts &amp; cancellation) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-10.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="asyncio — Python for C# / .NET developers | LKG School"><meta property="og:description" content="One LLM call takes 2 seconds. Fifty in a row take 100. Fifty concurrently take 4. asyncio is the single highest-leverage Python skill for GenAI apps. Learn asyncio (async / await, The event loop, gather &amp; semaphores, Timeouts &amp; cancellation) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-10.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "asyncio", "description": "One LLM call takes 2 seconds. Fifty in a row take 100. Fifty concurrently take 4. asyncio is the single highest-leverage Python skill for GenAI apps. Learn asyncio (async / await, The event loop, gather & semaphores, Timeouts & cancellation) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-10.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["async / await", "The event loop", "gather & semaphores", "Timeouts & cancellation"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "asyncio", "item": "https://lkgschool.in/learn/PY-10.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 34</nav>
+<h1>asyncio</h1>
+<p class="lede">One LLM call takes 2 seconds. Fifty in a row take 100. Fifty <strong>concurrently</strong> take 4. asyncio is the single highest-leverage Python skill for GenAI apps.</p>
+<a class="cta" href="/?reel=PY-10">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>async / await</li><li>The event loop</li><li>gather &amp; semaphores</li><li>Timeouts &amp; cancellation</li></ol>
+<h2>Remember this</h2><ul><li>async def returns a coroutine, nothing runs until awaited; the event loop juggles thousands of I/O waits on one thread</li><li>gather runs calls concurrently (results stay ordered); Semaphore caps in-flight calls to respect rate limits</li><li>Ship reliability: per-call timeouts, retry with backoff, and a budget on the whole batch</li></ul>
+<section class="notes"><h2>async / await</h2>
+<ul>
+<li><code>async def</code> → calling returns a <strong>coroutine object</strong>; nothing runs until awaited.</li>
+<li><code>asyncio.run(main())</code> — entry point, called once.</li>
+<li>Mental model: C# syntax, single-threaded cooperative runtime.</li>
+</ul>
+<h2>Event loop</h2>
+<ul>
+<li>One thread; queue of ready coroutines; runs each to its next <code>await</code>.</li>
+<li>While a coroutine waits on I/O, others run — waiting becomes doing.</li>
+<li>CPU-heavy work inside a coroutine blocks the whole loop (→ PY-11).</li>
+<li>Beware sync/blocking calls inside async code — freezes the loop; use httpx (PY-12).</li>
+</ul>
+<h2>gather &amp; Semaphore</h2>
+<ul>
+<li><code>asyncio.gather(*coros)</code> — concurrent execution, <strong>ordered results</strong>.</li>
+<li><code>Semaphore(N)</code> caps in-flight calls — rate-limit politeness.</li>
+<li><code>return_exceptions=True</code> — batch survives individual failures.</li>
+</ul>
+<h2>Timeouts &amp; cancellation</h2>
+<ul>
+<li><code>asyncio.wait_for(coro, timeout)</code> → CancelledError at the await point.</li>
+<li>Retry transient (429/5xx) with exponential backoff; fail fast on 4xx.</li>
+<li>Budget the whole batch — per-call timeouts × retries ≠ bounded runtime.</li>
+</ul></section>
+<h2>Code: Production batch pattern: gather + semaphore + timeout + retry</h2><pre><code>import asyncio
+
+sem = asyncio.Semaphore(10)
+
+async def call_llm(prompt: str) -&gt; str:
+    async with sem:
+        for attempt in range(3):
+            try:
+                resp = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        model=&quot;gpt-4o&quot;,
+                        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+                    ),
+                    timeout=30,          # per-call deadline
+                )
+                return resp.choices[0].message.content
+            except (asyncio.TimeoutError, RateLimitError):
+                if attempt == 2:
+                    raise               # permanent failure after 3 tries
+                await asyncio.sleep(2 ** attempt)  # 1s, 2s backoff
+
+async def main(prompts: list[str]) -&gt; list[str]:
+    # tolerate individual failures; don&#x27;t lose 49 for 1
+    return await asyncio.gather(
+        *[call_llm(p) for p in prompts],
+        return_exceptions=True,
+    )
+
+results = asyncio.run(asyncio.wait_for(main(prompts), timeout=600))
+# failures arrive as exception objects in-place — inspect &amp; handle</code></pre>
+<nav class="pn"><a href="/learn/GA-17.html">← Advanced RAG</a><a href="/learn/PY-11.html">Threads vs Processes →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

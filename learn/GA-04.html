@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Structured Output &amp; Tools — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Free-text is for humans. Machines need schemas. This reel turns LLM output from prose into data. Learn Structured Output &amp; Tools (JSON / structured outputs, Function / tool calling, Pydantic + LLM end-to-end, Prompt caching) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-04.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Structured Output &amp; Tools — Generative AI for software architects | LKG School"><meta property="og:description" content="Free-text is for humans. Machines need schemas. This reel turns LLM output from prose into data. Learn Structured Output &amp; Tools (JSON / structured outputs, Function / tool calling, Pydantic + LLM end-to-end, Prompt caching) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-04.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Structured Output & Tools", "description": "Free-text is for humans. Machines need schemas. This reel turns LLM output from prose into data. Learn Structured Output & Tools (JSON / structured outputs, Function / tool calling, Pydantic + LLM end-to-end, Prompt caching) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-04.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["JSON / structured outputs", "Function / tool calling", "Pydantic + LLM end-to-end", "Prompt caching", "Multimodal inputs"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Structured Output & Tools", "item": "https://lkgschool.in/learn/GA-04.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › LLM Basics + API › Reel 13</nav>
+<h1>Structured Output &amp; Tools</h1>
+<p class="lede">Free-text is for humans. <strong>Machines need schemas.</strong> This reel turns LLM output from prose into data.</p>
+<a class="cta" href="/?reel=GA-04">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>JSON / structured outputs</li><li>Function / tool calling</li><li>Pydantic + LLM end-to-end</li><li>Prompt caching</li><li>Multimodal inputs</li></ol>
+<h2>Remember this</h2><ul><li>response_format + JSON Schema guarantees shape — Pydantic is the single source of truth</li><li>Tool calling = model proposes, your code disposes — the atomic unit of agents</li><li>Stable prompt prefix earns cache discounts; multimodal input + structured output = document superpowers</li></ul>
+<section class="notes"><h2>Structured outputs</h2>
+<ul>
+<li>Pass a JSON Schema as <code>response_format</code> → the API <strong>constrains generation</strong> to valid schema.</li>
+<li>Loop: Pydantic model → <code>model_json_schema()</code> → API → <code>Model.model_validate_json()</code>.</li>
+<li>Guarantees <strong>shape</strong>, not truth — value checks still need validators + grounding.</li>
+</ul>
+<h2>Function / tool calling</h2>
+<p>1. Register tools: name + description + parameter schema. 2. Model replies with a structured call request (<code>tool_calls</code>). 3. <strong>Your code executes</strong> — validate args (Pydantic), authorize, run. 4. Append result as a <code>role: &quot;tool&quot;</code> message; model continues.</p>
+<blockquote>Model proposes, code disposes. The atomic unit of agents (Stage 6).</blockquote>
+<h2>Pydantic end-to-end</h2>
+<ul>
+<li>One class: schema export · constraint · parse · value validation · test fixtures.</li>
+</ul>
+<h2>Prompt caching</h2>
+<ul>
+<li>Stable byte-identical prefix (system, docs, examples) → cached at a steep discount.</li>
+<li>Static first, dynamic last — a deliberate cost architecture.</li>
+</ul>
+<h2>Multimodal inputs</h2>
+<ul>
+<li>Images (base64/URL) and PDFs ride along as message parts.</li>
+<li>Multimodal in + structured out collapses OCR/extraction pipelines into one schema&#x27;d call.</li>
+<li>Verify critical numbers on high-stakes documents.</li>
+</ul></section>
+<h2>Code: Structured output + tool calling, end to end</h2><pre><code>from pydantic import BaseModel, Field
+from openai import OpenAI
+
+client = OpenAI()
+
+# --- 1. Structured output ---------------------------------------
+class Invoice(BaseModel):
+    vendor: str
+    total: float = Field(ge=0)
+    date: str
+
+resp = client.chat.completions.create(
+    model=&quot;gpt-4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Extract the invoice from this text: &#x27;Acme Corp — total $1,240.00 — 2026-03-01&#x27;&quot;}],
+    response_format={
+        &quot;type&quot;: &quot;json_schema&quot;,
+        &quot;json_schema&quot;: {&quot;name&quot;: &quot;invoice&quot;, &quot;schema&quot;: Invoice.model_json_schema()},
+    },
+)
+invoice = Invoice.model_validate_json(resp.choices[0].message.content)
+
+# --- 2. Tool calling ---------------------------------------------
+def get_weather(city: str) -&gt; str:
+    return f&quot;Sunny, 22°C in {city}&quot;          # your real code runs here
+
+weather_tool = {
+    &quot;type&quot;: &quot;function&quot;,
+    &quot;function&quot;: {
+        &quot;name&quot;: &quot;get_weather&quot;,
+        &quot;description&quot;: &quot;Get current weather for a city&quot;,
+        &quot;parameters&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {&quot;city&quot;: {&quot;type&quot;: &quot;string&quot;}},
+            &quot;required&quot;: [&quot;city&quot;],
+        },
+    },
+}
+
+r = client.chat.completions.create(
+    model=&quot;gpt-4o&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Weather in Paris?&quot;}],
+    tools=[weather_tool],
+)
+call = r.choices[0].message.tool_calls[0]
+args = eval(call.function.arguments)          # in prod: json.loads + validate
+result = get_weather(**args)
+print(result)                                  # → &#x27;Sunny, 22°C in Paris&#x27;</code></pre>
+<nav class="pn"><a href="/learn/GA-03.html">← API Basics</a><a href="/learn/GA-05.html">Core Techniques →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

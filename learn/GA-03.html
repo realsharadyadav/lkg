@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API Basics — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Every LLM app is a loop: build messages, call, stream, count, retry. Master the loop — skip the pain. Learn API Basics (Chat API anatomy, Streaming responses, Token counting &amp; cost, Rate limits &amp; retries) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-03.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="API Basics — Generative AI for software architects | LKG School"><meta property="og:description" content="Every LLM app is a loop: build messages, call, stream, count, retry. Master the loop — skip the pain. Learn API Basics (Chat API anatomy, Streaming responses, Token counting &amp; cost, Rate limits &amp; retries) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-03.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "API Basics", "description": "Every LLM app is a loop: build messages, call, stream, count, retry. Master the loop — skip the pain. Learn API Basics (Chat API anatomy, Streaming responses, Token counting & cost, Rate limits & retries) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-03.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Chat API anatomy", "Streaming responses", "Token counting & cost", "Rate limits & retries", "Official SDKs", "Batch API"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "API Basics", "item": "https://lkgschool.in/learn/GA-03.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › LLM Basics + API › Reel 12</nav>
+<h1>API Basics</h1>
+<p class="lede">Every LLM app is a <strong>loop</strong>: build messages, call, stream, count, retry. Master the loop — skip the pain.</p>
+<a class="cta" href="/?reel=GA-03">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Chat API anatomy</li><li>Streaming responses</li><li>Token counting &amp; cost</li><li>Rate limits &amp; retries</li><li>Official SDKs</li><li>Batch API</li></ol>
+<h2>Remember this</h2><ul><li>The API is stateless — YOUR message list is the conversation; system sets behavior</li><li>Stream for UX; count tokens before the call; log usage per feature</li><li>Backoff+jitter on 429s; official SDKs; batch API halves bulk costs</li></ul>
+<section class="notes"><h2>Chat API anatomy</h2>
+<ul>
+<li>Stateless: <code>messages=[...]</code> in → one assistant message out. <strong>Your list = the conversation.</strong></li>
+<li>Roles: <code>system</code> (operating manual) · <code>user</code> · <code>assistant</code> (prior replies, appended by you).</li>
+</ul>
+<h2>Streaming</h2>
+<ul>
+<li><code>stream=True</code> → iterate chunks; <code>delta.content</code> = new text.</li>
+<li>Time-to-first-token is the UX metric.</li>
+<li><code>stream_options={&quot;include_usage&quot;: True}</code> → token counts in the final chunk.</li>
+</ul>
+<h2>Tokens &amp; cost</h2>
+<ul>
+<li>cost = (prompt × input price) + (completion × <strong>output price</strong> — usually higher).</li>
+<li>Count before the call (tiktoken), trim context, cap <code>max_tokens</code>, log per feature.</li>
+</ul>
+<h2>Rate limits &amp; retries</h2>
+<ul>
+<li>429 = too many requests → <strong>exponential backoff + jitter</strong>, honor <code>Retry-After</code>, cap attempts.</li>
+<li>Add timeouts + circuit breakers — this is network code.</li>
+</ul>
+<h2>SDKs</h2>
+<ul>
+<li>OpenAI SDK covers OpenAI + Azure OpenAI; Anthropic SDK mirrors the shape.</li>
+<li>Abstract behind your own interface only when multi-provider is <strong>real</strong>.</li>
+</ul>
+<h2>Batch API</h2>
+<ul>
+<li>JSONL of requests → results ≤24h at ~half price.</li>
+<li>Route by deadline: interactive for users, batch for bulk.</li>
+</ul></section>
+<h2>Code: The production call loop — streaming, usage, retry</h2><pre><code>import random, time
+from openai import OpenAI, RateLimitError
+
+client = OpenAI()
+
+def chat(messages, model=&quot;gpt-4o-mini&quot;, max_retries=4, **kw):
+    &quot;&quot;&quot;Call with retry/backoff + usage logging. The only wrapper you need.&quot;&quot;&quot;
+    for attempt in range(max_retries):
+        try:
+            return client.chat.completions.create(
+                model=model, messages=messages,
+                stream_options={&quot;include_usage&quot;: True},
+                **kw,
+            )
+        except RateLimitError as e:
+            if attempt == max_retries - 1:
+                raise
+            wait = (2 ** attempt) + random.random()   # backoff + jitter
+            ra = e.response.headers.get(&quot;Retry-After&quot;)
+            if ra: wait = float(ra)
+            print(f&quot;429 — retry {attempt + 1} in {wait:.1f}s&quot;)
+            time.sleep(wait)
+
+# --- streaming render ------------------------------------------------
+stream = chat(
+    [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Explain chunking in 2 sentences&quot;}],
+    stream=True, max_tokens=120,
+)
+full = &quot;&quot;
+for chunk in stream:
+    piece = chunk.choices[0].delta.content or &quot;&quot;
+    print(piece, end=&quot;&quot;, flush=True)   # render live
+    full += piece
+    if chunk.usage:
+        print(f&quot;\n[usage] {chunk.usage}&quot;)   # tokens for cost logging
+
+# --- batch for bulk (sketch) -----------------------------------------
+# requests.jsonl: {&quot;custom_id&quot;:&quot;row-1&quot;,&quot;method&quot;:&quot;POST&quot;,&quot;url&quot;:&quot;/v1/chat/completions&quot;,&quot;body&quot;:{...}}
+# batch = client.batches.create(input_file_id=uploaded.id, endpoint=&quot;/v1/chat/completions&quot;, completion_window=&quot;24h&quot;)</code></pre>
+<nav class="pn"><a href="/learn/GA-02.html">← Model Landscape</a><a href="/learn/GA-04.html">Structured Output &amp; Tools →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

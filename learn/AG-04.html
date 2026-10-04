@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Concepts — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Every AI app re-invents tool connections. MCP — the Model Context Protocol — ends that: one open standard to plug models into tools and data. USB-C for AI. Learn MCP Concepts (What &amp; why, Host, client, server, Primitives: tools, resources, prompts, Transports &amp; vs function calling) in a short ani…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-04.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="MCP Concepts — Agentic AI for software architects | LKG School"><meta property="og:description" content="Every AI app re-invents tool connections. MCP — the Model Context Protocol — ends that: one open standard to plug models into tools and data. USB-C for AI. Learn MCP Concepts (What &amp; why, Host, client, server, Primitives: tools, resources, prompts, Transports &amp; vs function calling) in a short ani…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-04.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "MCP Concepts", "description": "Every AI app re-invents tool connections. MCP — the Model Context Protocol — ends that: one open standard to plug models into tools and data. USB-C for AI. Learn MCP Concepts (What & why, Host, client, server, Primitives: tools, resources, prompts, Transports & vs function calling) in a short ani…", "url": "https://lkgschool.in/learn/AG-04.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["What & why", "Host, client, server", "Primitives: tools, resources, prompts", "Transports & vs function calling"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "MCP Concepts", "item": "https://lkgschool.in/learn/AG-04.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 46</nav>
+<h1>MCP Concepts</h1>
+<p class="lede">Every AI app re-invents tool connections. MCP — the Model Context Protocol — ends that: <strong>one open standard to plug models into tools and data. USB-C for AI.</strong></p>
+<a class="cta" href="/?reel=AG-04">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>What &amp; why</li><li>Host, client, server</li><li>Primitives: tools, resources, prompts</li><li>Transports &amp; vs function calling</li></ol>
+<h2>Remember this</h2><ul><li>MCP = open standard replacing N×M bespoke integrations; servers expose curated capabilities behind a trust boundary</li><li>Three roles: host (initiates), client (per-server connection), server (owns capabilities, discovered at connect time)</li><li>Primitives: tools (model-invoked actions), resources (app-curated data), prompts (user-selected templates); stdio for local, HTTP for shared</li></ul>
+<section class="notes"><h2>What &amp; why</h2>
+<ul>
+<li>N apps × M tools = N×M bespoke integrations. MCP = one open protocol (Anthropic, late 2024).</li>
+<li>Server = trust boundary: curated tools, credentials stay inside.</li>
+</ul>
+<h2>Roles</h2>
+<ul>
+<li><strong>Host</strong>: AI app, owns LLM + UX, initiates everything.</li>
+<li><strong>Client</strong>: one per server, host-owned, carries the protocol.</li>
+<li><strong>Server</strong>: owns capabilities; announced via discovery at connect.</li>
+</ul>
+<h2>Primitives</h2>
+<ul>
+<li><strong>Tools</strong>: model-invoked actions (schemas).</li>
+<li><strong>Resources</strong>: app-curated data (URIs) — model doesn&#x27;t pull directly.</li>
+<li><strong>Prompts</strong>: user-selected templates.</li>
+</ul>
+<h2>Transports &amp; comparison</h2>
+<ul>
+<li>stdio (local subprocess) vs HTTP (remote/shared, needs auth).</li>
+<li>MCP ≠ function calling: protocol AROUND the calls (discovery, lifecycle, composition, ecosystem).</li>
+</ul></section>
+<h2>Code: Capability discovery: what a server announces</h2><pre><code>// What a server exposes at connect time (simplified):
+{
+  &quot;tools&quot;: [
+    { &quot;name&quot;: &quot;search_tickets&quot;,
+      &quot;description&quot;: &quot;Search support tickets by keyword. Use for customer-history questions; NOT for live account data (use get_account).&quot;,
+      &quot;inputSchema&quot;: { &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: { &quot;query&quot;: {&quot;type&quot;: &quot;string&quot;}, &quot;limit&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;default&quot;: 5} },
+        &quot;required&quot;: [&quot;query&quot;] } }
+  ],
+  &quot;resources&quot;: [
+    { &quot;uri&quot;: &quot;ticket://recent&quot;,  &quot;name&quot;: &quot;Recent tickets&quot;,
+      &quot;description&quot;: &quot;Last 50 tickets as markdown&quot; },
+    { &quot;uri&quot;: &quot;kb://article/41&quot;,  &quot;name&quot;: &quot;Refund policy&quot; }
+  ],
+  &quot;prompts&quot;: [
+    { &quot;name&quot;: &quot;ticket_summary&quot;,
+      &quot;description&quot;: &quot;Summarize a ticket thread with sentiment&quot; }
+  ]
+}
+
+// The host turns tools[] into the model&#x27;s function-calling schema —
+// AG-02&#x27;s description discipline, now riding a standard wire format.</code></pre>
+<nav class="pn"><a href="/learn/GA-19.html">← Files as Data Source</a><a href="/learn/AG-05.html">MCP Spec Evolution →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

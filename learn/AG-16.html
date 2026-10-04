@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Framework Selection — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Framework choice is a two-to-three-year bet. Choose with a matrix, a bake-off, and an exit plan — not a demo-day feeling. Learn Framework Selection (The selection matrix, Lock-in &amp; portability, The hands-on bake-off, Decision discipline) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-16.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Framework Selection — Agentic AI for software architects | LKG School"><meta property="og:description" content="Framework choice is a two-to-three-year bet. Choose with a matrix, a bake-off, and an exit plan — not a demo-day feeling. Learn Framework Selection (The selection matrix, Lock-in &amp; portability, The hands-on bake-off, Decision discipline) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-16.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Framework Selection", "description": "Framework choice is a two-to-three-year bet. Choose with a matrix, a bake-off, and an exit plan — not a demo-day feeling. Learn Framework Selection (The selection matrix, Lock-in & portability, The hands-on bake-off, Decision discipline) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/AG-16.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The selection matrix", "Lock-in & portability", "The hands-on bake-off", "Decision discipline"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Framework Selection", "item": "https://lkgschool.in/learn/AG-16.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 58</nav>
+<h1>Framework Selection</h1>
+<p class="lede">Framework choice is a two-to-three-year bet. Choose with a <strong>matrix, a bake-off, and an exit plan</strong> — not a demo-day feeling.</p>
+<a class="cta" href="/?reel=AG-16">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The selection matrix</li><li>Lock-in &amp; portability</li><li>The hands-on bake-off</li><li>Decision discipline</li></ol>
+<h2>Remember this</h2><ul><li>Weight the boring axes: control-flow philosophy, ecosystem, maturity pulse — features converge, these don&#x27;t</li><li>Keep a plain, testable core with the framework as a shell and protocols (MCP/A2A) as integrations — the exit costs a re-shell, not a rebuild</li><li>Run the same-task bake-off on honest dimensions, record the ADR with tripwires, and re-ask &#x27;would we choose this again?&#x27; every quarter</li></ul>
+<section class="notes"><h2>Matrix (weight boring axes)</h2>
+<ul>
+<li>Control (who owns flow) · ecosystem (docs, hiring, 2 a.m. answers) · language/runtime fit · maturity pulse (cadence, spec absorption).</li>
+<li>Features converge — philosophies and momentum don&#x27;t.</li>
+</ul>
+<h2>Lock-in &amp; portability</h2>
+<ul>
+<li>Lock-in layers: model bindings (cheap) · tool integrations (cheap if MCP) · orchestration logic (expensive).</li>
+<li>Shell pattern: plain tested core + framework at edges + protocol integrations.</li>
+<li>Write the exit plan at adoption.</li>
+</ul>
+<h2>Bake-off</h2>
+<ul>
+<li>Same representative task (tool + branch + failure + checkpoint) in top-2.</li>
+<li>Dimensions: time-to-working, my-code ratio, break-it debugging, test ergonomics, free observability.</li>
+</ul>
+<h2>Discipline</h2>
+<ul>
+<li>ADR + pre-agreed tripwires + quarterly &#x27;would we choose this again?&#x27; — switch bravely.</li>
+</ul></section>
+<h2>Code: The bake-off scorecard template</h2><pre><code># Bake-off: LangGraph vs MAF (task: RAG + tool + failure path)
+# Scorer: ____ Date: ____ Versions: __________
+
+dim,                    weight, LG, MAF
+time_to_working,        1,      _,   _
+my_code_ratio,          2,      _,   _   # app logic vs ceremony
+break_it_debug_min,     2,      _,   _   # intentional tool failure
+pytest_ergonomics,      2,      _,   _
+observability_free,     1,      _,   _   # visibility w/o added instrumentation
+mcp_support_current,    2,      _,   _   # 2026-07-28 spec state
+docs_at_midnight,       1,      _,   _   # ecosystem gut-check
+# ─────────────────────────────────────────────
+# weighted totals:               _,   _
+# break-it notes:  LG error: …  MAF error: …
+# verdict + exit conditions recorded in ADR-7</code></pre>
+<nav class="pn"><a href="/learn/AG-15.html">← Framework Landscape</a><a href="/learn/GA-22.html">Security Threats →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

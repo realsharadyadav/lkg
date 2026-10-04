@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retrieval Quality — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Retrieval is a recall problem wearing a precision costume. Five techniques — top-k, reranking, rewriting, HyDE, hybrid — that decide whether the right chunk survives. Learn Retrieval Quality (Top-k &amp; the recall ceiling, Reranking, Query rewriting &amp; HyDE, Hybrid retrieval) in a short animated reel…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-15.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Retrieval Quality — Generative AI for software architects | LKG School"><meta property="og:description" content="Retrieval is a recall problem wearing a precision costume. Five techniques — top-k, reranking, rewriting, HyDE, hybrid — that decide whether the right chunk survives. Learn Retrieval Quality (Top-k &amp; the recall ceiling, Reranking, Query rewriting &amp; HyDE, Hybrid retrieval) in a short animated reel…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-15.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Retrieval Quality", "description": "Retrieval is a recall problem wearing a precision costume. Five techniques — top-k, reranking, rewriting, HyDE, hybrid — that decide whether the right chunk survives. Learn Retrieval Quality (Top-k & the recall ceiling, Reranking, Query rewriting & HyDE, Hybrid retrieval) in a short animated reel…", "url": "https://lkgschool.in/learn/GA-15.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Top-k & the recall ceiling", "Reranking", "Query rewriting & HyDE", "Hybrid retrieval"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Retrieval Quality", "item": "https://lkgschool.in/learn/GA-15.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 31</nav>
+<h1>Retrieval Quality</h1>
+<p class="lede">Retrieval is a <strong>recall problem wearing a precision costume</strong>. Five techniques — top-k, reranking, rewriting, HyDE, hybrid — that decide whether the right chunk survives.</p>
+<a class="cta" href="/?reel=GA-15">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Top-k &amp; the recall ceiling</li><li>Reranking</li><li>Query rewriting &amp; HyDE</li><li>Hybrid retrieval</li></ol>
+<h2>Remember this</h2><ul><li>Tune top-k on golden questions (usually 8–20); fetch wide, narrow later — recall at the top, precision at the bottom</li><li>Rerank: bi-encoder recalls broadly, cross-encoder scores (question, chunk) pairs jointly, keep the top few</li><li>Vague queries → rewrite / multi-query / HyDE; exact tokens → hybrid BM25 + vector with reciprocal-rank fusion</li></ul>
+<section class="notes"><h2>Top-k</h2>
+<ul>
+<li>k too small → recall dies (answer at k+1); too large → precision drowns.</li>
+<li>Golden questions plot recall vs k → typically 8–20.</li>
+<li>Funnel: fetch wide (20–50) → narrow later.</li>
+</ul>
+<h2>Reranking (two-stage)</h2>
+<ul>
+<li>Bi-encoder: fast, independent embeddings → broad candidates.</li>
+<li>Cross-encoder: (q, chunk) jointly → one score; accurate, slow.</li>
+<li>Retrieve-then-rerank is the standard production upgrade.</li>
+</ul>
+<h2>Query rewriting</h2>
+<ul>
+<li><strong>Rewrite</strong>: vague → precise standalone query (conversation-aware).</li>
+<li><strong>Multi-query</strong>: 3–5 paraphrases, union results.</li>
+<li><strong>HyDE</strong>: generate hypothetical answer → embed it → vocabulary matches real chunks.</li>
+</ul>
+<h2>Hybrid retrieval</h2>
+<ul>
+<li>Vector: paraphrase-proof, weak on exact tokens (codes, names, IDs).</li>
+<li>BM25: exact-token precision, blind to paraphrase.</li>
+<li><strong>RRF</strong> fuses by rank (1, ½, ⅓…): scale-free, no calibration.</li>
+<li>Order: hybrid fetch → rerank → cut.</li>
+</ul></section>
+<h2>Code: Retrieval stack: hybrid fetch → rerank → cut</h2><pre><code>from ranx import compare  # golden-set eval
+
+def retrieve(question: str, k: int = 5) -&gt; list[Chunk]:
+    # 1 · rewrite for precision (cheap LLM call)
+    q = llm(f&quot;Rewrite as a precise standalone search query: {question}&quot;)
+
+    # 2 · HYBRID fetch — vector + BM25, fused by rank
+    vec_hits = vdb.search(embed(q), k=50)
+    bm25_hits = bm25.search(q, k=50)
+    fused = reciprocal_rank_fusion([vec_hits, bm25_hits])[:50]
+
+    # 3 · RERANK with a cross-encoder
+    pairs = [[question, c.text] for c in fused]   # original q, not rewrite
+    scores = cross_encoder.predict(pairs)
+    ranked = [c for _, c in sorted(zip(scores, fused), reverse=True)]
+
+    return ranked[:k]   # only these enter the prompt
+
+# --- golden-set loop: measure before you tune --------------------
+# for each (question, answer_chunk) in golden_set:
+#     assert answer_chunk in retrieve(question, k=20)
+# recall@20 too low? → hybrid on, rewrite on, raise fetch width
+# recall fine but answers wrong? → that&#x27;s GA-16&#x27;s stage, not this one</code></pre>
+<nav class="pn"><a href="/learn/GA-14.html">← Ingestion &amp; Chunking</a><a href="/learn/GA-16.html">Generation &amp; Citations →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

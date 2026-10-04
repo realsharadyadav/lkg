@@ -18,3 +18,8 @@ Never edit these numbers by hand. Skipping the bump can leave phones on stale or
 All clips play through ONE shared `<audio>` element (`js/audio.js`) unlocked from a tap
 (pointerup/touchend/click). Don't create `new Audio()` per clip, and don't start sound from
 `pointerdown` — iOS Safari blocks both.
+
+## SEO pages
+`learn/*.html`, `sitemap.xml` and `robots.txt` are generated from the reel JSON.
+Re-run `python3 scripts/build-seo.py` whenever reel content or the manifest changes, and commit the output.
+Lesson pages link into the app with `/?reel=<ID>` (handled in `js/feed.js`).

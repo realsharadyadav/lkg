@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performance &amp; Cost — Generative AI for software architects | LKG School</title>
+<meta name="description" content="The same answer can cost 10× more or arrive 5× slower depending on engineering. Caching, routing, streaming, fallbacks — the optimization stack, honestly prioritized. Learn Performance &amp; Cost (Caching layers, Model routing, Latency &amp; resilience, Quotas &amp; throughput) in a short animated reel with …">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-25.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Performance &amp; Cost — Generative AI for software architects | LKG School"><meta property="og:description" content="The same answer can cost 10× more or arrive 5× slower depending on engineering. Caching, routing, streaming, fallbacks — the optimization stack, honestly prioritized. Learn Performance &amp; Cost (Caching layers, Model routing, Latency &amp; resilience, Quotas &amp; throughput) in a short animated reel with …">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-25.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Performance & Cost", "description": "The same answer can cost 10× more or arrive 5× slower depending on engineering. Caching, routing, streaming, fallbacks — the optimization stack, honestly prioritized. Learn Performance & Cost (Caching layers, Model routing, Latency & resilience, Quotas & throughput) in a short animated reel with …", "url": "https://lkgschool.in/learn/GA-25.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Caching layers", "Model routing", "Latency & resilience", "Quotas & throughput"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Performance & Cost", "item": "https://lkgschool.in/learn/GA-25.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 62</nav>
+<h1>Performance &amp; Cost</h1>
+<p class="lede">The same answer can cost 10× more or arrive 5× slower depending on engineering. <strong>Caching, routing, streaming, fallbacks</strong> — the optimization stack, honestly prioritized.</p>
+<a class="cta" href="/?reel=GA-25">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Caching layers</li><li>Model routing</li><li>Latency &amp; resilience</li><li>Quotas &amp; throughput</li></ol>
+<h2>Remember this</h2><ul><li>Three caches compound: static-first prompts for provider cache reuse, exact response cache, high-threshold semantic cache — with versioned keys and TTLs</li><li>Model routing sends easy traffic to cheap lanes with EXTERNAL verification and policy exceptions; PTU covers the steady baseline, on-demand the peaks</li><li>Latency = streaming + parallelism + small contexts; resilience = multi-provider fallback with constant response shapes and idempotent retries; capacity pressure sheds load by design</li></ul>
+<section class="notes"><h2>Caching</h2>
+<ul>
+<li>Prompt cache: static-first assembly (positional).</li>
+<li>Response cache: exact match, tenant-scoped keys.</li>
+<li>Semantic cache: high threshold (≥0.95), TTLs, versioned keys, never cache errors/abstentions.</li>
+</ul>
+<h2>Model routing</h2>
+<ul>
+<li>Cheap lane first, EXTERNAL verification, escalate on miss.</li>
+<li>Policy exceptions: safety/side-effects/compliance stay flagship.</li>
+<li>Quality monitored per route (GA-24).</li>
+</ul>
+<h2>Latency &amp; resilience</h2>
+<ul>
+<li>Streaming everywhere · gather() independent calls · smallest sufficient context.</li>
+<li>Multi-provider fallback, constant response shapes, idempotent retries.</li>
+</ul>
+<h2>Quotas &amp; throughput</h2>
+<ul>
+<li>PTU for steady baselines, on-demand for peaks; token buckets; queue-and-degrade ladder designed in advance; load-test quarterly.</li>
+</ul></section>
+<h2>Code: The request pipeline with every lever in place</h2><pre><code>async def handle(q, user):
+    key = cache_key(q, user.tenant, prompt_version())
+    if hit := response_cache.get(key):            # exact
+        return hit
+    if near := semantic_cache.search(embed(q), 0.95):
+        return near                               # paraphrase
+
+    route = triage(q)                             # cheap | strong
+    try:
+        async with token_bucket(user):            # smoothing
+            stream = route.model.stream(assemble_static_first(q))
+            return await emit_sse(stream,         # first token &lt;1s
+                                  on_complete=lambda r: (
+                                      response_cache.set(key, r),
+                                      semantic_cache.add(q, r)))
+    except ProviderUnavailable:
+        return await fallback_provider.handle(q)  # same shape, degraded note</code></pre>
+<nav class="pn"><a href="/learn/GA-24.html">← Observability</a><a href="/learn/GA-26.html">Deployment →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

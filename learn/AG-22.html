@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: Data Analyst Agent — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Capstone two: an agent that ingests CSVs, answers in DuckDB SQL, draws charts, and CANNOT write to your database — GA-19&#x27;s theory as a working build. Learn Project: Data Analyst Agent (Ingestion pipeline, The SQL tool, Charts &amp; summaries, Guardrails, evals &amp; limits) in a short animated reel with …">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-22.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Project: Data Analyst Agent — Agentic AI for software architects | LKG School"><meta property="og:description" content="Capstone two: an agent that ingests CSVs, answers in DuckDB SQL, draws charts, and CANNOT write to your database — GA-19&#x27;s theory as a working build. Learn Project: Data Analyst Agent (Ingestion pipeline, The SQL tool, Charts &amp; summaries, Guardrails, evals &amp; limits) in a short animated reel with …">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-22.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Project: Data Analyst Agent", "description": "Capstone two: an agent that ingests CSVs, answers in DuckDB SQL, draws charts, and CANNOT write to your database — GA-19's theory as a working build. Learn Project: Data Analyst Agent (Ingestion pipeline, The SQL tool, Charts & summaries, Guardrails, evals & limits) in a short animated reel with …", "url": "https://lkgschool.in/learn/AG-22.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Ingestion pipeline", "The SQL tool", "Charts & summaries", "Guardrails, evals & limits"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Project: Data Analyst Agent", "item": "https://lkgschool.in/learn/AG-22.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Hands-on Projects › Reel 70</nav>
+<h1>Project: Data Analyst Agent</h1>
+<p class="lede">Capstone two: an agent that ingests CSVs, answers in <strong>DuckDB SQL</strong>, draws charts, and CANNOT write to your database — GA-19&#x27;s theory as a working build.</p>
+<a class="cta" href="/?reel=AG-22">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Ingestion pipeline</li><li>The SQL tool</li><li>Charts &amp; summaries</li><li>Guardrails, evals &amp; limits</li></ol>
+<h2>Remember this</h2><ul><li>Ingest CSV→Parquet with explicit reject reporting and per-session isolation; views give the model a typed, semantic-layered namespace</li><li>The SQL tool carries GA-18&#x27;s four fences and AG-02&#x27;s actionable errors; routing sends analysis to SQL, visuals to the sandbox, semantics to retrieval</li><li>Narrative cites every number via query references and abstains on whys; golden sets score honesty; efficiency gates keep questions at cents</li></ul>
+<section class="notes"><h2>Ingest</h2>
+<ul>
+<li>CSV→Parquet, TRY_CAST + reject report with samples (coverage honesty).</li>
+<li>Per-session DuckDB connections (structural tenant isolation).</li>
+<li>Views = typed namespace + semantic layer (versioned config).</li>
+</ul>
+<h2>SQL tool</h2>
+<ul>
+<li>GA-18 fences: parse → AST allow-list → LIMIT wrap → scoped identity.</li>
+<li>AG-02 actionable errors (unknown columns name available ones).</li>
+<li>list-tables exploration tool; GA-19 router in instructions.</li>
+</ul>
+<h2>Charts &amp; narrative</h2>
+<ul>
+<li>Sandbox code route (AG-03 contract) → linked artifacts.</li>
+<li>Invariant: every number cites its query · speculation labeled · whys abstained.</li>
+</ul>
+<h2>Guardrails &amp; evals</h2>
+<ul>
+<li>Upload caps, output screens, golden analyst set (correctness + honesty traps),</li>
+</ul>
+<p>efficiency gates (cents/question), stated limits in product copy.</p>
+<p><strong>Build order: ingest → fenced tool → routing golden set → charts → honesty evals.</strong></p></section>
+<h2>Code: run-sql: the whole tool</h2><pre><code>@mcp.tool()
+def run_sql(query: str, session: str) -&gt; SqlResult:
+    &quot;&quot;&quot;Execute read-only SQL over this session&#x27;s tables (orders, …).
+    Use for aggregation, joins, trends. Do NOT use for file ops —
+    ATTACH/COPY/read_csv are rejected. Prefer explicit column lists.
+    Results capped at 500 rows.&quot;&quot;&quot;
+    tree = sqlglot.parse_one(query)
+    if not isinstance(tree, sqlglot.exp.Select) or \
+       any(banned in tree.sql() for banned in
+           (&quot;ATTACH&quot;, &quot;COPY&quot;, &quot;read_csv&quot;, &quot;write_&quot;)):
+        raise ToolError(&quot;only plain SELECTs over session tables allowed&quot;)
+    con = sessions.connect(session)          # structural isolation
+    rows = con.execute(f&quot;SELECT * FROM ({tree.sql()}) _q LIMIT 500&quot;)
+    return SqlResult(columns=rows.columns, rows=rows.fetchall(),
+                     row_count=rows.rowcount, query=tree.sql())</code></pre>
+<nav class="pn"><a href="/learn/AG-21.html">← Project: SOP-to-Excel Agent</a><a href="/learn/AG-23.html">Project: Document Processing Agent →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

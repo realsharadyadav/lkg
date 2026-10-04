@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedding Concepts — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Meaning, as math. Five concepts and you&#x27;ll understand the technology half of Stage 4. Learn Embedding Concepts (What is an embedding, Dimensions &amp; trade-offs, Similarity metrics, Semantic vs keyword search) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-07.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Embedding Concepts — Generative AI for software architects | LKG School"><meta property="og:description" content="Meaning, as math. Five concepts and you&#x27;ll understand the technology half of Stage 4. Learn Embedding Concepts (What is an embedding, Dimensions &amp; trade-offs, Similarity metrics, Semantic vs keyword search) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-07.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Embedding Concepts", "description": "Meaning, as math. Five concepts and you'll understand the technology half of Stage 4. Learn Embedding Concepts (What is an embedding, Dimensions & trade-offs, Similarity metrics, Semantic vs keyword search) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-07.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["What is an embedding", "Dimensions & trade-offs", "Similarity metrics", "Semantic vs keyword search", "Visualizing embeddings"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Embedding Concepts", "item": "https://lkgschool.in/learn/GA-07.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 22</nav>
+<h1>Embedding Concepts</h1>
+<p class="lede">Meaning, as <strong>math</strong>. Five concepts and you&#x27;ll understand the technology half of Stage 4.</p>
+<a class="cta" href="/?reel=GA-07">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>What is an embedding</li><li>Dimensions &amp; trade-offs</li><li>Similarity metrics</li><li>Semantic vs keyword search</li><li>Visualizing embeddings</li></ol>
+<h2>Remember this</h2><ul><li>Embeddings = meaning as vectors; similar direction = similar meaning</li><li>Dimensions trade quality for memory; cosine is the default metric (dot if normalized)</li><li>Semantic search finds meaning, keyword finds literals — visualize with PCA/t-SNE to debug your corpus</li></ul>
+<section class="notes"><h2>What is an embedding</h2>
+<ul>
+<li>Text → fixed-length vector of floats; <strong>similar direction = similar meaning</strong>.</li>
+<li>Meaning becomes measurable geometry.</li>
+</ul>
+<h2>Dimensions</h2>
+<ul>
+<li>384 / 768 / 1536 / 3072… richer ≠ always better.</li>
+<li>Memory: 1M docs × 1536 × 4B ≈ 6 GB (+index). Pick the smallest size that passes your eval.</li>
+<li>Dimensions are model-locked → model change = full re-embedding (GA-08).</li>
+</ul>
+<h2>Similarity metrics</h2>
+<table><tr><th>Metric</th><th>When</th></tr><tr><td><strong>Cosine</strong></td><td>text default (direction only)</td></tr><tr><td>Dot</td><td>normalized vectors → == cosine, faster</td></tr><tr><td>Euclidean</td><td>when magnitude carries signal (some image/recsys)</td></tr></table>
+<ul>
+<li>Normalize at write time → query with cheap dot product.</li>
+</ul>
+<h2>Semantic vs keyword</h2>
+<ul>
+<li>Keyword: exact tokens — precise on codes/IDs, deaf to synonyms.</li>
+<li>Semantic: meaning — synonym-robust, blurry on exact strings.</li>
+<li>Production answer: <strong>hybrid</strong> (GA-15).</li>
+</ul>
+<h2>Visualizing</h2>
+<ul>
+<li>PCA: fast linear projection — first look.</li>
+<li>t-SNE: cluster-preserving, nonlinear — pretty, distorts global distances.</li>
+<li>Healthy corpus → topic clusters + cross-lingual neighbors. Blob → fix chunking/model upstream.</li>
+</ul></section>
+<h2>Code: Embeddings, from text to plot</h2><pre><code>import numpy as np
+from openai import OpenAI
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+client = OpenAI()
+
+def embed(texts: list[str]) -&gt; np.ndarray:
+    r = client.embeddings.create(model=&quot;text-embedding-3-small&quot;, input=texts)
+    return np.array([d.embedding for d in r.data])
+
+docs = [
+    &quot;Quarterly revenue rose 12% to $4.1M&quot;,
+    &quot;Q1 earnings: total income $4.1 million, up 12%&quot;,
+    &quot;The sofa arrives in grey fabric on Friday&quot;,
+    &quot;Error AX-2041: printer queue timeout&quot;,
+    &quot;Policy updated: remote work now 3 days per week&quot;,
+    &quot;नई नीति: दूरस्थ कार्य अब सप्ताह में 3 दिन&quot;,
+]
+vecs = embed(docs)                     # (6, 1536)
+print(vecs.shape)
+
+# similarity sanity check (unit-normalized → dot = cosine)
+u = vecs / np.linalg.norm(vecs, axis=1, keepdims=True)
+sim = u @ u.T
+print(&quot;revenue pair:&quot;, round(sim[0, 1], 3))   # high — paraphrase
+print(&quot;revenue vs sofa:&quot;, round(sim[0, 2], 3)) # near 0 — unrelated
+
+# 1536 → 2 for a look
+xy = PCA(n_components=2).fit_transform(vecs)
+plt.scatter(xy[:, 0], xy[:, 1])
+for (x, y), d in zip(xy, docs):
+    plt.annotate(d[:20], (x, y))
+plt.show()                              # clusters = healthy corpus</code></pre>
+<nav class="pn"><a href="/learn/PY-19.html">← Excel Automation</a><a href="/learn/GA-08.html">Embedding Models →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

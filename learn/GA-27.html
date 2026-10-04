@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG vs Fine-tune vs Prompt — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Three levers change model behavior: what you SAY, what it KNOWS, and what it IS. Choosing wrong wastes weeks — this reel is the decision framework architects actually use. Learn RAG vs Fine-tune vs Prompt (The decision framework, Fine-tuning, SFT, LoRA, Distillation &amp; small models, Local &amp; open m…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-27.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="RAG vs Fine-tune vs Prompt — Generative AI for software architects | LKG School"><meta property="og:description" content="Three levers change model behavior: what you SAY, what it KNOWS, and what it IS. Choosing wrong wastes weeks — this reel is the decision framework architects actually use. Learn RAG vs Fine-tune vs Prompt (The decision framework, Fine-tuning, SFT, LoRA, Distillation &amp; small models, Local &amp; open m…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-27.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "RAG vs Fine-tune vs Prompt", "description": "Three levers change model behavior: what you SAY, what it KNOWS, and what it IS. Choosing wrong wastes weeks — this reel is the decision framework architects actually use. Learn RAG vs Fine-tune vs Prompt (The decision framework, Fine-tuning, SFT, LoRA, Distillation & small models, Local & open m…", "url": "https://lkgschool.in/learn/GA-27.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The decision framework", "Fine-tuning, SFT, LoRA", "Distillation & small models", "Local & open models"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "RAG vs Fine-tune vs Prompt", "item": "https://lkgschool.in/learn/GA-27.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 76</nav>
+<h1>RAG vs Fine-tune vs Prompt</h1>
+<p class="lede">Three levers change model behavior: what you SAY, what it KNOWS, and what it IS. <strong>Choosing wrong wastes weeks — this reel is the decision framework architects actually use.</strong></p>
+<a class="cta" href="/?reel=GA-27">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The decision framework</li><li>Fine-tuning, SFT, LoRA</li><li>Distillation &amp; small models</li><li>Local &amp; open models</li></ol>
+<h2>Remember this</h2><ul><li>Three levers: prompt (behavior, free), RAG (facts, instant updates), fine-tune (weights, permanent) — decide in that order; default stack is prompt + RAG</li><li>SFT teaches with curated examples (quality over quantity); LoRA/PEFT trains tiny adapters — 0.1% of weights, one GPU, hot-swappable per request</li><li>Distillation moves a teacher&#x27;s capability into a cheap student; pair it with routing and the frontier model only sees the traffic that pays for it</li><li>Open weights + Ollama (dev) / vLLM (prod, paged attention) give you an OpenAI-compatible socket you own — swap backends via base_url alone</li></ul>
+<section class="notes"><h2>The framework</h2>
+<p>1. Knowledge current/private/changing? → <strong>RAG</strong> (GA-09/GA-10). 2. Behavior still failing with good prompt + facts? → <strong>fine-tune</strong>. 3. Otherwise → <strong>prompt harder</strong> — the underused lever. Golden rule: fine-tune style/format, RAG facts. Complements.</p>
+<h2>Fine-tuning mechanics</h2>
+<ul>
+<li>SFT on hundreds–thousands of CURATED pairs; data curation = 80% of the project.</li>
+<li>LoRA/PEFT: freeze base, train tiny adapters (r=16 typical). MBs, one GPU, hot-swap per request.</li>
+<li>Risks: catastrophic forgetting, you now own versions/deployment (GA-26), needs eval harness (GA-20).</li>
+</ul>
+<h2>Distillation</h2>
+<p>Teacher outputs → student training data. Gate student on golden set before traffic. Pair with routing: cheap classifier sends ~15% to frontier.</p>
+<h2>Local &amp; open</h2>
+<ul>
+<li>Ollama: dev/prototype, OpenAI-compatible on localhost:11434.</li>
+<li>vLLM: production serving, paged attention + continuous batching → throughput per GPU.</li>
+<li>When local: data-boundary rules, predictable volume capex, residency.</li>
+<li>When not: frontier-reasoning gap — measure on YOUR evals; the gap closes quarterly.</li>
+</ul>
+<h2>Cross-links</h2>
+<p>GA-03/04 (prompting, structured output), GA-09/10 (RAG), GA-20 (evals), GA-25/30 (cost), GA-26 (deployment), GA-29 (managed alternatives), AG-13 (context budget).</p></section>
+<h2>Code: The lever ladder</h2><pre><code>LEVER          CHANGES       COST         REVERSIBLE?   UPDATES
+prompt         behavior      ~0           instant       per call
+RAG            knowledge     retrieval    instant       update docs
+fine-tune      weights       $ + GPUs     retrain       per release
+
+def choose(p):
+    if p.knowledge_is_private_or_changing: return &quot;RAG&quot;
+    if fails_despite_prompt_and_facts(p):
+        return &quot;FINE-TUNE (LoRA) on curated examples&quot;
+    return &quot;prompt + RAG  ← 80% of production answers</code></pre>
+<nav class="pn"><a href="/learn/AG-25.html">← Architect Toolkit</a><a href="/learn/GA-28.html">Beyond Text →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

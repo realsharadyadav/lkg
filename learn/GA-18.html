@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text-to-SQL — Generative AI for software architects | LKG School</title>
+<meta name="description" content="&quot;Just ask your database in English.&quot; Text-to-SQL makes it real — and it&#x27;s a masterclass in LLM + guardrails engineering. Learn Text-to-SQL (How it works, Schema linking &amp; semantic layer, SQL safety, Validation &amp; self-correction) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-18.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Text-to-SQL — Generative AI for software architects | LKG School"><meta property="og:description" content="&quot;Just ask your database in English.&quot; Text-to-SQL makes it real — and it&#x27;s a masterclass in LLM + guardrails engineering. Learn Text-to-SQL (How it works, Schema linking &amp; semantic layer, SQL safety, Validation &amp; self-correction) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-18.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Text-to-SQL", "description": "\"Just ask your database in English.\" Text-to-SQL makes it real — and it's a masterclass in LLM + guardrails engineering. Learn Text-to-SQL (How it works, Schema linking & semantic layer, SQL safety, Validation & self-correction) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-18.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["How it works", "Schema linking & semantic layer", "SQL safety", "Validation & self-correction"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Text-to-SQL", "item": "https://lkgschool.in/learn/GA-18.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 44</nav>
+<h1>Text-to-SQL</h1>
+<p class="lede">&quot;Just ask your database in English.&quot; Text-to-SQL makes it real — and it&#x27;s a masterclass in <strong>LLM + guardrails engineering</strong>.</p>
+<a class="cta" href="/?reel=GA-18">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>How it works</li><li>Schema linking &amp; semantic layer</li><li>SQL safety</li><li>Validation &amp; self-correction</li></ol>
+<h2>Remember this</h2><ul><li>Text-to-SQL = pipeline: schema linking prunes the warehouse, generation writes SQL, validation gates execution — the model is one stage of four</li><li>Semantic layer + column annotations + 3–5 gold example pairs beat any amount of instruction</li><li>Safety = read-only role + AST allow-list + LIMIT/timeout wrapping + capped self-correction loop with actionable errors</li></ul>
+<section class="notes"><h2>Pipeline</h2>
+<p>1. Question (ambiguous NL) 2. <strong>Schema linking</strong> — prune to relevant tables/columns 3. Generation — schema + annotations + examples 4. <strong>Validate → execute read-only → verify result</strong></p>
+<h2>Schema linking &amp; semantic layer</h2>
+<ul>
+<li>Annotate: meaning, units, caveats per column.</li>
+<li>Semantic layer: versioned business definitions (churn, MRR, region).</li>
+<li>3–5 gold question→SQL pairs per domain (demonstration &gt; instruction).</li>
+</ul>
+<h2>SQL safety</h2>
+<ul>
+<li>Read-only DB role (deep fence) · AST allow-list (sqlglot) · LIMIT/timeout wrap · replica/masked data.</li>
+</ul>
+<h2>Validation &amp; self-correction</h2>
+<ul>
+<li>DB errors back to model as actionable observations; retry ≤3.</li>
+<li>Result checks: non-empty, shape, plausibility.</li>
+<li>Persistent failure → ask a clarifying question (abstention).</li>
+</ul></section>
+<h2>Code: Text-to-SQL, the full guarded pipeline</h2><pre><code>SEMANTIC_LAYER = &quot;&quot;&quot;
+churned: no transaction in 90 days
+mrr: recurring revenue from subscriptions only
+region: customer&#x27;s billing country
+&quot;&quot;&quot;
+
+async def ask_db(question: str) -&gt; str:
+    # 1 · schema linking: embed question → match table/column descriptions
+    schema = link_schema(question, catalog)          # ~5 relevant tables
+
+    for attempt in range(3):
+        # 2 · generate with meaning + examples
+        sql = llm(GEN_PROMPT, schema=schema,
+                  semantics=SEMANTIC_LAYER,
+                  examples=gold_pairs_for(question))
+        try:
+            rows = safe_execute(sql, readonly_conn)   # fenced (slide 4)
+        except (SqlRejected, DbError) as e:
+            history.append((sql, str(e)))             # actionable error → retry
+            continue
+        if not rows or not plausible(question, rows):
+            history.append((sql, &quot;result empty/implausible&quot;))
+            continue
+        return render_answer(question, rows, sql)      # answer + SQL shown
+
+    return &quot;I couldn&#x27;t answer that reliably — can you clarify the timeframe or metric?&quot;</code></pre>
+<nav class="pn"><a href="/learn/AG-03.html">← Built-in Capabilities</a><a href="/learn/GA-19.html">Files as Data Source →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eval Fundamentals — Generative AI for software architects | LKG School</title>
+<meta name="description" content="You can&#x27;t improve what you don&#x27;t measure. In GenAI, the model&#x27;s mood is not a metric. Evals are how quality becomes engineering instead of vibes. Learn Eval Fundamentals (Why evals, The golden dataset, Offline vs online, Human review loops) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-20.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Eval Fundamentals — Generative AI for software architects | LKG School"><meta property="og:description" content="You can&#x27;t improve what you don&#x27;t measure. In GenAI, the model&#x27;s mood is not a metric. Evals are how quality becomes engineering instead of vibes. Learn Eval Fundamentals (Why evals, The golden dataset, Offline vs online, Human review loops) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-20.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Eval Fundamentals", "description": "You can't improve what you don't measure. In GenAI, the model's mood is not a metric. Evals are how quality becomes engineering instead of vibes. Learn Eval Fundamentals (Why evals, The golden dataset, Offline vs online, Human review loops) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-20.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Why evals", "The golden dataset", "Offline vs online", "Human review loops"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Eval Fundamentals", "item": "https://lkgschool.in/learn/GA-20.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 39</nav>
+<h1>Eval Fundamentals</h1>
+<p class="lede"><strong>You can&#x27;t improve what you don&#x27;t measure.</strong> In GenAI, the model&#x27;s mood is not a metric. Evals are how quality becomes engineering instead of vibes.</p>
+<a class="cta" href="/?reel=GA-20">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Why evals</li><li>The golden dataset</li><li>Offline vs online</li><li>Human review loops</li></ol>
+<h2>Remember this</h2><ul><li>Change is constant (prompts, silent model updates, living data) — evals are the only regression defense in GenAI</li><li>Golden dataset: 50–200 expert-reviewed real questions, versioned like code, including unanswerable cases; quality over size</li><li>Offline gates releases, online monitors drift; human review calibrates machines — measure the reviewers too</li></ul>
+<section class="notes"><h2>Why evals</h2>
+<ul>
+<li>Change is constant: prompt iterations, silent model updates, living data.</li>
+<li>No eval → quality discovered via complaints.</li>
+<li>Rule: nothing ships without an eval run (same discipline as tests).</li>
+</ul>
+<h2>Golden dataset</h2>
+<ul>
+<li>50–200 REAL questions + expert reference answers; quality &gt; size.</li>
+<li>Cover: common · edge · adversarial · <strong>unanswerable</strong> (abstention).</li>
+<li>Versioned (golden-v1, v2…); never leak into prompts/training.</li>
+<li>Owner + quarterly review; stale gold is worse than none.</li>
+</ul>
+<h2>Offline vs online</h2>
+<ul>
+<li><strong>Offline</strong>: golden set, reproducible, gates releases.</li>
+<li><strong>Online</strong>: shadow judging, user feedback, canary analysis; monitors drift.</li>
+<li>Alert on DELTAS, not single scores.</li>
+</ul>
+<h2>Human review loops</h2>
+<ul>
+<li>Rubric + calibration (shared cases, Cohen&#x27;s kappa).</li>
+<li>Sample: random + flagged (low scores, thumbs-down, abstentions).</li>
+<li>Humans calibrate machines; review volume shrinks as judges improve.</li>
+</ul></section>
+<h2>Code: Versioned golden set + offline eval runner</h2><pre><code># golden/v2.jsonl  — versioned like code, reviewed by SMEs
+{&quot;q&quot;: &quot;What is the refund window?&quot;, &quot;must_contain&quot;: [&quot;30 days&quot;], &quot;answerable&quot;: true}
+{&quot;q&quot;: &quot;Who is the CEO&#x27;s dentist?&quot;,    &quot;answerable&quot;: false}   # abstain expected
+
+# eval_runner.py
+import json, datetime
+
+def run_golden(pipeline, version: str) -&gt; dict:
+    cases = [json.loads(l) for l in open(f&quot;golden/{version}.jsonl&quot;)]
+    rows = []
+    for c in cases:
+        out = pipeline.ask(c[&quot;q&quot;])
+        rows.append({
+            &quot;q&quot;: c[&quot;q&quot;],
+            &quot;hit&quot;: all(k in out.answer for k in c.get(&quot;must_contain&quot;, [])),
+            &quot;abstained&quot;: out.abstained,
+            &quot;abstain_correct&quot;: (not c[&quot;answerable&quot;]) == out.abstained,
+        })
+    return {
+        &quot;dataset&quot;: version,
+        &quot;run_at&quot;: datetime.datetime.utcnow().isoformat(),
+        &quot;hit_rate&quot;: sum(r[&quot;hit&quot;] for r in rows) / len(rows),
+        &quot;abstention_accuracy&quot;: sum(r[&quot;abstain_correct&quot;] for r in rows) / len(rows),
+        &quot;rows&quot;: rows,
+    }
+
+# Store every run:  runs/2026-10-03T05-12.json
+# Compare: current run vs previous runs on the SAME dataset version —
+# a regression is a delta, not a vibe.</code></pre>
+<nav class="pn"><a href="/learn/PY-22.html">← Testing &amp; Quality</a><a href="/learn/GA-21.html">RAG &amp; LLM Metrics →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

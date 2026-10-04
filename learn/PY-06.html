@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modules &amp; Project Structure — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Scripts are fun, but projects pay. Four ideas that turn a pile of files into something shippable. Learn Modules &amp; Project Structure (The import system, Folder layout, Relative vs absolute imports, Entry points) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-06.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Modules &amp; Project Structure — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Scripts are fun, but projects pay. Four ideas that turn a pile of files into something shippable. Learn Modules &amp; Project Structure (The import system, Folder layout, Relative vs absolute imports, Entry points) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-06.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Modules & Project Structure", "description": "Scripts are fun, but projects pay. Four ideas that turn a pile of files into something shippable. Learn Modules & Project Structure (The import system, Folder layout, Relative vs absolute imports, Entry points) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-06.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The import system", "Folder layout", "Relative vs absolute imports", "Entry points"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Modules & Project Structure", "item": "https://lkgschool.in/learn/PY-06.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 6</nav>
+<h1>Modules &amp; Project Structure</h1>
+<p class="lede">Scripts are fun, but <strong>projects pay</strong>. Four ideas that turn a pile of files into something shippable.</p>
+<a class="cta" href="/?reel=PY-06">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The import system</li><li>Folder layout</li><li>Relative vs absolute imports</li><li>Entry points</li></ol>
+<h2>Remember this</h2><ul><li>Modules import once into namespaces; avoid <code>import *</code>; follow np/pd aliases</li><li>Use the src layout + absolute imports; fix cycles by extracting a third module</li><li>if __name__ == &quot;__main__&quot; separates library from script; use editable installs</li></ul>
+<section class="notes"><h2>Import system</h2>
+<ul>
+<li>Every <code>.py</code> = a module; folder + <code>__init__.py</code> = a package.</li>
+<li><code>import a.b</code> → bind namespace · <code>from a import b</code> → bind name · <code>import x as y</code>.</li>
+<li>Avoid <code>from x import *</code> (pollutes namespace, breaks tooling).</li>
+<li>Standard aliases: <code>np</code> (numpy), <code>pd</code> (pandas), <code>plt</code> (matplotlib).</li>
+</ul>
+<h2>Folder layout (src layout)</h2>
+<pre><code>myproject/
+  pyproject.toml
+  src/myproject/
+    __init__.py
+    services/users.py
+  tests/test_users.py</code></pre>
+<ul>
+<li>src layout forces imports through the installed package.</li>
+</ul>
+<h2>Relative vs absolute</h2>
+<ul>
+<li>❌ <code>from . import users</code> — breaks on moves/direct execution.</li>
+<li>✅ <code>from myproject.services import users</code> — always.</li>
+<li>Circular imports → <strong>extract shared code to a third module</strong>.</li>
+</ul>
+<h2>Entry points</h2>
+<ul>
+<li><code>__name__ == &quot;__main__&quot;</code> → True only when run directly.</li>
+<li>Run during dev: <code>python -m myproject.cli</code>.</li>
+<li>Ship a command: <code>[project.scripts]</code> in pyproject.toml.</li>
+<li>Daily driver: <code>uv pip install -e .</code> (editable install).</li>
+</ul></section>
+<h2>Code: Project skeleton + safe entry point</h2><pre><code># layout:
+# myproject/
+#   pyproject.toml
+#   src/myproject/__init__.py
+#   src/myproject/config.py
+#   src/myproject/services/__init__.py
+#   src/myproject/services/users.py
+#   tests/test_users.py
+
+# --- src/myproject/services/users.py --------------------------
+from __future__ import annotations
+
+_users: dict[str, dict] = {}
+
+def add(name: str) -&gt; dict:
+    _users[name] = {&quot;name&quot;: name}
+    return _users[name]
+
+def count() -&gt; int:
+    return len(_users)
+
+# --- src/myproject/cli.py --------------------------------------
+from myproject.services import users
+
+def main() -&gt; None:
+    users.add(&quot;ada&quot;)
+    print(f&quot;{users.count()} users&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    main()          # runs only when executed directly,
+                    # not when imported
+
+# --- pyproject.toml --------------------------------------------
+# [project.scripts]
+# myproject = &quot;myproject.cli:main&quot;
+
+# dev workflow:
+#   uv pip install -e .        # editable install
+#   myproject                  # now a real command</code></pre>
+<nav class="pn"><a href="/learn/PY-05.html">← OOP in Python</a><a href="/learn/PY-07.html">Errors, Files &amp; Config →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>
