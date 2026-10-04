@@ -89,16 +89,17 @@
       return () => { dead = true; clearInterval(iv); };
     },
 
-    /* ---- compare two cards ---- */
+    /* ---- compare cards (2 side by side with VS; 3-4 in a grid) ---- */
     compare(mount, sc) {
       const el = base(mount);
-      const row = h('div', 'compare');
+      const cards = sc.cards || [];
+      const row = h('div', 'compare' + (cards.length > 2 ? ' multi' : ''));
       el.appendChild(row);
-      (sc.cards || []).slice(0, 2).forEach((c, i) => {
+      cards.forEach((c, i) => {
         const d = h('div', 'cmp-card' + (c.win ? ' win' : ''), `<div class="em">${c.e}</div><h3>${mark(c.t)}</h3><p>${mark(c.s)}</p>`);
-        row.appendChild(d); pop(d, i, i ? 'from-r' : 'from-l');
+        row.appendChild(d); pop(d, Math.min(i, 4), cards.length > 2 ? '' : (i ? 'from-r' : 'from-l'));
       });
-      const vs = h('div', 'vs', 'VS'); row.insertBefore(vs, row.children[1] || null); pop(vs, 2);
+      if (cards.length === 2) { const vs = h('div', 'vs', 'VS'); row.insertBefore(vs, row.children[1]); pop(vs, 2); }
       return () => {};
     },
 
@@ -428,7 +429,7 @@
        {type:'flow', layers|stages:[{e,t,s,pk}]}  — pk is the emoji the packet becomes at that stage */
     flow(mount, sc) {
       const el = base(mount);
-      const stages = sc.stages || sc.layers || [];
+      const stages = sc.stages || sc.layers || sc.items || [];
       const wrap = h('div', 'fl-wrap');
       const track = h('div', 'fl-track', '<i></i>');
       const rows = stages.map(L => h('div', 'fl-row', `<span class="fl-node">${L.e || '•'}</span><span class="fl-tx"><b>${mark(L.t)}</b>${L.s ? `<small>${mark(L.s)}</small>` : ''}</span>`));

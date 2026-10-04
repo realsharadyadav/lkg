@@ -1,5 +1,5 @@
 /* LKG service worker — app shell cache-first, reel JSON/audio cached at runtime */
-const SHELL = 'lkg-shell-v31';
+const SHELL = 'lkg-shell-v32';
 const SHELL_FILES = [
   '.', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'img/icon.svg',
   'js/icons.js', 'js/state.js', 'js/narrator.js', 'js/scenes.js', 'js/data.js', 'js/motion.js', 'js/audio.js', 'js/player.js', 'js/feed.js', 'js/main.js',

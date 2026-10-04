@@ -225,6 +225,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .tl-bar{position:absolute;top:0;bottom:0;border-radius:6px;background:var(--accent);transform-origin:left;display:grid;place-items:center;box-shadow:inset 0 -2px 0 rgba(0,0,0,.08);border:1.5px solid #fff}
 .tl-bar em{font-style:normal;font-size:9.5px;font-weight:900;color:#fff}
 
+.compare.multi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare.multi .cmp-card{padding:14px 10px}
+.compare.multi .cmp-card:last-child:nth-child(odd){grid-column:1/-1}
+.compare.multi .cmp-card .em{font-size:28px}
+.compare.multi .cmp-card h3{font-size:15px}
+.compare.multi .cmp-card p{font-size:12px}
+
 /* ---------- tokens scene ---------- */
 .tokens-wrap{width:min(440px,92vw);display:flex;flex-direction:column;gap:22px;align-items:center}
 .token-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;min-height:44px}
