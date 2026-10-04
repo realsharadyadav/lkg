@@ -16,22 +16,76 @@
   const sheets = { code: $('#codePanel'), notes: $('#notesSheet'), settings: $('#settingsSheet'), about: $('#aboutSheet'), script: $('#scriptSheet'), map: $('#mapSheet') };
   let openName = null, onSheetClose = null;
   function fireClose() { const f = onSheetClose; onSheetClose = null; if (f) f(); }
+  /* ---- side panels (code ← right, notes → left) are pages, not popups:
+         they track the finger and the reel slides aside, iOS-navigation style ---- */
+  const SIDE = { code: 1, notes: -1 };          // +1 = lives to the right, -1 = to the left
+  const feedsEl = $('#feeds'), topEl = $('#topbar');
+  const appW = () => $('#app').clientWidth || innerWidth;
+  let settleTimer = 0;
+  function setSide(name, p, animate) {         // p: 0 = closed … 1 = open
+    p = Math.max(0, Math.min(1, p));
+    const dir = SIDE[name], el = sheets[name];
+    const tr = animate ? '' : 'none';
+    el.style.transition = feedsEl.style.transition = topEl.style.transition = scrim.style.transition = tr;
+    el.style.transform = `translateX(${dir * (1 - p) * 100}%)`;
+    feedsEl.style.transform = topEl.style.transform = p ? `translateX(${-dir * p * 30}%)` : '';
+    scrim.style.opacity = String(p * 0.28);
+    el.style.visibility = 'visible';
+  }
+  function settleSide(name, open) {
+    clearTimeout(settleTimer);
+    setSide(name, open ? 1 : 0, true);
+    if (!open) settleTimer = setTimeout(() => {     // fully closed: drop the transforms
+      feedsEl.style.transform = topEl.style.transform = ''; scrim.style.opacity = ''; sheets[name].style.visibility = '';
+    }, 460);
+  }
   function openSheet(name) {
     fireClose();
+    if (openName && SIDE[openName] && openName !== name) settleSide(openName, false);
     Object.values(sheets).forEach(s => s.classList.remove('open'));
     sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
+    if (SIDE[name]) settleSide(name, true);
   }
-  function closeSheets() { Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; fireClose(); }
+  function closeSheets() {
+    if (openName && SIDE[openName]) settleSide(openName, false);
+    Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; fireClose();
+  }
   scrim.addEventListener('click', closeSheets);
-  // swipe a side panel back the way it came to close it (not while scrolling code sideways)
-  [[sheets.code, 1], [sheets.notes, -1]].forEach(([el, dir]) => {
-    let sx = null, sy = 0;
-    el.addEventListener('pointerdown', e => { sx = e.target.closest('pre, table') ? null : e.clientX; sy = e.clientY; });
-    el.addEventListener('pointerup', e => {
-      if (sx == null) return;
-      const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-      if (dx * dir > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) closeSheets();
+
+  /* finger-driven drag, used from the reel (to open) and from the panel (to close) */
+  const drag = {
+    start(name) { clearTimeout(settleTimer); if (openName && openName !== name) closeSheets(); },
+    move(name, p) { setSide(name, p, false); },
+    end(name, p, flick, player) {
+      // open when dragged past a third, or flicked quickly in the opening direction
+      if (p > 0.33 || flick > 0.45) {
+        Object.values(sheets).forEach(s => s.classList.remove('open'));
+        sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
+        settleSide(name, true);
+        if (player) player.holdWhile(done => { onSheetClose = done; });
+      } else settleSide(name, false);
+    }
+  };
+  // drag an open side panel back the way it came (not while scrolling code sideways)
+  Object.keys(SIDE).forEach(name => {
+    const el = sheets[name], dir = SIDE[name];
+    let st = null;
+    el.addEventListener('pointerdown', e => { st = e.target.closest('pre, table, select, input') ? null : { x: e.clientX, y: e.clientY, t: performance.now(), on: false }; });
+    el.addEventListener('pointermove', e => {
+      if (!st || openName !== name) return;
+      const dx = e.clientX - st.x, dy = e.clientY - st.y;
+      if (!st.on) { if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3 && dx * dir > 0) st.on = true; else return; }
+      setSide(name, 1 - Math.max(0, dx * dir) / appW(), false);
     });
+    const up = e => {
+      if (!st) return;
+      const was = st; st = null;
+      if (!was.on) return;
+      const dx = (e.clientX - was.x) * dir, v = dx / Math.max(1, performance.now() - was.t);
+      if (dx / appW() > 0.3 || v > 0.45) closeSheets(); else settleSide(name, true);
+    };
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', () => { if (st && st.on) settleSide(name, true); st = null; });
   });
   // one-time hint about the side swipes
   try {
@@ -130,12 +184,15 @@
   }
 
   SS.ui = {
-    toast, openSheet, closeSheets,
-    openCode(data, onClose) {
-      if (!data.code) { onClose && onClose(); return; }
+    toast, openSheet, closeSheets, drag,
+    fillCode(data) {
       $('#codeTitle').textContent = data.code.title;
       $('#codeBody').innerHTML = py(data.code.body);
       $('#codeNotes').innerHTML = (data.code.annot || []).map(a => `<div>💡 ${a}</div>`).join('');
+    },
+    openCode(data, onClose) {
+      if (!data.code) { onClose && onClose(); return; }
+      SS.ui.fillCode(data);
       openSheet('code');
       onSheetClose = onClose || null;
     },
@@ -160,10 +217,14 @@
       openSheet('map');
       const c = $('#mapBody .cur'); if (c) requestAnimationFrame(() => c.scrollIntoView({ block: 'center' }));
     },
-    openNotes(data, onClose) {
-      if (!data.notes) { onClose && onClose(); return; }
+    fillNotes(data) {
       $('#notesTitle').textContent = `📄 ${data.topic} — full notes`;
       $('#notesBody').innerHTML = md(data.notes);
+      $('#notesBody').scrollTop = 0;
+    },
+    openNotes(data, onClose) {
+      if (!data.notes) { onClose && onClose(); return; }
+      SS.ui.fillNotes(data);
       openSheet('notes');
       onSheetClose = onClose || null;
     }

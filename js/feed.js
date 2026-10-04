@@ -114,15 +114,31 @@
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if ((Math.abs(dx) > 12 || Math.abs(dy) > 12) && lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-      // horizontal swipes: ← code (panel slides in from the right) · → notes (panel slides in from the left)
-      if (!swipeFired && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) {
-        if (dx < 0 && player.data.code) { swipeFired = true; player.holdWhile(done => SS.ui.openCode(player.data, done)); }
-        else if (dx > 0 && player.data.notes) { swipeFired = true; player.holdWhile(done => SS.ui.openNotes(player.data, done)); }
+      // horizontal drag pulls a page in with the finger: ← code (from the right) · → notes (from the left)
+      if (!down.side && !swipeFired && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+        const name = dx < 0 ? 'code' : 'notes';
+        if (player.data[name]) {
+          down.side = name; swipeFired = true;
+          if (name === 'code') SS.ui.fillCode(player.data); else SS.ui.fillNotes(player.data);
+          SS.ui.drag.start(name);
+          try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+      }
+      if (down.side) {
+        const dir = down.side === 'code' ? -1 : 1;
+        down.p = Math.max(0, dx * dir) / (el.clientWidth || innerWidth);
+        SS.ui.drag.move(down.side, down.p);
       }
     });
     const up = e => {
       if (!down) return;
       if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      if (down.side) {
+        const dir = down.side === 'code' ? -1 : 1;
+        const flick = (e.clientX - down.x) * dir / Math.max(1, performance.now() - down.t);   // px per ms
+        SS.ui.drag.end(down.side, down.p || 0, flick, player);
+        down = null; return;
+      }
       if (down.long) { player.pressEnd(); down = null; return; }
       const dt = performance.now() - down.t;
       const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
@@ -145,7 +161,10 @@
       }
     };
     el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', () => { down = null; if (lpTimer) clearTimeout(lpTimer); player.pressEnd(); });
+    el.addEventListener('pointercancel', () => {
+      if (down && down.side) SS.ui.drag.end(down.side, 0, 0, player);
+      down = null; if (lpTimer) clearTimeout(lpTimer); player.pressEnd();
+    });
   }
 
   const items = [];       // parallel to catalog.reels: {meta, el, player, id}
