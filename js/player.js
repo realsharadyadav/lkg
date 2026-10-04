@@ -211,6 +211,8 @@
       if (!this.audBar) return;
       f = Math.max(0, Math.min(1, f));
       this.audBar.firstChild.style.transform = 'scaleX(' + f + ')';
+      // current reel's dash fills smoothly through each scene, not just between scenes
+      if (this.state === 'scene' && this.data.scenes.length) this._seg((this.sceneIdx + f) / this.data.scenes.length);
       if (this.state === 'hook' && this.hookRing) this.hookRing.style.strokeDashoffset = String(238.8 * (1 - f));
       if (this._sents) {   // one-line caption follows the sentence being spoken
         let i = this._sents.findIndex(x => f <= x.end); if (i < 0) i = this._sents.length - 1;
