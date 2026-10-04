@@ -215,6 +215,7 @@
       if (!this.audBar) return;
       f = Math.max(0, Math.min(1, f));
       this.audBar.firstChild.style.transform = 'scaleX(' + f + ')';
+      if (this._cue && this.state === 'scene') this._cue(f);
       // current reel's dash fills smoothly through each scene, not just between scenes
       if (this.state === 'scene' && this.data.scenes.length) this._seg((this.sceneIdx + f) / this.data.scenes.length);
       if (this.state === 'hook' && this.hookRing) this.hookRing.style.strokeDashoffset = String(238.8 * (1 - f));
@@ -243,7 +244,8 @@
       const mount = h('div', 'scene');
       this.stage.appendChild(mount);
       const render = SS.scenes[sc.type] || SS.scenes.bigtext;
-      this.sceneCleanup = render(mount, sc, { accent: getComputedStyle(this.root).getPropertyValue('--accent'), durMs: sc.narration ? SS.narrator.estMs(sc.narration) * 2.2 : 9000 });
+      this._cue = null;   // story scenes subscribe here to follow the narration (0..1) and fire visual cues
+      this.sceneCleanup = render(mount, sc, { accent: getComputedStyle(this.root).getPropertyValue('--accent'), durMs: sc.narration ? SS.narrator.estMs(sc.narration) * 2.2 : 9000, onProgress: fn => { this._cue = fn; } });
       if (SS.motion) SS.motion.transition(this.stage, olds, mount);
       else olds.forEach(l => l.remove());
       this._caption(sc.narration || sc.title || '');
@@ -443,7 +445,7 @@
     _setCap(text) { this._capFull = text; this._sents = null; this.capText.textContent = text; }
     _say(text, onend) { this.speech = SS.narrator.speak(text, { onend }); }
     _stopSpeech() { if (this.speech) { this.speech.cancel(); this.speech = null; } if (this.karaokeStop) { this.karaokeStop(); this.karaokeStop = null; } }
-    _clearScene() { if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; } this.stage.innerHTML = ''; }
+    _clearScene() { this._cue = null; if (this.sceneCleanup) { try { this.sceneCleanup(); } catch (e) {} this.sceneCleanup = null; } this.stage.innerHTML = ''; }
     _after(ms, fn) {
       const t = { left: ms, at: Date.now(), id: 0 };
       t.run = () => { this.timers = this.timers.filter(x => x !== t); if (!this.paused && this.state !== 'idle') fn(); };

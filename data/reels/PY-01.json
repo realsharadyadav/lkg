@@ -14,11 +14,30 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · PYTHON VERSIONS",
       "title": "One language. Many versions. Pick **one**.",
       "sub": "Pin a stable release — today that's the 3.13 line",
+      "h": 300,
+      "actors": [
+        { "id": "lap", "k": "panel", "x": 50, "y": 33, "w": 96, "h": 52, "e": "💻", "t": "Your machine" },
+        { "id": "v39", "k": "chip", "x": 16, "y": 40, "e": "🐍", "t": "3.9", "c": "sm" },
+        { "id": "v311", "k": "chip", "x": 38, "y": 40, "e": "🐍", "t": "3.11", "c": "sm" },
+        { "id": "v312", "k": "chip", "x": 60, "y": 40, "e": "🐍", "t": "3.12", "c": "sm" },
+        { "id": "v313", "k": "chip", "x": 82, "y": 40, "e": "🐍", "t": "3.13", "c": "sm" },
+        { "id": "t313", "k": "tag", "x": 77, "y": 54, "t": "✓ for learning" },
+        { "id": "srv", "k": "panel", "x": 50, "y": 84, "w": 96, "h": 32, "e": "🖥️", "t": "Production" },
+        { "id": "p313", "k": "chip", "x": 82, "y": 40, "e": "🐍", "t": "3.13", "tone": "good", "c": "sm" },
+        { "id": "lock", "k": "tag", "x": 70, "y": 90, "e": "🔒", "t": "same version" }
+      ],
+      "steps": [
+        { "at": "First decision", "do": [["show", "lap"]] },
+        { "at": "many versions alive", "do": [["show", "v39"], ["show", "v311"], ["show", "v312"], ["show", "v313"]] },
+        { "at": "newest stable for learning", "do": [["dim", "v39"], ["dim", "v311"], ["dim", "v312"], ["tone", "v313", "good"], ["hot", "v313"], ["show", "t313"]] },
+        { "at": "exact same version in production", "do": [["show", "srv"], ["show", "p313"], ["move", "p313", 28, 90], ["show", "lock"]] },
+        { "at": "hold several versions side by side", "do": [["undim", "v39"], ["undim", "v311"], ["undim", "v312"], ["hot", "v39"], ["hot", "v311"], ["hot", "v312"], ["text", "lap", "Your machine · side by side ✓"]] }
+      ],
       "narration": "First decision: which Python? Unlike dot-net's one big SDK, Python has many versions alive at once. Rule of thumb: newest stable for learning, exact same version in production. You can hold several versions side by side, exactly like multiple dot-net SDKs on one machine."
     },
     {
@@ -32,16 +51,55 @@
       "narration": "Install from python dot org, or Homebrew on a Mac. To juggle versions, use uv — it installs and switches Pythons in seconds. Then verify: run python dash dash version, and check that pip points at the same install. Two Pythons fighting on one path is the classic day-one bug."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · VIRTUAL ENVIRONMENTS",
       "title": "Every project gets its **own room**",
       "sub": "venv = your per-project NuGet folder, but stronger",
+      "h": 300,
+      "actors": [
+        { "id": "sys", "k": "panel", "x": 50, "y": 17, "w": 96, "h": 30, "e": "🐍", "t": "System Python" },
+        { "id": "pk", "k": "pkg", "x": 92, "y": 40, "e": "📦" },
+        { "id": "mess", "k": "tag", "x": 34, "y": 25, "e": "💥", "t": "shared by every project", "tone": "bad" },
+        { "id": "rA", "k": "panel", "x": 17, "y": 70, "w": 29, "h": 46, "t": "Project A" },
+        { "id": "rB", "k": "panel", "x": 50, "y": 70, "w": 29, "h": 46, "t": "Project B" },
+        { "id": "rC", "k": "panel", "x": 83, "y": 70, "w": 29, "h": 46, "t": "Project C" },
+        { "id": "cA", "k": "chip", "x": 17, "y": 78, "t": "httpx 0.27", "c": "sm" },
+        { "id": "cB", "k": "chip", "x": 50, "y": 78, "t": "httpx 0.24", "c": "sm" },
+        { "id": "cC", "k": "chip", "x": 83, "y": 78, "t": "numpy 2.1", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Now the golden rule", "do": [["show", "sys"]] },
+        { "at": "Never install packages", "do": [["show", "pk"], ["move", "pk", 72, 22]] },
+        { "at": "into the system Python", "do": [["tone", "sys", "bad"], ["show", "mess"], ["pulse", "pk"]] },
+        { "at": "Each project gets", "do": [["dim", "sys"], ["show", "rA"], ["show", "rB"], ["show", "rC"], ["show", "cA"], ["show", "cB"], ["show", "cC"]] },
+        { "at": "its own folder of dependencies", "do": [["tone", "rA", "good"], ["tone", "rB", "good"], ["tone", "rC", "good"], ["text", "rA", "A · .venv"], ["text", "rB", "B · .venv"], ["text", "rC", "C · .venv"]] },
+        { "at": "virtual environment", "do": [["hot", "rA"], ["hot", "rB"], ["hot", "rC"]] }
+      ],
       "narration": "Now the golden rule. Never install packages into the system Python. Each project gets an isolated environment — its own folder of dependencies. Think of it as a per-project NuGet setup, except isolation is mandatory, not optional. It's called a virtual environment — venv for short."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 1,
+      "kicker": "THREE COMMANDS",
+      "title": "Create → **activate** → install",
+      "h": 300,
+      "actors": [
+        { "id": "tm", "k": "term", "x": 50, "y": 20, "w": 96, "h": 36 },
+        { "id": "rm", "k": "panel", "x": 50, "y": 72, "w": 76, "h": 44, "e": "🏠", "t": "my-project/.venv", "tone": "dashed" },
+        { "id": "py", "k": "chip", "x": 33, "y": 80, "e": "🐍", "t": "private Python", "c": "sm" },
+        { "id": "ps", "k": "tag", "x": 73, "y": 61, "t": "(.venv) active" },
+        { "id": "pk", "k": "chip", "x": 80, "y": 32, "e": "📦", "t": "httpx", "c": "sm" },
+        { "id": "fast", "k": "tag", "x": 50, "y": 42.5, "e": "⚡", "t": "uv · 10× faster" }
+      ],
+      "steps": [
+        { "at": "Three commands", "do": [["show", "tm"]] },
+        { "at": "First:", "do": [["text", "tm", "$ python -m venv .venv"], ["show", "rm"]] },
+        { "at": "creates a private", "do": [["tone", "rm", ""], ["show", "py"]] },
+        { "at": "Second:", "do": [["text", "tm", "$ python -m venv .venv\n$ source .venv/bin/activate"], ["tone", "rm", "good"], ["hot", "rm"], ["show", "ps"]] },
+        { "at": "Third:", "do": [["text", "tm", "$ python -m venv .venv\n$ source .venv/bin/activate\n$ uv pip install httpx"], ["show", "pk"], ["move", "pk", 68, 80]] },
+        { "at": "ten times faster", "do": [["show", "fast"], ["pulse", "pk"]] }
+      ],
       "items": [
         { "e": "📦", "pk": "📦", "t": "python -m venv .venv", "s": "Creates a private Python + pip inside your project folder" },
         { "e": "🔌", "pk": "🔌", "t": "source .venv/bin/activate", "s": "Windows: .venv\\Scripts\\activate — your terminal now uses the venv" },

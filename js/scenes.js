@@ -478,6 +478,101 @@
       return kill;
     },
 
+    /* ---- narrated story: actors on a stage; steps fire when the narration reaches a phrase ----
+       {type:'story', kicker, title, h, actors:[{id,k,e,t,s,x,y,w,h,tone,on,c}], steps:[{at:'phrase'|0..1, do:[[op,id,...]]}]}
+       k: panel | chip | pkg | tag | term     x,y,w,h: % of the stage (x,y = centre)     on: visible from the start
+       ops: show hide hot unhot dim undim tone(id,name|'') text(id,str) move(id,x,y) pulse
+       Steps are STATES (replayed from the top when the narration is scrubbed back), not one-shot animations. */
+    story(mount, sc, ctx) {
+      const el = base(mount);
+      if (sc.kicker) { const k = h('div', 'kicker', sc.kicker); k.style.marginBottom = '6px'; el.appendChild(k); pop(k, 0); }
+      if (sc.title) { const t = h('div', 'big-h sm', mark(sc.title)); el.appendChild(t); pop(t, 1); }
+      const stg = h('div', 'st-stage'); stg.style.height = (sc.h || 280) + 'px';
+      el.appendChild(stg);
+      const TONES = ['good', 'bad', 'accent', 'dashed'];
+      const recs = {};
+      (sc.actors || []).forEach(a => {
+        const d = h('div', 'st-a st-' + (a.k || 'chip') + (a.c ? ' ' + a.c : ''));
+        if (a.k === 'term') d.appendChild(h('pre'));
+        else d.innerHTML = (a.e ? `<span class="e">${a.e}</span>` : '') + (a.t ? `<b>${mark(a.t)}</b>` : '') + (a.s ? `<small>${mark(a.s)}</small>` : '');
+        if (a.w) d.style.width = a.w + '%';
+        if (a.h) d.style.height = a.h + '%';
+        stg.appendChild(d);
+        recs[a.id] = { a, d, iv: 0, txt: '' };
+      });
+
+      const setText = (r, str, instant) => {
+        clearInterval(r.iv);
+        if (r.a.k !== 'term') {
+          let b = r.d.querySelector('b'); if (!b) { b = h('b'); r.d.appendChild(b); }
+          b.innerHTML = mark(str); r.txt = str; return;
+        }
+        const pre = r.d.firstChild, prev = r.txt;
+        r.txt = str;
+        if (instant) { pre.textContent = str; return; }
+        let i = str.startsWith(prev) ? prev.length : 0;       // only type what was added
+        if (i === 0) pre.textContent = '';
+        r.iv = setInterval(() => { pre.textContent = str.slice(0, ++i); if (i >= str.length) clearInterval(r.iv); }, 26);
+      };
+      const place = r => { r.d.style.left = r.a.x + '%'; r.d.style.top = r.a.y + '%'; };
+      const reset = () => Object.values(recs).forEach(r => {
+        clearInterval(r.iv);
+        r.d.className = r.d.className.split(' ').filter(c => !/^(on|hot|dim|good|bad|accent|dashed|pulse)$/.test(c)).join(' ');
+        if (r.a.on) r.d.classList.add('on');
+        if (r.a.tone) r.d.classList.add(r.a.tone);
+        r.d.style.transitionDelay = '0ms';
+        place(r);
+        if (r.a.k === 'term') { r.txt = r.a.t || ''; r.d.firstChild.textContent = r.txt; }
+        else { const b = r.d.querySelector('b'); if (b && r.a.t) b.innerHTML = mark(r.a.t); }
+      });
+      const apply = (op, i, instant) => {
+        const r = recs[op[1]]; if (!r) return;
+        r.d.style.transitionDelay = instant ? '0ms' : (i * 140) + 'ms';
+        switch (op[0]) {
+          case 'show': r.d.classList.add('on'); break;
+          case 'hide': r.d.classList.remove('on'); break;
+          case 'hot': r.d.classList.add('hot'); break;
+          case 'unhot': r.d.classList.remove('hot'); break;
+          case 'dim': r.d.classList.add('dim'); break;
+          case 'undim': r.d.classList.remove('dim'); break;
+          case 'tone': TONES.forEach(t => r.d.classList.remove(t)); if (op[2]) r.d.classList.add(op[2]); break;
+          case 'text': setText(r, op[2], instant); break;
+          case 'move': r.d.style.left = op[2] + '%'; r.d.style.top = op[3] + '%'; break;
+          case 'pulse': r.d.classList.remove('pulse'); void r.d.offsetWidth; r.d.classList.add('pulse'); break;
+        }
+      };
+
+      // phrase -> fraction of the narration (same char-ratio the player uses for its sentence captions); lands a hair early
+      const narr = (sc.narration || '').replace(/\*/g, ''), low = narr.toLowerCase();
+      const steps = (sc.steps || []).map((s, n) => {
+        let f = typeof s.at === 'number' ? s.at : 0;
+        if (typeof s.at === 'string') {
+          const i = low.indexOf(s.at.toLowerCase());
+          if (i < 0) console.warn('story cue not found in narration:', s.at);
+          f = i < 0 ? 0 : Math.max(0, i / Math.max(1, narr.length) - 0.012);
+        }
+        return { f, n, ops: s.do || [] };
+      }).sort((a, b) => a.f - b.f || a.n - b.n);
+
+      let cur = -1;
+      const go = k => {
+        if (k === cur) return;
+        if (k < cur) {            // scrubbed back: rebuild instantly from the top
+          stg.classList.add('st-nt');
+          reset();
+          for (let i = 0; i <= k; i++) steps[i].ops.forEach(o => apply(o, 0, true));
+          void stg.offsetWidth; stg.classList.remove('st-nt');
+        } else {
+          for (let i = cur + 1; i <= k; i++) steps[i].ops.forEach((o, j) => apply(o, j, false));
+        }
+        cur = k;
+      };
+      reset();
+      const onP = f => { let k = -1; for (let i = 0; i < steps.length; i++) if (f >= steps[i].f) k = i; go(k); };
+      if (ctx && ctx.onProgress) ctx.onProgress(onP); else go(steps.length - 1);
+      return () => Object.values(recs).forEach(r => clearInterval(r.iv));
+    },
+
     /* ---- the same text cut by different chunking strategies ----
        {type:'chunks', title, text, strategies:[{name, e, cuts:[word index a chunk ENDS on]}]} */
     chunks(mount, sc) {
