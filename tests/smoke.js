@@ -19,7 +19,7 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
 (async () => {
   await new Promise(r => server.listen(0, r));
   const url = 'http://localhost:' + server.address().port + '/';
-  const b = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'], executablePath: process.env.CHROMIUM });
+  const b = await chromium.launch({ executablePath: process.env.CHROMIUM });
   const p = await b.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto(url); await p.waitForTimeout(1500);
