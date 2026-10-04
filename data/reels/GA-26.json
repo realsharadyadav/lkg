@@ -21,12 +21,12 @@
       "narration": "An AI gateway sits between your applications and model providers — Azure API Management is the canonical enterprise example, with dedicated LLM policies; LiteLLM and Portkey serve the same role platform-agnostically. What the gateway centralizes: AUTH — one key for your apps, provider keys held in the gateway's vault — no credentials in application code; POLICY — rate limits, quotas, and the GA-25 smoothing rules enforced at the edge, uniformly; OBSERVABILITY — every call logged, costed, and traced at one choke point, GA-24's pipeline for free; and PROVIDER ABSTRACTION — apps call ONE endpoint; the gateway routes to OpenAI, Anthropic, Azure, or a fallback — GA-25's multi-provider resilience becomes configuration, not code. The architectural principle is the same as AG-06's MCP gateway: cross-cutting concerns belong at the boundary, not scattered through applications."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🔐", "t": "Credential vault", "s": "Provider keys live in the gateway · apps hold one internal identity · rotation without deployments" },
-        { "e": "📏", "t": "Policy enforcement", "s": "Rate limits, quotas, PII redaction hooks, allowed-models lists — uniform across every app" },
-        { "e": "🔀", "t": "Provider abstraction", "s": "One endpoint in, many providers behind · failover and routing as config (GA-25)" }
+        { "e": "🔐", "pk": "🔐", "t": "Credential vault", "s": "Provider keys live in the gateway · apps hold one internal identity · rotation without deployments" },
+        { "e": "📏", "pk": "📏", "t": "Policy enforcement", "s": "Rate limits, quotas, PII redaction hooks, allowed-models lists — uniform across every app" },
+        { "e": "🔀", "pk": "🔀", "t": "Provider abstraction", "s": "One endpoint in, many providers behind · failover and routing as config (GA-25)" }
       ],
       "narration": "The maturity ladder: stage one, apps call providers directly with env-var keys — fine for one prototype; stage two, a gateway for keys and logging — the moment a SECOND app exists; stage three, full policy and abstraction — when compliance, multi-provider, or cost governance arrive. Skipping straight to stage three is over-engineering; staying at stage one past two apps is debt. One gateway subtlety: streaming passthrough — SSE streams must flow through without buffering, or the gateway defeats PY-13's latency wins; verify before adopting. And note the symmetry with everything else in this curriculum: the gateway is a trust boundary — treat its config as AG-06 treated MCP configs — reviewed, versioned, minimal — because a misconfigured gateway is a misconfigured firewall."
     },

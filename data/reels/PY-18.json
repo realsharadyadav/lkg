@@ -114,12 +114,12 @@
       "narration": "Closing the loop: DuckDB persists when you ask it to. In-memory by default — gone when the process ends. For durability: create a database file, or materialize results back to the lake. Copy to writes query results straight to Parquet — including partitioned output. The round trip is elegant: files in, SQL in the middle, files out. No import jobs, no staging schemas, no server to babysit. Your pipeline is a query and a copy statement."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 5,
       "items": [
-        { "e": "💾", "t": "duckdb.connect('warehouse.db')", "s": "Persistent database file — tables survive restarts" },
-        { "e": "📤", "t": "COPY (SELECT …) TO 'out.parquet' (FORMAT PARQUET, PARTITION_BY (month))", "s": "Query results → partitioned Parquet in one statement" },
-        { "e": "🔁", "t": "CREATE VIEW / TABLE … AS", "s": "Compose pipelines as views; materialize only what's expensive" }
+        { "e": "💾", "pk": "💾", "t": "duckdb.connect('warehouse.db')", "s": "Persistent database file — tables survive restarts" },
+        { "e": "📤", "pk": "📊", "t": "COPY (SELECT …) TO 'out.parquet' (FORMAT PARQUET, PARTITION_BY (month))", "s": "Query results → partitioned Parquet in one statement" },
+        { "e": "🔁", "pk": "🔗", "t": "CREATE VIEW / TABLE … AS", "s": "Compose pipelines as views; materialize only what's expensive" }
       ],
       "narration": "The persistence patterns. Default in-memory for exploration — zero cleanup. A connect with a filename when tables must survive — full database semantics, still no server. And copy to for the lake round trip: run the transformation, write partitioned Parquet straight out. Views let you layer logic without materializing each step. This is why DuckDB ends so many architecture debates: the same engine explores interactively, runs the nightly pipeline, and serves the agent's ad-hoc questions — all from files."
     },

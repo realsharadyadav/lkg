@@ -23,12 +23,12 @@
       "narration": "The DataFrame is a table with named columns and an index — think a SQL result set you can manipulate in memory. A Series is one column — a labeled array. Everything is built on NumPy, so operations are vectorized and fast. Columns can differ in type — strings, floats, dates in one table. And the index is first-class: it aligns data automatically during math and joins, which is both the superpower and the source of every beginner's confusion."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🏗️", "t": "df = pd.read_csv(\"tickets.csv\")", "s": "One call: file → DataFrame. Also read_parquet, read_excel, read_json" },
-        { "e": "📋", "t": "df.shape · df.columns · df.dtypes", "s": "First three things to check on ANY new dataframe" },
-        { "e": "🧮", "t": "df[\"amount\"] * 1.2 vectorizes", "s": "Column ops apply to every row — no loops" }
+        { "e": "🏗️", "pk": "📄", "t": "df = pd.read_csv(\"tickets.csv\")", "s": "One call: file → DataFrame. Also read_parquet, read_excel, read_json" },
+        { "e": "📋", "pk": "📊", "t": "df.shape · df.columns · df.dtypes", "s": "First three things to check on ANY new dataframe" },
+        { "e": "🧮", "pk": "🔢", "t": "df[\"amount\"] * 1.2 vectorizes", "s": "Column ops apply to every row — no loops" }
       ],
       "narration": "Day-one moves. Read a file with one call — CSV, Parquet, Excel, JSON. Then orient: shape tells you rows and columns, dtypes tell you what you're holding — and mismatched dtypes are the number-one silent bug. Then compute on whole columns at once — a price column times a factor applies to every row in one vectorized shot. If you find yourself iterating rows, stop; there's a vectorized way."
     },
@@ -95,12 +95,12 @@
       "narration": "Real data is dirty: missing values are NaN — not a number — a float sentinel that contaminates arithmetic silently. Pandas gives you isna to find them, fillna to fill, dropna to remove. Dtypes drift too: numbers that arrived as strings, dates as text. Fix with astype and to datetime. The discipline: look at dtypes and isna counts FIRST, before any analysis — the number of wrong conclusions caused by a string-typed amount column is uncountable."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 4,
       "items": [
-        { "e": "🕳️", "t": "df.isna().sum()", "s": "Missing counts per column — run this on every new dataset" },
-        { "e": "🩹", "t": "fillna(0) · fillna(df.median()) · dropna()", "s": "Fill with meaning, not convenience — a filled value is a claim" },
-        { "e": "🔧", "t": "pd.to_datetime(df[\"created\"])", "s": "Parse dates once; astype for the rest. Lock dtypes in a schema" }
+        { "e": "🕳️", "pk": "🕳️", "t": "df.isna().sum()", "s": "Missing counts per column — run this on every new dataset" },
+        { "e": "🩹", "pk": "🧩", "t": "fillna(0) · fillna(df.median()) · dropna()", "s": "Fill with meaning, not convenience — a filled value is a claim" },
+        { "e": "🔧", "pk": "✅", "t": "pd.to_datetime(df[\"created\"])", "s": "Parse dates once; astype for the rest. Lock dtypes in a schema" }
       ],
       "narration": "The cleaning checklist. Missing counts first — know the holes before you build on them. Filling is a data decision: zero is a claim, median is a claim, drop is a claim — document whichever you choose. Parse dates immediately; datetime columns unlock resampling and time math. And if you're loading the same structure repeatedly, codify it — a dtypes dict applied on read — so cleaning becomes code instead of archaeology."
     },

@@ -21,12 +21,12 @@
       "narration": "Flat retrieval has a structural blind spot: it finds chunks similar to the query but can't see RELATIONSHIPS — how entities connect across a whole corpus. 'Which suppliers depend on the same subcomponent as our top product?' is a graph question. GraphRAG's recipe: during ingest, extract entities and relationships from every chunk — product, supplier, component, depends-on — and build a knowledge graph alongside the vector index. At query time, answer in two modes: local questions still go to plain vector search, but global or cross-document questions traverse the graph — or synthesize over graph-derived community summaries. You pay extraction cost and graph upkeep for questions flat RAG structurally cannot answer."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🕸️", "t": "Extract at ingest", "s": "Entities + relations per chunk → graph beside the vector index · extraction LLM pass" },
-        { "e": "🔎", "t": "Local questions → vectors", "s": "\"What's our refund window?\" — flat retrieval still wins on speed & simplicity" },
-        { "e": "🌍", "t": "Global questions → graph", "s": "Cross-doc relationships, dependencies, \"who connects to whom\" → traversal + community summaries" }
+        { "e": "🕸️", "pk": "🕸️", "t": "Extract at ingest", "s": "Entities + relations per chunk → graph beside the vector index · extraction LLM pass" },
+        { "e": "🔎", "pk": "🔎", "t": "Local questions → vectors", "s": "\"What's our refund window?\" — flat retrieval still wins on speed & simplicity" },
+        { "e": "🌍", "pk": "🌍", "t": "Global questions → graph", "s": "Cross-doc relationships, dependencies, \"who connects to whom\" → traversal + community summaries" }
       ],
       "narration": "The honest decision framework. GraphRAG is not an upgrade you apply everywhere — it's a different index answering a different question class. If your users ask lookup and summarization questions, vectors are simpler, cheaper and better. If they ask relationship and synthesis questions across the corpus — dependency analysis, influence mapping, 'what connects these two projects' — a graph earns its complexity. Start flat; add the graph when question analysis shows the relationship class appearing in your logs. Extraction quality gates everything: a noisy entity extractor builds a noisy graph, and graph errors are harder to spot than bad chunks."
     },

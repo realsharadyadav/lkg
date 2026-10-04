@@ -42,12 +42,12 @@
       "narration": "Now the dangerous tools, made safe by construction. write-cells changes values in a range — but only after three guardrails. ONE: backup — before any mutation, copy the file to a timestamped backup; every write is reversible, forever. TWO: dry-run — a mode where the tool computes EXACTLY what would change and returns it — 'B4: 120 → 145; C4: formula removed' — without touching the file; the model shows the user the plan first. THREE: diff-confirm flow — the actual write requires a diff-token from the dry-run, proving the preview was generated and reviewed; the write tool REFUSES to run without it. Blast-radius limits ride along: max cells per write, protected-sheet detection, no macro-enabled files at all."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "💾", "t": "Automatic backup", "s": "Timestamped copy before EVERY mutation · rollback is a file copy away" },
-        { "e": "🧪", "t": "Dry-run previews", "s": "The plan as data: cell → old value → new value · the model reviews before the user approves" },
-        { "e": "🎫", "t": "Diff-token confirmation", "s": "Writes require the preview's token — no preview, no write · poisoned loops can't skip the human" }
+        { "e": "💾", "pk": "💾", "t": "Automatic backup", "s": "Timestamped copy before EVERY mutation · rollback is a file copy away" },
+        { "e": "🧪", "pk": "📊", "t": "Dry-run previews", "s": "The plan as data: cell → old value → new value · the model reviews before the user approves" },
+        { "e": "🎫", "pk": "✅", "t": "Diff-token confirmation", "s": "Writes require the preview's token — no preview, no write · poisoned loops can't skip the human" }
       ],
       "narration": "Why the diff-token matters: without it, a poisoned or confused agent could call write-cells directly — AG-07's tool-poisoning scenario, built by your own tool design. With it, the ONLY path to mutation runs through a preview the host renders for a human — the confirmation gate from AG-07 implemented INSIDE the server's semantics. Error design completes the picture: a dry-run that detects a protected sheet, a merged-cell collision, or a formula overwrite returns an actionable error — 'C4 contains a formula that would be replaced; set allow_formula_overwrite=true explicitly or adjust the range'. Every failure names the constraint, the blocking content, and the escape hatch — the AG-02 contract, applied to spreadsheets."
     },

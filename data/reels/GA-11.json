@@ -57,12 +57,12 @@
       "narration": "Every serious deployment is multi-tenant, and the isolation model is an architecture decision with security weight. Option one: shared collection with a tenant filter on every query — cheapest, but the filter must NEVER be forgettable; one missing clause is a data breach. Option two: per-tenant collections or partitions — isolation by construction, more overhead, cleaner audit. Option three: separate databases or clusters per tenant — maximum assurance, maximum cost — reserved for regulated tiers. Choose per tenant class, enforce at the retrieval interface — the one from GA-10 — so no query path can bypass it."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 2,
       "items": [
-        { "e": "🎛️", "t": "Filter-based: cheap, fragile", "s": "WHERE tenant_id = X on every query — enforce in code, test the enforcement" },
-        { "e": "📦", "t": "Per-tenant collections: structural", "s": "Isolation by construction; index sizes per tenant; no forgotten WHERE" },
-        { "e": "🏰", "t": "Per-tenant DB/cluster: compliance tier", "s": "Regulated clients; cost follows assurance" }
+        { "e": "🎛️", "pk": "🎛️", "t": "Filter-based: cheap, fragile", "s": "WHERE tenant_id = X on every query — enforce in code, test the enforcement" },
+        { "e": "📦", "pk": "📦", "t": "Per-tenant collections: structural", "s": "Isolation by construction; index sizes per tenant; no forgotten WHERE" },
+        { "e": "🏰", "pk": "🏰", "t": "Per-tenant DB/cluster: compliance tier", "s": "Regulated clients; cost follows assurance" }
       ],
       "narration": "The three postures and their honesty levels. Filter-based scales best but lives one bug away from a breach — if you choose it, the enforcement lives in exactly one code path with tests that would fail a missing clause. Collections give structural isolation with modest overhead — the sweet spot for most SaaS tiers. And full separation for the clients whose contracts demand it — the cost is real and so is the assurance. The architect's move: make tenancy a provisioning decision per client tier, not a global one — and never, ever let a raw query bypass the retrieval interface."
     },
@@ -75,12 +75,12 @@
       "narration": "The disaster-recovery insight that simplifies everything: the vector index is a derived artifact. Given the source documents and the embedding model version, you can rebuild it. So the hierarchy of durability: source documents — irreplaceable, backed up like crown jewels; embeddings and metadata — derived, but expensive to regenerate — snapshot them; the index itself — fastest to rebuild, lowest backup priority. Your DR plan: R-P-O for the source data, a rebuild runbook with measured timings, and — the step everyone skips — a rehearsed restore. An untested backup is a rumor, not a plan."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "👑", "t": "Source docs: crown jewels", "s": "Versioned, replicated, point-in-time recovery — the business asset" },
-        { "e": "📸", "t": "Snapshots for speed", "s": "Store-level snapshots (Qdrant/pgbarman-style) cut restore from hours to minutes" },
-        { "e": "🎭", "t": "Rehearse the restore", "s": "Quarterly: rebuild the index from source in staging, measure time vs RTO" }
+        { "e": "👑", "pk": "👑", "t": "Source docs: crown jewels", "s": "Versioned, replicated, point-in-time recovery — the business asset" },
+        { "e": "📸", "pk": "📸", "t": "Snapshots for speed", "s": "Store-level snapshots (Qdrant/pgbarman-style) cut restore from hours to minutes" },
+        { "e": "🎭", "pk": "🎭", "t": "Rehearse the restore", "s": "Quarterly: rebuild the index from source in staging, measure time vs RTO" }
       ],
       "narration": "The DR checklist, in priority order. Protect the source with the same rigor as any production database — because it is one. Snapshot the derived layers to meet aggressive R-T-Os — rebuilding a hundred-million-vector index might exceed your window, so snapshots buy back minutes you promised. And rehearse: schedule the restore drill, time it, compare against the R-T-O you wrote in the proposal. The difference between a recovery plan and a recovery fantasy is one afternoon of rehearsal per quarter. This is table stakes for any system holding client data."
     },

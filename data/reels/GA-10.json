@@ -113,12 +113,12 @@
       "narration": "The selection matrix, in one breath. Scale: pgvector to millions per node; Qdrant and Pinecone to hundreds of millions; FAISS to billions if you build the shell. Ops: SaaS is zero, pgvector inherits your existing ops, Qdrant is a new server to run. Security: pgvector and self-hosted keep data in your perimeter; SaaS and cloud-managed trade perimeter for convenience. Cost: steady-state self-host usually wins past year one; bursty and early-stage favors SaaS. Run the matrix per client, document the decision — the next reel makes the chosen store stay healthy in production."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 5,
       "items": [
-        { "e": "📊", "t": "Benchmark YOUR corpus", "s": "Recall + latency + filtered QPS on your vectors — synthetic benchmarks lie politely" },
-        { "e": "📄", "t": "Write the ADR", "s": "Architecture Decision Record: options, scores, the call, the review trigger" },
-        { "e": "🚪", "t": "Keep the exit open", "s": "Abstract behind your retrieval interface; vectors + IDs migrate — habits don't" }
+        { "e": "📊", "pk": "📊", "t": "Benchmark YOUR corpus", "s": "Recall + latency + filtered QPS on your vectors — synthetic benchmarks lie politely" },
+        { "e": "📄", "pk": "📄", "t": "Write the ADR", "s": "Architecture Decision Record: options, scores, the call, the review trigger" },
+        { "e": "🚪", "pk": "🚪", "t": "Keep the exit open", "s": "Abstract behind your retrieval interface; vectors + IDs migrate — habits don't" }
       ],
       "narration": "The process that makes the matrix real. Benchmark with your own vectors and query mix — every vendor's demo is beautiful. Record the decision as an ADR — options considered, numbers, the chosen path, and the trigger that reopens it. And engineer the exit: a thin retrieval interface in your code means the store is a replaceable detail; your vectors and metadata migrate mechanically. You're not buying a vector database forever — you're renting one until the constraints change. Design like you know it."
     },

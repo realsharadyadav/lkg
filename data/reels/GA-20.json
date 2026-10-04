@@ -39,12 +39,12 @@
       "narration": "The golden dataset is your source of truth: fifty to a few hundred real questions, each with a known-correct answer or grading criteria, drawn from actual user queries and reviewed by domain experts. Quality beats size — two hundred vetted questions outperform ten thousand noisy ones. Cover the shape of reality: common questions, edge cases, adversarial inputs, and — critically — UNANSWERABLE questions, so abstention is measured, not assumed. Version it like code: golden-v1, golden-v2 — when you add cases, the dataset grows deliberately, and old versions stay runnable so you can compare runs across time. This dataset is also GA-15's recall-measuring tool and GA-16's abstention test — one artifact, many evals."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "🎯", "t": "Real questions, expert answers", "s": "From actual logs + SME review · a wrong 'golden' answer corrupts every metric downstream" },
-        { "e": "🧪", "t": "Cover the distribution", "s": "Common · edge · adversarial · unanswerable → measures hits AND honesty" },
-        { "e": "🗂️", "t": "Versioned like code", "s": "golden-v1, v2… · every eval run records WHICH dataset version scored it" }
+        { "e": "🎯", "pk": "🎯", "t": "Real questions, expert answers", "s": "From actual logs + SME review · a wrong 'golden' answer corrupts every metric downstream" },
+        { "e": "🧪", "pk": "🧪", "t": "Cover the distribution", "s": "Common · edge · adversarial · unanswerable → measures hits AND honesty" },
+        { "e": "🗂️", "pk": "🗂️", "t": "Versioned like code", "s": "golden-v1, v2… · every eval run records WHICH dataset version scored it" }
       ],
       "narration": "Build it incrementally: start with fifty questions from support tickets and sales calls — the questions users actually ask, not the ones you imagine. Get subject-matter experts to write reference answers and, importantly, grading guidance: some answers are exact-match, others need rubric judgments — 'must mention X, must not claim Y'. Then treat contamination as the enemy: golden questions must never leak into few-shot prompts or fine-tuning data, or your eval measures memorization. Finally, budget maintenance: assign an owner; a stale golden set measuring last year's product is worse than none — schedule quarterly reviews against current docs and fresh logs. The dataset is infrastructure, with all that implies."
     },

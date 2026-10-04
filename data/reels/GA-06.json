@@ -21,12 +21,12 @@
       "narration": "The moment a prompt has variables, it's a template — treat it like one. Named placeholders with explicit escaping, default values, and a single function that renders it. Why the discipline? Because prompts become infrastructure: they get called from five places, edited by three people, and a silent behavior change hurts like a database migration gone wrong. A render function you can unit test, with variables validated by Pydantic before they ever touch prose — that's the bar."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🧩", "t": "Named placeholders only", "s": "render(summary=..., doc=...) — never f-string concatenation scattered in code" },
-        { "e": "✅", "t": "Validate template inputs", "s": "Pydantic model for the variables — length limits, allowed values" },
-        { "e": "📏", "t": "Measure rendered size", "s": "Token-count the final prompt — fail fast if it exceeds the budget" }
+        { "e": "🧩", "pk": "🧩", "t": "Named placeholders only", "s": "render(summary=..., doc=...) — never f-string concatenation scattered in code" },
+        { "e": "✅", "pk": "✅", "t": "Validate template inputs", "s": "Pydantic model for the variables — length limits, allowed values" },
+        { "e": "📏", "pk": "📏", "t": "Measure rendered size", "s": "Token-count the final prompt — fail fast if it exceeds the budget" }
       ],
       "narration": "The three rules of templates. Named placeholders through one render function — so there's exactly one place to log what actually got sent. Validate inputs with a Pydantic model before rendering — a two-thousand-word user paste shouldn't silently blow your context budget. And count the rendered tokens against a cap. These three habits convert 'prompts in strings' into 'prompts as an interface' — which is what the next three chapters formalize."
     },
@@ -57,12 +57,12 @@
       "narration": "How do you know your 'improvement' improved anything? You can't A/B gut feelings. Build a golden set: fifty to a few hundred real inputs with expected outputs — extracted from production, including the nasty cases. Run candidate prompts against it automatically; score with exact checks where possible, a stronger model as judge where not. A prompt change merges only when its score beats main's score. This is how prompt engineering becomes engineering — hypotheses, measurements, regressions caught before users do."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 2,
       "items": [
-        { "e": "🥇", "t": "Golden set from production", "s": "Real inputs + expected outputs; add every bug report as a new case" },
-        { "e": "🤖", "t": "LLM-as-judge (carefully)", "s": "For open-ended output, a stronger model grades with a rubric — check ITS bias too" },
-        { "e": "🚫", "t": "Regression gate in CI", "s": "Score must not drop vs main — prompt PRs obey the same bar as code PRs" }
+        { "e": "🥇", "pk": "🥇", "t": "Golden set from production", "s": "Real inputs + expected outputs; add every bug report as a new case" },
+        { "e": "🤖", "pk": "🤖", "t": "LLM-as-judge (carefully)", "s": "For open-ended output, a stronger model grades with a rubric — check ITS bias too" },
+        { "e": "🚫", "pk": "✅", "t": "Regression gate in CI", "s": "Score must not drop vs main — prompt PRs obey the same bar as code PRs" }
       ],
       "narration": "The eval stack. Golden set first — real traffic, refreshed continuously; every incident becomes a regression case. For structured output, score programmatically — exact match on fields, validators on values. For open-ended text, model-graded rubrics work, but spot-check the judge — graders have favorite styles. And the gate: CI runs the harness on every prompt change, scores land in the PR, and a regression blocks the merge. Same ceremony as unit tests, because it is one."
     },

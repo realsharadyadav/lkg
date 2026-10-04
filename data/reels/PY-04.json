@@ -75,12 +75,12 @@
       "narration": "A decorator wraps a function with extra behavior — the exact shape of ASP dot net middleware or an ActionFilter. You write at-sign retry above a function, and every call now retries on failure. The mechanism is beautifully simple: a function that takes a function and returns a wrapped function. In agent systems, decorators add logging, timing, and rate-limit handling to every tool."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🎁", "t": "@timer above def call_api():", "s": "Syntactic sugar: call_api = timer(call_api) — same thing, spelled better" },
-        { "e": "🧩", "t": "functools.wraps preserves the name/doc", "s": "Without it, every wrapped function claims to be called 'wrapper'" },
-        { "e": "🔌", "t": "Stack them: @log @retry @validate", "s": "Order matters — top decorator runs first on the way in, last on the way out" }
+        { "e": "🎁", "pk": "🎁", "t": "@timer above def call_api():", "s": "Syntactic sugar: call_api = timer(call_api) — same thing, spelled better" },
+        { "e": "🧩", "pk": "🧩", "t": "functools.wraps preserves the name/doc", "s": "Without it, every wrapped function claims to be called 'wrapper'" },
+        { "e": "🔌", "pk": "🔌", "t": "Stack them: @log @retry @validate", "s": "Order matters — top decorator runs first on the way in, last on the way out" }
       ],
       "narration": "Mechanics: at-sign name above a function is sugar for passing the function through the decorator. Use functools dot wraps so the wrapper keeps the original name and docstring — otherwise your stack traces all say 'wrapper'. And decorators stack, applied bottom-up: validate, then retry, then log — each one wrapping the previous."
     },

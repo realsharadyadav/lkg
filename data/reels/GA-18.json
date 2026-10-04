@@ -40,12 +40,12 @@
       "narration": "Raw schema is column names and types — `cust_status_cd`, `amt_usd`, `dte`. The model can guess, but guessing is how 'revenue' becomes a dozen subtly different column choices. Schema descriptions fix this: annotate every relevant column in the prompt — `amt_usd: gross transaction amount in USD, pre-refund`. The semantic layer goes further: a curated store of BUSINESS definitions — 'churned = no transaction in 90 days; MRR = monthly recurring from subscriptions only; region = customer's billing country' — injected with the schema so the model writes YOUR organization's SQL, not plausible generic SQL. This layer is usually the difference between a demo that impresses and a system analysts actually trust with real questions."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "🏷️", "t": "Column annotations", "s": "Name + type + meaning + units + caveats: 'pre-refund', 'billing country', 'last 90d'" },
-        { "e": "📖", "t": "Semantic layer", "s": "Business definitions: churn, MRR, active user — one definition, injected everywhere" },
-        { "e": "💡", "t": "Example pairs (gold SQL)", "s": "3–5 question→SQL pairs per domain teach dialect, joins & house style better than any instruction" }
+        { "e": "🏷️", "pk": "🏷️", "t": "Column annotations", "s": "Name + type + meaning + units + caveats: 'pre-refund', 'billing country', 'last 90d'" },
+        { "e": "📖", "pk": "📖", "t": "Semantic layer", "s": "Business definitions: churn, MRR, active user — one definition, injected everywhere" },
+        { "e": "💡", "pk": "💡", "t": "Example pairs (gold SQL)", "s": "3–5 question→SQL pairs per domain teach dialect, joins & house style better than any instruction" }
       ],
       "narration": "Why examples out-teach instructions: SQL generation errors are stylistic and structural — which tables join through which key, your date conventions, your aggregate patterns. Instructions describe these abstractly; examples DEMONSTRATE them, and models are demonstration-driven learners. Curate gold pairs from your analysts' best queries — the same people who'd otherwise be answering these questions manually. The semantic layer deserves investment beyond the prompt: version it, review changes like code, because a changed definition silently changes every past and future answer — the same freshness discipline as GA-14's living documents. And keep the injected context tight: five annotated tables plus three examples beats forty bare tables every time — context quality beats context quantity, again."
     },

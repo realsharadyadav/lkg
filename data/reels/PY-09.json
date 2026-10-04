@@ -21,12 +21,12 @@
       "narration": "Here's the single most valuable library for your GenAI work. Pydantic's BaseModel is a class where every field is declared with a type — and when you construct it from raw data, every value is validated and coerced. String where an int belongs? Error, immediately, with a readable message. Missing required field? Error. This is the difference between hoping JSON is well-formed and knowing it — parse, don't pray."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🏗️", "t": "class Config(BaseModel): model: str · temp: float = 0.7", "s": "Type-annotated fields double as validation rules" },
-        { "e": "🧲", "t": "Config(**json_data) or model_validate(json)", "s": "Construction IS validation — bad payloads raise ValidationError" },
-        { "e": "🔧", "t": "Smart coercion: \"42\" → 42 · \"true\" → True", "s": "Strings from JSON become proper types when unambiguous" }
+        { "e": "🏗️", "pk": "📋", "t": "class Config(BaseModel): model: str · temp: float = 0.7", "s": "Type-annotated fields double as validation rules" },
+        { "e": "🧲", "pk": "🧪", "t": "Config(**json_data) or model_validate(json)", "s": "Construction IS validation — bad payloads raise ValidationError" },
+        { "e": "🔧", "pk": "💎", "t": "Smart coercion: \"42\" → 42 · \"true\" → True", "s": "Strings from JSON become proper types when unambiguous" }
       ],
       "narration": "The workflow: declare your model with type-annotated fields — same syntax as a dataclass. Then parse incoming data with model validate, or construct directly from a dict. Coercion is smart: the string forty-two becomes an integer if the field says int. And when validation fails, you get one ValidationError listing every problem — which is exactly what you show an LLM in the retry loop."
     },

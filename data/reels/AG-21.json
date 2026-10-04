@@ -42,12 +42,12 @@
       "narration": "Rules become a PLAN: for each target workbook, compute the exact cell-level diff — old value, new value, formula impacts — before touching anything. This is AG-09's dry-run pattern elevated to the system level: the plan is a data structure — file, sheet, range, old, new, source-rule — rendered as a review document for the human: '4 workbooks will change, 3 cells each; 1 workbook already matches; formula F9 on EMEA references B7 and will recalculate.' Formula IMPACT analysis belongs here: when a changed cell is referenced by formulas, the preview says so — 'F9 depends on B7; post-change value computes to X' — so reviewers see consequences, not just edits. The plan stage is also where CONFLICTS surface: two rules touching the same cell, a rule contradicting an earlier SOP — flagged, not merged silently. Then the confirmation flow: the human approves the rendered plan — or approves with modifications, which regenerate the diff — and only then does execution get its token."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "🗺️", "t": "Plan as data", "s": "file → sheet → range → old → new → source-rule · renderable as a human review document" },
-        { "e": "🧮", "t": "Formula impact", "s": "Dependents of changed cells identified · reviewers see computed consequences, not just edits" },
-        { "e": "⚠️", "t": "Conflict detection", "s": "Two rules → one cell · SOP contradictions · flagged for humans, never merged silently" }
+        { "e": "🗺️", "pk": "📋", "t": "Plan as data", "s": "file → sheet → range → old → new → source-rule · renderable as a human review document" },
+        { "e": "🧮", "pk": "📐", "t": "Formula impact", "s": "Dependents of changed cells identified · reviewers see computed consequences, not just edits" },
+        { "e": "⚠️", "pk": "⚠️", "t": "Conflict detection", "s": "Two rules → one cell · SOP contradictions · flagged for humans, never merged silently" }
       ],
       "narration": "Why the plan stage earns its weight: it converts the agent's work from 'edits happened' to 'edits were REVIEWED' — the governance property that makes automation permissible on business-critical spreadsheets. The approval UX follows AG-17's what-not-which discipline: the review document speaks in consequences — 'VAT on the EMEA sheet becomes 21.5%, effective November; the quarterly summary recalculates to 2,340,000' — not in cell addresses. And the plan is versioned: approval generates the confirmation token AG-09 defined, binding THIS diff to the authorization — execution of a different diff requires a new approval. Edge cases handled here: idempotent skips — workbooks already matching report 'no change needed', which is a SUCCESS case, not an exception; partial targets — a file that matches the glob but lacks the sheet goes to the exception queue with the others. Planning is where the project proves AG-11's thesis: thinking first, acting after, reviewing in between."
     },

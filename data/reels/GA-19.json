@@ -78,12 +78,12 @@
       "narration": "The fourth pattern, for a different question class: documents whose VALUE is prose wrapped in tables — financial reports, spec sheets, compliance matrices, lab results. 'What did the report say about Q3 risks' needs the TEXT of the right table rows, not an aggregation. Plain chunking fails here — GA-14's warning: splitting a table across chunks destroys rows. Tabular RAG strategies: serialize each table whole with its title and section context into one chunk — row-level splitting only for genuinely huge tables; or structure-aware retrieval — index tables by caption and headers, retrieve the whole table when its caption matches; or hybrid: table goes to the vector store as text, its KEY COLUMNS also go to DuckDB, and the router picks per question. The test: can the retrieved chunk answer the question COMPLETE? A partial row can't."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🗂️", "t": "Table-as-chunk", "s": "Whole table + caption + section in one chunk · never split rows · sized for retrieval" },
-        { "e": "🏷️", "t": "Caption-first indexing", "s": "Tables retrievable by title/context — 'Table 4: Q3 risk factors' matches risk questions" },
-        { "e": "🔀", "t": "Dual-route", "s": "Table text → RAG · key columns → DuckDB · question router picks retrieval or aggregation" }
+        { "e": "🗂️", "pk": "🗂️", "t": "Table-as-chunk", "s": "Whole table + caption + section in one chunk · never split rows · sized for retrieval" },
+        { "e": "🏷️", "pk": "🏷️", "t": "Caption-first indexing", "s": "Tables retrievable by title/context — 'Table 4: Q3 risk factors' matches risk questions" },
+        { "e": "🔀", "pk": "🔀", "t": "Dual-route", "s": "Table text → RAG · key columns → DuckDB · question router picks retrieval or aggregation" }
       ],
       "narration": "The pattern selection heuristic: aggregation questions — numbers over the data — DuckDB; semantic questions — what the document SAYS — tabular RAG; transformation questions — reshape, merge, visualize — code interpreter. Many real systems run all three on the same uploaded file simultaneously: the file becomes a database, a chartable dataset, and a chunked document, and the router sends each question down the right road. One closing principle ties all four patterns: the LLM is the universal interface, never the computation engine. Every time the answer depends on exact arithmetic, exact coverage, or exact structure, an engine does the work and the model does the talking. That single separation is the difference between a demo and a product."
     },

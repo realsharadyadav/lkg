@@ -75,12 +75,12 @@
       "narration": "The two mainstream checkers: mypy — the original, runs as a command line tool, great in CI. Pyright — Microsoft's engine, powers Pylance in VS Code, extremely fast with the best error messages. Either is fine; pyright if you live in VS Code. Wire one into your editor for red squiggles as you type, and into CI so type errors can never merge. Start lenient, tighten gradually."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🚀", "t": "Start: mypy --ignore-missing-imports src/", "s": "Third-party libraries without stubs won't block you on day one" },
-        { "e": "📈", "t": "Gradual strictness", "s": "disallow_untyped_defs next; full strict when the codebase is ready" },
-        { "e": "🧪", "t": "CI gate: mypy src/ || exit 1", "s": "Types only help if they're enforced — make the build fail on errors" }
+        { "e": "🚀", "pk": "📝", "t": "Start: mypy --ignore-missing-imports src/", "s": "Third-party libraries without stubs won't block you on day one" },
+        { "e": "📈", "pk": "🔍", "t": "Gradual strictness", "s": "disallow_untyped_defs next; full strict when the codebase is ready" },
+        { "e": "🧪", "pk": "✅", "t": "CI gate: mypy src/ || exit 1", "s": "Types only help if they're enforced — make the build fail on errors" }
       ],
       "narration": "Adoption path. Day one: run mypy loose, only on your code. Week two: require annotations on new functions — disallow untyped defs. Then tighten toward strict. The trap to avoid: annotating half a codebase and ignoring the checker output. Types are a contract; an unenforced contract is just decoration. One CI line makes it real — mypy, and fail the build."
     },

@@ -56,12 +56,12 @@
       "narration": "Let's make the Pydantic connection explicit, because this is the pattern you'll type a hundred times. Your BaseModel generates the JSON Schema for the API constraint. The same class parses the response with model validate json. Field validators then check VALUES the schema can't express — totals that must add up, dates that must be in the future. And for tools, the same class describes parameters — meaning your function signatures and the model's view of them never drift apart."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 2,
       "items": [
-        { "e": "📤", "t": "Outgoing: model_json_schema()", "s": "Feed structured output AND tool parameter definitions" },
-        { "e": "📥", "t": "Incoming: Model.model_validate_json()", "s": "Typed, validated object — not a dict you hope about" },
-        { "e": "🧪", "t": "Bonus: test fixtures for free", "s": "Model.model_construct / example() build valid test data fast" }
+        { "e": "📤", "pk": "📐", "t": "Outgoing: model_json_schema()", "s": "Feed structured output AND tool parameter definitions" },
+        { "e": "📥", "pk": "📥", "t": "Incoming: Model.model_validate_json()", "s": "Typed, validated object — not a dict you hope about" },
+        { "e": "🧪", "pk": "🧪", "t": "Bonus: test fixtures for free", "s": "Model.model_construct / example() build valid test data fast" }
       ],
       "narration": "The four jobs on one slide. Outgoing, the schema constrains generation. Incoming, validation rebuilds the typed object — with your value rules from Reel 9 applied on top. And a testing bonus: constructing example instances of your models gives you realistic fixtures for unit tests and eval sets. The theme across this whole course is consolidation — one definition, enforced everywhere. Pydantic is that theme in library form."
     },

@@ -76,12 +76,12 @@
       "narration": "Every module has a hidden variable, dunder name. When Python runs a file directly, that variable equals the string main. When the file is imported instead, it equals the module's name. So the idiom if name equals main wraps code that should only run as a script — demos, test data, CLI behavior. It's how one file can be both an importable library and a runnable tool."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🚀", "t": "python -m myproject.cli", "s": "Runs as main inside the package — imports work, no path hacks" },
-        { "e": "🧷", "t": "pyproject [project.scripts]", "s": "cli = \"myproject.cli:main\" → install a real `myproject` command" },
-        { "e": "📦", "t": "uv pip install -e .", "s": "Editable install: your package importable everywhere while you edit" }
+        { "e": "🚀", "pk": "🚀", "t": "python -m myproject.cli", "s": "Runs as main inside the package — imports work, no path hacks" },
+        { "e": "🧷", "pk": "🧷", "t": "pyproject [project.scripts]", "s": "cli = \"myproject.cli:main\" → install a real `myproject` command" },
+        { "e": "📦", "pk": "📦", "t": "uv pip install -e .", "s": "Editable install: your package importable everywhere while you edit" }
       ],
       "narration": "Three ways to run. Python dash m runs a module as main — the reliable way during development. Then the grown-up path: declare a console script in pie project, and after install your command exists on the path. And the development trick of the trade — editable install. Your package behaves as if fully installed, but every edit takes effect immediately. This is your daily workflow from now on."
     },

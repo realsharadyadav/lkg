@@ -41,12 +41,12 @@
       "narration": "By default the API returns the complete answer after generating all of it — seconds of dead air. Streaming flips it: tokens arrive as they're produced, and your UI renders them live — the typing effect every AI product has. Implementation: set stream to true and read chunks from the response iterator. One nuance: each chunk holds a delta, a piece of the text, and usage stats only come at the end — if you need the token count, capture the final chunk."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "🚿", "t": "for chunk in stream:", "s": "delta.choices[0].delta.content holds each new piece of text" },
-        { "e": "⏱️", "t": "Time-to-first-token = UX", "s": "Render the first token in <1s; stream transforms perceived latency" },
-        { "e": "🧾", "t": "usage arrives in the final chunk", "s": "stream_options={\"include_usage\": True} to get token counts while streaming" }
+        { "e": "🚿", "pk": "🔤", "t": "for chunk in stream:", "s": "delta.choices[0].delta.content holds each new piece of text" },
+        { "e": "⏱️", "pk": "⏱️", "t": "Time-to-first-token = UX", "s": "Render the first token in <1s; stream transforms perceived latency" },
+        { "e": "🧾", "pk": "📊", "t": "usage arrives in the final chunk", "s": "stream_options={\"include_usage\": True} to get token counts while streaming" }
       ],
       "narration": "Mechanics. Loop over the stream; each iteration gives you a delta containing the new text — append and render. Two details matter in production: measure time to first token, because that's what users feel; and remember usage accounting — pass the include-usage stream option so the final chunk carries the token counts for your cost logging. In the agent world, streaming also lets you display tool calls as they happen — transparency the user learns to trust."
     },

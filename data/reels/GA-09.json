@@ -76,12 +76,12 @@
       "narration": "Approximate search means sometimes the true nearest neighbor isn't in the result — recall below one hundred percent. How much you tolerate is a business decision: for product recommendations, ninety-five percent is invisible; for legal retrieval where a missed clause matters, you chase ninety-nine-plus — with wider search, reranking, or exact fallbacks. The discipline: define recall on YOUR golden query set — the same one from GA-08 — and measure it whenever you change index parameters, scale, or the embedding model. ANN without measured recall is just hope with an API."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🧪", "t": "Golden-set recall", "s": "hit@5 with index ON vs brute force — the gap is your recall loss" },
-        { "e": "🎚️", "t": "Tune to the SLA", "s": "Raise ef / M until recall plateaus; stop there — extra memory buys nothing" },
-        { "e": "🛟", "t": "Reranker backstop", "s": "Fetch top-50 ANN → exact re-score top-50 → recall ~restored at small cost (GA-15)" }
+        { "e": "🧪", "pk": "🧪", "t": "Golden-set recall", "s": "hit@5 with index ON vs brute force — the gap is your recall loss" },
+        { "e": "🎚️", "pk": "🎚️", "t": "Tune to the SLA", "s": "Raise ef / M until recall plateaus; stop there — extra memory buys nothing" },
+        { "e": "🛟", "pk": "🛟", "t": "Reranker backstop", "s": "Fetch top-50 ANN → exact re-score top-50 → recall ~restored at small cost (GA-15)" }
       ],
       "narration": "Managing the trade. Measure the gap between approximate and exact on your golden set — that's your true recall. Tune parameters until the gap closes to your SLA, then stop; overspending on the index wastes memory. And keep the reranker trick in your pocket: let ANN fetch a generous candidate set — top fifty — then re-score those exactly with the full-precision vectors, usually via a cross-encoder. You get near-exact recall at a fraction of brute-force cost. This two-stage shape — cheap wide retrieval, precise narrow re-ranking — is one of the most reused patterns in the whole field."
     },

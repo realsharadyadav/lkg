@@ -21,12 +21,12 @@
       "narration": "Three axes for embedding models. Quality: does it rank YOUR document pairs correctly — measure with a small set of known query-answer pairs from your domain. Cost: OpenAI's small model is famously cheap; self-hosted models trade API cost for GPU cost. Language support: English-only models quietly fail on Hindi text — for your corpus, multilingual support isn't a nice-to-have. The procedure is identical to GA-02's model selection: build a small relevance eval set, run candidates, pick the cheapest that passes. The leaderboard is a starting shortlist, never the decision."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "🏆", "t": "Start from the MTEB leaderboard", "s": "Massive Text Embedding Benchmark — a shortlist, not a verdict" },
-        { "e": "🧪", "t": "Build a 30-pair relevance eval", "s": "query → the doc that MUST rank #1 → measure hit@5 per candidate" },
-        { "e": "☁️", "t": "API vs self-hosted", "s": "OpenAI/Cohere/Voyage APIs: zero ops. sentence-transformers: private, GPU-billed" }
+        { "e": "🏆", "pk": "🏆", "t": "Start from the MTEB leaderboard", "s": "Massive Text Embedding Benchmark — a shortlist, not a verdict" },
+        { "e": "🧪", "pk": "🧪", "t": "Build a 30-pair relevance eval", "s": "query → the doc that MUST rank #1 → measure hit@5 per candidate" },
+        { "e": "☁️", "pk": "☁️", "t": "API vs self-hosted", "s": "OpenAI/Cohere/Voyage APIs: zero ops. sentence-transformers: private, GPU-billed" }
       ],
       "narration": "The selection workflow. Shortlist from MTEB — the public benchmark for embedding quality. Then the part that matters: thirty to fifty query-document pairs from YOUR data, where you KNOW the right answer; score each candidate by whether the correct doc lands in the top five. On cost: API models bill per token — trivial for most corpora; self-hosted via sentence-transformers gives privacy and no per-call cost, at the price of a GPU you now operate. Your Deloitte context likely means: API for prototypes, self-hosted when client data residency demands it."
     },
@@ -75,12 +75,12 @@
       "narration": "The exit cost, stated plainly. Embedding models aren't interchangeable — different dimensionality, and even at equal dimensions, different geometry. A vector from model A means nothing to model B. Switching means: re-embed the entire corpus, rebuild every index, and re-run your retrieval evals. For a million documents this is hours of compute and a real bill. Sometimes it's worth it — a multilingual fix, a quality jump. But go in with eyes open: the cheapest embedding migration is the one you avoid by choosing well the first time."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🗃️", "t": "Store raw text alongside vectors", "s": "Re-embedding requires the source — if you only kept vectors, you're stuck" },
-        { "e": "🧪", "t": "Dual-run before cutover", "s": "Embed a sample with BOTH models; compare hit@5; cut over only when better" },
-        { "e": "🪢", "t": "Version your embeddings", "s": "embed_model + embed_version per record — mixed-generation indexes are bugs" }
+        { "e": "🗃️", "pk": "🗃️", "t": "Store raw text alongside vectors", "s": "Re-embedding requires the source — if you only kept vectors, you're stuck" },
+        { "e": "🧪", "pk": "🧪", "t": "Dual-run before cutover", "s": "Embed a sample with BOTH models; compare hit@5; cut over only when better" },
+        { "e": "🪢", "pk": "🏷️", "t": "Version your embeddings", "s": "embed_model + embed_version per record — mixed-generation indexes are bugs" }
       ],
       "narration": "The migration playbook. Always keep the source text — the vectors are derived, replaceable data; the text is the asset. Dual-run your eval set through both models before committing: new model wins on hit-at-five across your golden pairs, then cut over. And VERSION every vector with which model produced it — during migration you'll have two generations alive at once, and a query must only compare against its own generation. Architect's take: treat the embedding model like a database engine upgrade — planned, tested, reversible, and rare."
     },

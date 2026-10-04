@@ -77,12 +77,12 @@
       "narration": "The moment the boss says 'do that for every file in the folder', you're running a pipeline — and pipelines have pipeline rules. Iterate files, extract, transform, write outputs to a NEW folder — never in place. Log every file with its status: processed, skipped, failed with reason. Wrap per-file work in try/except so one corrupt workbook doesn't abort the other four hundred ninety-nine. And make the loop resumable: skip outputs that already exist, so a crash at file three hundred doesn't restart from zero."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
-        { "e": "🗂️", "t": "glob → process → write to out/", "s": "New folder for results; inputs stay pristine and re-runnable" },
-        { "e": "📋", "t": "Per-file try/except + a results log", "s": "CSV log: file, status, rows, error — your audit trail" },
-        { "e": "♻️", "t": "Skip existing outputs", "s": "Idempotency: rerun safely; crash at 300 resumes at 300" }
+        { "e": "🗂️", "pk": "📂", "t": "glob → process → write to out/", "s": "New folder for results; inputs stay pristine and re-runnable" },
+        { "e": "📋", "pk": "⚙️", "t": "Per-file try/except + a results log", "s": "CSV log: file, status, rows, error — your audit trail" },
+        { "e": "♻️", "pk": "📁", "t": "Skip existing outputs", "s": "Idempotency: rerun safely; crash at 300 resumes at 300" }
       ],
       "narration": "Pipeline hygiene. Outputs to a separate tree — inputs immutable, runs reproducible. Per-file isolation with logging — batch jobs fail at 2am on file 214 of 500; the log tells you which and why, and the other 499 still got done. Idempotency — checking for existing outputs turns a fragile batch into a resumable one. These are the same rules as any ETL job; spreadsheets just tempt people into skipping them because 'it's only Excel'. It is never only Excel."
     },
@@ -113,12 +113,12 @@
       "narration": "This chapter is a career insurance policy. Any automated Excel write follows the ritual: back up the original first — copy, timestamped. Dry-run the transformation and print what WOULD change — counts and samples. Diff the plan against expectations. Write to a NEW file. Verify the output programmatically — sheet names, formula counts, spot values. Only then consider replacing the original, keeping the backup. In production systems this is formalized: versioned inputs, audit logs, approval gates. The capstone agent in this course implements exactly this — backup, dry-run, diff, approve — because real money lives in those cells."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 5,
       "items": [
-        { "e": "💾", "t": "Backup: shutil.copy(f, f + \".bak-<ts>\")", "s": "Before anything touches the file — always" },
-        { "e": "🧪", "t": "Dry-run: report changes, write nothing", "s": "Human reviews the plan: '214 cells across 3 sheets will change' — approve?" },
-        { "e": "✅", "t": "Write new → verify → swap", "s": "Verify counts and spot values; atomic swap keeps a good file in place" }
+        { "e": "💾", "pk": "💾", "t": "Backup: shutil.copy(f, f + \".bak-<ts>\")", "s": "Before anything touches the file — always" },
+        { "e": "🧪", "pk": "📋", "t": "Dry-run: report changes, write nothing", "s": "Human reviews the plan: '214 cells across 3 sheets will change' — approve?" },
+        { "e": "✅", "pk": "✅", "t": "Write new → verify → swap", "s": "Verify counts and spot values; atomic swap keeps a good file in place" }
       ],
       "narration": "The ritual, concretely. Backup first — timestamped, automatic, non-negotiable. Dry-run second — the system describes its intended changes and a human approves; this is the human-in-the-loop principle from GA-02 applied to spreadsheets. Write to a new path, verify programmatically, then swap. When your agent touches finance's workbook at scale, this pattern is the difference between 'the bot updated the files' and 'the bot corrupted the quarter-end numbers and we found out from the auditors'. Build the ritual in from day one."
     },

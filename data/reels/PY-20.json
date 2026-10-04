@@ -77,12 +77,12 @@
       "narration": "Schema evolution without versioning is how databases become archaeology sites. Alembic is SQLAlchemy's migration tool — autogenerate compares your models to the live schema and drafts a migration script; you review, edit, commit. Upgrade and downgrade functions make changes reversible — the schema equivalent of rollback. Wire migrations into deployment: containers run alembic upgrade head at startup or as a release step. Your EF Migrations muscle memory maps one-to-one: snapshot the model, generate, review, apply, version."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "⚙️", "t": "alembic revision --autogenerate -m \"add tickets table\"", "s": "Diff models vs database → a draft upgrade()/downgrade() script" },
-        { "e": "👀", "t": "Review every autogenerate", "s": "Autogenerate drafts; destructive changes (drops) always hand-checked" },
-        { "e": "🚀", "t": "alembic upgrade head in CI/CD", "s": "Migrations run as a release step — schema and code ship together" }
+        { "e": "⚙️", "pk": "📝", "t": "alembic revision --autogenerate -m \"add tickets table\"", "s": "Diff models vs database → a draft upgrade()/downgrade() script" },
+        { "e": "👀", "pk": "👀", "t": "Review every autogenerate", "s": "Autogenerate drafts; destructive changes (drops) always hand-checked" },
+        { "e": "🚀", "pk": "🚀", "t": "alembic upgrade head in CI/CD", "s": "Migrations run as a release step — schema and code ship together" }
       ],
       "narration": "The workflow. Autogenerate to draft, eyeball the diff — especially drops and type changes, which autogenerate handles cautiously at best. Commit the migration with the code that needs it. Apply at release time: one command, versioned, logged. Downgrade functions matter more than they look — they're your drill for the day a deploy goes sideways at 3am. If your team has ever repaired a production schema by hand over a screenshare, Alembic is the vaccine — the exact same discipline as EF Migrations, which you already trust."
     },
@@ -113,12 +113,12 @@
       "narration": "pgvector is the extension that turns Postgres into a vector database. Add a column of type vector with your dimension, insert embeddings alongside your rows, create an index — and SQL gains nearest-neighbor operators: order by embedding distance and limit k. The architectural elegance: your documents, metadata, permissions, and embeddings live in ONE store — joins between semantic search and relational filters are ordinary SQL. No sync pipelines, no second system to secure and back up. It won't out-scale dedicated vector databases — GA-10 covers that decision — but for a huge fraction of real workloads, one Postgres is the whole answer."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 5,
       "items": [
-        { "e": "➕", "t": "ALTER TABLE docs ADD COLUMN embedding vector(1536)", "s": "CREATE INDEX … USING hnsw (embedding vector_cosine_ops)" },
-        { "e": "🔍", "t": "SELECT * FROM docs ORDER BY embedding <=> $1 LIMIT 5", "s": "<=> = cosine distance · combine with WHERE tenant_id = $2 freely" },
-        { "e": "🏗️", "t": "The one-database pattern", "s": "Semantic search + filters + permissions in ONE system of record" }
+        { "e": "➕", "pk": "📋", "t": "ALTER TABLE docs ADD COLUMN embedding vector(1536)", "s": "CREATE INDEX … USING hnsw (embedding vector_cosine_ops)" },
+        { "e": "🔍", "pk": "🏗️", "t": "SELECT * FROM docs ORDER BY embedding <=> $1 LIMIT 5", "s": "<=> = cosine distance · combine with WHERE tenant_id = $2 freely" },
+        { "e": "🏗️", "pk": "🔍", "t": "The one-database pattern", "s": "Semantic search + filters + permissions in ONE system of record" }
       ],
       "narration": "The essentials. Vector type sized to your model; an HNSW index for approximate nearest-neighbor speed — GA-09 explains the algorithm. The distance operator: less-equal-greater-than is cosine distance — order ascending, limit k. And the killer feature: filter freely — where tenant equals this, where date after that — vector and relational in one query, one transaction, one backup. For multi-tenant systems with moderate scale, this pattern deletes entire categories of integration risk. GA-10 puts pgvector on the selection matrix against the dedicated stores — with honest limits."
     },

@@ -21,12 +21,12 @@
       "narration": "Top-k means: return the k most similar chunks. Too small — three, five — and recall dies: the answer's chunk sat at rank six, one position past the cutoff, and the model never saw it. Too large — fifty, a hundred — and precision drowns: the prompt fills with near-misses that dilute attention and cost tokens. The fix is embarrassingly simple: build a golden set — fifty to a hundred real questions whose answer-chunks you know — and plot answer-recall against k. Most prose corpora land somewhere between eight and twenty. Then remember top-k is measured on the FIRST pass; later stages will shrink the list, so fetch wide, then narrow."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 0,
       "items": [
-        { "e": "📉", "t": "k too small → recall dies", "s": "Answer at rank k+1 never reaches the model · the silent failure" },
-        { "e": "🌊", "t": "k too large → precision drowns", "s": "Near-miss chunks dilute attention, burn tokens, invite hallucination" },
-        { "e": "📐", "t": "Measure on golden questions", "s": "Plot answer-recall vs k → most corpora land at k = 8–20 · fetch wide, narrow later" }
+        { "e": "📉", "pk": "📉", "t": "k too small → recall dies", "s": "Answer at rank k+1 never reaches the model · the silent failure" },
+        { "e": "🌊", "pk": "🌊", "t": "k too large → precision drowns", "s": "Near-miss chunks dilute attention, burn tokens, invite hallucination" },
+        { "e": "📐", "pk": "📐", "t": "Measure on golden questions", "s": "Plot answer-recall vs k → most corpora land at k = 8–20 · fetch wide, narrow later" }
       ],
       "narration": "Think of retrieval as a funnel. The first pass exists to avoid MISSING anything, so bias toward generosity here — fetch twenty or thirty candidates. The narrowing happens downstream: metadata filters, reranking, and the context budget will cut it to the five or six chunks that actually earn desk space. The classic mistake is tuning k as if the retrieved list were the final context — it isn't. Measure recall at the top of the funnel, measure faithfulness at the bottom, and keep the two jobs separate. When recall is the complaint, k and hybrid search are your first two levers — in that order."
     },

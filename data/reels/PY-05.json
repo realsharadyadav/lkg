@@ -83,21 +83,21 @@
       "narration": "Inheritance works as you'd expect: class B of A, super calls the parent, and you can override or extend. But Python's culture is blunter than C sharp's: deep hierarchies are frowned on. Composition and duck typing solve most problems inheritance used to. When you do inherit, keep it shallow — one level, maybe two."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 2,
       "items": [
         {
-          "e": "👪",
+          "e": "👪", "pk": "👪",
           "t": "class Tool(BaseTool):",
           "s": "Inherit, override run(), call super().run() to extend behavior"
         },
         {
-          "e": "🧬",
+          "e": "🧬", "pk": "🧬",
           "t": "super().__init__(...)",
           "s": "Python 3: plain super() inside a method — no class name needed"
         },
         {
-          "e": "🧱",
+          "e": "🧱", "pk": "🧱",
           "t": "Mixins: small, single-purpose parents",
           "s": "class JsonMixin, class LoggerMixin — composed, not deep trees"
         }
@@ -113,21 +113,21 @@
       "narration": "Here's the class you'll actually write most. Put at-dataclass above a class, list fields with type hints, and Python generates the constructor, equality, and a clean repr automatically. It's C sharp's record types — constructor, equality, ToString — with one decorator. Defaults, mutable defaults done safely, even frozen for immutability."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 3,
       "items": [
         {
-          "e": "⚡",
+          "e": "⚡", "pk": "⚡",
           "t": "@dataclass class Config:",
           "s": "Three lines replace fifteen — init, eq, repr generated"
         },
         {
-          "e": "🔒",
+          "e": "🔒", "pk": "🔒",
           "t": "@dataclass(frozen=True)",
           "s": "Immutable records — hashable, safe to share"
         },
         {
-          "e": "🧷",
+          "e": "🧷", "pk": "🧷",
           "t": "field(default_factory=list)",
           "s": "Safe mutable defaults — the trap from Reel 4, handled for you"
         }
@@ -169,21 +169,21 @@
       "narration": "Last tool: property turns a method into an attribute. Access it without parentheses, but it computes on every read. This is where validation and derived values live: a temperature in Celsius that also exposes Fahrenheit, or a config that reads an environment variable lazily. Pair it with a setter and you get C sharp property syntax, Python-style."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 5,
       "items": [
         {
-          "e": "✨",
+          "e": "✨", "pk": "✨",
           "t": "@property def cost_usd(self)",
           "s": "model.cost_usd — no parens, computed fresh each read"
         },
         {
-          "e": "🛡️",
+          "e": "🛡️", "pk": "🛡️",
           "t": "@cost.setter validates on write",
           "s": "Raise ValueError on bad input — validation lives in the class"
         },
         {
-          "e": "💡",
+          "e": "💡", "pk": "💡",
           "t": "Cache with functools.cached_property",
           "s": "Compute once, then serve the cached value forever"
         }

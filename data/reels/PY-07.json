@@ -41,12 +41,12 @@
       "narration": "When an LLM returns malformed output, or a config file is missing a key — that's not a ValueError, that's a domain failure. Define your own exceptions by inheriting from Exception. Callers can then catch exactly your error, and stack traces read like documentation. In agent systems, custom exceptions become your control flow: retry the transient ones, alert on the fatal ones."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "🧱", "t": "class LLMOutputError(Exception)", "s": "Inherit Exception (or a domain base like AppError)" },
-        { "e": "🔗", "t": "Add context in the message", "s": "raise ConfigError(f\"missing key: {key}\") from original" },
-        { "e": "🌳", "t": "Inherit domain bases", "s": "AppError → ConfigError, LLMError → RetryableError: catch hierarchies" }
+        { "e": "🧱", "pk": "🧱", "t": "class LLMOutputError(Exception)", "s": "Inherit Exception (or a domain base like AppError)" },
+        { "e": "🔗", "pk": "🔗", "t": "Add context in the message", "s": "raise ConfigError(f\"missing key: {key}\") from original" },
+        { "e": "🌳", "pk": "🌳", "t": "Inherit domain bases", "s": "AppError → ConfigError, LLMError → RetryableError: catch hierarchies" }
       ],
       "narration": "The pattern: a small tree. AppError at the root, then ConfigError, LLMError under it. Raise with a helpful message, and chain with 'from' when wrapping a lower error — it keeps both stack traces. Callers catch the base to handle everything, or a leaf to handle one thing. This is how you keep error handling readable at three in the morning."
     },
@@ -59,12 +59,12 @@
       "narration": "The with statement is C sharp's using block: acquire a resource, use it, and no matter what happens — exception, return, crash — cleanup runs automatically. Files are the textbook case, but anything with setup and teardown works: database connections, locks, even timed sections. In the LLM world you'll use it for httpx clients so connections are pooled and released correctly."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 2,
       "items": [
-        { "e": "📂", "t": "with open(\"config.json\") as f:", "s": "File closes even if parsing inside throws" },
-        { "e": "🧰", "t": "Multiple in one line", "s": "with open(a) as fa, open(b) as fb: — nested or comma-separated" },
-        { "e": "🏗️", "t": "Build your own: contextlib", "s": "@contextmanager turns a generator into a context manager" }
+        { "e": "📂", "pk": "📂", "t": "with open(\"config.json\") as f:", "s": "File closes even if parsing inside throws" },
+        { "e": "🧰", "pk": "🧰", "t": "Multiple in one line", "s": "with open(a) as fa, open(b) as fb: — nested or comma-separated" },
+        { "e": "🏗️", "pk": "🏗️", "t": "Build your own: contextlib", "s": "@contextmanager turns a generator into a context manager" }
       ],
       "narration": "Details worth knowing. One with can hold multiple resources — comma separated. Files close even when the code inside raises. And you can build your own using contextlib's contextmanager decorator — write a generator that yields the resource, and everything after yield becomes the cleanup. It's the idiomatic way to wrap retry logic or temporary state."
     },
@@ -95,12 +95,12 @@
       "narration": "JSON is the lingua franca of every API you'll touch, and Python maps it perfectly: JSON objects become dicts, arrays become lists, strings, numbers, booleans, and null becomes None. The json module converts with two calls — loads for strings, dumps for output. Every LLM response you receive and every request you send goes through these two functions."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 4,
       "items": [
-        { "e": "📥", "t": "json.loads(text) → dict", "s": "Parse API responses; json.load(f) reads straight from a file object" },
-        { "e": "📤", "t": "json.dumps(obj, indent=2)", "s": "Serialize; indent=2 for humans, default compact for APIs" },
-        { "e": "🧬", "t": "dataclasses/Pydantic bridge", "s": "Parse into typed objects instead of raw dicts — Reel 9 (Pydantic)" }
+        { "e": "📥", "pk": "📥", "t": "json.loads(text) → dict", "s": "Parse API responses; json.load(f) reads straight from a file object" },
+        { "e": "📤", "pk": "📤", "t": "json.dumps(obj, indent=2)", "s": "Serialize; indent=2 for humans, default compact for APIs" },
+        { "e": "🧬", "pk": "🧬", "t": "dataclasses/Pydantic bridge", "s": "Parse into typed objects instead of raw dicts — Reel 9 (Pydantic)" }
       ],
       "narration": "The round trip: loads turns response text into nested dicts — access with square brackets or get. Dumps goes back out, with indent for pretty printing. One warning: raw dicts don't validate anything. A missing key fails three functions later. The professional move is parsing straight into typed objects — dataclasses today, Pydantic models in Reel 9. That's when JSON stops being fragile."
     },

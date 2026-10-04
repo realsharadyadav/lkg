@@ -40,12 +40,12 @@
       "narration": "Token spend is the least-visible production metric — it accumulates in provider invoices, weeks late, with no shape. The dashboard fixes that: aggregate tokens × model pricing into DOLLARS, sliced three ways. Per user/tenant: who spends what — a runaway script, a power user, an abusive trial — each needs a different response, and you can't choose without the slice. Per feature: which PRODUCT capability costs most — the chat feature might cost ten times the summarizer; pricing and architecture decisions need this. Per model and per prompt version: cost shifts when you switch models or prompts — routing more traffic to a cheaper model should show up as a clean delta, not a surprise. Then budgets: alerts at thresholds — daily spend doubles suddenly, page someone; per-request caps enforced at runtime — GA-23's pipeline is where they bite."
     },
     {
-      "type": "list",
+      "type": "flow",
       "chapter": 1,
       "items": [
-        { "e": "👤", "t": "Per user/tenant", "s": "Runaway scripts, power users, abuse — different problems, different responses · quota enforcement" },
-        { "e": "🧩", "t": "Per feature", "s": "Which capability costs most · pricing and architecture decisions ride on this slice" },
-        { "e": "🚨", "t": "Alerts + runtime caps", "s": "Daily-spend anomalies page someone · per-request caps enforced in the pipeline" }
+        { "e": "👤", "pk": "👤", "t": "Per user/tenant", "s": "Runaway scripts, power users, abuse — different problems, different responses · quota enforcement" },
+        { "e": "🧩", "pk": "🧩", "t": "Per feature", "s": "Which capability costs most · pricing and architecture decisions ride on this slice" },
+        { "e": "🚨", "pk": "🚨", "t": "Alerts + runtime caps", "s": "Daily-spend anomalies page someone · per-request caps enforced in the pipeline" }
       ],
       "narration": "The cost-quality pairing is the dashboard's real power: plot cost AGAINST quality metrics on the same time axis — a cost drop that coincides with a quality drop is a regression wearing an optimization's costume; a quality rise that costs 40 percent more is a product decision, made with data. Caching effects should be visible too — GA-17's semantic cache shows up as a cost-per-request line stepping down; when the step flattens, cache hit-rate deserves a look. And forecast: monthly run-rate projected from current traffic — the question 'what happens to our bill when this feature 10xes' should have a number attached BEFORE the growth arrives, not after the invoice. Cost observability completes the loop with GA-25's optimization levers — you can only route, cache, and cap what you can measure."
     },
