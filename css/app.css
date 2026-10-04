@@ -26,7 +26,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   display:flex;align-items:center;gap:10px;
   background:linear-gradient(rgba(255,255,255,.92),transparent);
 }
-.brand{font-weight:900;font-size:20px;letter-spacing:-.5px;color:var(--text)}
+.brand{font-weight:900;font-size:20px;letter-spacing:-.5px;color:var(--text);white-space:nowrap;display:flex;align-items:baseline;min-width:0}
 .brand span{background:linear-gradient(90deg,#65a30d,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent;margin-left:2px}
 .streak{margin-left:auto;font-size:13px;background:rgba(255,255,255,.9);border:1px solid var(--line);padding:4px 10px;border-radius:999px;font-weight:700;color:var(--text)}
 .streak b{margin-left:3px}
@@ -405,3 +405,40 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .about-hint{font-size:13px;color:var(--muted);font-weight:600;margin-top:8px}
 .about-hint a{color:var(--genai-deep);font-weight:900;text-decoration:none}
 .set-btn{width:100%;text-align:left;cursor:pointer}
+
+/* ---------- narrow-phone layout ----------
+   Keep the page at the browser's real width. The old document-level zoom made
+   mobile rendering dependent on devicePixelRatio and forced users to zoom by
+   hand when the browser did not apply it consistently. */
+@media (max-width:480px){
+  #topbar{padding-inline:10px;gap:7px}
+  .brand{font-size:18px;letter-spacing:-.6px}
+  .brand-sub{font-size:8.5px;letter-spacing:1px;margin-left:4px}
+  .top-right{gap:6px}
+  .prog-pill{font-size:11px;padding:4px 8px}
+  .streak{font-size:12px;padding:4px 8px}
+  .iconbtn{width:34px;height:34px;font-size:15px}
+  .segs{gap:3px;padding-inline:8px}
+  .stage{padding-inline:12px;padding-bottom:140px}
+  .scene{inset-inline:12px;bottom:140px}
+  .capzone{left:10px;right:calc(var(--rail) + 10px);bottom:calc(74px + var(--sab));gap:5px}
+  .cap-title{font-size:17px}
+  .cap-text{font-size:14px;line-height:1.4;max-height:calc(1.4em * 3.2)}
+  .rail{right:4px;bottom:calc(82px + var(--sab));gap:10px}
+  .rail-btn .ic{width:42px;height:42px;font-size:18px}
+  .rail-btn .lb{font-size:9.5px}
+  .hook{padding-inline:20px}
+  .tab{font-size:10.5px}
+  .tab .ti{font-size:18px}
+}
+@media (max-width:350px){
+  .brand span.brand-sub{display:none}
+  .brand{font-size:19px}
+  .prog-pill{font-size:10px;padding-inline:6px}
+  .streak{padding-inline:6px}
+  .stage{padding-inline:9px;padding-bottom:134px}
+  .scene{inset-inline:9px;bottom:134px}
+  .capzone{left:8px;right:calc(var(--rail) + 8px)}
+  .cap-title{font-size:16px}
+  .cap-text{font-size:13.5px}
+}

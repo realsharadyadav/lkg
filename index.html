@@ -7,27 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="LKG — your path from .NET architect to GenAI architect. 80 chaptered reels: Python, GenAI, Agentic AI.">
-<script>
-/* Mobile fit: on small portrait phones, gently zoom out (like the 80% users pick
-   manually) so the layout has the same comfortable proportions as on desktop. */
-(function () {
-  var DESIGN_W = 487;
-  function fit() {
-    var portrait = window.matchMedia('(orientation: portrait)').matches;
-    var w = Math.min(window.screen.width, window.screen.height);
-    var nz = (portrait && w && w < 480) ? w / DESIGN_W : 0;
-    document.documentElement.style.zoom = nz || '';
-  }
-  fit();
-  window.addEventListener('orientationchange', function () { setTimeout(fit, 80); });
-  window.addEventListener('resize', function () { setTimeout(fit, 120); });
-})();
-</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>LKG · GenAI Architect Path</title>
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=7">
 </head>
 <body>
 <div id="app">
