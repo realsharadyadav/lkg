@@ -18,7 +18,11 @@
     a.addEventListener('error', fail);
     const p = a.play();
     if (p && p.catch) p.catch(fail);
-    return { cancel() { settled = true; try { a.pause(); } catch (e) {} } };
+    return {
+      cancel() { settled = true; try { a.pause(); } catch (e) {} },
+      pause() { try { a.pause(); } catch (e) {} },
+      resume() { if (a.ended) return; const r = a.play(); if (r && r.catch) r.catch(() => {}); }
+    };
   }
 
   /* key: e.g. 'PY-01/hook', 'PY-01/s3', 'PY-01/recap', 'PY-01/quiz0_q',
@@ -28,13 +32,25 @@
     // muted: stay silent but keep timing so scenes still advance
     if (SS.narrator.muted || !('Audio' in window)) {
       const ms = Math.max(1500, SS.narrator.estMs(text || ''));
-      const t = setTimeout(() => cb.onend && cb.onend(), ms);
-      return { cancel() { clearTimeout(t); } };
+      let t = setTimeout(() => cb.onend && cb.onend(), ms), left = ms, at = Date.now();
+      return {
+        cancel() { clearTimeout(t); },
+        pause() { clearTimeout(t); left -= Date.now() - at; },
+        resume() { at = Date.now(); t = setTimeout(() => cb.onend && cb.onend(), Math.max(0, left)); }
+      };
     }
-    return playFile('data/audio/' + key + '.mp3', {
+    // clip missing -> browser voice; the handle follows whichever is active
+    let inner = null, cancelled = false;
+    const handle = {
+      cancel() { cancelled = true; inner && inner.cancel(); },
+      pause() { inner && inner.pause && inner.pause(); },
+      resume() { inner && inner.resume && inner.resume(); }
+    };
+    inner = playFile('data/audio/' + key + '.mp3', {
       onend: () => cb.onend && cb.onend(),
-      onerror: () => SS.narrator.speak(text, cb)   // clip missing -> browser voice
+      onerror: () => { if (!cancelled) inner = SS.narrator.speak(text, cb); }
     });
+    return handle;
   }
 
   SS.audio = { speak };
