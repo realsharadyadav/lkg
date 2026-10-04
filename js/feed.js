@@ -52,9 +52,9 @@
     rail.addEventListener('click', e => e.stopPropagation());
     rail.querySelector('.rail-like').addEventListener('click', e => { const r = e.target.closest('.rail-btn').getBoundingClientRect(); player.like(r.left + r.width / 2, r.top + r.height / 2); });
     const codeBtn = rail.querySelector('.rail-code');
-    if (codeBtn) codeBtn.addEventListener('click', () => player.holdWhile(done => SS.ui.openCode(data, done)));
+    if (codeBtn) codeBtn.addEventListener('click', () => SS.ui.openCode(data));   // narration keeps playing
     const notesBtn = rail.querySelector('.rail-notes');
-    if (notesBtn) notesBtn.addEventListener('click', () => player.holdWhile(done => SS.ui.openNotes(data, done)));
+    if (notesBtn) notesBtn.addEventListener('click', () => SS.ui.openNotes(data));
     rail.querySelector('.rail-mute').addEventListener('click', () => {
       SS.narrator.setMuted(!SS.narrator.muted);
       document.dispatchEvent(new CustomEvent('ss:mute'));
@@ -259,7 +259,10 @@
       const found = items.find(it => it.el === feed._active);
       return found && found.player ? found.player : null;
     },
-    next() { feed.scrollTo({ top: feed.scrollTop + feed.clientHeight, behavior: 'smooth' }); },
+    next() {
+      if (document.querySelector('.sheet.open')) return;   // reading code/notes: stay on this reel
+      feed.scrollTo({ top: feed.scrollTop + feed.clientHeight, behavior: 'smooth' });
+    },
     goTo(id) { const it = items.find(x => x.id === id); if (it) feed.scrollTo({ top: it.el.offsetTop }); },
     nextLabel(id) {
       const rs = SS.catalog.reels, i = rs.findIndex(r => r.id === id);

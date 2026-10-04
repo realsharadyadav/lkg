@@ -114,8 +114,7 @@
         if (p > 0.25 || flick > 0.3) {   // forgiving: a quarter of the way, or a light flick
           Object.values(sheets).forEach(s => s.classList.remove('open'));
           sheets[n].classList.add('open'); scrim.classList.add('on'); openName = n;
-          settleSide(n, true, v);
-          player.holdWhile(done => { onSheetClose = done; });
+          settleSide(n, true, v);   // narration keeps playing while reading code / notes
           try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
         } else settleSide(n, false, v);
       }
