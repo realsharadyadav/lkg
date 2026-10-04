@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector DB Options — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Fifteen products, one decision matrix. Pick by constraints, not by hype. Learn Vector DB Options (pgvector, Azure AI Search, Qdrant / Chroma / FAISS, Pinecone &amp; managed SaaS) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-10.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Vector DB Options — Generative AI for software architects | LKG School"><meta property="og:description" content="Fifteen products, one decision matrix. Pick by constraints, not by hype. Learn Vector DB Options (pgvector, Azure AI Search, Qdrant / Chroma / FAISS, Pinecone &amp; managed SaaS) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-10.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Vector DB Options", "description": "Fifteen products, one decision matrix. Pick by constraints, not by hype. Learn Vector DB Options (pgvector, Azure AI Search, Qdrant / Chroma / FAISS, Pinecone & managed SaaS) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-10.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["pgvector", "Azure AI Search", "Qdrant / Chroma / FAISS", "Pinecone & managed SaaS", "Relational built-ins", "The selection matrix"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Vector DB Options", "item": "https://lkgschool.in/learn/GA-10.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 26</nav>
+<h1>Vector DB Options</h1>
+<p class="lede">Fifteen products, one decision matrix. Pick by <strong>constraints</strong>, not by hype.</p>
+<a class="cta" href="/?reel=GA-10">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>pgvector</li><li>Azure AI Search</li><li>Qdrant / Chroma / FAISS</li><li>Pinecone &amp; managed SaaS</li><li>Relational built-ins</li><li>The selection matrix</li></ol>
+<h2>Remember this</h2><ul><li>pgvector = consolidation default; Azure AI Search = Microsoft-estate enterprise; Qdrant/Chroma/FAISS = self-host spectrum; Pinecone = SaaS velocity</li><li>Relational DBs are adding vectors — verify per-version before proposing</li><li>Benchmark your corpus, write the ADR, keep the exit open via a thin retrieval interface</li></ul>
+<section class="notes"><h2>pgvector</h2>
+<ul>
+<li>Postgres + vectors. Default for apps/prototypes/multi-tenant to millions of vectors.</li>
+<li>Watch: HNSW memory, vacuum habits. Exit when measurements demand.</li>
+</ul>
+<h2>Azure AI Search</h2>
+<ul>
+<li>Managed, Entra-integrated, hybrid + semantic ranking, AI enrichment.</li>
+<li>Wins: Azure estates, compliance-driven clients. Model SKU/capacity pricing.</li>
+</ul>
+<h2>Open-source spectrum</h2>
+<ul>
+<li><strong>FAISS</strong>: library (indexes only — you build the DB).</li>
+<li><strong>Chroma</strong>: embedded, zero-ops — prototypes → small prod.</li>
+<li><strong>Qdrant</strong>: self-hosted production server — filtering-friendly HNSW, replication.</li>
+</ul>
+<h2>Pinecone &amp; managed SaaS</h2>
+<ul>
+<li>Zero ops, serverless scaling, ongoing rent, data leaves your VPC.</li>
+<li>12-month crossover math decides vs self-host.</li>
+</ul>
+<h2>Relational built-ins</h2>
+<ul>
+<li>SQL Server / Oracle / others adding vector search — <strong>verify per exact version</strong>.</li>
+<li>&#x27;Already licensed&#x27; wins procurement rooms when it clears the technical bar.</li>
+</ul>
+<h2>Selection matrix</h2>
+<ul>
+<li>Score: scale · ops · security/data-residency · cost (steady-state math).</li>
+<li>Benchmark YOUR corpus (recall + filtered QPS) · write the ADR · keep a thin Retriever interface so the store is replaceable.</li>
+</ul></section>
+<h2>Code: The thin retrieval interface — swap stores without tears</h2><pre><code>from typing import Protocol, Any
+
+class Hit(BaseModel):
+    id: str
+    score: float
+    payload: dict
+
+class Retriever(Protocol):
+    def upsert(self, ids: list[str], vecs, payloads: list[dict]) -&gt; None: ...
+    def search(self, vec, k: int = 10, where: dict | None = None) -&gt; list[Hit]: ...
+    def delete(self, ids: list[str]) -&gt; None: ...
+
+# --- one implementation per store ---------------------------------
+class QdrantRetriever:
+    def __init__(self, client, collection: str):
+        self.c, self.col = client, collection
+    def search(self, vec, k=10, where=None):
+        r = self.c.search(self.col, vec, limit=k,
+                          query_filter=self._f(where) if where else None)
+        return [Hit(id=h.id, score=h.score, payload=h.payload) for h in r]
+
+class PgvectorRetriever:
+    def __init__(self, engine): self.engine = engine
+    def search(self, vec, k=10, where=None):
+        sql = text(&quot;&quot;&quot;SELECT id, 1-(embedding &lt;=&gt; :q) AS score, payload
+                      FROM docs
+                      WHERE (:tenant IS NULL OR tenant_id = :tenant)
+                      ORDER BY embedding &lt;=&gt; :q LIMIT :k&quot;&quot;&quot;)
+        ...  # same Hit shape
+
+# --- app code depends on the Protocol, never a store --------------
+def answer_question(q: str, retriever: Retriever):
+    hits = retriever.search(embed(q), k=5, where={&quot;tenant&quot;: current_tenant()})
+    return generate(context=[h.payload[&quot;text&quot;] for h in hits])
+# Qdrant today, pgvector for a conservative client, Azure next —
+# the app doesn&#x27;t change.</code></pre>
+<nav class="pn"><a href="/learn/GA-09.html">← Vector DB Fundamentals</a><a href="/learn/GA-11.html">Operations →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

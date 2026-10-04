@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beyond Text — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Language was the doorway — not the house. Vision, speech, and images make GenAI a full-sense system, and every pipeline you built gains a pair of eyes and a voice. Learn Beyond Text (Vision &amp; OCR, Speech in and out, Realtime voice agents, Image generation) in a short animated reel with notes, rec…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-28.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Beyond Text — Generative AI for software architects | LKG School"><meta property="og:description" content="Language was the doorway — not the house. Vision, speech, and images make GenAI a full-sense system, and every pipeline you built gains a pair of eyes and a voice. Learn Beyond Text (Vision &amp; OCR, Speech in and out, Realtime voice agents, Image generation) in a short animated reel with notes, rec…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-28.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Beyond Text", "description": "Language was the doorway — not the house. Vision, speech, and images make GenAI a full-sense system, and every pipeline you built gains a pair of eyes and a voice. Learn Beyond Text (Vision & OCR, Speech in and out, Realtime voice agents, Image generation) in a short animated reel with notes, rec…", "url": "https://lkgschool.in/learn/GA-28.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Vision & OCR", "Speech in and out", "Realtime voice agents", "Image generation"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Beyond Text", "item": "https://lkgschool.in/learn/GA-28.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 77</nav>
+<h1>Beyond Text</h1>
+<p class="lede">Language was the doorway — not the house. <strong>Vision, speech, and images make GenAI a full-sense system</strong>, and every pipeline you built gains a pair of eyes and a voice.</p>
+<a class="cta" href="/?reel=GA-28">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Vision &amp; OCR</li><li>Speech in and out</li><li>Realtime voice agents</li><li>Image generation</li></ol>
+<h2>Remember this</h2><ul><li>Vision is an input-format change: image_url content blocks in the same chat API — manage token cost with detail levels and cropping</li><li>Speech is a solved commodity — STT/TTS wrap your existing text pipeline; sentence-level TTS streaming hides latency behind playback</li><li>Realtime speech-to-speech replaces request/response with a persistent bidirectional stream — keep it as the conversational front door, route structured work through tool calls</li><li>Image generation renders but doesn&#x27;t reason — pipeline text-first, run generation async, and label provenance at birth</li></ul>
+<section class="notes"><h2>Vision &amp; OCR</h2>
+<ul>
+<li>image_url content blocks; detail low/high is the token-cost dial.</li>
+<li>Clean structure from Document Intelligence (GA-29) + judgment from the model.</li>
+<li>Ask &#x27;from the image only&#x27; — groundedness discipline.</li>
+</ul>
+<h2>Speech</h2>
+<ul>
+<li>STT: commodity. Chunk long audio, timestamp, LLM post-pass for domain terms.</li>
+<li>TTS: per-sentence streaming hides latency behind playback.</li>
+<li>Voice is a product choice — offer options, default unobtrusive.</li>
+</ul>
+<h2>Realtime voice agents</h2>
+<ul>
+<li>Speech-to-speech, persistent bidirectional stream (WebSocket — PY-14).</li>
+<li>~1s loop budget; interruption = cancellation event (AG-19).</li>
+<li>Pattern: realtime model as front door; structured work via tool calls (AG-16).</li>
+</ul>
+<h2>Image generation</h2>
+<ul>
+<li>Render, not reason — pipeline text-first.</li>
+<li>Async job pattern (AG-19); editing beats raw generation for products.</li>
+<li>Provenance at birth (C2PA, watermark); generated media out of RAG corpora until reviewed (AG-22); transparency duties under EU AI Act.</li>
+</ul>
+<h2>Cross-links</h2>
+<p>GA-03 (chat API shape), GA-07 (latency), GA-10/29 (retrieval, ingestion), AG-09 (guardrails), AG-13 (context budget), AG-16 (tool contracts), AG-17 (session memory), AG-19 (async/abort), AG-22 (injection), PY-14 (websockets for realtime).</p></section>
+<h2>Code: The multimodal pipeline, end to end</h2><pre><code># ONE pipeline, every sense:
+async def handle(user_msg):
+    # eyes: screenshots/charts/doc scans  (vision blocks)
+    # ears:  audio → STT → text
+    # brain: text + retrieved facts → answer   [UNCHANGED CORE]
+    # voice: answer → sentence-TTS → stream
+    # hands: tool calls for structured work
+    # guardrails: screen every surface (AG-09)
+
+    return pipeline.run(user_msg)
+
+# The core you built in 76 reels didn&#x27;t change.
+# It just learned to see, hear, and speak.</code></pre>
+<nav class="pn"><a href="/learn/GA-27.html">← RAG vs Fine-tune vs Prompt</a><a href="/learn/PY-14.html">Real-time &amp; Webhooks →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /data/audio/
+
+Sitemap: https://lkgschool.in/sitemap.xml

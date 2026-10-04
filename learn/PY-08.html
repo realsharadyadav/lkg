@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Type Hints — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Miss your compiler? Good news — Python can have compile-time safety too. Optional, gradual, and free. Learn Type Hints (Basic hints, Optional &amp; Union, Generics &amp; TypedDict, mypy / pyright) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-08.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Type Hints — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Miss your compiler? Good news — Python can have compile-time safety too. Optional, gradual, and free. Learn Type Hints (Basic hints, Optional &amp; Union, Generics &amp; TypedDict, mypy / pyright) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-08.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Type Hints", "description": "Miss your compiler? Good news — Python can have compile-time safety too. Optional, gradual, and free. Learn Type Hints (Basic hints, Optional & Union, Generics & TypedDict, mypy / pyright) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-08.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Basic hints", "Optional & Union", "Generics & TypedDict", "mypy / pyright"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Type Hints", "item": "https://lkgschool.in/learn/PY-08.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 8</nav>
+<h1>Type Hints</h1>
+<p class="lede">Miss your <strong>compiler</strong>? Good news — Python can have compile-time safety too. Optional, gradual, and free.</p>
+<a class="cta" href="/?reel=PY-08">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Basic hints</li><li>Optional &amp; Union</li><li>Generics &amp; TypedDict</li><li>mypy / pyright</li></ol>
+<h2>Remember this</h2><ul><li>Hints: name: type -&gt; return; collections parameterize as list[str]</li><li>Optional[str] = str | None — declare None or the checker complains at callers</li><li>TypedDict for dict-shaped data; mypy/pyright in editor + CI, tighten gradually</li></ul>
+<section class="notes"><h2>Basics</h2>
+<ul>
+<li><code>def f(name: str, n: int = 1) -&gt; str:</code> — params + return.</li>
+<li>Collections parameterize: <code>list[str]</code>, <code>dict[str, int]</code>, <code>tuple[str, int]</code>.</li>
+<li>Modern (3.9+): lowercase builtins; legacy code uses <code>typing.List</code> etc.</li>
+</ul>
+<h2>Optional &amp; Union</h2>
+<ul>
+<li><code>Optional[str]</code> ≡ <code>str | None</code> — None must be <strong>declared</strong>.</li>
+<li><code>str | int</code> (3.10+) / <code>Union[str, int]</code>.</li>
+<li>Narrow with <code>if x is not None:</code> / <code>isinstance(...)</code> — checkers understand guards.</li>
+</ul>
+<h2>Generics &amp; TypedDict</h2>
+<pre><code>def first[T](items: list[T]) -&gt; T:   # 3.12+ (TypeVar before 3.12)
+    return items[0]
+
+class ApiResponse(TypedDict):
+    model: str
+    tokens: int</code></pre>
+<ul>
+<li><strong>TypedDict</strong> = dict with a schema (JSON land) · <strong>dataclass/Pydantic</strong> = real objects.</li>
+</ul>
+<h2>mypy / pyright</h2>
+<ul>
+<li>Editor: pyright (Pylance) · CI: <code>mypy src/</code> (fail build on errors).</li>
+<li>Adopt gradually: loose → <code>disallow_untyped_defs</code> → strict.</li>
+</ul></section>
+<h2>Code: Type hints that earn their keep</h2><pre><code>from typing import TypedDict, Optional
+
+# --- basics ---------------------------------------------------
+def estimate_cost(model: str, tokens: int) -&gt; float:
+    prices: dict[str, float] = {&quot;gpt-4o&quot;: 2.50, &quot;sonnet&quot;: 3.00}
+    return tokens / 1_000_000 * prices.get(model, 1.00)
+
+# --- Optional: None must be declared ---------------------------
+def find_model(name: str) -&gt; Optional[str]:
+    return name if name.startswith(&quot;gpt&quot;) else None
+
+m = find_model(&quot;gpt-4o&quot;)
+if m is not None:                 # narrowing — mypy verifies this guard
+    print(m.upper())
+
+# --- TypedDict: schemas for dict-shaped data -------------------
+class ChatMessage(TypedDict):
+    role: str
+    content: str
+
+class ApiResponse(TypedDict):
+    model: str
+    message: ChatMessage
+    tokens: int
+
+payload: ApiResponse = {
+    &quot;model&quot;: &quot;gpt-4o&quot;,
+    &quot;message&quot;: {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;hi&quot;},
+    &quot;tokens&quot;: 12,
+}
+
+# --- check -----------------------------------------------------
+# $ pip install mypy
+# $ mypy --ignore-missing-imports src/
+# CI: mypy src/ &amp;&amp; pytest          # types gate + tests gate</code></pre>
+<nav class="pn"><a href="/learn/PY-07.html">← Errors, Files &amp; Config</a><a href="/learn/PY-09.html">Pydantic →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

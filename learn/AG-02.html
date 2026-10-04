@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tool Design — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Agents are only as good as their tools. Descriptions drive selection, validation blocks chaos, errors teach recovery. Tool design IS agent design. Learn Tool Design (Schemas &amp; descriptions, Validation, Errors the model can fix, Idempotency, parallelism &amp; tool overload) in a short animated reel wi…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-02.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Tool Design — Agentic AI for software architects | LKG School"><meta property="og:description" content="Agents are only as good as their tools. Descriptions drive selection, validation blocks chaos, errors teach recovery. Tool design IS agent design. Learn Tool Design (Schemas &amp; descriptions, Validation, Errors the model can fix, Idempotency, parallelism &amp; tool overload) in a short animated reel wi…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-02.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Tool Design", "description": "Agents are only as good as their tools. Descriptions drive selection, validation blocks chaos, errors teach recovery. Tool design IS agent design. Learn Tool Design (Schemas & descriptions, Validation, Errors the model can fix, Idempotency, parallelism & tool overload) in a short animated reel wi…", "url": "https://lkgschool.in/learn/AG-02.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Schemas & descriptions", "Validation", "Errors the model can fix", "Idempotency, parallelism & tool overload"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Tool Design", "item": "https://lkgschool.in/learn/AG-02.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 42</nav>
+<h1>Tool Design</h1>
+<p class="lede">Agents are only as good as their tools. <strong>Descriptions drive selection, validation blocks chaos, errors teach recovery.</strong> Tool design IS agent design.</p>
+<a class="cta" href="/?reel=AG-02">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Schemas &amp; descriptions</li><li>Validation</li><li>Errors the model can fix</li><li>Idempotency, parallelism &amp; tool overload</li></ol>
+<h2>Remember this</h2><ul><li>Tool selection is reading: names, when/when-not descriptions, and argument examples directly shape agent behavior</li><li>Validate like untrusted input: schema + authorization + blast-radius limits; fail closed with actionable errors returned to the loop</li><li>Idempotent tools make retries safe; parallelize independent calls; keep the tool set small or layer its discovery</li></ul>
+<section class="notes"><h2>Schemas &amp; descriptions</h2>
+<ul>
+<li>Name = verb_noun, unambiguous. Description answers: what / when / when NOT.</li>
+<li>Argument descriptions carry examples — models imitate them.</li>
+<li>Defaults are behavioral guardrails.</li>
+</ul>
+<h2>Validation</h2>
+<ul>
+<li>LLM args = untrusted input: Pydantic schema + authorization + blast-radius limits.</li>
+<li>Fail closed: invalid → actionable ToolError back to the loop; never silently coerce.</li>
+</ul>
+<h2>Errors the model can fix</h2>
+<ul>
+<li>Constraint + received value + correct example (+ nearest alternatives).</li>
+<li>Distinguish retryable vs terminal in the message.</li>
+</ul>
+<h2>Craft</h2>
+<ul>
+<li>Idempotent tools → retries safe (upsert/ensure/delete-if-present).</li>
+<li>Parallelize independent calls (gather).</li>
+<li>~12+ tools → group/merge/layer discovery.</li>
+</ul></section>
+<h2>Code: A production-grade tool: validated, idempotent, self-explaining errors</h2><pre><code>from pydantic import BaseModel, Field
+from typing import Literal
+
+class SearchDocs(BaseModel):
+    query: str = Field(min_length=2, max_length=200,
+                       description=&quot;standalone keywords, not a question&quot;)
+    top_k: int = Field(default=5, ge=1, le=10)
+    date_after: str | None = Field(
+        default=None, pattern=r&quot;^\d{4}-\d{2}-\d{2}$&quot;)
+
+def search_documents(args: SearchDocs, user: User):
+    if not user.can_search:
+        raise ToolError(&quot;permission denied: search requires the &#x27;kb&#x27; role&quot;)
+    try:
+        hits = vdb.search(embed(args.query), k=args.top_k,
+                          where={&quot;acl&quot;: {&quot;$in&quot;: user.groups}})
+    except IndexUnavailable:
+        raise ToolError(&quot;search index temporarily unavailable — &quot;
+                        &quot;retry in ~30s or answer from general knowledge&quot;)
+    if not hits:
+        raise ToolError(
+            f&quot;no results for &#x27;{args.query}&#x27;. Try broader keywords &quot;
+            &quot;(e.g. drop qualifiers) or a date filter reset.&quot;)
+    return [{&quot;id&quot;: h.id, &quot;snippet&quot;: h.text[:300]} for h in hits]
+
+# Note: ToolError messages are written FOR THE MODEL — constraints,
+# received values, next steps. They are the loop&#x27;s feedback signal.</code></pre>
+<nav class="pn"><a href="/learn/AG-01.html">← What is an Agent</a><a href="/learn/AG-03.html">Built-in Capabilities →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

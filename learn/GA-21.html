@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG &amp; LLM Metrics — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Faithfulness, context precision, LLM-as-judge — the metric stack that tells you which stage of your RAG is lying and when a &#x27;better&#x27; change actually isn&#x27;t. Learn RAG &amp; LLM Metrics (The metric stack, LLM-as-judge, Regression testing, Eval tooling) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-21.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="RAG &amp; LLM Metrics — Generative AI for software architects | LKG School"><meta property="og:description" content="Faithfulness, context precision, LLM-as-judge — the metric stack that tells you which stage of your RAG is lying and when a &#x27;better&#x27; change actually isn&#x27;t. Learn RAG &amp; LLM Metrics (The metric stack, LLM-as-judge, Regression testing, Eval tooling) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-21.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "RAG & LLM Metrics", "description": "Faithfulness, context precision, LLM-as-judge — the metric stack that tells you which stage of your RAG is lying and when a 'better' change actually isn't. Learn RAG & LLM Metrics (The metric stack, LLM-as-judge, Regression testing, Eval tooling) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-21.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The metric stack", "LLM-as-judge", "Regression testing", "Eval tooling"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "RAG & LLM Metrics", "item": "https://lkgschool.in/learn/GA-21.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 40</nav>
+<h1>RAG &amp; LLM Metrics</h1>
+<p class="lede">Faithfulness, context precision, LLM-as-judge — the metric stack that tells you <strong>which stage of your RAG is lying</strong> and when a &#x27;better&#x27; change actually isn&#x27;t.</p>
+<a class="cta" href="/?reel=GA-21">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The metric stack</li><li>LLM-as-judge</li><li>Regression testing</li><li>Eval tooling</li></ol>
+<h2>Remember this</h2><ul><li>Metric stack maps to stages: context recall/precision → retrieval · faithfulness → generation honesty · relevance → intent</li><li>LLM-as-judge scales grading but carries position, verbosity, and self-preference biases — calibrate against human anchors, grade atomically</li><li>Promote evals to CI gates (fast subset on PR, full nightly) and record model/prompt/dataset versions per run</li></ul>
+<section class="notes"><h2>Metric stack (maps to stages)</h2>
+<ul>
+<li><strong>Context recall/precision</strong> → retrieval stage (GA-15 fixes).</li>
+<li><strong>Faithfulness</strong> → generation honesty (claim-by-claim support).</li>
+<li><strong>Answer relevance</strong> → intent alignment.</li>
+<li>Pattern-matching triage: which metric dropped names the stage.</li>
+</ul>
+<h2>LLM-as-judge</h2>
+<ul>
+<li>Biases: position, verbosity, self-preference.</li>
+<li>Mitigate: rubric-based absolute scores, randomized order, atomic claim checks, different-family judge.</li>
+<li>Calibrate vs human anchors (kappa) — scheduled, not once.</li>
+</ul>
+<h2>Regression testing</h2>
+<ul>
+<li>PR gate: fast subset, thresholds on deltas.</li>
+<li>Nightly full golden run → dashboard + trend alerts.</li>
+<li>Record model version + prompt hash + dataset version per run.</li>
+</ul>
+<h2>Tooling</h2>
+<ul>
+<li>Ragas (metrics), promptfoo (prompt testing/CI), Langfuse (tracing).</li>
+<li>Tools ship default judges — override and calibrate deliberately.</li>
+</ul></section>
+<h2>Code: Faithfulness via atomic claim checking</h2><pre><code>JUDGE = &quot;&quot;&quot;You are a strict fact-checker.
+Given CONTEXT and ANSWER:
+1. Decompose ANSWER into atomic claims (short, single-fact).
+2. For each claim, classify:
+   SUPPORTED   — context states it
+   PARTIAL     — context implies but doesn&#x27;t state it
+   UNSUPPORTED — context contradicts or lacks it
+3. Reply as JSON: {&quot;claims&quot;: [{&quot;text&quot;: ..., &quot;verdict&quot;: ...}],
+                  &quot;faithfulness&quot;: supported/total}
+Grade ONLY from the CONTEXT. Unknown = UNSUPPORTED.&quot;&quot;&quot;
+
+def faithfulness(context: str, answer: str) -&gt; float:
+    verdicts = llm(JUDGE, context=context, answer=answer)
+    claims = verdicts[&quot;claims&quot;]
+    supported = sum(1 for c in claims if c[&quot;verdict&quot;] == &quot;SUPPORTED&quot;)
+    return supported / max(len(claims), 1)
+
+# Threshold in CI:  faithfulness(answer) &gt;= 0.9
+# Calibrate monthly: run 50 human-graded cases through the judge,
+# compute agreement — if kappa sags, the JUDGE drifted, not the app.</code></pre>
+<nav class="pn"><a href="/learn/GA-20.html">← Eval Fundamentals</a><a href="/learn/AG-01.html">What is an Agent →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

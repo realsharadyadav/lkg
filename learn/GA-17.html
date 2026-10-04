@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advanced RAG — Generative AI for software architects | LKG School</title>
+<meta name="description" content="When flat chunks stop answering — graphs, agents, multi-hop, and security. The frontier toolkit for questions that span documents and permissions. Learn Advanced RAG (GraphRAG, Agentic RAG, Multi-hop questions, Security &amp; caching) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-17.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Advanced RAG — Generative AI for software architects | LKG School"><meta property="og:description" content="When flat chunks stop answering — graphs, agents, multi-hop, and security. The frontier toolkit for questions that span documents and permissions. Learn Advanced RAG (GraphRAG, Agentic RAG, Multi-hop questions, Security &amp; caching) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-17.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Advanced RAG", "description": "When flat chunks stop answering — graphs, agents, multi-hop, and security. The frontier toolkit for questions that span documents and permissions. Learn Advanced RAG (GraphRAG, Agentic RAG, Multi-hop questions, Security & caching) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-17.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["GraphRAG", "Agentic RAG", "Multi-hop questions", "Security & caching"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Advanced RAG", "item": "https://lkgschool.in/learn/GA-17.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 33</nav>
+<h1>Advanced RAG</h1>
+<p class="lede">When flat chunks stop answering — <strong>graphs, agents, multi-hop, and security</strong>. The frontier toolkit for questions that span documents and permissions.</p>
+<a class="cta" href="/?reel=GA-17">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>GraphRAG</li><li>Agentic RAG</li><li>Multi-hop questions</li><li>Security &amp; caching</li></ol>
+<h2>Remember this</h2><ul><li>GraphRAG: entity/relation extraction at ingest; graph traversal for cross-document relationship questions, vectors for local ones</li><li>Agentic RAG = retrieval as a tool under model control (judgment for latency/cost); multi-hop = fixed decompose-retrieve-synthesize for compound questions</li><li>Ship-ready = ACL filters inside retrieval (never post-filter) + semantic cache with high similarity threshold and tenant-scoped keys</li></ul>
+<section class="notes"><h2>GraphRAG</h2>
+<ul>
+<li>Ingest: LLM-extract entities + relations → knowledge graph beside vector index.</li>
+<li>Local questions → vectors; global/relationship questions → graph traversal / community summaries.</li>
+<li>Start flat; add graph when logs show relationship-class questions.</li>
+</ul>
+<h2>Agentic RAG</h2>
+<ul>
+<li>Retrieval becomes a TOOL the agent invokes: decide → search → read → re-search/answer/clarify.</li>
+<li>Wins: judgment, no wasted retrievals, adaptive depth.</li>
+<li>Costs: latency, non-determinism, harder eval. Fixed decomposition (multi-hop) is the middle ground.</li>
+</ul>
+<h2>Multi-hop</h2>
+<ul>
+<li>Decompose → retrieve per sub-question → synthesize.</li>
+<li>Evaluate EACH hop; answer must cite every hop&#x27;s sources (citation count ≥ hop count).</li>
+</ul>
+<h2>Security &amp; caching</h2>
+<ul>
+<li>ACL: chunk-level metadata, filtered in the retrieval query by asking user. Never post-filter.</li>
+<li>Semantic cache: q-embedding → answer, threshold ≥ ~0.97, key includes tenant.</li>
+<li>Stage 4 complete: ingest → chunk → embed → retrieve → generate → ship.</li>
+</ul></section>
+<h2>Code: Advanced RAG guardrails: ACL filter + semantic cache + decomposition</h2><pre><code>from dataclasses import dataclass
+
+# --- security: filter INSIDE retrieval --------------------------------
+def retrieve(q, user) -&gt; list[Chunk]:
+    return vdb.search(
+        embed(q), k=20,
+        where={&quot;acl&quot;: {&quot;$in&quot;: user.permission_groups}},  # GA-09 filters
+    )
+    # NEVER: fetch all → generate → strip disallowed from the answer.
+    # The LLM has already seen what you tried to hide.
+
+# --- semantic cache: high threshold, tenant-scoped key ----------------
+@dataclass
+class CacheEntry:
+    q_vec: list[float]
+    answer: str
+    tenant: str
+
+CACHE: list[CacheEntry] = []
+
+def ask_cached(question: str, user) -&gt; str:
+    qv = embed(question)
+    for e in CACHE:                       # small: brute force is fine
+        if e.tenant == user.tenant and cosine(qv, e.q_vec) &gt;= 0.97:
+            return e.answer               # near-duplicate only!
+    answer = generate(history, question, retrieve(question, user))
+    CACHE.append(CacheEntry(qv, answer, user.tenant))
+    return answer
+
+# --- multi-hop: fixed decomposition ------------------------------------
+def ask_multi_hop(compound: str) -&gt; str:
+    subs = llm(f&quot;Split into standalone sub-questions: {compound}&quot;)
+    results = [retrieve_and_answer(s) for s in subs]   # eval each hop!
+    return llm(f&quot;Synthesize with citations to ALL sources: {results}&quot;)</code></pre>
+<nav class="pn"><a href="/learn/GA-16.html">← Generation &amp; Citations</a><a href="/learn/PY-10.html">asyncio →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

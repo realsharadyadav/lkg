@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NumPy &amp; Vectors — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Embeddings are vectors. Vectors are NumPy. This reel is the math your AI career runs on. Learn NumPy &amp; Vectors (NumPy arrays, Dot product &amp; norm, Cosine similarity, Broadcasting) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-24.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="NumPy &amp; Vectors — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Embeddings are vectors. Vectors are NumPy. This reel is the math your AI career runs on. Learn NumPy &amp; Vectors (NumPy arrays, Dot product &amp; norm, Cosine similarity, Broadcasting) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-24.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "NumPy & Vectors", "description": "Embeddings are vectors. Vectors are NumPy. This reel is the math your AI career runs on. Learn NumPy & Vectors (NumPy arrays, Dot product & norm, Cosine similarity, Broadcasting) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-24.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["NumPy arrays", "Dot product & norm", "Cosine similarity", "Broadcasting"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "NumPy & Vectors", "item": "https://lkgschool.in/learn/PY-24.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 16</nav>
+<h1>NumPy &amp; Vectors</h1>
+<p class="lede">Embeddings are vectors. Vectors are NumPy. <strong>This reel is the math your AI career runs on.</strong></p>
+<a class="cta" href="/?reel=PY-24">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>NumPy arrays</li><li>Dot product &amp; norm</li><li>Cosine similarity</li><li>Broadcasting</li></ol>
+<h2>Remember this</h2><ul><li>ndarray = typed, packed, vectorized — 50-100x faster than lists; embeddings live here</li><li>Cosine similarity = dot ÷ norms; 1 = same meaning — the retrieval computation in one line</li><li>Normalize to unit vectors, then query @ corpus.T = all similarities at once</li></ul>
+<section class="notes"><h2>Arrays</h2>
+<ul>
+<li><code>ndarray</code>: one dtype, contiguous memory, vectorized C ops → 50-100× lists.</li>
+<li><code>a.shape</code>, <code>a.dtype</code> — <code>(1536,)</code> float32 = one embedding.</li>
+<li>2D: rows = documents; <code>a[0]</code> row · <code>a[:, 0]</code> column.</li>
+</ul>
+<h2>Dot product &amp; norm</h2>
+<ul>
+<li><strong>Dot</strong>: <code>np.dot(a, b)</code> = Σ aᵢbᵢ — agreement measure.</li>
+<li><strong>Norm</strong>: <code>np.linalg.norm(a)</code> = √(Σ aᵢ²) — vector length.</li>
+</ul>
+<h2>Cosine similarity</h2>
+<pre><code>cos(θ) = dot(a, b) / (norm(a) · norm(b))</code></pre>
+<ul>
+<li>1.0 = same direction · 0 = unrelated · −1 = opposite.</li>
+<li>Similarity = angle (direction), not distance.</li>
+</ul>
+<h2>Broadcasting</h2>
+<ul>
+<li>Align dims right-to-left; must match or be 1.</li>
+<li>Pattern: normalize all vectors → <code>sims = corpus_u @ query_u</code> (one matmul = all cosine scores).</li>
+<li>Vector DBs optimize exactly this — you now know what they do.</li>
+</ul></section>
+<h2>Code: Hand-rolled similarity search — 15 lines</h2><pre><code>import numpy as np
+
+# Simulate: 10,000 chunks, 1,536-dim embeddings (like OpenAI&#x27;s)
+rng = np.random.default_rng(42)
+corpus = rng.normal(size=(10_000, 1536)).astype(np.float32)
+query  = rng.normal(size=(1536,)).astype(np.float32)
+
+# --- 1. normalize to unit length (norm = 1) --------------------
+def unit(v: np.ndarray) -&gt; np.ndarray:
+    return v / np.linalg.norm(v, axis=-1, keepdims=True)
+
+corpus_u = unit(corpus)          # (10000, 1536), norms now 1
+query_u  = unit(query)           # (1536,)
+
+# --- 2. ALL cosine similarities in ONE matmul -------------------
+sims = corpus_u @ query_u        # (10000,) — dot = cosine (unit vectors)
+
+# --- 3. top-5 most similar chunks -------------------------------
+top5 = np.argsort(sims)[::-1][:5]
+for rank, idx in enumerate(top5, 1):
+    print(f&quot;#{rank} chunk={idx}  sim={sims[idx]:.4f}&quot;)
+
+# This 3-step pattern is the beating heart of every vector DB.
+# FAISS/HNSW just make step 2 faster — the math is identical.</code></pre>
+<nav class="pn"><a href="/learn/GA-06.html">← Prompt Lifecycle</a><a href="/learn/PY-25.html">ML Basics →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architect Toolkit — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Agents are systems that act — which means agent architecture is architecture where a mistake becomes an action. This reel adapts GA-30&#x27;s toolkit for the agentic era: platform design, tenancy, budgets, and adoption. Learn Architect Toolkit (Agent reference architecture, Agent platform design, Tena…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-25.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Architect Toolkit — Agentic AI for software architects | LKG School"><meta property="og:description" content="Agents are systems that act — which means agent architecture is architecture where a mistake becomes an action. This reel adapts GA-30&#x27;s toolkit for the agentic era: platform design, tenancy, budgets, and adoption. Learn Architect Toolkit (Agent reference architecture, Agent platform design, Tena…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-25.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Architect Toolkit", "description": "Agents are systems that act — which means agent architecture is architecture where a mistake becomes an action. This reel adapts GA-30's toolkit for the agentic era: platform design, tenancy, budgets, and adoption. Learn Architect Toolkit (Agent reference architecture, Agent platform design, Tena…", "url": "https://lkgschool.in/learn/AG-25.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Agent reference architecture", "Agent platform design", "Tenancy & cost", "Adoption, risk & sourcing"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Architect Toolkit", "item": "https://lkgschool.in/learn/AG-25.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 75</nav>
+<h1>Architect Toolkit</h1>
+<p class="lede">Agents are systems that act — which means agent architecture is architecture where <strong>a mistake becomes an action</strong>. This reel adapts GA-30&#x27;s toolkit for the agentic era: platform design, tenancy, budgets, and adoption.</p>
+<a class="cta" href="/?reel=AG-25">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Agent reference architecture</li><li>Agent platform design</li><li>Tenancy &amp; cost</li><li>Adoption, risk &amp; sourcing</li></ol>
+<h2>Remember this</h2><ul><li>Agent reference architecture: gateway, orchestrator, tools, memory, guardrails, observability — with guardrails screening actions and the orchestrator kept stateless</li><li>By the third agent, build a platform: shared gateway, tool registry, memory stores, observability, eval harnesses — agents become versioned configuration files</li><li>Multi-tenancy: tenant keys enforced at the store ACL (never in prompts), per-tenant sandboxes, and circuit breakers that shed one tenant, not all</li><li>Adoption runs pilot → expand → platform; keep the risk &amp; compliance matrix as code with owners and expiry dates — and revisit build-vs-buy twice a year</li></ul>
+<section class="notes"><h2>Reference architecture (6 layers)</h2>
+<p>Gateway (auth/quota) → Orchestrator (loop, stateless; state in memory) → Tool runtime (contracts, sandbox, audit) → Memory (scoped, TTL&#x27;d, ACL&#x27;d) · Guardrails (input + output + ACTION) · Observability (full loop tracing).</p>
+<h2>Platform design</h2>
+<p>By agent #3, centralize: gateway, tool registry, memory infra, observability plane, eval harness. Agents become YAML definitions: model, tools, memory, guardrails, budget, evals — versioned in git, reviewed like code.</p>
+<h2>Multi-tenancy</h2>
+<ul>
+<li>Isolation rings: data (store-level ACL filter — never prompts), execution (per-tenant sandboxes, deny egress), quota (per-tenant circuit breakers).</li>
+<li>Noisy-neighbor math: loops amplify — hard breakers, not alerts.</li>
+<li>Cost model: per tenant per task class; map to budget blocks per pricing tier.</li>
+<li>Compliance matrix: tenant x data-class x model-provider x action-class, as code with owners and review-by dates.</li>
+</ul>
+<h2>Adoption roadmap</h2>
+<p>Pilot (1 use-case, HITL, trust metrics) → Expand (3–5 use-cases, self-serve definitions, internal catalog) → Platform (paved road: template + evals + guardrails + budget).</p>
+<h2>Build vs buy vs configure</h2>
+<p>Agents = your product → build orchestrator + evals. Internal leverage → configure framework + your gateway/policies. Commodity tasks → buy. Revisit twice a year.</p>
+<h2>Cross-links</h2>
+<p>AG-09 (guardrails), AG-14 (loop), AG-16 (registry), AG-17 (memory), AG-18 (HITL), AG-20/21 (observability/evals), AG-22 (sandbox exfiltration), AG-23 (budgets/circuit breakers), GA-30 (base toolkit: selection, NFRs, gates, cost).</p></section>
+<h2>Code: The platform contract</h2><pre><code># Every agent, in one file, on one platform:
+#   shared gateway · registry tools · scoped memory
+#   three-surface guardrails · full tracing · CI evals
+name: support-triage
+version: 3.2.0
+model:   { deployment: my-gpt4o, temperature: 0.2 }
+tools:   [ticket.search, ticket.reply{hitl}, kb.lookup]
+memory:  [conversation{ttl:90d}, user-profile{pii:masked}]
+guardrails: { input: standard, output: standard, action: strict }
+budget:  { max_steps: 12, max_cost_usd: 0.35, deadline_s: 240 }
+evals:   { golden_set: evals/triage.jsonl, min_success: 0.92 }
+
+# New agents: copy, diff, review, deploy — days, not months.</code></pre>
+<nav class="pn"><a href="/learn/GA-30.html">← Architect Toolkit</a><a href="/learn/GA-27.html">RAG vs Fine-tune vs Prompt →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

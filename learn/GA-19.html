@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Files as Data Source — Generative AI for software architects | LKG School</title>
+<meta name="description" content="&quot;Chat with your spreadsheet&quot; is the #1 demo in GenAI — and a minefield of silent wrong answers. Four patterns, from naive to production-grade. Learn Files as Data Source (Chat with CSV/Excel, DuckDB + LLM, Code-interpreter pattern, Tabular RAG) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-19.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Files as Data Source — Generative AI for software architects | LKG School"><meta property="og:description" content="&quot;Chat with your spreadsheet&quot; is the #1 demo in GenAI — and a minefield of silent wrong answers. Four patterns, from naive to production-grade. Learn Files as Data Source (Chat with CSV/Excel, DuckDB + LLM, Code-interpreter pattern, Tabular RAG) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-19.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Files as Data Source", "description": "\"Chat with your spreadsheet\" is the #1 demo in GenAI — and a minefield of silent wrong answers. Four patterns, from naive to production-grade. Learn Files as Data Source (Chat with CSV/Excel, DuckDB + LLM, Code-interpreter pattern, Tabular RAG) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-19.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Chat with CSV/Excel", "DuckDB + LLM", "Code-interpreter pattern", "Tabular RAG"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Files as Data Source", "item": "https://lkgschool.in/learn/GA-19.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 45</nav>
+<h1>Files as Data Source</h1>
+<p class="lede">&quot;Chat with your spreadsheet&quot; is the #1 demo in GenAI — and a minefield of silent wrong answers. Four patterns, from naive to production-grade.</p>
+<a class="cta" href="/?reel=GA-19">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Chat with CSV/Excel</li><li>DuckDB + LLM</li><li>Code-interpreter pattern</li><li>Tabular RAG</li></ol>
+<h2>Remember this</h2><ul><li>Never let the model compute or read raw tabular data at scale — engines compute, models interpret</li><li>DuckDB turns files into queryable tables with zero import; code-interpreter covers plots/transforms; route per question</li><li>Tabular RAG keeps whole tables (with captions) as chunks — split rows are unretrievable meaning</li></ul>
+<section class="notes"><h2>Why naive chat-with-CSV fails</h2>
+<ul>
+<li>Silent sampling (context limits) · arithmetic drift · structure flattening (merged cells, totals rows).</li>
+<li>State coverage explicitly: &#x27;analyzed 48,211 rows&#x27;.</li>
+</ul>
+<h2>DuckDB + LLM</h2>
+<ul>
+<li><code>CREATE VIEW ... SELECT * FROM &#x27;file.parquet&#x27;</code> — zero-copy, in-process.</li>
+<li>DESCRIBE + sampled values into the prompt; model writes SQL, engine executes (GA-18 fences).</li>
+</ul>
+<h2>Code-interpreter pattern</h2>
+<ul>
+<li>For plots/transforms/multi-file logic SQL can&#x27;t express.</li>
+<li>Same sandbox rules as AG-03; charts as linked artifacts.</li>
+<li>Router per question: &#x27;how many/sum&#x27; → SQL · &#x27;show/plot/combine&#x27; → code.</li>
+</ul>
+<h2>Tabular RAG</h2>
+<ul>
+<li>Whole table + caption + section per chunk; caption-first indexing; key columns optionally mirrored to DuckDB.</li>
+</ul>
+<p><strong>Principle: models interpret, engines compute.</strong></p></section>
+<h2>Code: The tri-router: one file, three engines</h2><pre><code>async def answer_over_file(question: str, file_path: str) -&gt; Answer:
+    # 0 · one-time setup: file becomes all three things
+    con = duckdb.connect()
+    con.execute(f&quot;CREATE VIEW data AS SELECT * FROM &#x27;{file_path}&#x27;&quot;)
+    workspace = sandbox.put(file_path)          # code-interpreter
+    chunks = index_tables_with_captions(file_path)  # tabular RAG
+
+    # 1 · cheap router classifies the question
+    route = classify(question, classes=[&quot;aggregate&quot;, &quot;transform&quot;, &quot;semantic&quot;])
+
+    if route == &quot;aggregate&quot;:                    # DuckDB
+        sql = llm(SQL_PROMPT, schema=describe(con), q=question)
+        rows = con.execute(f&quot;SELECT * FROM ({sql}) _q LIMIT 500&quot;).fetchdf()
+        return llm(ANSWER_PROMPT, q=question, exact_results=rows)
+
+    if route == &quot;transform&quot;:                    # code interpreter
+        code = llm(CODE_PROMPT, q=question, files=[workspace.name])
+        out = await sandbox.run(code, timeout=60)
+        return Answer(text=out.stdout, artifacts=out.files)
+
+    return rag_answer(question, store=chunks)   # semantic → tabular RAG
+
+# Rule of the whole reel: models interpret, engines compute.</code></pre>
+<nav class="pn"><a href="/learn/GA-18.html">← Text-to-SQL</a><a href="/learn/AG-04.html">MCP Concepts →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

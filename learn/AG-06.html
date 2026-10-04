@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Using Existing MCP Servers — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Hundreds of MCP servers exist — filesystem, GitHub, databases. Using them well is a security and governance exercise wearing a configuration file. Learn Using Existing MCP Servers (The reference server zoo, Connecting from hosts, Trust: the supply-chain question, MCP gateways) in a short animated…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-06.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Using Existing MCP Servers — Agentic AI for software architects | LKG School"><meta property="og:description" content="Hundreds of MCP servers exist — filesystem, GitHub, databases. Using them well is a security and governance exercise wearing a configuration file. Learn Using Existing MCP Servers (The reference server zoo, Connecting from hosts, Trust: the supply-chain question, MCP gateways) in a short animated…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-06.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Using Existing MCP Servers", "description": "Hundreds of MCP servers exist — filesystem, GitHub, databases. Using them well is a security and governance exercise wearing a configuration file. Learn Using Existing MCP Servers (The reference server zoo, Connecting from hosts, Trust: the supply-chain question, MCP gateways) in a short animated…", "url": "https://lkgschool.in/learn/AG-06.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["The reference server zoo", "Connecting from hosts", "Trust: the supply-chain question", "MCP gateways"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Using Existing MCP Servers", "item": "https://lkgschool.in/learn/AG-06.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 48</nav>
+<h1>Using Existing MCP Servers</h1>
+<p class="lede">Hundreds of MCP servers exist — filesystem, GitHub, databases. Using them well is a <strong>security and governance exercise</strong> wearing a configuration file.</p>
+<a class="cta" href="/?reel=AG-06">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>The reference server zoo</li><li>Connecting from hosts</li><li>Trust: the supply-chain question</li><li>MCP gateways</li></ol>
+<h2>Remember this</h2><ul><li>Consume before building: reference servers (filesystem, DB, GitHub) are maintained and spec-current — fork and scope, don&#x27;t start from zero</li><li>Host configs are security policy: the filesystem path argument is the sandbox, tokens deserve fine-grained scopes, remote URLs need an operator you trust</li><li>Servers are supply-chain dependencies: provenance, pinned versions, audited tool surfaces; gateways centralize auth, audit, and policy at enterprise scale</li></ul>
+<section class="notes"><h2>Reference servers</h2>
+<ul>
+<li>Filesystem (scoped dirs) · databases (read-only modes) · GitHub · fetch · hundreds community-maintained.</li>
+<li>Strategy: consume → fork/scope → build only what&#x27;s missing.</li>
+</ul>
+<h2>Connecting</h2>
+<ul>
+<li>stdio = local config: command + args + env. Config IS security policy.</li>
+<li>Filesystem path arg = the sandbox. Tokens fine-grained. Remote URLs need trusted operators.</li>
+</ul>
+<h2>Trust (supply chain)</h2>
+<ul>
+<li>Provenance (official/vendor) · read the tool surface · minimum scopes · pin versions · track spec updates · registry (no shadow IT).</li>
+</ul>
+<h2>Gateways</h2>
+<ul>
+<li>Enterprise control plane: central auth (SSO), full audit, policy, server registry.</li>
+<li>Credentials off endpoints. Critical infra — but governance must stay fast.</li>
+</ul></section>
+<h2>Code: The server-vetting checklist</h2><pre><code># Before adding ANY MCP server to your stack:
+
+provenance:
+  □ Official/reference impl, or vendor-authored for its own API?
+  □ Known maintainers, public repo, issue responsiveness?
+
+surface:
+  □ Read the exposed tools — does each match the server&#x27;s stated job?
+  □ Any unexpected capabilities (shell, network, file writes)?
+
+permissions:
+  □ Minimum scopes? Read-only where possible?
+  □ Credentials scoped to specific repos/paths, not broad?
+
+operations:
+  □ Version pinned (npx pkg@1.2.3 / lockfile), not latest?
+  □ Tracks MCP spec revisions (post-2026-07-28 aware)?
+  □ Logged in the team server registry (no shadow IT)?
+
+# 2 minutes per server. Cheaper than one incident.</code></pre>
+<nav class="pn"><a href="/learn/AG-05.html">← MCP Spec Evolution</a><a href="/learn/AG-07.html">MCP Security →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

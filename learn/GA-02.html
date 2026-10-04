@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Landscape — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Hundreds of models. Five questions to pick the right one — every single time. Learn Model Landscape (Model families, Reasoning vs standard, Multimodal models, Selection criteria) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-02.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Model Landscape — Generative AI for software architects | LKG School"><meta property="og:description" content="Hundreds of models. Five questions to pick the right one — every single time. Learn Model Landscape (Model families, Reasoning vs standard, Multimodal models, Selection criteria) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-02.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Model Landscape", "description": "Hundreds of models. Five questions to pick the right one — every single time. Learn Model Landscape (Model families, Reasoning vs standard, Multimodal models, Selection criteria) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-02.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Model families", "Reasoning vs standard", "Multimodal models", "Selection criteria", "Hallucination & limits"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Model Landscape", "item": "https://lkgschool.in/learn/GA-02.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › LLM Basics + API › Reel 11</nav>
+<h1>Model Landscape</h1>
+<p class="lede">Hundreds of models. <strong>Five questions</strong> to pick the right one — every single time.</p>
+<a class="cta" href="/?reel=GA-02">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Model families</li><li>Reasoning vs standard</li><li>Multimodal models</li><li>Selection criteria</li><li>Hallucination &amp; limits</li></ol>
+<h2>Remember this</h2><ul><li>Three families: frontier API / open-weight self-run / small cheap — hybrid architectures are normal</li><li>Reasoning models for hard logic, standard for bulk language work; route and escalate</li><li>Hallucination is structural — anchor (retrieval), constrain (schema), judge (humans)</li></ul>
+<section class="notes"><h2>Three families</h2>
+<table><tr><th>Family</th><th>Examples</th><th>Strength</th><th>Cost shape</th></tr><tr><td>Frontier API</td><td>GPT/Claude/Gemini flagships</td><td>Max capability</td><td>per-token</td></tr><tr><td>Open-weight</td><td>Llama, Mistral, Qwen</td><td>privacy, fine-tune, self-run</td><td>your GPU</td></tr><tr><td>Small</td><td><em>-mini / </em>-nano</td><td>cheap, fast, bulk work</td><td>per-token, tiny</td></tr></table>
+<blockquote>Hybrid (frontier for hard + small for bulk) is a legitimate architecture.</blockquote>
+<h2>Reasoning vs standard</h2>
+<ul>
+<li><strong>Reasoning</strong>: visible chain-of-thought → math, code, multi-step planning. Slower + pricier.</li>
+<li><strong>Standard</strong>: direct answers → classification, extraction, chat.</li>
+<li>Pattern: <strong>route</strong> — cheap first, escalate on failure.</li>
+</ul>
+<h2>Multimodal</h2>
+<ul>
+<li>Vision (images/screenshots/charts), PDF understanding, audio.</li>
+<li>Collapses point solutions (OCR, chart parsers) into one call.</li>
+</ul>
+<h2>Selection: quality · cost · latency · privacy</h2>
+<ul>
+<li>Eval on <strong>your</strong> 50-100 examples · cost math × volume · latency budget per UX type.</li>
+<li>Write the decision + reason in an architecture note.</li>
+</ul>
+<h2>Hallucination — a structural property</h2>
+<ul>
+<li>Models generate <em>plausible</em> text; they don&#x27;t look things up.</li>
+<li>Defense in depth: <strong>anchor</strong> (RAG) → <strong>constrain</strong> (schema/validators) → <strong>judge</strong> (human-in-loop).</li>
+</ul></section>
+<h2>Code: A pragmatic model-selection harness</h2><pre><code>import time, json
+from openai import OpenAI
+
+client = OpenAI()
+
+# Your real examples — 50 is enough to rank candidates
+EVAL_SET = [
+    {&quot;input&quot;: &quot;Extract the total from: &#x27;Invoice total: $1,240.00&#x27;&quot;, &quot;expect&quot;: &quot;1240.00&quot;},
+    {&quot;input&quot;: &quot;Is this refund request abusive? &#x27;give me my money back now!!!&#x27;&quot;, &quot;expect&quot;: &quot;no&quot;},
+]
+
+CANDIDATES = [&quot;gpt-4o-mini&quot;, &quot;gpt-4o&quot;]   # + your open-weight endpoint
+
+def run(model: str, prompt: str) -&gt; str:
+    t0 = time.time()
+    r = client.chat.completions.create(
+        model=model, temperature=0, max_tokens=80,
+        messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: prompt}],
+    )
+    ms = (time.time() - t0) * 1000
+    usage = r.usage
+    return r.choices[0].message.content, ms, usage
+
+for model in CANDIDATES:
+    correct, cost, lat = 0, 0.0, []
+    for ex in EVAL_SET:
+        out, ms, u = run(model, ex[&quot;input&quot;])
+        correct += ex[&quot;expect&quot;] in out
+        lat.append(ms)
+        # cost += tokens × model price  (fill from the current pricing page)
+    print(f&quot;{model}: {correct}/{len(EVAL_SET)}  &quot;
+          f&quot;avg {sum(lat)/len(lat):.0f}ms&quot;)
+
+# Architect&#x27;s take: keep this harness. Re-run it whenever you
+# consider switching models — decisions become data, not debates.</code></pre>
+<nav class="pn"><a href="/learn/GA-01.html">← How LLMs Work</a><a href="/learn/GA-03.html">API Basics →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

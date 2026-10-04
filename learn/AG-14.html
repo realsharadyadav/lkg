@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architectures — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Multi-agent is a scaling decision, not a vibe. Supervisors, handoffs, shared blackboards — and the honest bill for what multi-agent costs you. Learn Architectures (Supervisor pattern, Handoffs, Shared state &amp; blackboard, When multi-agent hurts · A2A) in a short animated reel with notes, recap and…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-14.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Architectures — Agentic AI for software architects | LKG School"><meta property="og:description" content="Multi-agent is a scaling decision, not a vibe. Supervisors, handoffs, shared blackboards — and the honest bill for what multi-agent costs you. Learn Architectures (Supervisor pattern, Handoffs, Shared state &amp; blackboard, When multi-agent hurts · A2A) in a short animated reel with notes, recap and…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-14.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Architectures", "description": "Multi-agent is a scaling decision, not a vibe. Supervisors, handoffs, shared blackboards — and the honest bill for what multi-agent costs you. Learn Architectures (Supervisor pattern, Handoffs, Shared state & blackboard, When multi-agent hurts · A2A) in a short animated reel with notes, recap and…", "url": "https://lkgschool.in/learn/AG-14.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Supervisor pattern", "Handoffs", "Shared state & blackboard", "When multi-agent hurts · A2A"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Architectures", "item": "https://lkgschool.in/learn/AG-14.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 56</nav>
+<h1>Architectures</h1>
+<p class="lede">Multi-agent is a scaling decision, not a vibe. Supervisors, handoffs, shared blackboards — <strong>and the honest bill for what multi-agent costs you.</strong></p>
+<a class="cta" href="/?reel=AG-14">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Supervisor pattern</li><li>Handoffs</li><li>Shared state &amp; blackboard</li><li>When multi-agent hurts · A2A</li></ol>
+<h2>Remember this</h2><ul><li>Supervisor is the default topology: one legible decision-maker, testable specialists, compressed returns — mind the supervisor&#x27;s context bottleneck</li><li>Handoffs transfer ownership with distilled briefs and capability-checked routing; blackboards decouple agents via shared, status-annotated state</li><li>Multi-agent&#x27;s bill is real: cost, latency, distributed debugging; A2A standardizes agent-to-agent interop as MCP did for tools</li></ul>
+<section class="notes"><h2>Supervisor</h2>
+<ul>
+<li>Central orchestrator + specialists; legible control flow; independent evals.</li>
+<li>Bottleneck: supervisor context → compressed returns, digest reads.</li>
+<li>Keep specialist boundaries sharp: route, don&#x27;t let workers self-select.</li>
+</ul>
+<h2>Handoffs</h2>
+<ul>
+<li>Transfer of ownership: distilled brief (goal/tried/facts/state).</li>
+<li>Capability-checked routing; graceful hand-backs with logged misses.</li>
+</ul>
+<h2>Blackboard</h2>
+<ul>
+<li>Shared workspace: decoupled, async, inspectable.</li>
+<li>Schema = coordination protocol: sections with owner + status.</li>
+<li>Mix: messages for control, board for artifacts.</li>
+</ul>
+<h2>When multi-agent hurts</h2>
+<ul>
+<li>Bill: cost × agents, latency × hops, distributed debugging, no auto-quality.</li>
+<li>Escalate only on proven single-context failure.</li>
+<li><strong>A2A</strong>: agent-to-agent interop; MCP = tools, A2A = agents; portability hedge.</li>
+</ul></section>
+<h2>Code: Supervisor loop with compressed returns and budgets</h2><pre><code>async def supervisor(task: str):
+    board = Blackboard(task_id=new_id())        # shared state (ch.3)
+    budget = CostBudget(usd=2.00, wall=timedelta(minutes=10))
+
+    while not budget.exhausted():
+        plan = await llm(DELEGATE_PROMPT, task=task,
+                         board=board.digest(),    # compressed view
+                         roster=specialist_cards())
+        if plan.done:
+            return plan.answer
+
+        results = await asyncio.gather(*[
+            run_specialist(step, board) for step in plan.parallel_batch])
+        for r in results:
+            board.write(r.section,                 # pointer, not payload
+                        summary=r.summary,
+                        artifacts=r.artifact_paths,
+                        status=&quot;verified&quot; if r.self_checked else &quot;proposed&quot;)
+    return escalate(task, board.history())
+
+# Specialists read/write sections; supervisor reads digests.
+# The board — not message history — is the system&#x27;s memory.</code></pre>
+<nav class="pn"><a href="/learn/AG-13.html">← Context Management</a><a href="/learn/AG-15.html">Framework Landscape →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

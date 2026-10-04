@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Functions in Python are objects — pass them around, wrap them, make them lazy. Five skills that separate tourists from locals. Learn Functions (def, args &amp; kwargs, The mutable default-arg trap, lambda &amp; closures, Decorators) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-04.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Functions — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Functions in Python are objects — pass them around, wrap them, make them lazy. Five skills that separate tourists from locals. Learn Functions (def, args &amp; kwargs, The mutable default-arg trap, lambda &amp; closures, Decorators) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-04.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Functions", "description": "Functions in Python are objects — pass them around, wrap them, make them lazy. Five skills that separate tourists from locals. Learn Functions (def, args & kwargs, The mutable default-arg trap, lambda & closures, Decorators) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-04.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["def, args & kwargs", "The mutable default-arg trap", "lambda & closures", "Decorators", "Generators & yield"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Functions", "item": "https://lkgschool.in/learn/PY-04.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 4</nav>
+<h1>Functions</h1>
+<p class="lede">Functions in Python are <strong>objects</strong> — pass them around, wrap them, make them lazy. Five skills that separate tourists from locals.</p>
+<a class="cta" href="/?reel=PY-04">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>def, args &amp; kwargs</li><li>The mutable default-arg trap</li><li>lambda &amp; closures</li><li>Decorators</li><li>Generators &amp; yield</li></ol>
+<h2>Remember this</h2><ul><li>**kwargs collects/splats dicts — how LLM tool arguments reach your code</li><li>Never use mutable defaults; use None + create inside</li><li>Decorators = middleware; yield = lazy streaming with constant memory</li></ul>
+<section class="notes"><h2>def, args, kwargs</h2>
+<pre><code>def call(model, temperature=0.7, **kwargs): ...
+call(&quot;gpt-4o&quot;, temperature=0.2, stream=True)
+tool_args = {&quot;city&quot;: &quot;Paris&quot;}; f(**tool_args)   # dict → kwargs</code></pre>
+<ul>
+<li><code><em>args</code> → tuple of extra positionals · <code></em>*kwargs</code> → dict of extra keywords.</li>
+<li>LLM tool calls arrive as JSON → <code>**args</code>. This pattern is everywhere in agent code.</li>
+</ul>
+<h2>Mutable default trap</h2>
+<pre><code>def bad(items=[]): ...          # shared list! items persist between calls
+def good(items=None):
+    items = [] if items is None else items</code></pre>
+<h2>lambda &amp; closures</h2>
+<ul>
+<li><code>lambda m: len(m)</code> — one expression, inline.</li>
+<li>Closures capture <strong>variables</strong> (late binding) — bind loop vars as defaults: <code>lambda i=i: i</code>.</li>
+</ul>
+<h2>Decorators = middleware</h2>
+<pre><code>def retry(fn):
+    @functools.wraps(fn)
+    def wrapper(*a, **kw): ...
+    return wrapper</code></pre>
+<ul>
+<li><code>@decorator</code> above <code>def f</code> ≡ <code>f = decorator(f)</code>.</li>
+<li>Use <code>@functools.wraps(fn)</code> — otherwise traces say &#x27;wrapper&#x27;.</li>
+</ul>
+<h2>Generators &amp; yield</h2>
+<pre><code>def read_lines(path):
+    with open(path) as f:
+        for line in f: yield line.strip()</code></pre>
+<ul>
+<li>Lazy + constant memory; compose into pipelines; sibling: generator expression <code>(x*x for x in nums)</code>.</li>
+</ul></section>
+<h2>Code: Functions: the five skills in one file</h2><pre><code>import functools, time, random
+
+# --- 1. args &amp; kwargs: how tool calls arrive -----------------
+def call_api(model, temperature=0.7, **kwargs):
+    print(f&quot;{model=} {temperature=} extra={kwargs}&quot;)
+
+args = {&quot;city&quot;: &quot;Paris&quot;, &quot;days&quot;: 3}          # from an LLM&#x27;s tool call
+def plan_trip(city, days): return f&quot;{days} days in {city}&quot;
+plan_trip(**args)                              # dict → keyword args
+
+# --- 2. NEVER do this ----------------------------------------
+# def bad(items=[]):  items.append(1); return items   # shared!
+def good(items=None):
+    items = [] if items is None else items
+    items.append(1)
+    return items
+
+# --- 3. lambda &amp; closures ------------------------------------
+models = [&quot;gpt-4o&quot;, &quot;llama-3&quot;, &quot;claude-sonnet&quot;]
+models.sort(key=lambda m: len(m))
+
+# --- 4. decorators = middleware -------------------------------
+def retry(fn):
+    @functools.wraps(fn)
+    def wrapper(*a, **kw):
+        for attempt in range(3):
+            try:
+                return fn(*a, **kw)
+            except Exception:
+                if attempt == 2: raise
+                time.sleep(0.2 * (attempt + 1))
+    return wrapper
+
+@retry
+def flaky_llm_call():
+    if random.random() &lt; 0.7: raise ConnectionError(&quot;429&quot;)
+    return &quot;ok&quot;
+
+# --- 5. generators = streaming --------------------------------
+def read_lines(path):
+    with open(path) as f:
+        for line in f:
+            yield line.strip()
+
+for row in read_lines(&quot;bigfile.csv&quot;):   # constant memory
+    pass</code></pre>
+<nav class="pn"><a href="/learn/PY-03.html">← Core Data Structures</a><a href="/learn/PY-05.html">OOP in Python →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

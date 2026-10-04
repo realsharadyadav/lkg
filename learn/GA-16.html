@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generation &amp; Citations — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Great retrieval, sloppy generation = a confident liar with footnotes. This reel: assembling context, forcing citations, and teaching the model to say “I don’t know.” Learn Generation &amp; Citations (Context assembly, Grounded answers &amp; citations, The courage to not know, Conversation-aware RAG) in a…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-16.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Generation &amp; Citations — Generative AI for software architects | LKG School"><meta property="og:description" content="Great retrieval, sloppy generation = a confident liar with footnotes. This reel: assembling context, forcing citations, and teaching the model to say “I don’t know.” Learn Generation &amp; Citations (Context assembly, Grounded answers &amp; citations, The courage to not know, Conversation-aware RAG) in a…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-16.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Generation & Citations", "description": "Great retrieval, sloppy generation = a confident liar with footnotes. This reel: assembling context, forcing citations, and teaching the model to say “I don’t know.” Learn Generation & Citations (Context assembly, Grounded answers & citations, The courage to not know, Conversation-aware RAG) in a…", "url": "https://lkgschool.in/learn/GA-16.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Context assembly", "Grounded answers & citations", "The courage to not know", "Conversation-aware RAG"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Generation & Citations", "item": "https://lkgschool.in/learn/GA-16.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 32</nav>
+<h1>Generation &amp; Citations</h1>
+<p class="lede">Great retrieval, sloppy generation = a confident liar with footnotes. This reel: assembling context, forcing citations, and teaching the model to say <strong>“I don’t know.”</strong></p>
+<a class="cta" href="/?reel=GA-16">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Context assembly</li><li>Grounded answers &amp; citations</li><li>The courage to not know</li><li>Conversation-aware RAG</li></ol>
+<h2>Remember this</h2><ul><li>Assembly is design: strong chunks first AND last, delimited and source-labeled, curated — never dumped</li><li>Citations ([Handbook §7.1]) turn an oracle into a verifiable assistant — and make debugging instant</li><li>Abstention is engineered: prompt contract + score threshold + unanswerable questions in the eval; follow-ups need standalone-query rewriting over history</li></ul>
+<section class="notes"><h2>Context assembly</h2>
+<ul>
+<li>Attention is U-shaped → strongest chunk first AND last.</li>
+<li>Delimit each chunk: <code>&lt;doc src=&quot;label&quot;&gt;…</code> → enables precise citation.</li>
+<li>Curate ~5 chunks; padding = retrieval problem, fix GA-15.</li>
+</ul>
+<h2>Grounded answers &amp; citations</h2>
+<ul>
+<li>Every claim carries a source marker; UI renders it as a link.</li>
+<li>Citations = trust + debuggability (retrieval-fail vs read-fail) + compliance.</li>
+</ul>
+<h2>“I don&#x27;t know”</h2>
+<ul>
+<li>Prompt contract + score-threshold gate + unanswerable questions in the golden set.</li>
+<li>Good UX: abstain + offer a next step.</li>
+</ul>
+<h2>Conversation-aware RAG</h2>
+<ul>
+<li>Rewrite follow-up → standalone query (history-aware), retrieve on it.</li>
+<li>Generation sees history + fresh context → consistent answers.</li>
+<li>Pitfalls: unbounded history (trim/summarize), stale topics (rewriter must pivot).</li>
+</ul></section>
+<h2>Code: Generation stage: assembly, citations, abstention, follow-ups</h2><pre><code>SYSTEM = &quot;&quot;&quot;You are a helpful assistant. Rules:
+1. Answer ONLY from the &lt;context&gt; below.
+2. Cite every claim as [source-label].
+3. If the context lacks the answer, say exactly:
+   &quot;I don&#x27;t have that information.&quot;
+Never use outside knowledge.&quot;&quot;&quot;
+
+def ask(history: list[dict], question: str) -&gt; str:
+    # 1 · follow-up → standalone query
+    standalone = llm(
+        &quot;Rewrite as a self-contained search query.&quot;,
+        history=history, question=question)
+
+    # 2 · retrieve (GA-15 stack)
+    chunks = retrieve(standalone, k=5)
+
+    # 3 · mechanical abstention — before any LLM call
+    if not chunks or chunks[0].score &lt; 0.62:
+        return &quot;I couldn&#x27;t find that in the handbook. Search the wider wiki?&quot;
+
+    # 4 · assemble: best first AND last (U-shaped attention)
+    ordered = [chunks[0], *chunks[1:], chunks[0]] if len(chunks) &gt; 2 else chunks
+    context = &quot;\n&quot;.join(
+        f&#x27;&lt;doc src=&quot;{c.source}&quot;&gt;{c.text}&lt;/doc&gt;&#x27; for c in ordered)
+
+    # 5 · generate with history + grounded context
+    return chat(SYSTEM, history + [
+        {&quot;role&quot;: &quot;user&quot;,
+         &quot;content&quot;: f&quot;&lt;context&gt;\n{context}\n&lt;/context&gt;\n\n{standalone}&quot;}])</code></pre>
+<nav class="pn"><a href="/learn/GA-15.html">← Retrieval Quality</a><a href="/learn/GA-17.html">Advanced RAG →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

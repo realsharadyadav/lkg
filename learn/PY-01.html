@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setup &amp; Tooling — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Five minutes of setup will save you fifty hours of pain. Let&#x27;s build your Python workspace the right way — once. Learn Setup &amp; Tooling (Python versions &amp; install, venv &amp; uv/pip, pyproject.toml &amp; requirements, IDE setup) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-01.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Setup &amp; Tooling — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Five minutes of setup will save you fifty hours of pain. Let&#x27;s build your Python workspace the right way — once. Learn Setup &amp; Tooling (Python versions &amp; install, venv &amp; uv/pip, pyproject.toml &amp; requirements, IDE setup) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-01.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Setup & Tooling", "description": "Five minutes of setup will save you fifty hours of pain. Let's build your Python workspace the right way — once. Learn Setup & Tooling (Python versions & install, venv & uv/pip, pyproject.toml & requirements, IDE setup) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-01.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Python versions & install", "venv & uv/pip", "pyproject.toml & requirements", "IDE setup", "Jupyter notebooks"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Setup & Tooling", "item": "https://lkgschool.in/learn/PY-01.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 1</nav>
+<h1>Setup &amp; Tooling</h1>
+<p class="lede"><strong>Five minutes of setup</strong> will save you fifty hours of pain. Let&#x27;s build your Python workspace the right way — once.</p>
+<a class="cta" href="/?reel=PY-01">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Python versions &amp; install</li><li>venv &amp; uv/pip</li><li>pyproject.toml &amp; requirements</li><li>IDE setup</li><li>Jupyter notebooks</li></ol>
+<h2>Remember this</h2><ul><li>Pin one Python version per project; uv or pyenv switches between them</li><li>Every project gets its own venv — never install into system Python</li><li>Declare dependencies in pyproject.toml + a lockfile; use Jupyter only for experiments</li></ul>
+<section class="notes"><h2>Python versions</h2>
+<ul>
+<li>Many versions coexist; pin <strong>one per project</strong> (<code>requires-python = &quot;&gt;=3.13&quot;</code>).</li>
+<li>Install via python.org, Homebrew, or <code>uv python install 3.13</code>.</li>
+<li><code>python --version</code> + <code>which python</code> are your sanity checks.</li>
+</ul>
+<h2>Virtual environments (venv)</h2>
+<ul>
+<li>Isolated per-project package folders — <strong>mandatory</strong>, not optional.</li>
+<li><code>python -m venv .venv</code> → <code>source .venv/bin/activate</code> → <code>pip install ...</code></li>
+<li>Windows: <code>.venv\Scripts\activate</code>.</li>
+<li><strong>uv</strong> (astral.sh): drop-in pip replacement, 10-100x faster; also manages Python versions.</li>
+</ul>
+<h2>Dependency declaration</h2>
+<table><tr><th>File</th><th>Role</th></tr><tr><td><code>pyproject.toml</code></td><td>Metadata + dependencies + tool config (the standard)</td></tr><tr><td><code>uv.lock</code> / <code>requirements.txt</code></td><td>Exact pinned versions for reproducibility</td></tr></table>
+<h2>IDE</h2>
+<ul>
+<li>VS Code + <strong>Python</strong> + <strong>Pylance</strong> + <strong>Ruff</strong> extensions.</li>
+<li>Ruff = formatter + linter in one (replaces Black/isort/flake8).</li>
+<li>Debugger: one <code>launch.json</code>, then F5, breakpoints, stepping.</li>
+</ul>
+<h2>Jupyter</h2>
+<ul>
+<li>Cells run individually (Shift+Enter); output stays inline.</li>
+<li>Ideal for data exploration and LLM prompt experiments.</li>
+<li>Pitfalls: out-of-order execution hides broken state; poor git diffs. Keep shippable code in <code>.py</code> files.</li>
+</ul></section>
+<h2>Code: Day-one setup — from zero to a working project</h2><pre><code># 1. Install a Python version (once)
+#    uv python install 3.13
+
+# 2. Create a project + virtual environment
+mkdir myproject &amp;&amp; cd myproject
+uv venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# 3. Declare dependencies in pyproject.toml
+#    [project]
+#    name = &quot;myproject&quot;
+#    requires-python = &quot;&gt;=3.13&quot;
+#    dependencies = [&quot;httpx&quot;]
+
+# 4. Install + lock (reproducible!)
+uv pip install httpx
+uv lock
+
+# 5. Verify which Python you&#x27;re using
+python --version
+which python                     # should point inside .venv/</code></pre>
+<nav class="pn"><span></span><a href="/learn/PY-02.html">Syntax Basics →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

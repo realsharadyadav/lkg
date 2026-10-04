@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DuckDB — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="A SQL engine with no server, no install drama — that queries your files directly. This one earns its keep daily. Learn DuckDB (What is DuckDB, Query files directly, Joins across files, Python integration) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-18.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="DuckDB — Python for C# / .NET developers | LKG School"><meta property="og:description" content="A SQL engine with no server, no install drama — that queries your files directly. This one earns its keep daily. Learn DuckDB (What is DuckDB, Query files directly, Joins across files, Python integration) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-18.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "DuckDB", "description": "A SQL engine with no server, no install drama — that queries your files directly. This one earns its keep daily. Learn DuckDB (What is DuckDB, Query files directly, Joins across files, Python integration) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-18.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["What is DuckDB", "Query files directly", "Joins across files", "Python integration", "DuckDB vs SQLite vs SQL Server", "Persisting & exporting"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "DuckDB", "item": "https://lkgschool.in/learn/PY-18.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 20</nav>
+<h1>DuckDB</h1>
+<p class="lede">A SQL engine with <strong>no server, no install drama</strong> — that queries your files directly. This one earns its keep daily.</p>
+<a class="cta" href="/?reel=PY-18">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>What is DuckDB</li><li>Query files directly</li><li>Joins across files</li><li>Python integration</li><li>DuckDB vs SQLite vs SQL Server</li><li>Persisting &amp; exporting</li></ol>
+<h2>Remember this</h2><ul><li>DuckDB = embedded columnar OLAP: pip install, no server, Postgres-flavored SQL</li><li>Files are tables: query CSV/Parquet/partitioned lakes directly; join across formats; pandas DataFrames register as views</li><li>duckdb.sql() with bound params; COPY … TO Parquet closes the loop; vs SQLite (OLTP) vs SQL Server (system of record)</li></ul>
+<section class="notes"><h2>What it is</h2>
+<ul>
+<li>Embedded, in-process, columnar OLAP engine. <code>pip install duckdb</code> — no server.</li>
+<li>Postgres-flavored SQL; vectorized + parallel; works beyond RAM.</li>
+</ul>
+<h2>Query files directly</h2>
+<ul>
+<li><code>FROM &#x27;data.csv&#x27; / &#x27;lake/<em>*/</em>.parquet&#x27;</code> — files are tables.</li>
+<li>Partitioned folders pruned automatically; globs supported.</li>
+</ul>
+<h2>Joins across files</h2>
+<ul>
+<li>csv ⨝ parquet ⨝ JSON in one query.</li>
+<li><code>duckdb.register(&#x27;name&#x27;, df)</code> — live pandas DataFrame as a SQL view.</li>
+<li>Results: <code>.df()</code> / <code>.arrow()</code> / <code>.fetchall()</code>.</li>
+</ul>
+<h2>Python integration</h2>
+<ul>
+<li><code>duckdb.sql(&quot;...&quot;, params=[...])</code> — lazy relation, chainable.</li>
+<li>Extensions: <code>httpfs</code> (S3/HTTP), spatial, FTS.</li>
+</ul>
+<h2>DuckDB vs SQLite vs SQL Server</h2>
+<table><tr><th>Engine</th><th>Job</th></tr><tr><td>SQLite</td><td>embedded OLTP (app storage, transactions)</td></tr><tr><td>DuckDB</td><td>embedded OLAP (analytics over files)</td></tr><tr><td>SQL Server</td><td>enterprise system of record</td></tr></table>
+<h2>Persisting &amp; exporting</h2>
+<ul>
+<li>In-memory by default; <code>duckdb.connect(&#x27;file.db&#x27;)</code> persists.</li>
+<li><code>COPY (SELECT …) TO &#x27;out.parquet&#x27; (FORMAT PARQUET, PARTITION_BY (col))</code>.</li>
+<li>Compose with views; materialize only what&#x27;s expensive.</li>
+</ul></section>
+<h2>Code: DuckDB — the daily workflow in one script</h2><pre><code>import duckdb
+
+# --- explore files directly -------------------------------------
+rel = duckdb.sql(&quot;&quot;&quot;
+    SELECT status, COUNT(*) AS n, SUM(amount) AS total
+    FROM &#x27;data/events.csv&#x27;
+    GROUP BY status
+    ORDER BY total DESC
+&quot;&quot;&quot;)
+print(rel)                     # lazy relation — pretty-prints a sample
+
+# --- join CSV to a partitioned Parquet lake ----------------------
+duckdb.sql(&quot;&quot;&quot;
+    CREATE VIEW events AS
+    SELECT e.*, c.team
+    FROM &#x27;data/events.csv&#x27; e
+    JOIN &#x27;lake/customers/year=*/month=03/*.parquet&#x27; c USING (cust_id)
+&quot;&quot;&quot;)
+
+# --- register a live pandas DataFrame ----------------------------
+import pandas as pd
+flags = pd.DataFrame({&quot;status&quot;: [&quot;P1&quot;, &quot;P2&quot;], &quot;sla_h&quot;: [1, 24]})
+duckdb.register(&quot;flags&quot;, flags)
+
+result = duckdb.sql(&quot;&quot;&quot;
+    SELECT e.team, f.sla_h, AVG(e.amount) AS avg_amt
+    FROM events e
+    JOIN flags f USING (status)
+    GROUP BY ALL
+    ORDER BY avg_amt DESC
+&quot;&quot;&quot;).df()
+
+# --- persist the pipeline -----------------------------------------
+duckdb.sql(&quot;&quot;&quot;
+    COPY (SELECT * FROM events WHERE status = &#x27;P1&#x27;)
+    TO &#x27;out/p1_cases.parquet&#x27; (FORMAT PARQUET, COMPRESSION &#x27;snappy&#x27;)
+&quot;&quot;&quot;)
+
+# Parameterized (the only safe way to mix variables + SQL):
+city = &quot;Paris&quot;
+safe = duckdb.sql(&quot;SELECT * FROM events WHERE city = ?&quot;, params=[city])</code></pre>
+<nav class="pn"><a href="/learn/PY-17.html">← File Formats</a><a href="/learn/PY-19.html">Excel Automation →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory Types — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Agents without memory reset to zero every session. Four memory types — context, long-term, episodic/semantic, scratchpads — and the discipline of what NOT to remember. Learn Memory Types (Short-term: the context window, Long-term memory, Episodic vs semantic, Scratchpads &amp; working files) in a sho…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-12.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Memory Types — Agentic AI for software architects | LKG School"><meta property="og:description" content="Agents without memory reset to zero every session. Four memory types — context, long-term, episodic/semantic, scratchpads — and the discipline of what NOT to remember. Learn Memory Types (Short-term: the context window, Long-term memory, Episodic vs semantic, Scratchpads &amp; working files) in a sho…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-12.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Memory Types", "description": "Agents without memory reset to zero every session. Four memory types — context, long-term, episodic/semantic, scratchpads — and the discipline of what NOT to remember. Learn Memory Types (Short-term: the context window, Long-term memory, Episodic vs semantic, Scratchpads & working files) in a sho…", "url": "https://lkgschool.in/learn/AG-12.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Short-term: the context window", "Long-term memory", "Episodic vs semantic", "Scratchpads & working files"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Memory Types", "item": "https://lkgschool.in/learn/AG-12.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 54</nav>
+<h1>Memory Types</h1>
+<p class="lede">Agents without memory reset to zero every session. Four memory types — <strong>context, long-term, episodic/semantic, scratchpads</strong> — and the discipline of what NOT to remember.</p>
+<a class="cta" href="/?reel=AG-12">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Short-term: the context window</li><li>Long-term memory</li><li>Episodic vs semantic</li><li>Scratchpads &amp; working files</li></ol>
+<h2>Remember this</h2><ul><li>Short-term memory is the context window — finite, volatile, managed like RAM; degradation is silent</li><li>Long-term memory = curated store + deliberate retrieval, with provenance and freshness discipline; semantic facts (deduped, versioned) differ from episodic events (summarizing with age)</li><li>Scratchpads extend working memory via files — the pattern behind resumable, multi-session agent tasks</li></ul>
+<section class="notes"><h2>Short-term = context window</h2>
+<ul>
+<li>Finite, volatile; degradation is silent (early instructions fall out).</li>
+<li>Metaphor: context is RAM — manage as a working set.</li>
+</ul>
+<h2>Long-term memory</h2>
+<ul>
+<li>Write gates (reflection points, conclusions not transcripts) · store with provenance (when/source/confidence) · retrieve deliberately.</li>
+<li>Freshness discipline like RAG: updates, evictions, conflict detection.</li>
+</ul>
+<h2>Episodic vs semantic</h2>
+<ul>
+<li>Semantic: context-free facts · dedupe + version · recall by meaning.</li>
+<li>Episodic: context-rich events · timestamped/tagged · recall by situation · compress with age.</li>
+</ul>
+<h2>Scratchpads</h2>
+<ul>
+<li>Working files extend memory; notes = resumability; context carries the pointer, the file carries the state.</li>
+</ul></section>
+<h2>Code: Write gates: what enters memory, when</h2><pre><code># Gate 1 · REFLECTION POINT (end of meaningful work)
+→ extract semantic facts only: preferences, project truths, decisions
+→ skip: time-sensitive details, one-off context, anything PII-tagged
+
+# Gate 2 · TASK END
+→ summarize episode: goal → approach → outcome → one lesson
+→ tag: task_type, date, outcome (success/failure/abandoned)
+
+# Gate 3 · NEVER (memory safety, AG-13)
+→ raw secrets, API keys, credentials
+→ PII about people without consent basis
+→ unverified claims marked as facts (store as &#x27;unverified&#x27; or drop)
+
+# Gate 4 · EVICTION (scheduled)
+→ semantic: superseded facts replaced (keep old version 30d)
+→ episodic: raw → summary after 30d; lessons survive</code></pre>
+<nav class="pn"><a href="/learn/AG-11.html">← Agent Reasoning</a><a href="/learn/AG-13.html">Context Management →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

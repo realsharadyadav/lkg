@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector DB Fundamentals — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Exact search on a million vectors would take minutes. ANN finds the answer in milliseconds — here&#x27;s the honest trade. Learn Vector DB Fundamentals (What &amp; why, Why not a plain SQL table, ANN algorithms, Recall vs speed) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-09.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Vector DB Fundamentals — Generative AI for software architects | LKG School"><meta property="og:description" content="Exact search on a million vectors would take minutes. ANN finds the answer in milliseconds — here&#x27;s the honest trade. Learn Vector DB Fundamentals (What &amp; why, Why not a plain SQL table, ANN algorithms, Recall vs speed) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-09.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Vector DB Fundamentals", "description": "Exact search on a million vectors would take minutes. ANN finds the answer in milliseconds — here's the honest trade. Learn Vector DB Fundamentals (What & why, Why not a plain SQL table, ANN algorithms, Recall vs speed) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-09.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["What & why", "Why not a plain SQL table", "ANN algorithms", "Recall vs speed", "Metadata filtering", "Hybrid search"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Vector DB Fundamentals", "item": "https://lkgschool.in/learn/GA-09.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 25</nav>
+<h1>Vector DB Fundamentals</h1>
+<p class="lede">Exact search on a million vectors would take <strong>minutes</strong>. ANN finds the answer in <strong>milliseconds</strong> — here&#x27;s the honest trade.</p>
+<a class="cta" href="/?reel=GA-09">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>What &amp; why</li><li>Why not a plain SQL table</li><li>ANN algorithms</li><li>Recall vs speed</li><li>Metadata filtering</li><li>Hybrid search</li></ol>
+<h2>Remember this</h2><ul><li>Vector DB = store + k-NN search; B-trees can&#x27;t index angles, hence ANN</li><li>HNSW: multi-layer neighbor graph; tune M/ef, measure recall on YOUR golden set</li><li>Filters pre/post trade correctness vs speed; hybrid = BM25 + ANN fused with RRF, optional rerank</li></ul>
+<section class="notes"><h2>What &amp; why</h2>
+<ul>
+<li>Store vectors + payloads; answer k-NN (&#x27;top-k most similar&#x27;) fast at scale.</li>
+</ul>
+<h2>Why not a plain SQL table</h2>
+<ul>
+<li>B-trees index scalar order; similarity-by-angle has none → brute-force scan.</li>
+<li>Exact scan is the correctness baseline; ANN is how you beat physics.</li>
+</ul>
+<h2>ANN algorithms</h2>
+<ul>
+<li><strong>HNSW</strong> (default): multi-layer small-world graph; long jumps → local walk.</li>
+</ul>
+<p>- <code>M</code> = links/node, <code>ef</code> = search width → recall vs memory/insert speed.</p>
+<ul>
+<li>IVF: cluster first, search promising clusters.</li>
+<li>PQ: compress vectors (~10x memory) at some recall.</li>
+</ul>
+<h2>Recall vs speed</h2>
+<ul>
+<li>Recall &lt; 100% is the price; it&#x27;s a <strong>budget you set</strong>.</li>
+<li>Measure hit@5/recall vs brute force on YOUR golden set; tune to SLA.</li>
+<li>Backstop: ANN top-50 → exact/cross-encoder re-score (near-exact at low cost).</li>
+</ul>
+<h2>Metadata filtering</h2>
+<ul>
+<li>Pre-filter: correct, slow at high selectivity. Post-filter: fast, can starve k.</li>
+<li>Ultra-selective always-on filters (tenant) → per-tenant collections.</li>
+</ul>
+<h2>Hybrid search</h2>
+<ul>
+<li>BM25 + ANN → <strong>Reciprocal Rank Fusion</strong>: Σ 1/(k+rank), re-sort.</li>
+<li>Optional cross-encoder rerank on the fused top (GA-15).</li>
+</ul></section>
+<h2>Code: Hybrid search with Qdrant-style semantics + RRF</h2><pre><code>import numpy as np
+
+# --- setup (any ANN store: Qdrant/Chroma/pgvector all share this shape)
+# collection.upsert(ids, vectors=vecs, payloads=[{text, tenant, year}...])
+
+def vector_search(query_vec, k=50):
+    return ann_index.query(query_vec, top_k=k)      # your ANN leg
+
+def keyword_search(query, k=50):
+    return bm25_index.search(query, top_k=k)        # your keyword leg
+
+def rrf_fuse(rankings, k=60):
+    &quot;&quot;&quot;Reciprocal Rank Fusion — robust to different score scales.&quot;&quot;&quot;
+    scores = {}
+    for ranking in rankings:
+        for rank, doc_id in enumerate(ranking):
+            scores[doc_id] = scores.get(doc_id, 0) + 1.0 / (k + rank + 1)
+    return sorted(scores, key=scores.get, reverse=True)
+
+# --- one hybrid query ---------------------------------------------
+vec_hits = vector_search(embed(query), k=50)
+key_hits = keyword_search(query, k=50)
+final = rrf_fuse([vec_hits, key_hits])[:10]
+
+# --- recall check against brute force (your golden queries) --------
+def recall_at5(ann_hits, exact_hits):
+    return len(set(ann_hits[:5]) &amp; set(exact_hits[:5])) / 5
+
+# exact: sims = corpus_u @ query_u; top = argsort(-sims)[:k]
+# assert recall_at5(ann, exact) &gt;= 0.99  → tune M/ef until this passes</code></pre>
+<nav class="pn"><a href="/learn/PY-20.html">← SQL from Python</a><a href="/learn/GA-10.html">Vector DB Options →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

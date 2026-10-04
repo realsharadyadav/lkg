@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polars: pandas at Warp Speed — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Pandas made Python the language of data — and then showed its age. Polars is the rewrite: multi-threaded, query-planned, and 10-50x faster on the workloads agents actually generate. Learn Polars: pandas at Warp Speed (Why Polars wins, The expression API, Lazy queries, When to switch) in a short a…">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-16.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Polars: pandas at Warp Speed — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Pandas made Python the language of data — and then showed its age. Polars is the rewrite: multi-threaded, query-planned, and 10-50x faster on the workloads agents actually generate. Learn Polars: pandas at Warp Speed (Why Polars wins, The expression API, Lazy queries, When to switch) in a short a…">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-16.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Polars: pandas at Warp Speed", "description": "Pandas made Python the language of data — and then showed its age. Polars is the rewrite: multi-threaded, query-planned, and 10-50x faster on the workloads agents actually generate. Learn Polars: pandas at Warp Speed (Why Polars wins, The expression API, Lazy queries, When to switch) in a short a…", "url": "https://lkgschool.in/learn/PY-16.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Why Polars wins", "The expression API", "Lazy queries", "When to switch"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Polars: pandas at Warp Speed", "item": "https://lkgschool.in/learn/PY-16.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 79</nav>
+<h1>Polars: pandas at Warp Speed</h1>
+<p class="lede">Pandas made Python the language of data — and then showed its age. <strong>Polars is the rewrite: multi-threaded, query-planned, and 10-50x faster on the workloads agents actually generate.</strong></p>
+<a class="cta" href="/?reel=PY-16">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Why Polars wins</li><li>The expression API</li><li>Lazy queries</li><li>When to switch</li></ol>
+<h2>Remember this</h2><ul><li>Polars = Rust + Arrow + multi-threading: columnar vectorized ops, strict dtypes, no index — 10-50x faster than pandas on real workloads</li><li>Expressions (pl.col) replace loops and apply: compose when/then/otherwise, string ops, and JSON-into-structs as data</li><li>Lazy evaluation builds a plan, then pushes filters and projections into the file read — files bigger than RAM become routine</li><li>Switch for new and large pipelines; keep pandas where the ecosystem demands it; bridge with to_pandas() at the boundary</li></ul>
+<section class="notes"><h2>Why it wins</h2>
+<ul>
+<li>Rust + Arrow: columnar, vectorized, strict dtypes, null bitmaps.</li>
+<li>Multi-threaded by default — no GIL workarounds.</li>
+<li>No index — no alignment surprises.</li>
+</ul>
+<h2>Expressions</h2>
+<ul>
+<li>pl.col composes: arithmetic, when/then/otherwise, str.*, struct.field.</li>
+<li>JSON → struct → columns in two moves.</li>
+<li>.apply() → native expressions. That&#x27;s the migration.</li>
+</ul>
+<h2>Lazy</h2>
+<ul>
+<li>scan_* builds a plan; collect() executes.</li>
+<li>Predicate + projection pushdown at the file layer; sink_parquet streams.</li>
+<li>explain() shows the optimized plan — read it.</li>
+</ul>
+<h2>When to switch</h2>
+<ul>
+<li>Switch: new pipelines, &gt;1M rows, agent logs/evals/JSONL.</li>
+<li>Stay: ecosystem-locked tooling, large legacy codebase.</li>
+<li>Hybrid: to_pandas()/from_pandas at the boundary.</li>
+</ul>
+<h2>Cross-links</h2>
+<p>AG-19 (lazy → collect_async in async services), AG-21 (eval datasets), AG-23 (token accounting feeds cost model), GA-20 (SLO analysis), GA-25/30 (cost pipelines).</p></section>
+<h2>Code: The agent-data one-liner set</h2><pre><code>import polars as pl
+
+# 80% of GenAI data work is these four:
+
+logs = pl.scan_ndjson(&quot;runs/*.jsonl&quot;)
+
+costs = logs.group_by(&quot;model&quot;).agg(
+    (pl.col(&quot;in&quot;) + pl.col(&quot;out&quot;)).sum().alias(&quot;tokens&quot;)
+)                                   # 1 · token accounting (AG-23)
+
+quality = logs.with_columns(
+    pl.when(pl.col(&quot;score&quot;) &gt;= 0.92).then(&quot;pass&quot;)
+      .otherwise(&quot;fail&quot;).alias(&quot;v&quot;)
+).group_by([&quot;model&quot;, &quot;v&quot;]).agg(pl.len())   # 2 · SLO verdicts (GA-20)
+
+slow = logs.filter(pl.col(&quot;ms&quot;) &gt; 3000)    # 3 · latency outliers (GA-07)
+
+query = logs.select(pl.col(&quot;prompt&quot;).str.extract(r&quot;Goal: (.*?)&quot;)
+        .alias(&quot;goal&quot;)).unique()            # 4 · prompt mining
+
+# .collect() when ready. No loops were harmed.</code></pre>
+<nav class="pn"><a href="/learn/PY-14.html">← Real-time &amp; Webhooks</a><a href="/learn/PY-21.html">NoSQL &amp; Cache →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

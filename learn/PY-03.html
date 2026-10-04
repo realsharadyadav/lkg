@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Core Data Structures — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Four structures run 90% of all Python code. Master these and every LLM library will feel familiar. Learn Core Data Structures (list &amp; tuple, dict — the hash map, set — unique &amp; fast, Comprehensions) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-03.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Core Data Structures — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Four structures run 90% of all Python code. Master these and every LLM library will feel familiar. Learn Core Data Structures (list &amp; tuple, dict — the hash map, set — unique &amp; fast, Comprehensions) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-03.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Core Data Structures", "description": "Four structures run 90% of all Python code. Master these and every LLM library will feel familiar. Learn Core Data Structures (list & tuple, dict — the hash map, set — unique & fast, Comprehensions) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-03.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["list & tuple", "dict — the hash map", "set — unique & fast", "Comprehensions", "Slicing & unpacking"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Core Data Structures", "item": "https://lkgschool.in/learn/PY-03.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 3</nav>
+<h1>Core Data Structures</h1>
+<p class="lede">Four structures run <strong>90% of all Python code</strong>. Master these and every LLM library will feel familiar.</p>
+<a class="cta" href="/?reel=PY-03">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>list &amp; tuple</li><li>dict — the hash map</li><li>set — unique &amp; fast</li><li>Comprehensions</li><li>Slicing &amp; unpacking</li></ol>
+<h2>Remember this</h2><ul><li>list = mutable sequence, tuple = immutable record, dict = the JSON-shaped hash map</li><li>Comprehensions are LINQ in one line — [x for x in items if cond]</li><li>Slicing is half-open (start inclusive, end exclusive); unpacking + *rest replaces index plumbing</li></ul>
+<section class="notes"><h2>list &amp; tuple</h2>
+<table><tr><th></th><th>list <code>[1,2]</code></th><th>tuple <code>(1,2)</code></th></tr><tr><td>Mutable</td><td>✅ append/insert/remove/sort</td><td>❌ frozen</td></tr><tr><td>Hashable (usable as dict key)</td><td>❌</td><td>✅</td></tr><tr><td>Use for</td><td>evolving collections</td><td>fixed records</td></tr></table>
+<h2>dict</h2>
+<ul>
+<li>Hash map: <code>{&quot;key&quot;: value}</code> — keys must be hashable (str, number, tuple).</li>
+<li>O(1) lookup/insert/delete.</li>
+<li><code>d.get(k, default)</code> — safe read · <code>d.items()</code> — iterate pairs · <code>d.keys()</code> / <code>d.values()</code>.</li>
+<li><strong>Every JSON object becomes a dict</strong> — this is the LLM-era structure.</li>
+</ul>
+<h2>set</h2>
+<ul>
+<li>Unordered unique items; O(1) membership.</li>
+<li><code>|</code> union · <code>&amp;</code> intersection · <code>-</code> difference.</li>
+<li><code>list(set(x))</code> dedupes (order lost) · <code>dict.fromkeys(x)</code> dedupes, keeps order.</li>
+</ul>
+<h2>Comprehensions</h2>
+<pre><code>[m.upper() for m in models]                 # select
+[m for m in models if &quot;gpt&quot; in m]           # where
+[m.upper() for m in models if &quot;gpt&quot; in m]   # both
+{m: len(m) for m in models}                 # dict comp</code></pre>
+<blockquote>One line max — longer means go back to a loop.</blockquote>
+<h2>Slicing &amp; unpacking</h2>
+<ul>
+<li><code>a[1:3]</code> = indexes 1,2 (half-open) · <code>a[:3]</code> · <code>a[-2:]</code> (last two).</li>
+<li><code>first, *rest = items</code> · <code>a, b = b, a</code> (swap).</li>
+</ul></section>
+<h2>Code: The four structures + comprehensions in action</h2><pre><code>models = [&quot;gpt-4o&quot;, &quot;claude-sonnet&quot;, &quot;gpt-4o-mini&quot;, &quot;llama-3&quot;]
+
+# list: mutable sequence
+models.append(&quot;gemini-flash&quot;)
+models.sort()
+
+# tuple: immutable record
+endpoint = (&quot;api.openai.com&quot;, 443)   # host, port — fixed
+host, port = endpoint                 # unpacked in one line
+
+# dict: the structure of every LLM API response
+response = {&quot;model&quot;: &quot;gpt-4o&quot;, &quot;tokens&quot;: 42, &quot;ok&quot;: True}
+model = response.get(&quot;model&quot;, &quot;unknown&quot;)
+for key, value in response.items():
+    print(f&quot;  {key}: {value}&quot;)
+
+# set: dedupe + instant membership
+tags = list({&quot;ai&quot;, &quot;python&quot;, &quot;ai&quot;, &quot;rag&quot;})   # → [&#x27;ai&#x27;, &#x27;python&#x27;, &#x27;rag&#x27;]
+
+# comprehension = LINQ in one line
+gpts = [m.upper() for m in models if &quot;gpt&quot; in m]
+lengths = {m: len(m) for m in models}
+
+# slicing &amp; unpacking
+first, *rest = models
+last_two = models[-2:]</code></pre>
+<nav class="pn"><a href="/learn/PY-02.html">← Syntax Basics</a><a href="/learn/PY-04.html">Functions →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

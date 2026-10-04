@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FastAPI — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="FastAPI: the framework that made Python APIs feel modern. Type hints become validation, validation becomes docs — Swagger UI for free. Learn FastAPI (Routes &amp; models, Dependency injection, Middleware, background &amp; streaming, Auth &amp; docs) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-13.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="FastAPI — Python for C# / .NET developers | LKG School"><meta property="og:description" content="FastAPI: the framework that made Python APIs feel modern. Type hints become validation, validation becomes docs — Swagger UI for free. Learn FastAPI (Routes &amp; models, Dependency injection, Middleware, background &amp; streaming, Auth &amp; docs) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-13.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "FastAPI", "description": "FastAPI: the framework that made Python APIs feel modern. Type hints become validation, validation becomes docs — Swagger UI for free. Learn FastAPI (Routes & models, Dependency injection, Middleware, background & streaming, Auth & docs) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-13.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Routes & models", "Dependency injection", "Middleware, background & streaming", "Auth & docs"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "FastAPI", "item": "https://lkgschool.in/learn/PY-13.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 37</nav>
+<h1>FastAPI</h1>
+<p class="lede">FastAPI: the framework that made Python APIs feel modern. Type hints become validation, validation becomes docs — <strong>Swagger UI for free</strong>.</p>
+<a class="cta" href="/?reel=PY-13">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Routes &amp; models</li><li>Dependency injection</li><li>Middleware, background &amp; streaming</li><li>Auth &amp; docs</li></ol>
+<h2>Remember this</h2><ul><li>Type-hinted function signatures ARE the contract: Pydantic validates requests/responses, bad input dies as 422 before your code</li><li>Depends() gives .NET-style DI with per-request caching, teardown via yield, and test overrides — inject db/vector store/LLM clients</li><li>SSE via EventSourceResponse streams LLM tokens to browsers; middleware + BackgroundTasks + /docs OpenAPI complete the production picture</li></ul>
+<section class="notes"><h2>Routes &amp; models</h2>
+<ul>
+<li>Decorated functions = controllers; path/query params typed in the signature.</li>
+<li>Pydantic BaseModel: request validation + response shaping; 422s free.</li>
+<li>async def routes run on the event loop — await LLM/vector calls directly.</li>
+</ul>
+<h2>Dependency injection</h2>
+<ul>
+<li><code>Depends(provider)</code>: per-request caching, chains compose, teardown via <code>yield</code>.</li>
+<li><code>app.dependency_overrides[...]</code> in tests — swap at the seam.</li>
+<li>Inject db sessions, vector store, LLM clients uniformly.</li>
+</ul>
+<h2>Middleware / background / streaming</h2>
+<ul>
+<li>Middleware: request-wide concerns (request-id, timing). CORS: explicit origins.</li>
+<li>BackgroundTasks: fire-and-forget AFTER response — never for needed results.</li>
+<li><code>EventSourceResponse</code> (SSE): re-emit httpx LLM streams to browsers.</li>
+</ul>
+<h2>Auth &amp; docs</h2>
+<ul>
+<li>OAuth2PasswordBearer + JWT verify (RS256 for multi-service: public key verifies).</li>
+<li>OpenAPI + Swagger UI at <code>/docs</code>, generated from type hints.</li>
+<li>Run with uvicorn (ASGI). --reload = dev only.</li>
+</ul></section>
+<h2>Code: A minimal production-shaped FastAPI skeleton</h2><pre><code>from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel, Field
+from sse_starlette.sse import EventSourceResponse
+
+app = FastAPI(title=&quot;RAG Service&quot;)
+
+class Ask(BaseModel):
+    question: str = Field(min_length=3)
+    stream: bool = True
+
+async def get_store():
+    async with VectorStore.connect() as vs:   # per-request, auto-close
+        yield vs
+
+@app.post(&quot;/ask&quot;)
+async def ask(
+    req: Ask,
+    user: User = Depends(get_current_user),
+    store: VectorStore = Depends(get_store),
+):
+    async def gen():
+        async for token in rag.stream(req.question, store):
+            yield {&quot;data&quot;: token}
+    return EventSourceResponse(gen())
+
+# Run:  uvicorn app:app --reload
+# Docs: http://localhost:8000/docs  ← Swagger UI, already complete</code></pre>
+<nav class="pn"><a href="/learn/PY-12.html">← HTTP Clients</a><a href="/learn/PY-22.html">Testing &amp; Quality →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

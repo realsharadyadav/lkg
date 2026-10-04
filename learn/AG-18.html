@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Evals — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Agent quality is more than the final answer: did it take sensible steps, call the right tools, waste nothing? Trajectory evaluation and the agent regression suite. Learn Agent Evals (Task success rate, Trajectory &amp; tool-call evaluation, Simulated environments, Cost, latency &amp; regression suites) i…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-18.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Agent Evals — Agentic AI for software architects | LKG School"><meta property="og:description" content="Agent quality is more than the final answer: did it take sensible steps, call the right tools, waste nothing? Trajectory evaluation and the agent regression suite. Learn Agent Evals (Task success rate, Trajectory &amp; tool-call evaluation, Simulated environments, Cost, latency &amp; regression suites) i…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-18.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Agent Evals", "description": "Agent quality is more than the final answer: did it take sensible steps, call the right tools, waste nothing? Trajectory evaluation and the agent regression suite. Learn Agent Evals (Task success rate, Trajectory & tool-call evaluation, Simulated environments, Cost, latency & regression suites) i…", "url": "https://lkgschool.in/learn/AG-18.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Task success rate", "Trajectory & tool-call evaluation", "Simulated environments", "Cost, latency & regression suites"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Agent Evals", "item": "https://lkgschool.in/learn/AG-18.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 65</nav>
+<h1>Agent Evals</h1>
+<p class="lede">Agent quality is more than the final answer: <strong>did it take sensible steps, call the right tools, waste nothing?</strong> Trajectory evaluation and the agent regression suite.</p>
+<a class="cta" href="/?reel=AG-18">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Task success rate</li><li>Trajectory &amp; tool-call evaluation</li><li>Simulated environments</li><li>Cost, latency &amp; regression suites</li></ol>
+<h2>Remember this</h2><ul><li>Task success is verified completion against rubric-graded golden tasks — including adversarial cases where success means refusing — distributed by difficulty and domain</li><li>Trajectory evaluation decomposes HOW agents succeed: tool selection, argument accuracy, step sense, efficiency — each dimension maps to a specific fix</li><li>Simulated environments with seeded failures make breaking things free; efficiency metrics (cost/latency/calls per task) are promotion-gated regressions</li></ul>
+<section class="notes"><h2>Task success rate</h2>
+<ul>
+<li>Verified completion (artifact + spec + checks) · rubric-graded correctness · adversarial golden tasks (success = refuse/clarify/escalate).</li>
+<li>Distributions by difficulty and domain; paired with efficiency.</li>
+</ul>
+<h2>Trajectory evaluation</h2>
+<ul>
+<li>Dimensions: tool selection, arg accuracy, step sense, efficiency vs reference path.</li>
+<li>Judge-calibrated (GA-21); mechanical where possible (malformed-call ratio).</li>
+<li>Diagnostic: each dimension maps to a fix; trajectories are autonomy evidence (GA-17).</li>
+</ul>
+<h2>Simulated environments</h2>
+<ul>
+<li>Snapshot sandboxes · interaction mocks · adversarial seeding (failures at configurable rates).</li>
+<li>Incident replays become permanent regression cases.</li>
+</ul>
+<h2>Cost, latency &amp; regression</h2>
+<ul>
+<li>Per-task signatures: tokens, wall-clock, calls, tool calls.</li>
+<li>Efficiency regressions gate promotion like quality regressions.</li>
+<li>Suite grows at its frontier: incidents, escalations, feedback → new cases.</li>
+</ul></section>
+<h2>Code: The agent regression gate, as CI config</h2><pre><code>agent_regression:
+  dataset: agent_tasks/v4            # golden + adversarial + incidents
+  gates:
+    success_rate:   { min: 0.90, by_difficulty: { easy: 0.98, hard: 0.60 } }
+    trajectory:     { tool_selection: 0.85, arg_accuracy: 0.95,
+                      step_sense: 0.80, efficiency: 0.70 }
+    resources:      { cost_per_task_max: 1.4x_baseline,
+                      calls_per_task_max: 1.3x_baseline }
+    safety:         { adversarial_pass: 1.0 }   # refusals where required
+  cadence:
+    pr:      smoke_20_tasks
+    nightly: full_suite → trend_report
+    release: full_suite + simulation_replay
+
+# Red gate → no promotion → last-known-good keeps serving.</code></pre>
+<nav class="pn"><a href="/learn/AG-17.html">← Control Design</a><a href="/learn/AG-19.html">Production Engineering →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

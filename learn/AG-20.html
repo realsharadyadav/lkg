@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threat Model — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="An agent with tools is a PROGRAM an attacker can steer with prose. The agent-specific threat model: confused deputies, exfiltration paths, sandboxing, and scoped identity. Learn Threat Model (Indirect injection via tools, Confused deputy, Exfiltration paths, Sandboxing &amp; identity) in a short anim…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-20.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Threat Model — Agentic AI for software architects | LKG School"><meta property="og:description" content="An agent with tools is a PROGRAM an attacker can steer with prose. The agent-specific threat model: confused deputies, exfiltration paths, sandboxing, and scoped identity. Learn Threat Model (Indirect injection via tools, Confused deputy, Exfiltration paths, Sandboxing &amp; identity) in a short anim…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-20.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Threat Model", "description": "An agent with tools is a PROGRAM an attacker can steer with prose. The agent-specific threat model: confused deputies, exfiltration paths, sandboxing, and scoped identity. Learn Threat Model (Indirect injection via tools, Confused deputy, Exfiltration paths, Sandboxing & identity) in a short anim…", "url": "https://lkgschool.in/learn/AG-20.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Indirect injection via tools", "Confused deputy", "Exfiltration paths", "Sandboxing & identity"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Threat Model", "item": "https://lkgschool.in/learn/AG-20.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 67</nav>
+<h1>Threat Model</h1>
+<p class="lede">An agent with tools is a PROGRAM an attacker can steer with prose. The agent-specific threat model: <strong>confused deputies, exfiltration paths, sandboxing, and scoped identity</strong>.</p>
+<a class="cta" href="/?reel=AG-20">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Indirect injection via tools</li><li>Confused deputy</li><li>Exfiltration paths</li><li>Sandboxing &amp; identity</li></ol>
+<h2>Remember this</h2><ul><li>Tool outputs are an injection surface — label provenance, scan patterns, and enforce at the action layer where prose becomes powerless</li><li>Confused deputy: agents borrow authority, never own it — propagate asker scopes per call, keep service accounts minimal, attribute everything</li><li>Exfiltration is data-flow: govern crossings with egress allow-lists and per-tool payload policies, canary-test the exits, sandbox code by default, scope identity short-lived</li></ul>
+<section class="notes"><h2>Indirect injection via tools</h2>
+<ul>
+<li>Tool results are instructions-in-waiting · label provenance · scan patterns · enforce at action layer.</li>
+<li>Per-tool injection test-suite in CI; structure data vs free text where possible.</li>
+</ul>
+<h2>Confused deputy</h2>
+<ul>
+<li>Agents borrow authority per call · propagate asker scopes · minimal service accounts · three-part attribution (agent/run/asker).</li>
+<li>Authority gaps route to approval chains, not agent discretion.</li>
+</ul>
+<h2>Exfiltration paths</h2>
+<ul>
+<li>Map reads × write channels · egress allow-lists · per-tool payload policies · DLP at boundaries · canary-secret drills.</li>
+<li>Scope by deployment: research agent (broad web, read-only) ≠ payments agent (one API).</li>
+</ul>
+<h2>Sandboxing &amp; identity</h2>
+<ul>
+<li>Sandboxes: no-net default, allow-listed reads, caps, ephemeral, no host creds.</li>
+<li>Identity: per-agent service accounts, short-lived task-scoped tokens, pre-computed blast radius.</li>
+</ul></section>
+<h2>Code: The governed tool-call boundary, one wrapper</h2><pre><code>async def guarded_tool_call(agent, tool, args, asker):
+    # 1 · borrowed authority: the asker&#x27;s scopes, not the agent&#x27;s
+    if not asker.may(tool, args):
+        return deny(f&quot;{asker.name} lacks {tool.required_scope(args)}&quot;)
+
+    # 2 · egress governance
+    if dest := args.get(&quot;url&quot;) or args.get(&quot;recipient&quot;):
+        if not egress.allow(dest, via=tool.name):
+            return deny(f&quot;destination &#x27;{dest}&#x27; not allow-listed for {tool.name}&quot;)
+
+    # 3 · payload policy
+    if size(payload_of(args)) &gt; tool.max_payload:
+        return deny(f&quot;payload {size} exceeds {tool.name} limit — split or summarize&quot;)
+
+    # 4 · canary tripwire
+    if CANARY in str(args):
+        alert(&quot;canary_in_tool_args&quot;, tool=tool.name, agent=agent.id)
+
+    # 5 · execute + attribute
+    result = await tool.run(scoped_creds(agent, asker), args)
+    audit.log(agent=agent.id, run=agent.run_id, on_behalf_of=asker.id,
+              tool=tool.name, args_hash=h(args))
+    return result</code></pre>
+<nav class="pn"><a href="/learn/AG-19.html">← Production Engineering</a><a href="/learn/PY-23.html">Packaging &amp; Deployment →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

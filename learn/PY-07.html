@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errors, Files &amp; Config — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Real programs fail. The difference between a demo and a system is how you handle it — files, config, and clean failure paths. Learn Errors, Files &amp; Config (try / except / finally, Custom exceptions, Context managers (with), pathlib — modern paths) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-07.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Errors, Files &amp; Config — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Real programs fail. The difference between a demo and a system is how you handle it — files, config, and clean failure paths. Learn Errors, Files &amp; Config (try / except / finally, Custom exceptions, Context managers (with), pathlib — modern paths) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-07.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Errors, Files & Config", "description": "Real programs fail. The difference between a demo and a system is how you handle it — files, config, and clean failure paths. Learn Errors, Files & Config (try / except / finally, Custom exceptions, Context managers (with), pathlib — modern paths) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-07.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["try / except / finally", "Custom exceptions", "Context managers (with)", "pathlib — modern paths", "JSON files", "Env vars & .env"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Errors, Files & Config", "item": "https://lkgschool.in/learn/PY-07.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 7</nav>
+<h1>Errors, Files &amp; Config</h1>
+<p class="lede">Real programs <strong>fail</strong>. The difference between a demo and a system is how you handle it — files, config, and clean failure paths.</p>
+<a class="cta" href="/?reel=PY-07">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>try / except / finally</li><li>Custom exceptions</li><li>Context managers (with)</li><li>pathlib — modern paths</li><li>JSON files</li><li>Env vars &amp; .env</li></ol>
+<h2>Remember this</h2><ul><li>Catch specific exceptions, re-raise with bare raise, build domain exception trees</li><li>with guarantees cleanup; pathlib replaces string paths; JSON ↔ dict via loads/dumps</li><li>Config and secrets come from env vars; .env is dev-only and gitignored</li></ul>
+<section class="notes"><h2>try / except / finally</h2>
+<ul>
+<li>Catch <strong>specific</strong> exceptions; bare <code>except:</code> is a smell.</li>
+<li><code>except (A, B) as e:</code> · <code>finally:</code> always runs.</li>
+<li>Log then <code>raise</code> (bare) — don&#x27;t swallow.</li>
+</ul>
+<h2>Custom exceptions</h2>
+<pre><code>class AppError(Exception): ...
+class ConfigError(AppError): ...
+raise ConfigError(&quot;missing key&quot;) from original</code></pre>
+<ul>
+<li>Domain trees let callers catch broadly or narrowly.</li>
+</ul>
+<h2>Context managers</h2>
+<ul>
+<li><code>with X() as x:</code> ≡ C# <code>using</code> — cleanup on every exit path.</li>
+<li>Roll your own: <code>contextlib.contextmanager</code> decorator.</li>
+</ul>
+<h2>pathlib</h2>
+<pre><code>p = Path(&quot;data&quot;) / &quot;raw&quot; / &quot;x.json&quot;
+text = p.read_text(encoding=&quot;utf-8&quot;)
+Path(&quot;out&quot;).mkdir(parents=True, exist_ok=True)
+list(Path(&quot;data&quot;).glob(&quot;*.csv&quot;))</code></pre>
+<h2>JSON</h2>
+<ul>
+<li><code>json.loads(text)</code> → dict · <code>json.dumps(obj, indent=2)</code> → text.</li>
+<li><code>json.load(f)</code> / <code>json.dump(obj, f)</code> for file objects.</li>
+<li>Raw dicts don&#x27;t validate → typed parsing (Pydantic, Reel PY-09).</li>
+</ul>
+<h2>Env vars &amp; .env</h2>
+<ul>
+<li><code>os.environ[&quot;KEY&quot;]</code> (strict) · <code>os.getenv(&quot;KEY&quot;, default)</code>.</li>
+<li><code>.env</code> + python-dotenv for dev; <strong>gitignore it</strong>.</li>
+<li>Secrets in git history = rotate immediately.</li>
+</ul></section>
+<h2>Code: Errors, files &amp; config — production-shaped</h2><pre><code>import json, os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()                       # reads .env into os.environ
+API_KEY = os.environ[&quot;OPENAI_API_KEY&quot;]   # fail fast if missing
+
+# --- custom exceptions ----------------------------------------
+class AppError(Exception): pass
+class ConfigError(AppError): pass
+
+# --- config from JSON with real errors -------------------------
+CONFIG_PATH = Path(&quot;config&quot;) / &quot;app.json&quot;
+
+def load_config() -&gt; dict:
+    try:
+        return json.loads(CONFIG_PATH.read_text(encoding=&quot;utf-8&quot;))
+    except FileNotFoundError as e:
+        raise ConfigError(f&quot;missing config: {CONFIG_PATH}&quot;) from e
+    except json.JSONDecodeError as e:
+        raise ConfigError(f&quot;invalid JSON at line {e.lineno}&quot;) from e
+
+# --- with = guaranteed cleanup ---------------------------------
+with open(&quot;data/users.csv&quot;, encoding=&quot;utf-8&quot;) as f:
+    header = f.readline().strip()
+
+# --- pathlib everywhere ----------------------------------------
+out = Path(&quot;output&quot;) / &quot;report.json&quot;
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(json.dumps({&quot;rows&quot;: 42}, indent=2), encoding=&quot;utf-8&quot;)
+
+csvs = sorted(Path(&quot;data&quot;).glob(&quot;*.csv&quot;))</code></pre>
+<nav class="pn"><a href="/learn/PY-06.html">← Modules &amp; Project Structure</a><a href="/learn/PY-08.html">Type Hints →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NoSQL &amp; Cache — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Every system in this course leans on one truth: the fastest query is the one you never run. Redis makes state fast; document databases make state flexible. The last two tools in the belt. Learn NoSQL &amp; Cache (Redis: memory-speed state, Redis as infrastructure, Document databases, Choosing your st…">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-21.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="NoSQL &amp; Cache — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Every system in this course leans on one truth: the fastest query is the one you never run. Redis makes state fast; document databases make state flexible. The last two tools in the belt. Learn NoSQL &amp; Cache (Redis: memory-speed state, Redis as infrastructure, Document databases, Choosing your st…">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-21.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "NoSQL & Cache", "description": "Every system in this course leans on one truth: the fastest query is the one you never run. Redis makes state fast; document databases make state flexible. The last two tools in the belt. Learn NoSQL & Cache (Redis: memory-speed state, Redis as infrastructure, Document databases, Choosing your st…", "url": "https://lkgschool.in/learn/PY-21.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Redis: memory-speed state", "Redis as infrastructure", "Document databases", "Choosing your store"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "NoSQL & Cache", "item": "https://lkgschool.in/learn/PY-21.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 80</nav>
+<h1>NoSQL &amp; Cache</h1>
+<p class="lede">Every system in this course leans on one truth: <strong>the fastest query is the one you never run</strong>. Redis makes state fast; document databases make state flexible. The last two tools in the belt.</p>
+<a class="cta" href="/?reel=PY-21">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Redis: memory-speed state</li><li>Redis as infrastructure</li><li>Document databases</li><li>Choosing your store</li></ol>
+<h2>Remember this</h2><ul><li>Redis is a remote data-structure server: strings for cache (always with TTL), sets for dedupe, sorted sets for rate limits — sub-millisecond, volatile by design</li><li>Cache-aside (check → compute → store) plus pipelines, locks with token-checked release, and sliding-window limiters cover Redis&#x27;s 80%</li><li>Document databases (MongoDB / Cosmos DB) keep JSON whole — flexible schema, aggregation pipelines share Polars&#x27; vocabulary, indexes still mandatory</li><li>Storage policy in one breath: Postgres is the record, Redis the accelerator, documents the escape hatch — store sprawl is the enemy</li></ul>
+<section class="notes"><h2>Redis</h2>
+<ul>
+<li>Data-structure server in RAM: strings, hashes, sets, sorted sets.</li>
+<li>Cache-aside: get → compute → set EX. TTLs always.</li>
+<li>SADD = idempotency/dedupe (PY-14, AG-19). ZADD pipeline = sliding-window rate limit (AG-25, AG-23).</li>
+<li>SET NX EX = distributed lock; release with token check.</li>
+<li>Pub/sub = WebSocket fanout backbone (PY-14); fire-and-forget — signals, not state.</li>
+<li>Never the system of record.</li>
+</ul>
+<h2>Document DBs (MongoDB / Cosmos DB)</h2>
+<ul>
+<li>JSON whole; flexible schema; upsert without migrations.</li>
+<li>Aggregation pipelines = match/group/sort — Polars vocabulary (PY-16) in JSON.</li>
+<li>Index what you filter on — flexible schema ≠ no indexes.</li>
+<li>Cosmos: MongoDB API + turnkey multi-region on the GA-29 stack.</li>
+</ul>
+<h2>Storage policy</h2>
+<p>Postgres = record (start here) · Redis = accelerator · Documents = escape hatch. Store sprawl is the enemy; exotic options earn their slot via benchmark (GA-20 discipline).</p>
+<h2>Course close</h2>
+<p>80 reels: PY (01-25), GA (01-30), AG (01-25). Core idea: probabilistic models → trust through evals, guardrails, budgets, gates. Keep the reels as a cross-linked reference; practice by rebuilding without looking.</p>
+<h2>Cross-links</h2>
+<p>GA-10 (Postgres/pgvector), GA-29 (Cosmos on Azure), AG-09 (guardrails), AG-14 (agent loop), AG-17 (memory), AG-19 (queues/dedupe), AG-21 (eval logs), AG-23 (rate limits/budgets), AG-25 (platform), PY-14 (pub/sub fanout, webhook dedupe), PY-16 (aggregation kinship).</p></section>
+<h2>Code: The last snippet of the course</h2><pre><code># Reel 80 of 80 — the pattern that ties the course together:
+# every fast system in these reels has the same skeleton.
+
+async def serve(request):
+    await guardrails.check(request)              # AG-09
+    if not await rate_limit.allow(request.tenant):   # this reel
+        return slow_down()
+
+    cached = await redis.get(key(request))       # this reel
+    if cached:
+        return cached
+
+    async with lock(&quot;rebuild&quot;):                  # this reel
+        result = await agent.answer(             # AG-14
+            request.text,
+            memory=await mongo.load(request.user),   # AG-17
+            eval_log=True,                       # AG-21
+        )
+    await redis.set(key(request), result, ex=300)
+    return result
+# COURSE COMPLETE. Now go build the one only you can build.</code></pre>
+<nav class="pn"><a href="/learn/PY-16.html">← polars</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: Excel MCP Server — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="The capstone: build a real Excel MCP server — read tools, SAFE write tools, batch updates, audit trails — applying every discipline from AG-02 through AG-08. Learn Project: Excel MCP Server (Read tools first, Safe write tools, Batch operations, Audit, permissions &amp; recap) in a short animated reel…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-09.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Project: Excel MCP Server — Agentic AI for software architects | LKG School"><meta property="og:description" content="The capstone: build a real Excel MCP server — read tools, SAFE write tools, batch updates, audit trails — applying every discipline from AG-02 through AG-08. Learn Project: Excel MCP Server (Read tools first, Safe write tools, Batch operations, Audit, permissions &amp; recap) in a short animated reel…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-09.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Project: Excel MCP Server", "description": "The capstone: build a real Excel MCP server — read tools, SAFE write tools, batch updates, audit trails — applying every discipline from AG-02 through AG-08. Learn Project: Excel MCP Server (Read tools first, Safe write tools, Batch operations, Audit, permissions & recap) in a short animated reel…", "url": "https://lkgschool.in/learn/AG-09.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Read tools first", "Safe write tools", "Batch operations", "Audit, permissions & recap"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Project: Excel MCP Server", "item": "https://lkgschool.in/learn/AG-09.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 51</nav>
+<h1>Project: Excel MCP Server</h1>
+<p class="lede">The capstone: build a real Excel MCP server — <strong>read tools, SAFE write tools, batch updates, audit trails</strong> — applying every discipline from AG-02 through AG-08.</p>
+<a class="cta" href="/?reel=AG-09">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Read tools first</li><li>Safe write tools</li><li>Batch operations</li><li>Audit, permissions &amp; recap</li></ol>
+<h2>Remember this</h2><ul><li>Read path first: list → read_range → read_table, capped and formula-aware, with sequencing hints in descriptions</li><li>Safe writes = backup + dry-run preview + diff-token confirmation; batch updates are idempotent with structured per-file results</li><li>Audit trail append-only and outside the writable fence; folder scoping is the permission model — the stage&#x27;s disciplines in one server</li></ul>
+<section class="notes"><h2>Read path</h2>
+<ul>
+<li>list_workbooks (call first) · read_range (≤5k cells) · read_table (JSON records).</li>
+<li>openpyxl data_only=False — formulas as strings, documented in description.</li>
+</ul>
+<h2>Safe writes</h2>
+<ul>
+<li>Guardrails: timestamped backup → dry-run preview → diff-token confirmation → bounds.</li>
+<li>Actionable errors for protected sheets, merged cells, formula overwrites.</li>
+</ul>
+<h2>Batch</h2>
+<ul>
+<li>Same change across files: dry_run default true · idempotent (already_applied) · per-file results, partial success by design.</li>
+</ul>
+<h2>Audit &amp; permissions</h2>
+<ul>
+<li>Append-only JSONL log OUTSIDE the writable folder: ts, user, file, range, hashes, backup ref, token.</li>
+<li>ALLOWED-folder scoping = permission model.</li>
+</ul>
+<p><strong>Capstone: AG-02→AG-08 embodied in ~300 lines.</strong></p></section>
+<h2>Code: The complete tool surface (7 tools, one policy)</h2><pre><code># READS (always allowed, capped)
+list_workbooks()                     # map first
+read_range(file, sheet, &quot;A1:F50&quot;)   # ≤5,000 cells
+read_table(file, sheet, header_row)  # JSON records
+
+# WRITES (guarded: backup → preview → token → bounds)
+preview_write(file, sheet, range, values)   # → diff + confirm_token
+write_cells(..., confirm_token=...)         # refuses without valid token
+batch_update(sheet, range, values, files,
+             dry_run=True)                  # idempotent, per-file results
+
+# EVERYWHERE
+#   _wb(): ALLOWED-folder scoping            (AG-03/07)
+#   audit.jsonl: append-only, outside fence  (AG-07)
+#   docstrings: when / when-not / limits     (AG-02)
+#   FastMCP + Inspector-tested               (AG-08)
+#
+# Total: ~300 lines. That&#x27;s the whole production server.</code></pre>
+<nav class="pn"><a href="/learn/AG-08.html">← MCP Server Development</a><a href="/learn/AG-10.html">Workflow Patterns →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

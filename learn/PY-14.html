@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real-time &amp; WebSockets — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Request/response is a letter; realtime is a phone call. WebSockets give your FastAPI apps a live wire — streaming LLM tokens, chat, dashboards — and webhooks give the outside world a way to call YOU. Learn Real-time &amp; WebSockets (WebSockets: the live wire, Building realtime apps, Webhooks: inboun…">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-14.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Real-time &amp; WebSockets — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Request/response is a letter; realtime is a phone call. WebSockets give your FastAPI apps a live wire — streaming LLM tokens, chat, dashboards — and webhooks give the outside world a way to call YOU. Learn Real-time &amp; WebSockets (WebSockets: the live wire, Building realtime apps, Webhooks: inboun…">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-14.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Real-time & WebSockets", "description": "Request/response is a letter; realtime is a phone call. WebSockets give your FastAPI apps a live wire — streaming LLM tokens, chat, dashboards — and webhooks give the outside world a way to call YOU. Learn Real-time & WebSockets (WebSockets: the live wire, Building realtime apps, Webhooks: inboun…", "url": "https://lkgschool.in/learn/PY-14.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["WebSockets: the live wire", "Building realtime apps", "Webhooks: inbound events", "Production hardening"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Real-time & WebSockets", "item": "https://lkgschool.in/learn/PY-14.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Architect Layer + Extras › Reel 78</nav>
+<h1>Real-time &amp; WebSockets</h1>
+<p class="lede">Request/response is a letter; realtime is a phone call. <strong>WebSockets give your FastAPI apps a live wire — streaming LLM tokens, chat, dashboards — and webhooks give the outside world a way to call YOU.</strong></p>
+<a class="cta" href="/?reel=PY-14">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>WebSockets: the live wire</li><li>Building realtime apps</li><li>Webhooks: inbound events</li><li>Production hardening</li></ol>
+<h2>Remember this</h2><ul><li>WebSocket upgrades HTTP into a full-duplex frame pipe — either side pushes anytime; delivery isn&#x27;t guaranteed, so acks are your protocol&#x27;s job</li><li>Connection manager (rooms/broadcast) + token streaming are the two patterns — async lets one thread interleave thousands of live connections</li><li>Webhooks invert HTTP: verify HMAC signatures on raw bodies, dedupe by event ID, ACK in milliseconds and process via queue</li><li>Production needs heartbeats (zombie detection), bounded queues (backpressure), and a pub/sub backbone (Redis) to scale past one replica</li></ul>
+<section class="notes"><h2>WebSockets</h2>
+<ul>
+<li>Upgrade handshake (101); full-duplex frames; delivery NOT guaranteed — acks live in your protocol.</li>
+<li>FastAPI: @app.websocket; accept/receive_text/send_text; WebSocketDisconnect is normal exit.</li>
+<li>Scale unit: connections, not requests.</li>
+</ul>
+<h2>Patterns</h2>
+<ul>
+<li>ConnectionManager: rooms → set of sockets; broadcast loops; prune on send failure.</li>
+<li>Token streaming: LLM async stream → socket; &#x27;[DONE]&#x27; sentinel; never block the loop.</li>
+</ul>
+<h2>Webhooks</h2>
+<ul>
+<li>Verify HMAC over raw body, compare_digest; reject bad signatures.</li>
+<li>Idempotent by event ID (providers redeliver); fast ACK then queue; watch out-of-order.</li>
+<li>Webhook ingests the world; WebSocket fans out to clients — complements.</li>
+</ul>
+<h2>Production</h2>
+<ul>
+<li>Heartbeat ~30s; two missed → close.</li>
+<li>Bounded outbound queues; drop-oldest for live data.</li>
+<li>Multi-replica: local sockets + Redis pub/sub fanout (PY-21).</li>
+</ul>
+<h2>Cross-links</h2>
+<p>GA-07 (streaming latency), AG-19 (async jobs, idempotency — the same trio), AG-23 (secrets/trust), GA-28 (realtime voice rides these wires), PY-21 (Redis for the backbone and dedupe store).</p></section>
+<h2>Code: Realtime, end to end</h2><pre><code># The live pipeline:
+#   browser ↔ WebSocket ↔ FastAPI ↔ LLM stream
+#   world   → webhook  → FastAPI → queue → broadcast
+
+@app.websocket(&quot;/live/{room}&quot;)
+async def live(ws: WebSocket, room: str):
+    await manager.join(room, ws)
+    beat = asyncio.create_task(heartbeat(ws))
+    try:
+        async for token in llm.stream(await ws.receive_text()):
+            await ws.send_text(token)          # tokens as they&#x27;re born
+        await ws.send_text(&quot;[DONE]&quot;)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        beat.cancel()
+
+# Heartbeat in the background, tokens in the foreground,
+# disconnects handled in the finally — a socket that
+# survives production is a socket with all three.</code></pre>
+<nav class="pn"><a href="/learn/GA-28.html">← Beyond Text</a><a href="/learn/PY-16.html">polars →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

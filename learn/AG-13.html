@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Management — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Context is the scarcest resource in every agent system. Four disciplines — compaction, selective retrieval, budget planning, memory safety — that keep long runs coherent. Learn Context Management (Context compaction, Selective retrieval, Context budget planning, Memory safety) in a short animated…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-13.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Context Management — Agentic AI for software architects | LKG School"><meta property="og:description" content="Context is the scarcest resource in every agent system. Four disciplines — compaction, selective retrieval, budget planning, memory safety — that keep long runs coherent. Learn Context Management (Context compaction, Selective retrieval, Context budget planning, Memory safety) in a short animated…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-13.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Context Management", "description": "Context is the scarcest resource in every agent system. Four disciplines — compaction, selective retrieval, budget planning, memory safety — that keep long runs coherent. Learn Context Management (Context compaction, Selective retrieval, Context budget planning, Memory safety) in a short animated…", "url": "https://lkgschool.in/learn/AG-13.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Context compaction", "Selective retrieval", "Context budget planning", "Memory safety"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Context Management", "item": "https://lkgschool.in/learn/AG-13.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 55</nav>
+<h1>Context Management</h1>
+<p class="lede">Context is the scarcest resource in every agent system. Four disciplines — <strong>compaction, selective retrieval, budget planning, memory safety</strong> — that keep long runs coherent.</p>
+<a class="cta" href="/?reel=AG-13">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Context compaction</li><li>Selective retrieval</li><li>Context budget planning</li><li>Memory safety</li></ol>
+<h2>Remember this</h2><ul><li>Compaction preserves decisions, constraints, artifact pointers and open threads — triggered early, keeping recent turns verbatim</li><li>Retrieve memory just-in-time with task anchors and thresholds; &#x27;no memory&#x27; is a valid answer; conflicts resolved by provenance</li><li>Budget every token: instrument layers, cap tool outputs, reserve reply headroom; never persist secrets or unscoped PII</li></ul>
+<section class="notes"><h2>Compaction</h2>
+<ul>
+<li>Replace old turns with running summary: decisions · constraints · artifact paths · open threads.</li>
+<li>Trigger early (not at 99%), keep recent verbatim, verify (&#x27;state three constraints&#x27;).</li>
+</ul>
+<h2>Selective retrieval</h2>
+<ul>
+<li>Task-anchored, just-in-time, top-k with thresholds; abstain when thin.</li>
+<li>Detect conflicts by provenance; measure recall like RAG.</li>
+</ul>
+<h2>Budget planning</h2>
+<ul>
+<li>Layers: system+tools (fixed) · memory cap · recent verbatim · reply reserve.</li>
+<li>Tool output quotas: summarize-or-store with pointers.</li>
+<li>Instrument per layer; plan for the worst turn.</li>
+</ul>
+<h2>Memory safety</h2>
+<ul>
+<li>No secrets/PII persisted (secret-scan at write; consent basis).</li>
+<li>&#x27;Unverified&#x27; ≠ fact. Per-user namespacing; retrieval-time access checks.</li>
+</ul></section>
+<h2>Code: The context budget, enforced in one wrapper</h2><pre><code>BUDGET = {
+    &quot;system&quot;:  None,     # measured, fixed
+    &quot;memory&quot;:  2_000,    # tokens, retrieved top-k cap
+    &quot;recent&quot;:  8_000,    # verbatim turns
+    &quot;reserve&quot;: 4_000,    # reply + next tool-call headroom
+}
+
+async def build_context(state, task, user):
+    ctx = [system_prompt(), tool_schemas()]              # fixed
+
+    mems = memory.search(embed(task), k=4,               # selective
+                         where={&quot;user&quot;: user.id},        # access-checked
+                         min_score=0.82)                  # abstain below
+    ctx += format_memories(mems)[:BUDGET[&quot;memory&quot;]]
+
+    ctx += recent_turns(state, token_cap=BUDGET[&quot;recent&quot;])
+    if usage(ctx) &gt; WINDOW - BUDGET[&quot;reserve&quot;]:
+        ctx = compact(ctx, keep_recent=3)                # ch.1 discipline
+    return ctx
+
+# Tool outputs are capped INSIDE each tool (AG-02): summarize-or-store,
+# return pointer + summary. The wrapper never sees raw monsters.</code></pre>
+<nav class="pn"><a href="/learn/AG-12.html">← Memory Types</a><a href="/learn/AG-14.html">Architectures →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Design — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="An agent&#x27;s autonomy isn&#x27;t a switch — it&#x27;s a dial. Approval gates, autonomy levels, escalation paths, kill switches: the control design that makes autonomy shippable. Learn Control Design (Approval gates, Autonomy levels, Escalation paths, Kill switch, rollback &amp; audit) in a short animated reel wi…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-17.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Control Design — Agentic AI for software architects | LKG School"><meta property="og:description" content="An agent&#x27;s autonomy isn&#x27;t a switch — it&#x27;s a dial. Approval gates, autonomy levels, escalation paths, kill switches: the control design that makes autonomy shippable. Learn Control Design (Approval gates, Autonomy levels, Escalation paths, Kill switch, rollback &amp; audit) in a short animated reel wi…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-17.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Control Design", "description": "An agent's autonomy isn't a switch — it's a dial. Approval gates, autonomy levels, escalation paths, kill switches: the control design that makes autonomy shippable. Learn Control Design (Approval gates, Autonomy levels, Escalation paths, Kill switch, rollback & audit) in a short animated reel wi…", "url": "https://lkgschool.in/learn/AG-17.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Approval gates", "Autonomy levels", "Escalation paths", "Kill switch, rollback & audit"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Control Design", "item": "https://lkgschool.in/learn/AG-17.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 64</nav>
+<h1>Control Design</h1>
+<p class="lede">An agent&#x27;s autonomy isn&#x27;t a switch — it&#x27;s a <strong>dial</strong>. Approval gates, autonomy levels, escalation paths, kill switches: the control design that makes autonomy shippable.</p>
+<a class="cta" href="/?reel=AG-17">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Approval gates</li><li>Autonomy levels</li><li>Escalation paths</li><li>Kill switch, rollback &amp; audit</li></ol>
+<h2>Remember this</h2><ul><li>Approval gates trigger on consequences and parameters, render what-not-which previews, batch intelligently, and stay rare enough to be read</li><li>Autonomy is a per-dimension dial — suggest → recommend → act → act-and-report — earned through measured reliability and demoted on regression</li><li>Escalations carry complete packages and feed the learning loop; kill switches are independent, drilled, and paired with rollback-by-design</li></ul>
+<section class="notes"><h2>Approval gates</h2>
+<ul>
+<li>Consequence + parameter aware · show WHAT (rendered preview/diff) not which tool · batch as consolidated diffs · rare enough to be read.</li>
+</ul>
+<h2>Autonomy levels</h2>
+<ul>
+<li>Suggest → recommend → act (bounded) → act-and-report.</li>
+<li>Per-dimension, per-user; earned via measured success, auto-demoted on regression; versioned config artifact.</li>
+</ul>
+<h2>Escalation paths</h2>
+<ul>
+<li>Triggers: repeated failure, low confidence, novelty, policy, user demand.</li>
+<li>Package: tried/outcomes, state, assessment, artifact refs.</li>
+<li>Escalations → golden-set cases; rate = health metric.</li>
+</ul>
+<h2>Kill switch &amp; rollback</h2>
+<ul>
+<li>Kill: seconds-to-zero, infra-independent, manual, drilled.</li>
+<li>Rollback: reversible-by-design or gated; runbook pre-written; post-incident audit from existing trails.</li>
+</ul></section>
+<h2>Code: The control plane as configuration</h2><pre><code>domains:
+  customer_refunds:
+    autonomy: act                      # earned: 99% success over 500 runs
+    bounds: { max_amount_usd: 200, reversible_only: true }
+    gates: [ { trigger: &quot;amount &gt; 200&quot;, action: require_approval },
+             { trigger: &quot;recipient_count &gt; 10&quot;, action: require_approval } ]
+    escalation: { on: [failures&gt;=3, confidence&lt;0.6], package: full }
+
+  infrastructure_changes:
+    autonomy: recommend                # not yet earned
+    gates: [ { trigger: &quot;always&quot;, action: require_approval } ]
+
+global:
+  kill_switch: { scope: [per_agent, all], drill: quarterly }
+  rollback: { backups: automatic, runbook: v3, signoff: oncall_lead }
+  audit: { append_only: true, includes: [gates, levels, escalations, actions] }</code></pre>
+<nav class="pn"><a href="/learn/GA-26.html">← Deployment</a><a href="/learn/AG-18.html">Agent Evals →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

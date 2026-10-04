@@ -245,6 +245,9 @@
       document.addEventListener('ss:complete', () => refreshProgress());
 
       // resume where the user stopped
+      // deep link from the /learn pages: /?reel=PY-02
+      const linked = new URLSearchParams(location.search).get('reel');
+      if (linked && SS.catalog.reels.some(r => r.id === linked)) SS.state.setLastReel(linked);
       const saved = SS.state.getLastReel();
       const it = saved ? items.find(x => x.id === saved) : null;
       if (it) requestAnimationFrame(() => { feed.scrollTop = it.el.offsetTop; });

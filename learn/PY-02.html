@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Syntax Basics — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Python syntax will feel weird for exactly one day — then it clicks. Five ideas, one reel. Learn Syntax Basics (Dynamic typing, Indentation &amp; blocks, f-strings &amp; formatting, None &amp; truthiness) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-02.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Syntax Basics — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Python syntax will feel weird for exactly one day — then it clicks. Five ideas, one reel. Learn Syntax Basics (Dynamic typing, Indentation &amp; blocks, f-strings &amp; formatting, None &amp; truthiness) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-02.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Syntax Basics", "description": "Python syntax will feel weird for exactly one day — then it clicks. Five ideas, one reel. Learn Syntax Basics (Dynamic typing, Indentation & blocks, f-strings & formatting, None & truthiness) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-02.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Dynamic typing", "Indentation & blocks", "f-strings & formatting", "None & truthiness", "Operators & ranges"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Syntax Basics", "item": "https://lkgschool.in/learn/PY-02.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 2</nav>
+<h1>Syntax Basics</h1>
+<p class="lede">Python syntax will feel <strong>weird for exactly one day</strong> — then it clicks. Five ideas, one reel.</p>
+<a class="cta" href="/?reel=PY-02">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Dynamic typing</li><li>Indentation &amp; blocks</li><li>f-strings &amp; formatting</li><li>None &amp; truthiness</li><li>Operators &amp; ranges</li></ol>
+<h2>Remember this</h2><ul><li>Variables are name tags — untyped, movable, runtime-checked</li><li>Indentation IS the block structure — 4 spaces, no braces</li><li>f-strings interpolate anything; falsy = None/0/empty; use <code>is None</code></li></ul>
+<section class="notes"><h2>Dynamic typing</h2>
+<ul>
+<li><code>x = 5</code> — no type declaration. Variables are <strong>names bound to objects</strong>.</li>
+<li>Rebinding to another type is legal; errors appear at <strong>runtime</strong> (type hints + mypy fix this — Reel PY-08).</li>
+</ul>
+<h2>Indentation &amp; blocks</h2>
+<ul>
+<li>Whitespace is syntax: indent = enter block, dedent = exit block.</li>
+<li><strong>4 spaces</strong> per level (PEP 8); set the editor to convert tabs.</li>
+<li>Everything in a block must be indented — even single statements.</li>
+</ul>
+<h2>f-strings</h2>
+<pre><code>f&quot;Total: {price:.2f}&quot;      # format spec inside braces
+f&quot;{n:,}&quot;                   # thousands separators
+f&quot;{name.upper()} ok&quot;       # any expression</code></pre>
+<h2>None &amp; truthiness</h2>
+<ul>
+<li><code>None</code> = absence of a value (like null). Check with <code>is None</code>.</li>
+</ul>
+<table><tr><th>Falsy</th><th>Truthy</th></tr><tr><td><code>None</code>, <code>False</code>, <code>0</code>, <code>&quot;&quot;</code>, <code>[]</code>, <code>{}</code>, <code>()</code></td><td>everything else</td></tr></table>
+<h2>Operators</h2>
+<ul>
+<li><code>==</code> value equality · <code>is</code> identity (same object) · <code>in</code> membership.</li>
+<li><code>range(5)</code> → lazy sequence 0..4; <code>list(range(5))</code> materializes it.</li>
+<li><code>for i in range(n):</code> replaces C-style index loops in most cases.</li>
+</ul></section>
+<h2>Code: Syntax basics in 20 lines</h2><pre><code># Dynamic typing — name tags, not declarations
+price = 19.99
+label = &quot;pro&quot;
+price = label          # legal! the tag moves to a string
+
+# Indentation is the block
+if price == &quot;pro&quot;:
+    print(&quot;Pro plan&quot;)
+    print(&quot;  unlimited reels&quot;)
+print(&quot;always runs&quot;)   # dedented → outside the if
+
+# f-strings: interpolation + formatting
+rows = 1_234_567
+print(f&quot;Imported {rows:,} rows in {0.847:.2f}s&quot;)
+
+# Truthiness
+items = []
+if not items:          # same as: if len(items) == 0
+    print(&quot;empty list is falsy&quot;)
+
+if price is None:
+    pass               # explicit None check with `is`
+
+# in + range
+for i in range(3):     # 0, 1, 2
+    if &quot;pro&quot; in label:
+        print(f&quot;  step {i + 1} of 3&quot;)</code></pre>
+<nav class="pn"><a href="/learn/PY-01.html">← Setup &amp; Tooling</a><a href="/learn/PY-03.html">Core Data Structures →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

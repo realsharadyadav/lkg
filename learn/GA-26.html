@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deployment — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Prompts are code. Models are dependencies. Deploy them like it — gateways, environments, version pinning, and rollouts that can&#x27;t surprise you. Learn Deployment (LLM gateways, Environments &amp; promotion, Version pinning, Feature flags &amp; rollout) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-26.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Deployment — Generative AI for software architects | LKG School"><meta property="og:description" content="Prompts are code. Models are dependencies. Deploy them like it — gateways, environments, version pinning, and rollouts that can&#x27;t surprise you. Learn Deployment (LLM gateways, Environments &amp; promotion, Version pinning, Feature flags &amp; rollout) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-26.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Deployment", "description": "Prompts are code. Models are dependencies. Deploy them like it — gateways, environments, version pinning, and rollouts that can't surprise you. Learn Deployment (LLM gateways, Environments & promotion, Version pinning, Feature flags & rollout) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/GA-26.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["LLM gateways", "Environments & promotion", "Version pinning", "Feature flags & rollout"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Deployment", "item": "https://lkgschool.in/learn/GA-26.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 63</nav>
+<h1>Deployment</h1>
+<p class="lede">Prompts are code. Models are dependencies. <strong>Deploy them like it</strong> — gateways, environments, version pinning, and rollouts that can&#x27;t surprise you.</p>
+<a class="cta" href="/?reel=GA-26">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>LLM gateways</li><li>Environments &amp; promotion</li><li>Version pinning</li><li>Feature flags &amp; rollout</li></ol>
+<h2>Remember this</h2><ul><li>AI gateways centralize auth, policy, observability, and provider abstraction — cross-cutting concerns at the boundary, config as reviewed code</li><li>Prompts/models/configs are artifacts: PR → eval-gated CI → dev/UAT/prod promotion, with versioned registries and environment parity</li><li>Pin everything by version/hash — updates become tested, reversible decisions; staged rollouts with feature flags and instant kills keep blast radii small</li></ul>
+<section class="notes"><h2>AI gateways</h2>
+<ul>
+<li>One front door: auth vault, rate limits/quotas, observability, provider abstraction + failover (APIM, LiteLLM, Portkey).</li>
+<li>Config = reviewed code; verify streaming passthrough.</li>
+</ul>
+<h2>Environments &amp; promotion</h2>
+<ul>
+<li>Prompts/models/configs are artifacts: PR → CI eval gates → dev/UAT/prod.</li>
+<li>Registry with hashes; env parity except artifact versions; UAT on production-shaped data.</li>
+</ul>
+<h2>Version pinning</h2>
+<ul>
+<li>Pin model snapshots, prompt hashes, full config. Updates = eval-gated promotions.</li>
+<li>Watch provider deprecation schedules; staging may float to catch drift early.</li>
+</ul>
+<h2>Feature flags &amp; rollout</h2>
+<ul>
+<li>Per-request flags, canary 5→25→50→100 with metric gates, instant global kill.</li>
+<li>Deploys become routine: small, reversible, observed.</li>
+</ul></section>
+<h2>Code: Promotion pipeline definition (the whole reel as YAML)</h2><pre><code># prompt v42 change → this pipeline runs
+pipeline:
+  pr:
+    gates: [diff_review, linked_eval_expectation]
+  ci:
+    evals:
+      golden_set: { dataset: golden/v7, min_hit_rate: 0.92 }
+      faithfulness: { min: 0.90 }
+      agent_regression: { suite: agents/v3, allow_fail: 0 }
+      security_canaries: { jailbreak_set: redteam/v2, contain: 100% }
+  promote:
+    dev:   automatic_on_ci_green
+    uat:   automatic · shadow traffic 24h · compare vs prod
+    prod:  flag_canary [5%, 25%, 50%, 100%]
+           each_step_gated: [quality_delta &lt; 2pts, cost_delta &lt; 10%, errors &lt; baseline]
+           halt_on_red: true
+  rollback: flag_to 0% + artifact v41 hot
+
+# Everything versioned: prompts by hash, models by snapshot,
+# configs in repo. &#x27;Latest&#x27; appears nowhere.</code></pre>
+<nav class="pn"><a href="/learn/GA-25.html">← Performance &amp; Cost</a><a href="/learn/AG-17.html">Control Design →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

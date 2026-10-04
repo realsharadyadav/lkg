@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excel Automation — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Excel runs the business world. Python runs Excel — if you respect the file format. One careless write can destroy a workbook. Learn Excel Automation (openpyxl read/write, Preserve formatting &amp; formulas, pandas in/out, Batch across workbooks) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-19.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Excel Automation — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Excel runs the business world. Python runs Excel — if you respect the file format. One careless write can destroy a workbook. Learn Excel Automation (openpyxl read/write, Preserve formatting &amp; formulas, pandas in/out, Batch across workbooks) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-19.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Excel Automation", "description": "Excel runs the business world. Python runs Excel — if you respect the file format. One careless write can destroy a workbook. Learn Excel Automation (openpyxl read/write, Preserve formatting & formulas, pandas in/out, Batch across workbooks) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-19.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["openpyxl read/write", "Preserve formatting & formulas", "pandas in/out", "Batch across workbooks", "xlwings / COM", "Safe-write pattern"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Excel Automation", "item": "https://lkgschool.in/learn/PY-19.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 21</nav>
+<h1>Excel Automation</h1>
+<p class="lede">Excel runs the business world. Python runs Excel — <strong>if</strong> you respect the file format. One careless write can destroy a workbook.</p>
+<a class="cta" href="/?reel=PY-19">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>openpyxl read/write</li><li>Preserve formatting &amp; formulas</li><li>pandas in/out</li><li>Batch across workbooks</li><li>xlwings / COM</li><li>Safe-write pattern</li></ol>
+<h2>Remember this</h2><ul><li>openpyxl for surgical edits (keep_vba for macros); pandas for bulk table in/out — to_excel replaces, never edits</li><li>Batch = pipeline: new output folder, per-file logging, resumable idempotency; xlwings/COM when real Excel is required</li><li>Safe-write ritual: backup → dry-run → approve → write new → verify → swap</li></ul>
+<section class="notes"><h2>openpyxl</h2>
+<ul>
+<li><code>load_workbook(f)</code> → sheets, <code>ws[&quot;B3&quot;].value</code>, write values/formulas (as strings).</li>
+<li><code>keep_vba=True</code> for .xlsm. Untouched cells keep formatting.</li>
+</ul>
+<h2>Preservation</h2>
+<ul>
+<li>Workbooks contain formulas, charts, pivots, named ranges, macros — openpyxl silently drops what it doesn&#x27;t model.</li>
+<li>Audit after save: sheet names, formula counts, chart parts.</li>
+<li>Heavy formatting/macros → drive real Excel (xlwings/COM).</li>
+</ul>
+<h2>pandas bridge</h2>
+<ul>
+<li><code>read_excel</code> (sheet → DataFrame; <code>sheet_name=None</code> → dict of all sheets).</li>
+<li><code>to_excel</code> <strong>replaces</strong> — bulk extraction only, never editing in place.</li>
+<li>Recon first: title rows, merged cells, footnotes misalign parsing (skiprows/header/usecols).</li>
+</ul>
+<h2>Batch</h2>
+<ul>
+<li>New output folder · per-file try/except + CSV log · skip existing (idempotent/resumable).</li>
+</ul>
+<h2>xlwings / COM</h2>
+<ul>
+<li>Real Excel: total fidelity (recalc, pivots), needs Excel installed (Windows/Mac desktop/VM).</li>
+<li>@udf — Python functions callable from spreadsheet cells.</li>
+</ul>
+<h2>Safe-write pattern</h2>
+<p>1. <strong>Backup</strong> (timestamped copy) 2. <strong>Dry-run</strong> — report the plan, human approves 3. Write to a <strong>new</strong> file 4. <strong>Verify</strong> (sheets, formula counts, spot values) 5. Swap only after verification — backup retained</p></section>
+<h2>Code: The safe-write pattern, implemented</h2><pre><code>from pathlib import Path
+import shutil, datetime, openpyxl
+
+SRC = Path(&quot;finance/Q1_actuals.xlsx&quot;)
+OUT = Path(&quot;out/Q1_actuals_updated.xlsx&quot;)   # NEW file — never in place
+
+# 1. BACKUP --------------------------------------------------------
+ts = datetime.datetime.now().strftime(&quot;%Y%m%d-%H%M%S&quot;)
+shutil.copy(SRC, SRC.with_suffix(f&quot;.bak-{ts}.xlsx&quot;))
+
+# 2. DRY-RUN: compute the plan, write nothing ----------------------
+wb = openpyxl.load_workbook(SRC, data_only=False)
+ws = wb[&quot;Actuals&quot;]
+plan = []
+for row in range(2, ws.max_row + 1):
+    if ws.cell(row, 4).value == &quot;EUR&quot;:
+        plan.append((row, ws.cell(row, 5).value))
+print(f&quot;DRY-RUN: would recalc {len(plan)} EUR rows (e.g. {plan[:3]})&quot;)
+# → human reviews and approves before anything is written
+
+# 3. APPLY + WRITE NEW ---------------------------------------------
+RATE = 1.08
+for row, eur in plan:
+    ws.cell(row, 6, round(eur * RATE, 2))
+OUT.parent.mkdir(parents=True, exist_ok=True)
+wb.save(OUT)
+
+# 4. VERIFY ---------------------------------------------------------
+check = openpyxl.load_workbook(OUT)
+assert check.sheetnames == wb.sheetnames
+formulas = sum(1 for r in check[&quot;Actuals&quot;].iter_rows()
+               for c in r if isinstance(c.value, str) and c.value.startswith(&quot;=&quot;))
+print(f&quot;OK: {len(plan)} rows updated, {formulas} formulas intact -&gt; {OUT}&quot;)
+# Only after verification: manually replace the original, backup in hand.</code></pre>
+<nav class="pn"><a href="/learn/PY-18.html">← DuckDB</a><a href="/learn/GA-07.html">Embedding Concepts →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

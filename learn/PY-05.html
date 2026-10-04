@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OOP in Python — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Python OOP is lighter than C# — fewer keywords, more conventions. Six ideas, no fluff. Learn OOP in Python (Classes &amp; __init__, Dunder methods, Inheritance &amp; super(), dataclasses) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-05.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="OOP in Python — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Python OOP is lighter than C# — fewer keywords, more conventions. Six ideas, no fluff. Learn OOP in Python (Classes &amp; __init__, Dunder methods, Inheritance &amp; super(), dataclasses) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-05.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "OOP in Python", "description": "Python OOP is lighter than C# — fewer keywords, more conventions. Six ideas, no fluff. Learn OOP in Python (Classes & __init__, Dunder methods, Inheritance & super(), dataclasses) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-05.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Classes & __init__", "Dunder methods", "Inheritance & super()", "dataclasses", "Protocol & ABC", "@property"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "OOP in Python", "item": "https://lkgschool.in/learn/PY-05.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python Core › Reel 5</nav>
+<h1>OOP in Python</h1>
+<p class="lede">Python OOP is <strong>lighter than C#</strong> — fewer keywords, more conventions. Six ideas, no fluff.</p>
+<a class="cta" href="/?reel=PY-05">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Classes &amp; __init__</li><li>Dunder methods</li><li>Inheritance &amp; super()</li><li>dataclasses</li><li>Protocol &amp; ABC</li><li>@property</li></ol>
+<h2>Remember this</h2><ul><li>self is explicit; attributes are created by assignment; _underscore = convention</li><li>Dunders plug your class into Python syntax; dataclasses replace boilerplate records</li><li>Protocol &gt; ABC for interfaces; @property = computed fields</li></ul>
+<section class="notes"><h2>Classes &amp; __init__</h2>
+<pre><code>class Model:
+    def __init__(self, name: str, price: float = 0.0):
+        self.name = name          # attribute created by assignment
+        self.price = price</code></pre>
+<ul>
+<li><code>self</code> = C# <code>this</code>, but explicit in every method signature.</li>
+<li><code>_x</code> = internal by convention · <code>__x</code> = name-mangled (not truly private).</li>
+</ul>
+<h2>Dunder methods</h2>
+<table><tr><th>Dunder</th><th>Enables</th></tr><tr><td><code>__init__</code></td><td>construction</td></tr><tr><td><code>__len__</code></td><td><code>len(obj)</code></td></tr><tr><td><code>__str__</code> / <code>__repr__</code></td><td><code>print</code> / REPL debug</td></tr><tr><td><code>__eq__</code></td><td><code>==</code></td></tr><tr><td><code>__getitem__</code></td><td><code>obj[i]</code></td></tr></table>
+<h2>Inheritance &amp; super()</h2>
+<ul>
+<li><code>class Tool(BaseTool):</code> · <code>super().run()</code> (Py3: bare <code>super()</code>).</li>
+<li><strong>Keep hierarchies shallow</strong> — prefer composition + mixins.</li>
+</ul>
+<h2>dataclasses</h2>
+<pre><code>@dataclass(frozen=True)
+class Model:
+    name: str
+    tags: list = field(default_factory=list)</code></pre>
+<p>= records: <code>__init__</code> + <code>__eq__</code> + <code>__repr__</code> generated.</p>
+<h2>Protocol &amp; ABC</h2>
+<ul>
+<li><strong>ABC</strong>: nominal — inherit, <code>@abstractmethod</code>, loud failures.</li>
+<li><strong>Protocol</strong>: structural — declare the shape; any match qualifies (mypy-checked). Prefer Protocol.</li>
+</ul>
+<h2>@property</h2>
+<ul>
+<li>Computed attribute without <code>()</code>; add <code>@x.setter</code> for validation; <code>functools.cached_property</code> to memoize.</li>
+</ul></section>
+<h2>Code: OOP the Python way — 30 lines, everything from this reel</h2><pre><code>from dataclasses import dataclass, field
+from typing import Protocol
+import functools
+
+# --- dataclass: the record you&#x27;ll write most ------------------
+@dataclass(frozen=True)
+class Model:
+    name: str
+    input_price: float          # per 1M tokens, USD
+
+    @property
+    def cost_usd(self, tokens: int = 1_000_000) -&gt; float:
+        return self.input_price * tokens / 1_000_000
+
+# --- Protocol: structural interface (no inheritance!) ---------
+class Storage(Protocol):
+    def save(self, key: str, value: dict) -&gt; None: ...
+    def load(self, key: str) -&gt; dict | None: ...
+
+class MemoryStore:               # satisfies Storage automatically
+    def __init__(self): self._data = {}
+    def save(self, key, value): self._data[key] = value
+    def load(self, key): return self._data.get(key)
+
+def persist(store: Storage):     # mypy checks the SHAPE, not the parent
+    store.save(&quot;config&quot;, {&quot;model&quot;: &quot;gpt-4o&quot;})
+
+# --- classic class with dunders -------------------------------
+class Pipeline:
+    def __init__(self, steps: list | None = None):
+        self.steps = steps if steps is not None else []
+
+    def __len__(self): return len(self.steps)
+    def __str__(self): return f&quot;Pipeline({len(self.steps)} steps)&quot;
+
+    def add(self, step): self.steps.append(step); return self
+
+p = Pipeline().add(&quot;embed&quot;).add(&quot;search&quot;)
+print(len(p), str(p))</code></pre>
+<nav class="pn"><a href="/learn/PY-04.html">← Functions</a><a href="/learn/PY-06.html">Modules &amp; Project Structure →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

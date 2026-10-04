@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Production Engineering — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Agents that run for HOURS can&#x27;t live in a request handler. Durable execution, queues, budgets, and the failure catalogue — the machinery of 3 a.m. reliability. Learn Production Engineering (Loop limits, timeouts, retries, Durable execution, Queues, concurrency &amp; locking, Cost caps &amp; failure catal…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-19.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Production Engineering — Agentic AI for software architects | LKG School"><meta property="og:description" content="Agents that run for HOURS can&#x27;t live in a request handler. Durable execution, queues, budgets, and the failure catalogue — the machinery of 3 a.m. reliability. Learn Production Engineering (Loop limits, timeouts, retries, Durable execution, Queues, concurrency &amp; locking, Cost caps &amp; failure catal…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-19.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Production Engineering", "description": "Agents that run for HOURS can't live in a request handler. Durable execution, queues, budgets, and the failure catalogue — the machinery of 3 a.m. reliability. Learn Production Engineering (Loop limits, timeouts, retries, Durable execution, Queues, concurrency & locking, Cost caps & failure catal…", "url": "https://lkgschool.in/learn/AG-19.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Loop limits, timeouts, retries", "Durable execution", "Queues, concurrency & locking", "Cost caps & failure catalogue"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Production Engineering", "item": "https://lkgschool.in/learn/AG-19.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 66</nav>
+<h1>Production Engineering</h1>
+<p class="lede">Agents that run for HOURS can&#x27;t live in a request handler. <strong>Durable execution, queues, budgets, and the failure catalogue</strong> — the machinery of 3 a.m. reliability.</p>
+<a class="cta" href="/?reel=AG-19">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Loop limits, timeouts, retries</li><li>Durable execution</li><li>Queues, concurrency &amp; locking</li><li>Cost caps &amp; failure catalogue</li></ol>
+<h2>Remember this</h2><ul><li>Fences everywhere: iteration/wall/call budgets composed per level, timeouts at every boundary, transient-only idempotent retries — budget exits carry resumable state</li><li>Durable execution checkpoints after every step; replay-safe idempotent effects; waiting becomes free, multi-day tasks become ordinary</li><li>Queues smooth and prioritize; version-stamped single-writer artifacts prevent silent corruption; cost meters run per-run, per-tenant, and system-wide with pre-decided degradation</li></ul>
+<section class="notes"><h2>Fences</h2>
+<ul>
+<li>Budgets: iterations/wall/calls, nested per level · exits carry resumable state.</li>
+<li>Timeouts at every boundary, composed.</li>
+<li>Retries: transient-only, backoff+jitter, idempotent actions.</li>
+</ul>
+<h2>Durable execution</h2>
+<ul>
+<li>Checkpoint after every step (step+result+state-delta) · replay-safe effects.</li>
+<li>Temporal / Durable Functions / framework checkpointing.</li>
+<li>Waiting is free → multi-day tasks, human gates as suspends.</li>
+</ul>
+<h2>Queues &amp; concurrency</h2>
+<ul>
+<li>Jobs: enqueue → priority queue → workers with provider semaphores.</li>
+<li>Dead-letter after N attempts; visibility timeouts &gt; checkpoint interval.</li>
+<li>Artifacts: single-writer + version stamps + advisory locks.</li>
+</ul>
+<h2>Cost caps &amp; failure catalogue</h2>
+<ul>
+<li>Per-run caps, per-tenant quotas, system circuit breakers; 80% alerts, pre-decided degradation ladder.</li>
+<li>Catalogue: signature → cause → fix → prevention for every incident.</li>
+</ul></section>
+<h2>Code: The fenced, durable, metered run — one skeleton</h2><pre><code>async def run_agent(job):
+    state = store.load_checkpoint(job.id) or fresh_state(job)
+    budget = Budget(tokens=job.token_cap, wall=job.time_cap)
+
+    while not state.done and not budget.exhausted():
+        step = plan_next(state)
+        async with timeout(step.max_seconds):
+            result = await idempotent(step, key=state.idem_key(step.n))
+        state.apply(step, result)
+        store.checkpoint(job.id, state)            # durable after every step
+        budget.spend(result.tokens)
+
+    if not state.done:
+        await escalate(job, package=state.export())  # resumable exit
+    return state.result
+
+# Properties, by construction:
+#   crash      → resume from last checkpoint
+#   retry      → idempotent key prevents duplicates
+#   spiral     → budget exits with full state
+#   cost       → metered at every model call</code></pre>
+<nav class="pn"><a href="/learn/AG-18.html">← Agent Evals</a><a href="/learn/AG-20.html">Threat Model →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

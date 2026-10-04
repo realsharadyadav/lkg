@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controls — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Every threat from the last reel meets its match here: redaction, guardrails, moderation, audit trails, compliance — the control plane that never jailbreaks. Learn Controls (PII detection &amp; redaction, Guardrails: input &amp; output, Content safety services, Audit, residency &amp; compliance) in a short an…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-23.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Controls — Generative AI for software architects | LKG School"><meta property="og:description" content="Every threat from the last reel meets its match here: redaction, guardrails, moderation, audit trails, compliance — the control plane that never jailbreaks. Learn Controls (PII detection &amp; redaction, Guardrails: input &amp; output, Content safety services, Audit, residency &amp; compliance) in a short an…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-23.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Controls", "description": "Every threat from the last reel meets its match here: redaction, guardrails, moderation, audit trails, compliance — the control plane that never jailbreaks. Learn Controls (PII detection & redaction, Guardrails: input & output, Content safety services, Audit, residency & compliance) in a short an…", "url": "https://lkgschool.in/learn/GA-23.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["PII detection & redaction", "Guardrails: input & output", "Content safety services", "Audit, residency & compliance"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Controls", "item": "https://lkgschool.in/learn/GA-23.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Production + Security › Reel 60</nav>
+<h1>Controls</h1>
+<p class="lede">Every threat from the last reel meets its match here: <strong>redaction, guardrails, moderation, audit trails, compliance</strong> — the control plane that never jailbreaks.</p>
+<a class="cta" href="/?reel=GA-23">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>PII detection &amp; redaction</li><li>Guardrails: input &amp; output</li><li>Content safety services</li><li>Audit, residency &amp; compliance</li></ol>
+<h2>Remember this</h2><ul><li>Redact before you send: detect → placeholder → route → restore, with the mapping in request scope and regex+NER combined detection</li><li>Guardrails sandwich the model — deterministic input filters and output gates, block-or-replace by content class, every trip an observable event</li><li>Managed moderation runs as an independent pass with threshold-to-action bands; audit logs are append-only, correlated, and privacy-shaped; residency and retention are implemented, tested features</li></ul>
+<section class="notes"><h2>PII detection &amp; redaction</h2>
+<ul>
+<li>Detect: regex (structured) + NER (unstructured), golden-set recall.</li>
+<li>Replace → route → restore; mapping in request scope, never logged; redact before APIs AND logs.</li>
+</ul>
+<h2>Guardrails</h2>
+<ul>
+<li>Sandwich: input filters (length/encoding/injection screens) → model → output gates (secret/PII screens, topic, format).</li>
+<li>Block-or-replace per content class; trips are observable events with counters.</li>
+<li>Rules data-driven, versioned, deployable without releases.</li>
+</ul>
+<h2>Content safety services</h2>
+<ul>
+<li>Independent pass (in/out), threshold→action bands, gray-zone human review as calibration.</li>
+<li>Compose with own filters: standard harm classes = managed; brand/domain = yours.</li>
+</ul>
+<h2>Audit &amp; compliance</h2>
+<ul>
+<li>Append-only structured logs, correlation IDs, privacy-shaped (hashes + references).</li>
+<li>Residency by contract (regions, self-host), retention implemented AND deletion-tested.</li>
+<li>Map controls → OWASP entries; quarterly control matrix.</li>
+</ul></section>
+<h2>Code: The control plane as middleware, one pipeline</h2><pre><code>async def handle_request(user, text):
+    audit = AuditLog.start(user.id)               # correlated from birth
+
+    safe_in, mapping = redact(normalize(text))    # ch.1
+    if trip := injection_screen(safe_in):         # ch.2 tripwire
+        audit.guardrail_trip(&quot;injection&quot;, trip)
+        return refuse(&quot;I can&#x27;t process that request.&quot;)
+
+    reply = await llm.complete(safe_in)           # the model proposes
+
+    if secret := secret_pattern(reply):           # output gates
+        audit.guardrail_trip(&quot;secret_leak&quot;, hash(secret))
+        return refuse(&quot;The response contained sensitive data.&quot;)
+    mod = await moderate(reply)                   # ch.3 independent pass
+    if mod.action == &quot;block&quot;:
+        audit.guardrail_trip(f&quot;moderation_{mod.category}&quot;)
+        return refuse(&quot;I can&#x27;t provide that content.&quot;)
+    if mod.action == &quot;review&quot;:
+        await human_review_queue.add(reply, mod, audit.id)
+
+    audit.complete(tokens=reply.usage)            # ch.4 record
+    return restore(reply, mapping)                # ch.1 round-trip</code></pre>
+<nav class="pn"><a href="/learn/GA-22.html">← Security Threats</a><a href="/learn/GA-24.html">Observability →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

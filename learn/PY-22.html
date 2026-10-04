@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing &amp; Quality — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="LLM apps are nondeterministic — your TESTS must not be. pytest, deterministic mocking, structured logs, and automation that refuses bad commits. Learn Testing &amp; Quality (pytest fundamentals, Mocking LLMs &amp; APIs, Logging done right, Automation: ruff, black, pre-commit) in a short animated reel wit…">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-22.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Testing &amp; Quality — Python for C# / .NET developers | LKG School"><meta property="og:description" content="LLM apps are nondeterministic — your TESTS must not be. pytest, deterministic mocking, structured logs, and automation that refuses bad commits. Learn Testing &amp; Quality (pytest fundamentals, Mocking LLMs &amp; APIs, Logging done right, Automation: ruff, black, pre-commit) in a short animated reel wit…">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-22.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Testing & Quality", "description": "LLM apps are nondeterministic — your TESTS must not be. pytest, deterministic mocking, structured logs, and automation that refuses bad commits. Learn Testing & Quality (pytest fundamentals, Mocking LLMs & APIs, Logging done right, Automation: ruff, black, pre-commit) in a short animated reel wit…", "url": "https://lkgschool.in/learn/PY-22.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["pytest fundamentals", "Mocking LLMs & APIs", "Logging done right", "Automation: ruff, black, pre-commit"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Testing & Quality", "item": "https://lkgschool.in/learn/PY-22.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › App Building + Quality › Reel 38</nav>
+<h1>Testing &amp; Quality</h1>
+<p class="lede">LLM apps are nondeterministic — your TESTS must not be. pytest, deterministic mocking, structured logs, and automation that <strong>refuses bad commits</strong>.</p>
+<a class="cta" href="/?reel=PY-22">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>pytest fundamentals</li><li>Mocking LLMs &amp; APIs</li><li>Logging done right</li><li>Automation: ruff, black, pre-commit</li></ol>
+<h2>Remember this</h2><ul><li>pytest: plain functions + fixtures (shared, teardown-safe setup) + parametrize (one function, N cases); test contracts, not exact LLM phrasing</li><li>Mock at the boundary: FakeProvider records prompts so you assert on inputs (assembly, citations); real-model quality belongs to evals, not unit tests</li><li>Structured JSON logs with correlation IDs make production debuggable; ruff + black + pre-commit refuse bad code before review</li></ul>
+<section class="notes"><h2>pytest</h2>
+<ul>
+<li>Plain functions + assert; fixtures injected by name; yield → teardown.</li>
+<li><code>@pytest.mark.parametrize</code> — data-driven cases, independent reports.</li>
+<li>LLM apps: test CONTRACTS (grounded, abstains, validates), not phrasing.</li>
+</ul>
+<h2>Mocking LLMs</h2>
+<ul>
+<li>Never call real APIs in unit tests: slow, costly, nondeterministic.</li>
+<li>FakeProvider pattern: deterministic replies + records prompts → assert on INPUTS (context assembly, citation rules).</li>
+<li>Model quality → evals (GA-20/21), not unit tests.</li>
+</ul>
+<h2>Logging</h2>
+<ul>
+<li>Levels: DEBUG/INFO/ERROR; structured JSON; correlation/request IDs.</li>
+<li>Log retrieval telemetry (rewrites, scores, sources) for quality debugging.</li>
+<li>Never log secrets/PII; redact at the boundary.</li>
+</ul>
+<h2>Automation</h2>
+<ul>
+<li>ruff (lint, fast, --fix) + black (format) + pre-commit (gates on every commit).</li>
+<li>Shift-left: same checks locally and in CI; too cheap to bypass.</li>
+</ul></section>
+<h2>Code: The quality loop: tests + fake LLM + structured logging</h2><pre><code>import logging, json, pytest
+
+log = logging.getLogger(&quot;rag&quot;)
+
+class StructuredFormatter(logging.Formatter):
+    def format(self, record):
+        return json.dumps({
+            &quot;ts&quot;: self.formatTime(record),
+            &quot;level&quot;: record.levelname,
+            &quot;event&quot;: record.msg if isinstance(record.msg, str) else None,
+            **getattr(record, &quot;fields&quot;, {}),   # extra context rides along
+        })
+
+async def ask(rag, question, request_id):
+    log.info(&quot;ask.start&quot;, extra={&quot;fields&quot;: {
+        &quot;request_id&quot;: request_id, &quot;q&quot;: question[:80]}})
+    answer = await rag.ask(question)
+    log.info(&quot;ask.done&quot;, extra={&quot;fields&quot;: {
+        &quot;request_id&quot;: request_id, &quot;abstained&quot;: answer.abstained}})
+    return answer
+
+# In tests: caplog captures everything — assert on LOGGED events:
+def test_abstention_is_logged(rag, caplog):
+    with caplog.at_level(logging.INFO, logger=&quot;rag&quot;):
+        asyncio.run(ask(rag, &quot;totally unknown thing?&quot;, &quot;req-1&quot;))
+    abstentions = [r for r in caplog.records
+                   if getattr(r, &quot;abstained&quot;, None) is True]
+    assert abstentions, &quot;expected an abstention event in the logs&quot;</code></pre>
+<nav class="pn"><a href="/learn/PY-13.html">← FastAPI</a><a href="/learn/GA-20.html">Eval Fundamentals →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

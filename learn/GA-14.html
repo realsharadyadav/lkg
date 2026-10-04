@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ingestion &amp; Chunking — Generative AI for software architects | LKG School</title>
+<meta name="description" content="Retrieval can&#x27;t fix bad chunks. Ingestion and chunking decide 80% of RAG quality — before any embedding exists. This reel is the craft. Learn Ingestion &amp; Chunking (Document parsing, Chunking strategies, Size, overlap &amp; metadata, Changing documents) in a short animated reel with notes, recap and q…">
+<link rel="canonical" href="https://lkgschool.in/learn/GA-14.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Ingestion &amp; Chunking — Generative AI for software architects | LKG School"><meta property="og:description" content="Retrieval can&#x27;t fix bad chunks. Ingestion and chunking decide 80% of RAG quality — before any embedding exists. This reel is the craft. Learn Ingestion &amp; Chunking (Document parsing, Chunking strategies, Size, overlap &amp; metadata, Changing documents) in a short animated reel with notes, recap and q…">
+<meta property="og:url" content="https://lkgschool.in/learn/GA-14.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Ingestion & Chunking", "description": "Retrieval can't fix bad chunks. Ingestion and chunking decide 80% of RAG quality — before any embedding exists. This reel is the craft. Learn Ingestion & Chunking (Document parsing, Chunking strategies, Size, overlap & metadata, Changing documents) in a short animated reel with notes, recap and q…", "url": "https://lkgschool.in/learn/GA-14.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Document parsing", "Chunking strategies", "Size, overlap & metadata", "Changing documents"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Ingestion & Chunking", "item": "https://lkgschool.in/learn/GA-14.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Embeddings &gt; Vector DB &gt; RAG › Reel 30</nav>
+<h1>Ingestion &amp; Chunking</h1>
+<p class="lede"><strong>Retrieval can&#x27;t fix bad chunks.</strong> Ingestion and chunking decide 80% of RAG quality — before any embedding exists. This reel is the craft.</p>
+<a class="cta" href="/?reel=GA-14">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Document parsing</li><li>Chunking strategies</li><li>Size, overlap &amp; metadata</li><li>Changing documents</li></ol>
+<h2>Remember this</h2><ul><li>Parsing is per-format: PDF reading order, OCR for scans, special handling for tables — inspect extractions before indexing</li><li>Chunk strategies: fixed (naive) &lt; recursive (default) &lt; semantic/structural (precision) · sweet spot ~200–500 tokens + 50–100 overlap</li><li>Metadata per chunk (source, section, date, ACL) turns search into an enterprise system; deterministic IDs make updates and deletes clean</li></ul>
+<section class="notes"><h2>Parsing (per-format traps)</h2>
+<ul>
+<li><strong>PDF</strong>: layout ≠ reading order; multi-column scramble → layout-aware parser.</li>
+<li><strong>DOCX/PPTX/HTML</strong>: structured but noisy (text boxes, nav junk, boilerplate).</li>
+<li><strong>Scanned</strong>: OCR only — its accuracy is your ceiling; QC before indexing.</li>
+<li><strong>Tables</strong>: hardest — torn rows are unretrievable; serialize with headers or chunk whole.</li>
+</ul>
+<h2>Chunking strategies</h2>
+<table><tr><th>Strategy</th><th>How</th><th>When</th></tr><tr><td>Fixed</td><td>every N chars + overlap</td><td>demos only</td></tr><tr><td>Recursive</td><td>paragraphs → sentences → words</td><td><strong>default</strong></td></tr><tr><td>Semantic</td><td>cut where embedding distance peaks</td><td>precision, costs a pass</td></tr><tr><td>Structural</td><td>follow headings/sections</td><td>well-structured docs</td></tr></table>
+<h2>Size &amp; overlap</h2>
+<ul>
+<li>~200–500 tokens prose sweet spot; validate with golden questions.</li>
+<li>Overlap 50–100 tokens: no sentence lives in only one chunk.</li>
+</ul>
+<h2>Metadata per chunk</h2>
+<p>source · section · date · author · ACL → filtering, citations, security, freshness.</p>
+<h2>Changing documents</h2>
+<ul>
+<li>Deterministic IDs (doc:pos:hash) → upsert = clean replace.</li>
+<li>Diff at doc level; re-embed only changed docs.</li>
+<li>Deletes: cascade chunk removal — no zombie content.</li>
+</ul></section>
+<h2>Code: Ingestion pipeline: recursive chunks + metadata + incremental upsert</h2><pre><code>import hashlib
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,          # tokens ~ size dial: measure on golden Qs
+    chunk_overlap=80,        # stitches boundaries
+    separators=[&quot;\n## &quot;, &quot;\n# &quot;, &quot;\n\n&quot;, &quot;\n&quot;, &quot;. &quot;, &quot; &quot;],
+)
+
+def chunk_id(doc_id: str, pos: int, text: str) -&gt; str:
+    # deterministic → re-ingest of same doc REPLACES its chunks
+    h = hashlib.sha1(text.encode()).hexdigest()[:10]
+    return f&quot;{doc_id}:{pos}:{h}&quot;
+
+def ingest(doc_id: str, text: str, meta: dict):
+    seen = set()
+    for pos, chunk in enumerate(splitter.split_text(text)):
+        cid = chunk_id(doc_id, pos, chunk)
+        seen.add(cid)
+        vec = embed(chunk)
+        store.upsert(id=cid, vector=vec, payload={
+            &quot;text&quot;: chunk,
+            &quot;doc_id&quot;: doc_id,
+            &quot;source&quot;: meta[&quot;source&quot;],     # citation
+            &quot;section&quot;: meta.get(&quot;section&quot;),  # structural
+            &quot;date&quot;: meta[&quot;date&quot;],           # freshness filter
+            &quot;acl&quot;: meta[&quot;acl&quot;],             # security filter (GA-17)
+        })
+    # chunks previously stored for this doc but not in `seen` → delete
+    store.delete_where({&quot;doc_id&quot;: doc_id}, not_ids=seen)
+
+# Same code path handles create, update, AND delete:
+# changed doc → new chunk hashes → old ones purged by the last line.</code></pre>
+<nav class="pn"><a href="/learn/GA-13.html">← RAG Architecture</a><a href="/learn/GA-15.html">Retrieval Quality →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

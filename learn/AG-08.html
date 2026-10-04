@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Server Development — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Time to BUILD: a production MCP server — typed tools, exposed resources, tests, an Inspector, deployment with auth, and observability. FastMCP makes the first 80% minutes, not weeks. Learn MCP Server Development (FastMCP: first server, Resources &amp; typed design, Testing with the Inspector, Deploym…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-08.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="MCP Server Development — Agentic AI for software architects | LKG School"><meta property="og:description" content="Time to BUILD: a production MCP server — typed tools, exposed resources, tests, an Inspector, deployment with auth, and observability. FastMCP makes the first 80% minutes, not weeks. Learn MCP Server Development (FastMCP: first server, Resources &amp; typed design, Testing with the Inspector, Deploym…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-08.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "MCP Server Development", "description": "Time to BUILD: a production MCP server — typed tools, exposed resources, tests, an Inspector, deployment with auth, and observability. FastMCP makes the first 80% minutes, not weeks. Learn MCP Server Development (FastMCP: first server, Resources & typed design, Testing with the Inspector, Deploym…", "url": "https://lkgschool.in/learn/AG-08.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["FastMCP: first server", "Resources & typed design", "Testing with the Inspector", "Deployment: HTTP, auth, observability"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "MCP Server Development", "item": "https://lkgschool.in/learn/AG-08.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 50</nav>
+<h1>MCP Server Development</h1>
+<p class="lede">Time to BUILD: a production MCP server — typed tools, exposed resources, tests, an Inspector, deployment with auth, and observability. <strong>FastMCP makes the first 80% minutes, not weeks.</strong></p>
+<a class="cta" href="/?reel=AG-08">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>FastMCP: first server</li><li>Resources &amp; typed design</li><li>Testing with the Inspector</li><li>Deployment: HTTP, auth, observability</li></ol>
+<h2>Remember this</h2><ul><li>FastMCP: typed functions + docstrings become tools/resources in minutes — your signature is the schema, your docstring is the model&#x27;s documentation</li><li>Design small surfaces: resources for data, prompts for repeated shapes, explicit handles for state; test with the Inspector plus scripted protocol tests</li><li>Remote deployment = operating a service: streamable HTTP, spec-aligned OAuth, per-call observability, pinned revisions and deprecation tracking</li></ul>
+<section class="notes"><h2>FastMCP</h2>
+<ul>
+<li>Decorators: typed function → tool; docstring → description; Pydantic → schema.</li>
+<li>C# SDK mirrors it (attributes + ASP.NET hosting).</li>
+<li>You still own AG-02: descriptions, validation, actionable errors.</li>
+</ul>
+<h2>Design</h2>
+<ul>
+<li>Resources with mental-model URIs · prompts for repeated shapes · structured outputs.</li>
+<li>Small surfaces: ~5 legible tools; split by domain.</li>
+<li>Stateless: explicit handles as arguments for multi-call state.</li>
+</ul>
+<h2>Testing</h2>
+<ul>
+<li>MCP Inspector: interactive poke-list-invoke loop — test the model&#x27;s experience.</li>
+<li>Scripted: in-process sessions in pytest — schema/docs drift, failure quality, round-trips.</li>
+</ul>
+<h2>Deployment</h2>
+<ul>
+<li>streamable HTTP · load balancer friendly · spec-aligned OAuth (or gateway).</li>
+<li>Observability: per-call structured logs (hash args, log user), RED metrics, cost/call.</li>
+<li>Pin spec revision · track deprecations · backward-compatible surface.</li>
+</ul></section>
+<h2>Code: The same server, deployed: HTTP + logging + auth hook</h2><pre><code>from mcp.server.fastmcp import FastMCP
+import logging, structlog
+
+log = structlog.get_logger(&quot;mcp.orders&quot;)
+mcp = FastMCP(&quot;orders&quot;)
+
+@mcp.tool()
+def search_orders(customer: str, limit: int = 5) -&gt; list[dict]:
+    &quot;&quot;&quot;Search orders by customer name fragment … (same docstring!)&quot;&quot;&quot;
+    log.info(&quot;tool.call&quot;, tool=&quot;search_orders&quot;,
+             arg_hash=hash((customer, limit)),      # not raw args
+             user=current_user_id())               # auth context from hook
+    ...
+
+# Local:   mcp.run()                          # stdio
+# Remote:  mcp.run(transport=&quot;http&quot;,
+#                  host=&quot;0.0.0.0&quot;, port=8080,
+#                  auth=oauth_provider)       # spec-aligned OAuth
+#
+# Ops:  per-call logs · latency histograms · error-rate alerts ·
+#       cost-per-tool dashboards · pinned spec revision in CI</code></pre>
+<nav class="pn"><a href="/learn/AG-07.html">← MCP Security</a><a href="/learn/AG-09.html">Project: Excel MCP Server →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

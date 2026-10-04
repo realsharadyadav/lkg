@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>File Formats — Python for C# / .NET developers | LKG School</title>
+<meta name="description" content="Formats are contracts. CSV lies, JSON flexes, Parquet tells the truth — choose per workload. Learn File Formats (CSV pitfalls, JSON &amp; JSONL, Parquet, Parquet partitioning) in a short animated reel with notes, recap and quiz.">
+<link rel="canonical" href="https://lkgschool.in/learn/PY-17.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="File Formats — Python for C# / .NET developers | LKG School"><meta property="og:description" content="Formats are contracts. CSV lies, JSON flexes, Parquet tells the truth — choose per workload. Learn File Formats (CSV pitfalls, JSON &amp; JSONL, Parquet, Parquet partitioning) in a short animated reel with notes, recap and quiz.">
+<meta property="og:url" content="https://lkgschool.in/learn/PY-17.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "File Formats", "description": "Formats are contracts. CSV lies, JSON flexes, Parquet tells the truth — choose per workload. Learn File Formats (CSV pitfalls, JSON & JSONL, Parquet, Parquet partitioning) in a short animated reel with notes, recap and quiz.", "url": "https://lkgschool.in/learn/PY-17.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["CSV pitfalls", "JSON & JSONL", "Parquet", "Parquet partitioning", "Arrow / PyArrow", "Parquet vs DB vs Vector"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "File Formats", "item": "https://lkgschool.in/learn/PY-17.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Python for Data › Reel 19</nav>
+<h1>File Formats</h1>
+<p class="lede">Formats are <strong>contracts</strong>. CSV lies, JSON flexes, Parquet tells the truth — choose per workload.</p>
+<a class="cta" href="/?reel=PY-17">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>CSV pitfalls</li><li>JSON &amp; JSONL</li><li>Parquet</li><li>Parquet partitioning</li><li>Arrow / PyArrow</li><li>Parquet vs DB vs Vector</li></ol>
+<h2>Remember this</h2><ul><li>CSV: explicit encoding/dtypes always; JSON for APIs, JSONL for pipelines (streamable, corrupt-line-safe)</li><li>Parquet: columnar + typed + compressed; partition by filtered columns; Arrow = zero-copy memory glue</li><li>Three layers: DB for mutating truth, Parquet for bulk analytics, vector store for meaning</li></ul>
+<section class="notes"><h2>CSV pitfalls</h2>
+<ul>
+<li>No types, encoding landmines (utf-8 vs latin-1), delimiter variance, quoting traps.</li>
+<li>Prod rule: explicit <code>encoding</code>, <code>dtype</code>, <code>parse_dates</code> — never infer silently.</li>
+</ul>
+<h2>JSON &amp; JSONL</h2>
+<ul>
+<li>JSON: APIs, config, documents (nested, flexible).</li>
+<li><strong>JSONL</strong>: one JSON object per line — streamable, appendable, corrupt-line-safe.</li>
+<li>Compress text with gzip (<code>.jsonl.gz</code>).</li>
+</ul>
+<h2>Parquet</h2>
+<ul>
+<li>Columnar + typed schema + compressed (snappy/zstd). ~10x smaller, 10-50x faster analytics vs CSV.</li>
+<li><code>df.to_parquet(...)</code> / <code>pd.read_parquet(...)</code>.</li>
+</ul>
+<h2>Partitioning</h2>
+<ul>
+<li>Folder tree encodes column values (<code>year=2026/month=03/</code>) → engine prunes folders.</li>
+<li>Partition by <strong>filtered</strong> low-cardinality columns; avoid the small-files problem (target ~100MB-1GB files).</li>
+</ul>
+<h2>Arrow / PyArrow</h2>
+<ul>
+<li>Standard in-memory columnar layout → zero-copy between pandas/Polars/DuckDB/Spark.</li>
+<li>Powers pandas&#x27; Parquet reader; <code>pa.Table.from_pandas(df)</code> converts in μs.</li>
+</ul>
+<h2>Parquet vs DB vs Vector</h2>
+<table><tr><th>Job</th><th>Tool</th></tr><tr><td>Mutating transactional truth</td><td>Postgres / SQL Server</td></tr><tr><td>Bulk immutable analytics</td><td>Parquet (+ DuckDB)</td></tr><tr><td>Semantic similarity at scale</td><td>Vector store (Stage 4)</td></tr></table></section>
+<h2>Code: Formats in practice — CSV in, Parquet out, partitioned</h2><pre><code>import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
+
+# --- CSV: parse explicitly (no silent inference in prod) ----------
+dtypes = {&quot;amount&quot;: &quot;float64&quot;, &quot;status&quot;: &quot;category&quot;}
+df = pd.read_csv(&quot;events.csv&quot;, encoding=&quot;utf-8&quot;, dtype=dtypes,
+                 parse_dates=[&quot;created&quot;])
+
+# --- Parquet: typed + compressed -----------------------------------
+df.to_parquet(&quot;events.parquet&quot;, index=False, compression=&quot;snappy&quot;)
+# Typical result: 10x smaller than CSV, schema embedded, 10-50x faster reads
+
+# --- Partitioned dataset: folders as an index -----------------------
+table = pa.Table.from_pandas(df)
+pq.write_to_dataset(
+    table,
+    root_path=&quot;events_lake&quot;,
+    partition_cols=[&quot;status&quot;],       # year/month for time series
+)
+# → events_lake/status=P1/0000.parquet  events_lake/status=P2/...
+# DuckDB/pandas read only the partitions a filter touches
+
+# --- JSONL: the pipeline interchange --------------------------------
+with open(&quot;embeddings.jsonl&quot;, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+    for row in df.itertuples():
+        f.write(json.dumps({&quot;id&quot;: row.id, &quot;text&quot;: row.text}) + &quot;\n&quot;)
+# Read back with constant memory:
+# for line in open(&quot;embeddings.jsonl&quot;): rec = json.loads(line)</code></pre>
+<nav class="pn"><a href="/learn/PY-15.html">← pandas</a><a href="/learn/PY-18.html">DuckDB →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

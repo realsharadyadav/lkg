@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow Patterns — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="Five composable patterns — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — that cover most of what production agent systems actually do. Learn Workflow Patterns (Prompt chaining &amp; routing, Parallelization, Orchestrator-workers, Evaluator-optimizer) in a short anima…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-10.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="Workflow Patterns — Agentic AI for software architects | LKG School"><meta property="og:description" content="Five composable patterns — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — that cover most of what production agent systems actually do. Learn Workflow Patterns (Prompt chaining &amp; routing, Parallelization, Orchestrator-workers, Evaluator-optimizer) in a short anima…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-10.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "Workflow Patterns", "description": "Five composable patterns — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — that cover most of what production agent systems actually do. Learn Workflow Patterns (Prompt chaining & routing, Parallelization, Orchestrator-workers, Evaluator-optimizer) in a short anima…", "url": "https://lkgschool.in/learn/AG-10.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Prompt chaining & routing", "Parallelization", "Orchestrator-workers", "Evaluator-optimizer"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "Workflow Patterns", "item": "https://lkgschool.in/learn/AG-10.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Patterns + Frameworks › Reel 52</nav>
+<h1>Workflow Patterns</h1>
+<p class="lede">Five composable patterns — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — that cover <strong>most of what production agent systems actually do</strong>.</p>
+<a class="cta" href="/?reel=AG-10">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Prompt chaining &amp; routing</li><li>Parallelization</li><li>Orchestrator-workers</li><li>Evaluator-optimizer</li></ol>
+<h2>Remember this</h2><ul><li>Chaining decomposes hard tasks into testable steps with validation between; routing specializes via classification with a shared output contract</li><li>Parallelization: sectioning for throughput, voting for fuzzy-judgment reliability — with a designed merge and completeness checks</li><li>Orchestrator-workers for tasks that can&#x27;t be pre-split; evaluator-optimizer for checkable quality — with actionable critiques and honest exits</li></ul>
+<section class="notes"><h2>Chaining &amp; routing</h2>
+<ul>
+<li>Chain: extract → analyze → format; validate BETWEEN steps.</li>
+<li>Router: classify → specialized handler; shared output contract.</li>
+<li>Conditional logic in prose = smell; in code = architecture.</li>
+</ul>
+<h2>Parallelization</h2>
+<ul>
+<li>Sectioning: split → gather → concat; assert completeness at merge.</li>
+<li>Voting: N runs → aggregate; for fuzzy judgments; design aggregator + tie policy.</li>
+<li>Formal criteria → mechanical verification, not votes.</li>
+</ul>
+<h2>Orchestrator-workers</h2>
+<ul>
+<li>Dynamic decomposition when slices aren&#x27;t knowable upfront.</li>
+<li>Compress worker returns; budget rounds/workers/cost.</li>
+<li>Prefer static sectioning when the split is knowable.</li>
+</ul>
+<h2>Evaluator-optimizer</h2>
+<ul>
+<li>Generate → critique → refine; mechanical checks first.</li>
+<li>Actionable critiques; per-dimension evaluators; honest exits with history.</li>
+</ul></section>
+<h2>Code: Evaluator-optimizer, implemented</h2><pre><code>async def refine_until_pass(spec: str, checks: list[callable],
+                              max_rounds: int = 3) -&gt; Draft:
+    draft = await llm(GEN_PROMPT, spec=spec)
+    history = []
+
+    for round in range(max_rounds):
+        # mechanical checks first — free and honest
+        failures = [c(draft) for c in checks if not c(draft)]
+        if not failures:
+            return draft
+
+        # model judge for the non-mechanical criteria
+        critique = await llm(CRITIQUE_PROMPT, draft=draft,
+                             failures=failures)
+        history.append({&quot;round&quot;: round, &quot;critique&quot;: critique})
+        draft = await llm(REFINE_PROMPT, spec=spec, draft=draft,
+                          feedback=critique)          # fix ONLY the gaps
+
+    # budget out → escalate with full history
+    await escalate_to_human(draft, history)
+    return draft   # labeled &#x27;unrefined&#x27; — never silently final</code></pre>
+<nav class="pn"><a href="/learn/AG-09.html">← Project: Excel MCP Server</a><a href="/learn/AG-11.html">Agent Reasoning →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>

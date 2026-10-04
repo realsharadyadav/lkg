@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Spec Evolution — Agentic AI for software architects | LKG School</title>
+<meta name="description" content="July 28, 2026: MCP&#x27;s biggest revision ever — the protocol went stateless. Sessions, the handshake, and server-initiated callbacks are gone. Here&#x27;s what changed and why it matters. Learn MCP Spec Evolution (Versioned specs, The stateless core, What replaced the old features, Extensions, auth &amp; lif…">
+<link rel="canonical" href="https://lkgschool.in/learn/AG-05.html">
+<meta property="og:type" content="article"><meta property="og:site_name" content="LKG School">
+<meta property="og:title" content="MCP Spec Evolution — Agentic AI for software architects | LKG School"><meta property="og:description" content="July 28, 2026: MCP&#x27;s biggest revision ever — the protocol went stateless. Sessions, the handshake, and server-initiated callbacks are gone. Here&#x27;s what changed and why it matters. Learn MCP Spec Evolution (Versioned specs, The stateless core, What replaced the old features, Extensions, auth &amp; lif…">
+<meta property="og:url" content="https://lkgschool.in/learn/AG-05.html"><meta property="og:image" content="https://lkgschool.in/img/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/img/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "LearningResource", "name": "MCP Spec Evolution", "description": "July 28, 2026: MCP's biggest revision ever — the protocol went stateless. Sessions, the handshake, and server-initiated callbacks are gone. Here's what changed and why it matters. Learn MCP Spec Evolution (Versioned specs, The stateless core, What replaced the old features, Extensions, auth & lif…", "url": "https://lkgschool.in/learn/AG-05.html", "learningResourceType": "Video lesson", "educationalLevel": "Intermediate", "teaches": ["Versioned specs", "The stateless core", "What replaced the old features", "Extensions, auth & lifecycle"], "inLanguage": "en", "isAccessibleForFree": true, "provider": {"@type": "Organization", "name": "LKG School", "url": "https://lkgschool.in"}}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Course", "item": "https://lkgschool.in/learn/"}, {"@type": "ListItem", "position": 2, "name": "MCP Spec Evolution", "item": "https://lkgschool.in/learn/AG-05.html"}]}]</script>
+</head><body><main>
+<nav class="crumbs"><a href="/learn/">Course</a> › Agents Core + MCP › Reel 47</nav>
+<h1>MCP Spec Evolution</h1>
+<p class="lede">July 28, 2026: MCP&#x27;s biggest revision ever — <strong>the protocol went stateless</strong>. Sessions, the handshake, and server-initiated callbacks are gone. Here&#x27;s what changed and why it matters.</p>
+<a class="cta" href="/?reel=AG-05">▶ Watch this reel</a>
+<h2>What you'll learn</h2><ol><li>Versioned specs</li><li>The stateless core</li><li>What replaced the old features</li><li>Extensions, auth &amp; lifecycle</li></ol>
+<h2>Remember this</h2><ul><li>2026-07-28: stateless core — handshake and sessions removed; every request self-contained with its own metadata; round-robin scaling</li><li>MRTR replaces all server-initiated callbacks: interim input_required result → client gathers answers → original call re-issued with responses</li><li>Roots, Sampling, Logging + HTTP+SSE deprecated (12-month floor); Tasks and MCP Apps graduated into a reverse-DNS extensions framework; OAuth hardened</li></ul>
+<section class="notes"><h2>Versioning</h2>
+<ul>
+<li>Date-stamped revisions (2025-03-26 … 2025-11-25 → <strong>2026-07-28</strong>), negotiated per connection.</li>
+<li>Fifth revision; largest since auth; Linux Foundation (Agentic AI Foundation) governance.</li>
+</ul>
+<h2>Stateless core</h2>
+<ul>
+<li>REMOVED: sessions, <code>Mcp-Session-Id</code>, initialize/initialized handshake, ping, SSE resumability.</li>
+<li>Every request self-contained: version + identity + capabilities in <code>_meta</code>.</li>
+<li>Round-robin scaling; state → explicit handles in tool args (visible to the model).</li>
+</ul>
+<h2>MRTR replaces server-initiated callbacks</h2>
+<ul>
+<li>elicitation / sampling / roots → one pattern: <code>resultType: input_required</code> → client gathers → retry with <code>inputResponses</code>.</li>
+</ul>
+<h2>Deprecated (12-month floor)</h2>
+<ul>
+<li>Roots, Sampling, Logging, HTTP+SSE transport, OAuth DCR (→ Client ID Metadata Documents).</li>
+</ul>
+<h2>New structure</h2>
+<ul>
+<li>Extensions framework (reverse-DNS, versioned): Tasks (poll <code>tasks/get</code>), MCP Apps (sandboxed UI), Enterprise Managed Auth.</li>
+<li>Hardened OAuth (RFC 9207 issuer binding) · cacheable catalogs (ttlMs/cacheScope) · Mcp-Method/Name header routing.</li>
+<li>Tier 1 SDKs: TypeScript, Python, Go, C# (Rust beta).</li>
+</ul></section>
+<h2>Code: The migration checklist for a 2025-era server</h2><pre><code># From 2025-11-25 → 2026-07-28 — check your servers against this:
+
+# REMOVED (no grace period):
+#  □ Mcp-Session-Id header + any server-side session store
+#  □ initialize/initialized handshake → send version/caps per-request in _meta
+#  □ notifications/initialized, ping, logging/setLevel
+#  □ HTTP GET endpoint + resources/subscribe → subscriptions/listen
+
+# DEPRECATED (≥12 months, do NOT adopt in new code):
+#  □ roots/list            → explicit path arguments
+#  □ sampling/createMessage → MRTR input_required
+#  □ elicitation           → MRTR input_required
+#  □ logging               → server-side observability (AG-08)
+#  □ HTTP+SSE transport    → Streamable HTTP
+#  □ OAuth Dynamic Client Registration → Client ID Metadata Documents
+
+# NEW (adopt):
+#  □ Mcp-Method / Mcp-Name headers for gateway routing
+#  □ ttlMs/cacheScope on capability catalogs
+#  □ Long-running work → io.modelcontextprotocol/tasks (poll tasks/get)
+#  □ Rich UI results → MCP Apps extension (sandboxed iframe)</code></pre>
+<nav class="pn"><a href="/learn/AG-04.html">← MCP Concepts</a><a href="/learn/AG-06.html">Using Existing MCP Servers →</a></nav>
+<footer><a href="/">LKG School</a> · <a href="/learn/">Full course</a> · <a href="mailto:info@lkgschool.in">info@lkgschool.in</a></footer>
+</main></body></html>
