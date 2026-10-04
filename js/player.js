@@ -29,9 +29,7 @@
       const sc = this.data.scenes;
       const live = this.state === 'scene';
       const paras = live ? sc.map(s => strip(s.narration || s.title || '')) : [this._capFull];
-      const wasPaused = this.paused;
-      if (!wasPaused && (live || this.state === 'recap' || this.state === 'hook')) this._pause();
-      SS.ui.openScript(this.data.topic, paras, live ? this.sceneIdx : 0, () => { if (!wasPaused && this.paused) this._resume(); });
+      this.holdWhile(done => SS.ui.openScript(this.data.topic, paras, live ? this.sceneIdx : 0, done));
     }
 
     _buildOverlays() {
@@ -134,7 +132,7 @@
       // advance only when the hook line has finished (+ a short beat); the timer is just a safety net
       const hookText = strip(this.data.hook);
       this.speech = this._voice(this.data.id + '/hook', hookText, () => this._after(450, () => this._startScenes()));
-      this._after(SS.narrator.estMs(hookText) * 2.2 + 3000, () => { if (this.state === 'hook') this._startScenes(); });
+      this._after(this._safety(hookText, 3000), () => { if (this.state === 'hook') this._startScenes(); });
     }
     /* drag the bottom bar to seek inside the current narration clip */
     _bindScrub() {
@@ -167,6 +165,19 @@
       if (idx >= n) return this._recap();
       this.state = 'scene'; this.sceneIdx = idx;
       this._scene();
+    }
+
+    /* fallback timer that only fires if a clip never reports its end; slower speeds need longer */
+    _safety(text, extra) {
+      const sp = (SS.audio && SS.audio.speed) || 1;
+      return SS.narrator.estMs(text) * 2.2 / Math.min(1, sp) + extra;
+    }
+
+    /* pause while a sheet (code / notes / script) is open, resume when it closes */
+    holdWhile(open) {
+      const wasPaused = this.paused;
+      if (!wasPaused && (this.state === 'scene' || this.state === 'recap' || this.state === 'hook')) this._pause();
+      open(() => { if (!wasPaused && this.paused) this._resume(); });
     }
 
     /* narrate one clip and drive the bottom audio progress bar */
@@ -233,7 +244,7 @@
       if (sc.narration) {
         const key = `${this.data.id}/s${this.sceneIdx}`;
         this.speech = this._voice(key, strip(sc.narration), () => this._after(600, go));
-        this._after(SS.narrator.estMs(sc.narration) * 2.2 + 3100, go);
+        this._after(this._safety(sc.narration, 3100), go);
       } else {
         this._after(4500, go);
       }
@@ -257,7 +268,7 @@
         (this.data.recap[2] ? '. And finally: ' + strip(this.data.recap[2]) : '') +
         '. Now — a quick check.';
       this.speech = this._voice(this.data.id + '/recap', say, () => this._after(700, () => this._quiz()));
-      this._after(SS.narrator.estMs(say) * 2.2 + 3000, () => this._quiz());
+      this._after(this._safety(say, 3000), () => this._quiz());
     }
 
     _quiz() {
@@ -396,7 +407,7 @@
       this.speech = SS.audio
         ? SS.audio.speak(`${this.data.id}/s${this.sceneIdx}`, strip(sc.narration), { onend: go })
         : SS.narrator.speak(strip(sc.narration), { onend: go });
-      this._after(SS.narrator.estMs(sc.narration) * 2.2 + 2500, go);
+      this._after(this._safety(sc.narration, 2500), go);
     }
 
     like(x, y) {

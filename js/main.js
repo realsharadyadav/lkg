@@ -108,12 +108,13 @@
 
   SS.ui = {
     toast, openSheet, closeSheets,
-    openCode(data) {
-      if (!data.code) return;
+    openCode(data, onClose) {
+      if (!data.code) { onClose && onClose(); return; }
       $('#codeTitle').textContent = data.code.title;
       $('#codeBody').innerHTML = py(data.code.body);
       $('#codeNotes').innerHTML = (data.code.annot || []).map(a => `<div>💡 ${a}</div>`).join('');
       openSheet('code');
+      onSheetClose = onClose || null;
     },
     openScript(title, paras, cur, onClose) {
       $('#scriptTitle').textContent = '📜 ' + title;
@@ -136,11 +137,12 @@
       openSheet('map');
       const c = $('#mapBody .cur'); if (c) requestAnimationFrame(() => c.scrollIntoView({ block: 'center' }));
     },
-    openNotes(data) {
-      if (!data.notes) return;
+    openNotes(data, onClose) {
+      if (!data.notes) { onClose && onClose(); return; }
       $('#notesTitle').textContent = `📄 ${data.topic} — full notes`;
       $('#notesBody').innerHTML = md(data.notes);
       openSheet('notes');
+      onSheetClose = onClose || null;
     }
   };
   SS.fx = { heart, confetti };
@@ -178,6 +180,7 @@
     const mute = $('#muteSel');
     mute.checked = SS.narrator.muted;
     mute.addEventListener('change', () => { SS.narrator.setMuted(mute.checked); document.dispatchEvent(new CustomEvent('ss:mute')); });
+    document.addEventListener('ss:mute', () => { mute.checked = SS.narrator.muted; });
 
     const expr = $('#exprSel'), exprVal = $('#exprVal');
     expr.value = SS.narrator.expr;
@@ -206,7 +209,19 @@
       closeSheets(); SS.feed.goTo(b.dataset.id);
     });
 
-    $('#settingsBtn').addEventListener('click', () => openName === 'settings' ? closeSheets() : openSheet('settings'));
+    const fillStats = () => {
+      const ids = SS.catalog.reels.map(r => r.id);
+      $('#stDone').textContent = SS.state.completedCount(ids) + '/' + ids.length;
+      $('#stStreak').textContent = SS.state.streak();
+      $('#stXp').textContent = SS.state.xp();
+    };
+    $('#settingsBtn').addEventListener('click', () => {
+      if (openName === 'settings') return closeSheets();
+      fillStats();
+      const p = SS.feed.activePlayer();   // reading settings pauses the reel too
+      if (p) p.holdWhile(done => { openSheet('settings'); onSheetClose = done; });
+      else openSheet('settings');
+    });
     $('#aboutBtn').addEventListener('click', () => openSheet('about'));
     $('#resetBtn').addEventListener('click', () => {
       if (confirm('Reset all progress, likes and streak on this device?')) { SS.state.reset(); location.reload(); }

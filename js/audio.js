@@ -12,6 +12,9 @@
   el.preload = 'auto';
   el.setAttribute('playsinline', '');
   let token = 0, unlocked = false;
+  // mute/unmute takes effect on the clip that is playing right now (timing keeps going)
+  const syncMute = () => { el.muted = !!SS.narrator.muted; };
+  document.addEventListener('ss:mute', syncMute);
   const speed = () => SS.state.prefs.speed || 1;
   const SILENT = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA';
 
@@ -55,6 +58,7 @@
     };
     el.onended = () => { if (!mine()) return; cb.onprogress && cb.onprogress(1); ok(); };
     el.onerror = () => fail();
+    syncMute();
     el.src = url;
     const p = el.play();
     if (p && p.catch) p.catch(err => { if (err && err.name === 'AbortError') return; fail(err); });
@@ -62,7 +66,11 @@
       cancel() { if (mine()) { settled = true; try { el.pause(); } catch (e) {} } },
       seek(f) { if (mine() && isFinite(el.duration) && el.duration > 0) el.currentTime = Math.max(0, Math.min(.999, f)) * el.duration; },
       pause() { if (mine()) try { el.pause(); } catch (e) {} },
-      resume() { if (!mine() || settled || el.ended) return; const r = el.play(); if (r && r.catch) r.catch(err => fail(err)); }
+      resume() {
+        if (!mine() || settled || el.ended) return;
+        el.currentTime = Math.max(0, el.currentTime - 2);   // replay the last 2s for context
+        const r = el.play(); if (r && r.catch) r.catch(err => fail(err));
+      }
     };
   }
 
@@ -78,7 +86,7 @@
       return {
         cancel() { clearTimeout(t); clearInterval(iv); },
         pause() { paused = true; clearTimeout(t); left -= Date.now() - at; },
-        resume() { paused = false; at = Date.now(); t = setTimeout(() => { clearInterval(iv); cb.onend && cb.onend(); }, Math.max(0, left)); }
+        resume() { paused = false; left = Math.min(ms, left + 2000); at = Date.now(); t = setTimeout(() => { clearInterval(iv); cb.onend && cb.onend(); }, Math.max(0, left)); }
       };
     }
     // clip missing -> browser voice; the handle follows whichever is active
@@ -101,6 +109,7 @@
   SS.audio = {
     speak,
     unlock,
+    get speed() { return speed(); },
     setSpeed(v) { SS.state.prefs.speed = v; SS.state.save(); try { el.playbackRate = v; } catch (e) {} }
   };
 })();

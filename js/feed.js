@@ -52,9 +52,9 @@
     rail.addEventListener('click', e => e.stopPropagation());
     rail.querySelector('.rail-like').addEventListener('click', e => { const r = e.target.closest('.rail-btn').getBoundingClientRect(); player.like(r.left + r.width / 2, r.top + r.height / 2); });
     const codeBtn = rail.querySelector('.rail-code');
-    if (codeBtn) codeBtn.addEventListener('click', () => SS.ui.openCode(data));
+    if (codeBtn) codeBtn.addEventListener('click', () => player.holdWhile(done => SS.ui.openCode(data, done)));
     const notesBtn = rail.querySelector('.rail-notes');
-    if (notesBtn) notesBtn.addEventListener('click', () => SS.ui.openNotes(data));
+    if (notesBtn) notesBtn.addEventListener('click', () => player.holdWhile(done => SS.ui.openNotes(data, done)));
     rail.querySelector('.rail-mute').addEventListener('click', () => {
       SS.narrator.setMuted(!SS.narrator.muted);
       document.dispatchEvent(new CustomEvent('ss:mute'));
@@ -115,7 +115,7 @@
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if ((Math.abs(dx) > 12 || Math.abs(dy) > 12) && lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-      if (!swipeFired && dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.6 && player.data.code) { swipeFired = true; SS.ui.openCode(player.data); }
+      if (!swipeFired && dx < -70 && Math.abs(dx) > Math.abs(dy) * 1.6 && player.data.code) { swipeFired = true; player.holdWhile(done => SS.ui.openCode(player.data, done)); }
     });
     const up = e => {
       if (!down) return;
