@@ -22,70 +22,114 @@
   const feedsEl = $('#feeds'), topEl = $('#topbar');
   const appW = () => $('#app').clientWidth || innerWidth;
   let settleTimer = 0;
-  function setSide(name, p, animate) {         // p: 0 = closed … 1 = open
+  const EASE = 'cubic-bezier(.22,1,.36,1)';
+  function setSide(name, p, dur) {             // p: 0 = closed … 1 = open; dur in s (0 = follow the finger)
     p = Math.max(0, Math.min(1, p));
     const dir = SIDE[name], el = sheets[name];
-    const tr = animate ? '' : 'none';
+    const tr = dur ? `transform ${dur}s ${EASE}, opacity ${dur}s ${EASE}, border-radius ${dur}s ${EASE}` : 'none';
     el.style.transition = feedsEl.style.transition = topEl.style.transition = scrim.style.transition = tr;
     el.style.transform = `translateX(${dir * (1 - p) * 100}%)`;
-    feedsEl.style.transform = topEl.style.transform = p ? `translateX(${-dir * p * 30}%)` : '';
-    scrim.style.opacity = String(p * 0.28);
+    // the reel recedes: slides aside, shrinks a touch and rounds its corners (depth, like iOS)
+    const back = p ? `translateX(${-dir * p * 30}%) scale(${1 - p * 0.06})` : '';
+    feedsEl.style.transform = topEl.style.transform = back;
+    feedsEl.style.borderRadius = p ? (p * 28) + 'px' : '';
+    scrim.style.opacity = String(p * 0.3);
     el.style.visibility = 'visible';
   }
-  function settleSide(name, open) {
+  // flick speed (px/ms) shortens the settle: a fast swipe lands fast, a slow drag eases in
+  const durFor = v => Math.max(0.26, Math.min(0.5, 0.5 - Math.abs(v || 0) * 0.12));
+  function settleSide(name, open, v) {
     clearTimeout(settleTimer);
-    setSide(name, open ? 1 : 0, true);
+    setSide(name, open ? 1 : 0, durFor(v));
     if (!open) settleTimer = setTimeout(() => {     // fully closed: drop the transforms
-      feedsEl.style.transform = topEl.style.transform = ''; scrim.style.opacity = ''; sheets[name].style.visibility = '';
-    }, 460);
+      feedsEl.style.transform = topEl.style.transform = feedsEl.style.borderRadius = ''; scrim.style.opacity = '';
+      sheets[name].style.visibility = '';
+    }, 520);
   }
   function openSheet(name) {
     fireClose();
     if (openName && SIDE[openName] && openName !== name) settleSide(openName, false);
     Object.values(sheets).forEach(s => s.classList.remove('open'));
     sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
-    if (SIDE[name]) settleSide(name, true);
+    if (SIDE[name]) {
+      // opened by a button: content glides in a beat after the page
+      sheets[name].classList.remove('glide'); void sheets[name].offsetWidth; sheets[name].classList.add('glide');
+      settleSide(name, true);
+    }
   }
-  function closeSheets() {
-    if (openName && SIDE[openName]) settleSide(openName, false);
+  function closeSheets(v) {
+    if (openName && SIDE[openName]) settleSide(openName, false, typeof v === 'number' ? v : 0);
     Object.values(sheets).forEach(s => s.classList.remove('open')); scrim.classList.remove('on'); openName = null; fireClose();
   }
-  scrim.addEventListener('click', closeSheets);
+  scrim.addEventListener('click', () => closeSheets());
 
-  /* finger-driven drag, used from the reel (to open) and from the panel (to close) */
-  const drag = {
-    start(name) { clearTimeout(settleTimer); if (openName && openName !== name) closeSheets(); },
-    move(name, p) { setSide(name, p, false); },
-    end(name, p, flick, player) {
-      // open when dragged past a third, or flicked quickly in the opening direction
-      if (p > 0.33 || flick > 0.45) {
-        Object.values(sheets).forEach(s => s.classList.remove('open'));
-        sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
-        settleSide(name, true);
-        if (player) player.holdWhile(done => { onSheetClose = done; });
-      } else settleSide(name, false);
-    }
-  };
-  // drag an open side panel back the way it came (not while scrolling code sideways)
-  Object.keys(SIDE).forEach(name => {
-    const el = sheets[name], dir = SIDE[name];
-    let st = null;
-    el.addEventListener('pointerdown', e => { st = e.target.closest('pre, table, select, input') ? null : { x: e.clientX, y: e.clientY, t: performance.now(), on: false }; });
-    el.addEventListener('pointermove', e => {
-      if (!st || openName !== name) return;
-      const dx = e.clientX - st.x, dy = e.clientY - st.y;
-      if (!st.on) { if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3 && dx * dir > 0) st.on = true; else return; }
-      setSide(name, 1 - Math.max(0, dx * dir) / appW(), false);
-    });
-    const up = e => {
-      if (!st) return;
-      const was = st; st = null;
-      if (!was.on) return;
-      const dx = (e.clientX - was.x) * dir, v = dx / Math.max(1, performance.now() - was.t);
-      if (dx / appW() > 0.3 || v > 0.45) closeSheets(); else settleSide(name, true);
+  /* Horizontal swipe tracker. Uses touch events on phones so it can claim the gesture
+     (preventDefault) the moment it turns sideways; otherwise the browser grabs it as a
+     scroll and cancels the swipe — the "had to swipe twice" bug. Mouse uses pointer events. */
+  function hswipe(el, o) {
+    let s = null;
+    const begin = (x, y, target) => { s = o.canStart(target) ? { x, y, lx: x, lt: performance.now(), v: 0, name: null, dead: false } : null; };
+    const track = (x, y) => {                       // returns true while we own the gesture
+      if (!s || s.dead) return false;
+      const dx = x - s.x, dy = y - s.y, ax = Math.abs(dx), ay = Math.abs(dy);
+      if (!s.name) {
+        if (ax < 8 && ay < 8) return ax > ay && ax > 2;          // still deciding: hold off scrolling if it leans sideways
+        if (ax > ay * 1.1) { s.name = o.decide(dx); if (!s.name) { s.dead = true; return false; } }
+        else { s.dead = true; return false; }
+      }
+      const now = performance.now(), dt = now - s.lt;
+      if (dt > 0) { s.v = 0.7 * ((x - s.lx) / dt) + 0.3 * s.v; s.lx = x; s.lt = now; }
+      o.move(s.name, dx);
+      return true;
     };
-    el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', () => { if (st && st.on) settleSide(name, true); st = null; });
+    const finish = x => {
+      if (s && s.name) o.end(s.name, x - s.x, performance.now() - s.lt > 120 ? 0 : s.v);
+      s = null;
+    };
+    el.addEventListener('touchstart', e => { if (e.touches.length !== 1) { s = null; return; } const t = e.touches[0]; begin(t.clientX, t.clientY, e.target); }, { passive: true });
+    el.addEventListener('touchmove', e => { if (!s) return; const t = e.touches[0]; if (track(t.clientX, t.clientY) && e.cancelable) e.preventDefault(); }, { passive: false });
+    el.addEventListener('touchend', e => finish(e.changedTouches[0].clientX));
+    el.addEventListener('touchcancel', () => { if (s && s.name) o.end(s.name, 0, 0); s = null; });
+    el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') begin(e.clientX, e.clientY, e.target); });
+    el.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' && s) track(e.clientX, e.clientY); });
+    el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') finish(e.clientX); });
+  }
+
+  /* reel → page: used by feed.js for every reel */
+  function bindReelSwipe(reelEl, player) {
+    const dirOf = n => n === 'code' ? -1 : 1;
+    hswipe(reelEl, {
+      canStart: t => !openName && !t.closest('.aud-hit, .chapbar, .quiz, .nextup, .done-pop'),
+      decide: dx => {
+        const n = dx < 0 ? 'code' : 'notes';
+        if (!player.data[n]) return null;
+        if (n === 'code') SS.ui.fillCode(player.data); else SS.ui.fillNotes(player.data);
+        clearTimeout(settleTimer);
+        sheets[n].classList.remove('glide');
+        return n;
+      },
+      move: (n, dx) => setSide(n, Math.max(0, dx * dirOf(n)) / appW(), 0),
+      end: (n, dx, v) => {
+        const p = Math.max(0, dx * dirOf(n)) / appW(), flick = v * dirOf(n);
+        if (p > 0.25 || flick > 0.3) {   // forgiving: a quarter of the way, or a light flick
+          Object.values(sheets).forEach(s => s.classList.remove('open'));
+          sheets[n].classList.add('open'); scrim.classList.add('on'); openName = n;
+          settleSide(n, true, v);
+          player.holdWhile(done => { onSheetClose = done; });
+          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+        } else settleSide(n, false, v);
+      }
+    });
+  }
+  // page → back to the reel: drag it the way it came
+  Object.keys(SIDE).forEach(name => {
+    const dir = SIDE[name];
+    hswipe(sheets[name], {
+      canStart: t => openName === name && !t.closest('pre, table, select, input'),
+      decide: dx => dx * dir > 0 ? name : null,
+      move: (n, dx) => setSide(n, 1 - Math.max(0, dx * dir) / appW(), 0),
+      end: (n, dx, v) => { if ((dx * dir) / appW() > 0.25 || v * dir > 0.3) closeSheets(v); else settleSide(n, true, v); }
+    });
   });
   // one-time hint about the side swipes
   try {
@@ -184,7 +228,7 @@
   }
 
   SS.ui = {
-    toast, openSheet, closeSheets, drag,
+    toast, openSheet, closeSheets, bindReelSwipe,
     fillCode(data) {
       $('#codeTitle').textContent = data.code.title;
       $('#codeBody').innerHTML = py(data.code.body);

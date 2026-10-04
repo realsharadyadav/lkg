@@ -61,6 +61,22 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   ok(await p.evaluate(() => document.querySelector('#notesSheet').classList.contains('open')), 'swipe right opens notes');
   await swipe(300, 100); await p.waitForTimeout(500);
   ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open') && !SS.feed.activePlayer().paused), 'swipe notes back closes it and resumes');
+  // real touch events (the phone path): a slightly diagonal swipe must still open notes in one go
+  const cdp = await p.context().newCDPSession(p);
+  const touch = async (type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+  await touch('touchStart', 100, 430);
+  for (let k = 1; k <= 10; k++) { await touch('touchMove', 100 + 20 * k, 430 + 2 * k); await p.waitForTimeout(16); }
+  await touch('touchEnd'); await p.waitForTimeout(600);
+  ok(await p.evaluate(() => document.querySelector('#notesSheet').classList.contains('open')), 'touch swipe (slightly diagonal) opens notes first time');
+  await touch('touchStart', 300, 430);
+  for (let k = 1; k <= 10; k++) { await touch('touchMove', 300 - 22 * k, 430); await p.waitForTimeout(16); }
+  await touch('touchEnd'); await p.waitForTimeout(600);
+  ok(await p.evaluate(() => !document.querySelector('#notesSheet').classList.contains('open')), 'touch swipe back closes notes');
+  await touch('touchStart', 200, 1600 / 2);
+  for (let k = 1; k <= 3; k++) { await touch('touchMove', 200 - 30 * k, 800); await p.waitForTimeout(16); }
+  await touch('touchEnd'); await p.waitForTimeout(80);   // quick short flick
+  ok(await p.evaluate(() => document.querySelector('#codePanel').classList.contains('open')), 'quick flick opens code');
+  await p.click('#codePanel .close-sheet'); await p.waitForTimeout(600);
   await swipe(300, 250); await p.waitForTimeout(600);   // too short: snaps back
   ok(await p.evaluate(() => !document.querySelector('#codePanel').classList.contains('open') && !SS.feed.activePlayer().paused), 'short drag snaps back closed');
   const i0 = await p.evaluate(() => SS.feed.activePlayer().sceneIdx);

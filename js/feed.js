@@ -61,6 +61,7 @@
       SS.ui.toast(SS.narrator.muted ? '🔇 Narration muted' : '🔊 Narration on');
     });
     attachGestures(el, player);
+    SS.ui.bindReelSwipe(el, player);
     return { el, player, id: data.id, data };
   }
 
@@ -104,46 +105,25 @@
   }
 
   function attachGestures(el, player) {
-    let down = null, lpTimer = null, lastTap = 0, swipeFired = false, toggled = false;
+    let down = null, lpTimer = null, lastTap = 0, toggled = false;
     el.addEventListener('pointerdown', e => {
       down = { x: e.clientX, y: e.clientY, t: performance.now(), long: false };
-      swipeFired = false;
       lpTimer = setTimeout(() => { if (down) { down.long = true; player.pressStart(); } }, 500);
     });
     el.addEventListener('pointermove', e => {
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       if ((Math.abs(dx) > 12 || Math.abs(dy) > 12) && lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-      // horizontal drag pulls a page in with the finger: ← code (from the right) · → notes (from the left)
-      if (!down.side && !swipeFired && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-        const name = dx < 0 ? 'code' : 'notes';
-        if (player.data[name]) {
-          down.side = name; swipeFired = true;
-          if (name === 'code') SS.ui.fillCode(player.data); else SS.ui.fillNotes(player.data);
-          SS.ui.drag.start(name);
-          try { el.setPointerCapture(e.pointerId); } catch (_) {}
-        }
-      }
-      if (down.side) {
-        const dir = down.side === 'code' ? -1 : 1;
-        down.p = Math.max(0, dx * dir) / (el.clientWidth || innerWidth);
-        SS.ui.drag.move(down.side, down.p);
-      }
     });
     const up = e => {
       if (!down) return;
       if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
-      if (down.side) {
-        const dir = down.side === 'code' ? -1 : 1;
-        const flick = (e.clientX - down.x) * dir / Math.max(1, performance.now() - down.t);   // px per ms
-        SS.ui.drag.end(down.side, down.p || 0, flick, player);
-        down = null; return;
-      }
+
       if (down.long) { player.pressEnd(); down = null; return; }
       const dt = performance.now() - down.t;
       const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
-      if (swipeFired || dist >= 14 || dt >= 400) return;
+      if (dist >= 14 || dt >= 400) return;
       // left / right edges step through scenes (Stories-style); centre pauses
       const box = el.getBoundingClientRect();
       const rx = (e.clientX - box.left) / box.width;
@@ -162,7 +142,6 @@
     };
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', () => {
-      if (down && down.side) SS.ui.drag.end(down.side, 0, 0, player);
       down = null; if (lpTimer) clearTimeout(lpTimer); player.pressEnd();
     });
   }
