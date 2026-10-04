@@ -215,6 +215,7 @@
 
   /* ---------------- audio unlock + boot ---------------- */
   function unlock() {
+    if (SS.audio && SS.audio.unlock) SS.audio.unlock();   // re-tries on every tap until iOS accepts
     if (SS.audioUnlocked) return;
     SS.audioUnlocked = true;
     SS.feed.kickActive();
