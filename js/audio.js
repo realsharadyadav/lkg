@@ -5,38 +5,64 @@
 (function () {
   const SS = window.SS;
 
-  let curAudio = null;
+  /* ONE shared <audio> element for every clip. iOS Safari only lets an element play
+     sound after it has been started from a tap; a fresh `new Audio()` per clip can be
+     refused once the tap is over (swipes, auto-advance). Unlock it once, reuse forever. */
+  const el = new Audio();
+  el.preload = 'auto';
+  el.setAttribute('playsinline', '');
+  let token = 0, unlocked = false;
   const speed = () => SS.state.prefs.speed || 1;
+  const SILENT = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA';
+
+  /* call from inside a tap handler */
+  function unlock() {
+    // a clip already playing means the element is unlocked; never interrupt it
+    if (unlocked || !el.paused) { unlocked = unlocked || !el.paused; return; }
+    const t = ++token;
+    try {
+      el.src = SILENT;
+      const p = el.play();
+      if (p && p.then) p.then(() => { unlocked = true; if (t === token) el.pause(); }).catch(() => {});
+      else unlocked = true;
+    } catch (e) {}
+    // iOS speechSynthesis (fallback voice) also needs one utterance from a tap
+    try { if ('speechSynthesis' in window && !SS.narrator.muted) speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {}
+  }
 
   function playFile(url, cb) {
-    const a = new Audio(url);
-    curAudio = a;
-    a.defaultPlaybackRate = a.playbackRate = speed();
-    a.preservesPitch = true; a.webkitPreservesPitch = true;
-    let settled = false;
-    const ok = () => { if (!settled) { settled = true; cb && cb.onend && cb.onend(); } };
-    const fail = () => {
-      if (settled) return;
+    const t = ++token;
+    let settled = false, raf = 0;
+    const mine = () => t === token;
+    const ok = () => { if (!settled && mine()) { settled = true; cb.onend && cb.onend(); } };
+    const fail = err => {
+      if (settled || !mine()) return;
       settled = true;
-      cb && cb.onerror ? cb.onerror() : null;
+      if (err && err.name === 'NotAllowedError' && cb.onblocked) cb.onblocked();
+      else if (cb.onerror) cb.onerror();
     };
     // smooth (rAF) progress for the bottom audio bar
-    let raf = 0;
     const tick = () => {
-      if (settled) return;
-      if (cb && cb.onprogress && isFinite(a.duration) && a.duration > 0) cb.onprogress(a.currentTime / a.duration);
+      if (settled || !mine()) return;
+      if (cb.onprogress && isFinite(el.duration) && el.duration > 0) cb.onprogress(el.currentTime / el.duration);
       raf = requestAnimationFrame(tick);
     };
-    a.addEventListener('playing', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(tick); });
-    a.addEventListener('ended', () => { if (cb && cb.onprogress) cb.onprogress(1); ok(); });
-    a.addEventListener('error', fail);
-    const p = a.play();
-    if (p && p.catch) p.catch(err => (err && err.name === 'NotAllowedError' && cb && cb.onblocked) ? (settled = true, cb.onblocked()) : fail());
+    el.onplaying = () => {
+      if (!mine()) return;
+      unlocked = true;
+      if (el.playbackRate !== speed()) el.playbackRate = speed();   // only touch the rate when it differs
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(tick);
+    };
+    el.onended = () => { if (!mine()) return; cb.onprogress && cb.onprogress(1); ok(); };
+    el.onerror = () => fail();
+    el.src = url;
+    const p = el.play();
+    if (p && p.catch) p.catch(err => { if (err && err.name === 'AbortError') return; fail(err); });
     return {
-      cancel() { settled = true; try { a.pause(); } catch (e) {} },
-      seek(f) { if (isFinite(a.duration) && a.duration > 0) a.currentTime = Math.max(0, Math.min(.999, f)) * a.duration; },
-      pause() { try { a.pause(); } catch (e) {} },
-      resume() { if (a.ended) return; const r = a.play(); if (r && r.catch) r.catch(() => {}); }
+      cancel() { if (mine()) { settled = true; try { el.pause(); } catch (e) {} } },
+      seek(f) { if (mine() && isFinite(el.duration) && el.duration > 0) el.currentTime = Math.max(0, Math.min(.999, f)) * el.duration; },
+      pause() { if (mine()) try { el.pause(); } catch (e) {} },
+      resume() { if (!mine() || settled || el.ended) return; const r = el.play(); if (r && r.catch) r.catch(err => fail(err)); }
     };
   }
 
@@ -74,6 +100,7 @@
 
   SS.audio = {
     speak,
-    setSpeed(v) { SS.state.prefs.speed = v; SS.state.save(); if (curAudio) curAudio.playbackRate = v; }
+    unlock,
+    setSpeed(v) { SS.state.prefs.speed = v; SS.state.save(); try { el.playbackRate = v; } catch (e) {} }
   };
 })();

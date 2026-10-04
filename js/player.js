@@ -349,6 +349,7 @@
     /* ---------- input ---------- */
     tap() {                  // returns true when it toggled pause (so a double-tap can undo it)
       if (this._pending) return false;
+      if (this.paused) { this._resume(); return true; }
       // the tap that unlocked audio / started the reel must not skip its intro
       if (this.state === 'hook') { if (performance.now() - (this._beganAt || 0) > 700) this.skipHook(); return false; }
       if (this.state === 'quiz' || this.state === 'done' || this.state === 'idle') return false;

@@ -1,5 +1,5 @@
 /* LKG service worker — app shell cache-first, reel JSON/audio cached at runtime */
-const SHELL = 'lkg-shell-v15';
+const SHELL = 'lkg-shell-v16';
 const SHELL_FILES = [
   '.', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'js/state.js', 'js/narrator.js', 'js/scenes.js', 'js/data.js', 'js/motion.js', 'js/audio.js', 'js/player.js', 'js/feed.js', 'js/main.js',
@@ -28,12 +28,9 @@ self.addEventListener('fetch', e => {
     })));
     return;
   }
-  // shell: cache-first with background refresh
-  e.respondWith(caches.match(e.request).then(hit => {
-    const fresh = fetch(e.request).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(SHELL).then(c => c.put(e.request, copy)); }
-      return res;
-    }).catch(() => hit);
-    return hit || fresh;
-  }));
+  // shell: network-first so a deploy shows up on the next load; cache only when offline
+  e.respondWith(fetch(e.request).then(res => {
+    if (res.ok) { const copy = res.clone(); caches.open(SHELL).then(c => c.put(e.request, copy)); }
+    return res;
+  }).catch(() => caches.match(e.request)));
 });
