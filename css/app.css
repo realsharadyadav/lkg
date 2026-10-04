@@ -668,3 +668,14 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 .hook-badge small{display:block;font-size:9px;font-weight:900;letter-spacing:1.4px;color:var(--muted);margin-bottom:2px}
 .hook-badge b{font-size:27px;font-weight:900;color:var(--accent-deep);letter-spacing:-1px;font-variant-numeric:tabular-nums}
 .hook-lottie{display:none}
+
+/* ---------- top bar capsule: crisp, no blur (blur smeared on iOS and left a patch behind the gear) ---------- */
+.top-right{padding:2px;background:rgba(255,255,255,.9);border:.5px solid rgba(28,43,30,.1);
+  box-shadow:0 1px 2px rgba(28,43,30,.06),0 4px 12px -6px rgba(28,43,30,.18);
+  -webkit-backdrop-filter:none;backdrop-filter:none}
+.top-right>*,.top-right .iconbtn{background:none!important;border:0!important;box-shadow:none!important;border-radius:999px!important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.top-right>*+*{border-left:0}
+.top-right .prog-pill,.top-right .streak{padding:3px 8px;font-size:12px}
+.top-right .iconbtn{width:28px;height:28px;font-size:16px}
+#topbar{background:linear-gradient(rgba(240,248,236,.95),rgba(240,248,236,0));padding-bottom:2px}
