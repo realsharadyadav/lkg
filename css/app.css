@@ -679,3 +679,11 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 .top-right .prog-pill,.top-right .streak{padding:3px 8px;font-size:12px}
 .top-right .iconbtn{width:28px;height:28px;font-size:16px}
 #topbar{background:linear-gradient(rgba(240,248,236,.95),rgba(240,248,236,0));padding-bottom:2px}
+
+/* ---------- top bar: no brand text, bigger capsule ---------- */
+#topbar .brand{display:none}
+.top-right{padding:3px}
+.top-right .prog-pill,.top-right .streak{padding:7px 14px;font-size:14px;gap:6px}
+.top-right .prog-pill .ico,.top-right .streak .ico{font-size:18px}
+.top-right .iconbtn{width:38px;height:38px;font-size:19px}
+.segs{padding-top:calc(54px + var(--sat))}
