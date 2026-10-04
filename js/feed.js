@@ -145,22 +145,6 @@
     el.addEventListener('pointercancel', () => { down = null; if (lpTimer) clearTimeout(lpTimer); player.pressEnd(); });
   }
 
-  /* warm the next reels' opening clips so swiping on never waits for audio */
-  const warmed = new Set();
-  function prefetchAhead(id) {
-    const c = navigator.connection;
-    if (c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || ''))) return;
-    const rs = SS.catalog.reels, i = rs.findIndex(r => r.id === id);
-    rs.slice(i + 1, i + 3).forEach(r => {
-      ['hook', 's0', 's1'].forEach(k => {
-        const u = `data/audio/${r.id}/${k}.mp3`;
-        if (warmed.has(u)) return;
-        warmed.add(u);
-        fetch(u, { priority: 'low' }).catch(() => warmed.delete(u));
-      });
-    });
-  }
-
   const items = [];       // parallel to catalog.reels: {meta, el, player, id}
   let feed = null;
 
@@ -221,7 +205,7 @@
             if (prev === next) return;
             feed._active = next;
             const item = items.find(it => it.el === next);
-            if (item && item.id) { SS.state.setLastReel(item.id); prefetchAhead(item.id); }
+            if (item && item.id) SS.state.setLastReel(item.id);
             items.forEach(it => {
               if (it.el === prev && it.player) it.player.stop();
               if (it.el === next && it.player) it.player.start();
