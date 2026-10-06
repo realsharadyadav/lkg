@@ -77,7 +77,14 @@
       let dead = false, iv = null;
       const kids = [...card.children];
       const durMs = ctx && ctx.durMs;
-      if (durMs && kids.length > 1) {
+      if (ctx && ctx.onProgress && kids.length > 1) {   // follow the narration itself, not a timer
+        let last = -1;
+        kids[0].classList.add('hot'); last = 0;
+        ctx.onProgress(f => {
+          const i = Math.min(kids.length - 1, Math.floor(f * kids.length));
+          if (i !== last) { last = i; kids.forEach((k, j) => k.classList.toggle('hot', j === i)); }
+        });
+      } else if (durMs && kids.length > 1) {
         const stepMs = Math.max(2000, durMs / kids.length);
         let i = 0;
         iv = setInterval(() => {
@@ -675,4 +682,25 @@
       return kill;
     }
   };
+
+  /* ---- generic micro-motion layer: wraps every scene type except story (which has its own cues) ----
+     Feeds narration progress to: a slow push-in (--p), a spotlight that walks the **highlights**,
+     and a lift that walks compare cards. Purely visual; idempotent so scrubbing back is safe. */
+  Object.keys(SS.scenes).forEach(type => {
+    if (type === 'story') return;
+    const orig = SS.scenes[type];
+    SS.scenes[type] = function (mount, sc, ctx) {
+      const subs = [];
+      const c2 = Object.assign({}, ctx, { onProgress: fn => subs.push(fn) });
+      const cleanup = orig.call(this, mount, sc, c2);
+      const inner = mount.querySelector('.scene-inner');
+      if (ctx && ctx.onProgress && inner) {
+        const hls = [...inner.querySelectorAll('.hl')], cards = [...inner.querySelectorAll('.cmp-card')];
+        const pick = (arr, cls, f) => { if (arr.length < 2 && cls !== 'spot') return; const i = Math.min(arr.length - 1, Math.floor(f * arr.length)); arr.forEach((e, j) => e.classList.toggle(cls, j === i)); };
+        inner.classList.add('mm');
+        ctx.onProgress(f => { inner.style.setProperty('--p', f); pick(hls, 'spot', f); pick(cards, 'lift', f); subs.forEach(fn => fn(f)); });
+      } else if (ctx && ctx.onProgress) subs.forEach(fn => ctx.onProgress(fn));
+      return cleanup;
+    };
+  });
 })();

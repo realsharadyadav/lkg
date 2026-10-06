@@ -861,3 +861,17 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 @keyframes stPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
 .reduce-motion .st-a{transition:none}.reduce-motion .st-a.pulse{animation:none}
 @media (prefers-reduced-motion:reduce){.st-a{transition:none}.st-a.pulse{animation:none}}
+
+/* ---------- micro-motion layer (js/scenes.js wrapper) ---------- */
+.scene-inner.mm{transform:scale(calc(1 + var(--p,0) * .05));transition:transform .8s linear}
+.hl{transition:text-shadow .5s}
+.hl.spot{text-shadow:0 0 16px var(--accent-soft),0 0 2px var(--accent)}
+.cmp-card{transition:translate .4s,box-shadow .4s}
+.cmp-card.lift{translate:0 -6px;box-shadow:0 14px 34px -10px var(--accent-soft)}
+.list-item .dot,.cmp-card .em,.vs{animation:bob 3.4s ease-in-out infinite}
+.list-item:nth-child(2n) .dot,.cmp-card:nth-child(2n) .em{animation-delay:-1.4s}
+.list-item:nth-child(3n) .dot{animation-delay:-2.3s}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -3px}}
+@media (prefers-reduced-motion:reduce){.scene-inner.mm{transform:none}.list-item .dot,.cmp-card .em,.vs{animation:none}}
+html.reduce-motion .scene-inner.mm{transform:none}
+html.reduce-motion .list-item .dot,html.reduce-motion .cmp-card .em,html.reduce-motion .vs{animation:none}
