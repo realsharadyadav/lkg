@@ -10,6 +10,11 @@ Run `scripts/bump-build.sh` before every commit that goes to `main` — any chan
 Never edit these numbers by hand. Skipping the bump can leave phones on stale or mixed code
 (that is what broke audio on iOS before build 17).
 
+## Push rule
+Standing instruction from the owner: commit and push straight to `main` after each change — no need to ask first.
+Still run `scripts/bump-build.sh` (for any change to the app) and `node tests/smoke.js` before pushing.
+Never commit secrets (API keys); they live in the environment as secrets.
+
 ## Verify before pushing
 - `node tests/smoke.js` (Playwright + Chromium) must pass.
 - After deploy, check Settings → bottom shows the new `build N` on the phone.
@@ -58,4 +63,4 @@ How to convert a reel:
      click step is flaky on baseline too — rerun before blaming your change).
    A screenshot (jump to the scene, `SS.feed.activePlayer()._cue(f)`) is only for judging how it LOOKS.
 6. Keep the JSON's existing formatting (arrays of objects inline, one per line) so diffs stay small.
-7. `scripts/bump-build.sh`, commit, and only push to `main` when the user says so.
+7. `scripts/bump-build.sh`, commit, and push to `main` (see standing push rule below).
