@@ -39,13 +39,35 @@
   SS.scenes = {
 
     /* ---- bold statement ---- */
-    bigtext(mount, sc) {
+    bigtext(mount, sc, ctx) {
       const el = base(mount);
       if (sc.kicker) { const k = h('div', 'kicker', sc.kicker); el.appendChild(k); pop(k, 0); }
       const w = h('div', 'floaty'); w.style.width = '100%';
       const t = h('div', 'big-h', kinetic(mark(sc.title || '')));
       w.appendChild(t); el.appendChild(w); pop(t, 1);
       if (sc.sub) { const s = h('div', 'big-sub', mark(sc.sub)); el.appendChild(s); pop(s, 2); }
+      // nothing moves in this scene, so show the script: title rides up, sentence being spoken is lit, spoken ones dim
+      const parts = ctx && ctx.onProgress && sc.narration ? (sc.narration.match(/[^.?!…]+[.?!…]+["'”’)]?\s*|[^.?!…]+$/g) || []) : [];
+      if (parts.length) {
+        mount.classList.add('scripted');
+        const box = h('div', 'script-lines'); el.appendChild(box); pop(box, 3);
+        const total = sc.narration.replace(/\*/g, '').length || 1;
+        let acc = 0;
+        const lines = parts.map(x => {
+          acc += x.replace(/\*/g, '').length;
+          const l = h('span', 'sl', mark(x.trim())); l._end = acc / total;
+          box.appendChild(l); box.appendChild(document.createTextNode(' '));
+          return l;
+        });
+        let last = -2;
+        const show = f => {   // stateless: scrubbing back just re-derives the classes
+          let i = lines.findIndex(l => f <= l._end); if (i < 0) i = lines.length - 1;
+          if (i === last) return; last = i;
+          lines.forEach((l, j) => { l.classList.toggle('said', j < i); l.classList.toggle('now', j === i); });
+        };
+        show(0);
+        ctx.onProgress(show);
+      }
       return () => {};
     },
 
