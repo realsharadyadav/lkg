@@ -14,19 +14,43 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · DYNAMIC TYPING",
       "title": "No type declarations. **Ever.**",
       "sub": "The variable is just a name tag on an object",
+      "h": 300,
+      "actors": [
+        { "id": "cs", "k": "code", "x": 50, "y": 9.6, "w": 96, "h": 16.6, "t": "C#", "lines": ["int count = 5;   // type, then name"] },
+        { "id": "py", "k": "code", "x": 50, "y": 31.9, "w": 96, "h": 22.5, "t": "Python", "lines": ["count = 5", "count = \"text\""] },
+        { "id": "o5", "k": "pkg", "x": 28, "y": 65.3, "e": "5️⃣" },
+        { "id": "ot", "k": "pkg", "x": 72, "y": 65.3, "e": "🔤" },
+        { "id": "st", "k": "tag", "x": 28, "y": 52.7, "t": "count", "e": "🏷️" },
+        { "id": "err", "k": "tag", "x": 50, "y": 87.3, "t": "wrong type? found at run time", "e": "⚠️", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "In C sharp, you declare the type", "do": [["show", "cs"], ["ln", "cs", 1], ["hl", "cs", 0]] },
+        { "at": "In Python, you just name the value", "do": [["dim", "cs"], ["show", "py"], ["ln", "py", 1], ["hl", "py", 0], ["show", "o5"], ["show", "st"]] },
+        { "at": "peel it off", "do": [["show", "ot"], ["move", "st", 72, 52.7], ["ln", "py", 2], ["hl", "py", 1], ["pulse", "ot"]] },
+        { "at": "The trade-off", "do": [["show", "err"], ["pulse", "err"]] }
+      ],
       "narration": "In C sharp, you declare the type, then the name. In Python, you just name the value. The name is a sticker on the object — peel it off, stick it on something else, even a different type. Python doesn't care. The trade-off: less ceremony, but type errors show up at run time instead of compile time. That's why we'll add type hints later — reel eight."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 0,
-      "cards": [
-        { "e": "🔷", "t": "C#", "s": "int count = 5; string name = \"x\"; — declared, fixed, compiler-checked." },
-        { "e": "🐍", "t": "Python", "s": "count = 5; name = \"x\" — the name tag moves freely. Checked at runtime.", "win": true }
+      "h": 290,
+      "actors": [
+        { "id": "cs", "k": "code", "x": 50, "y": 17.2, "w": 96, "h": 31.6, "t": "C#", "lines": ["int count = 5;", "count = \"text\";"] },
+        { "id": "py", "k": "code", "x": 50, "y": 55.4, "w": 96, "h": 37.7, "t": "Python", "lines": ["count = 5", "count = \"text\"", "type(count)"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 92.4, "t": "variable: untyped · value: typed", "e": "🏷️", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Side by side", "do": [["show", "cs"], ["ln", "cs", 1], ["hl", "cs", 0], ["out", "cs", "locked to int 🔒"]] },
+        { "at": "In Python, count equals five", "do": [["dim", "cs"], ["show", "py"], ["ln", "py", 1], ["hl", "py", 0], ["out", "py", "name → 5"]] },
+        { "at": "Later, count equals some text", "do": [["undim", "cs"], ["ln", "cs", 2], ["hl", "cs", 1], ["out", "cs", "✗ cannot convert", "bad"], ["ln", "py", 2], ["hl", "py", 1], ["out", "py", "name → \"text\" ✓", "good"]] },
+        { "at": "Nothing is declared", "do": [["ln", "py", 3], ["hl", "py", 2], ["out", "py", "<class 'str'>", "good"]] },
+        { "at": "The variable is untyped", "do": [["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Side by side: in C sharp, int count equals five locks the sticker to integers. In Python, count equals five just sticks the name on a five. Later, count equals some text is perfectly legal. Nothing is declared; everything is an object with a type of its own. The variable is untyped — the value isn't."
     },
@@ -50,12 +74,20 @@
       "narration": "Here's the biggest culture shock: Python has no curly braces. The indentation is the block. If a line is inside an if, it's indented four spaces — that's the whole rule. It's not a style choice like in C sharp; it's the language. The good news: every Python file on Earth looks the same. The bad news: one mixed tab and your day is gone."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "4️⃣", "t": "4 spaces per level", "s": "PEP 8 — and configure your editor to insert spaces on Tab" },
-        { "e": "⬇️", "t": "Dedent = block ends", "s": "No closing brace to hunt for — unindenting is the closing brace" },
-        { "e": "🚫", "t": "Single-statement gotcha", "s": "Everything in the block must be indented — even one-liners" }
+      "h": 260,
+      "actors": [
+        { "id": "a", "k": "code", "x": 50, "y": 21.4, "w": 96, "h": 39.7, "t": "indent.py", "lines": ["def check(x):", "    if x > 0:", "        print(\"positive\")", "    print(\"done\")"] },
+        { "id": "t4", "k": "tag", "x": 78, "y": 49.2, "t": "4 spaces = 1 level", "tone": "good" },
+        { "id": "b", "k": "code", "x": 50, "y": 75.3, "w": 96, "h": 35.2, "t": "oops.py", "lines": ["if x > 0:", "print(\"hi\")"] }
+      ],
+      "steps": [
+        { "at": "Three rules", "do": [["show", "a"], ["ln", "a", 4]] },
+        { "at": "Four spaces per level", "do": [["hl", "a", 1], ["show", "t4"]] },
+        { "at": "A block ends when", "do": [["hl", "a", 3], ["hide", "t4"]] },
+        { "at": "everything inside a block", "do": [["hl", "a", 1, 2]] },
+        { "at": "The compiler won't guess", "do": [["hl", "a", -1], ["dim", "a"], ["show", "b"], ["ln", "b", 2], ["hl", "b", 1], ["out", "b", "IndentationError ✗", "bad"], ["tone", "b", "bad"]] }
       ],
       "narration": "Three rules. Four spaces per level — set your editor to convert tabs. A block ends when the indentation ends — unindenting is your closing brace. And everything inside a block must be indented, even a single line. The compiler won't guess your intent — it reads the whitespace, literally."
     },
@@ -80,12 +112,19 @@
       "narration": "Now the fun part. Put an f before a string, and any expression in curly braces is evaluated inside it. But here's what C sharp can't do: format specifiers live right in the braces — colon point two f for floats, colon comma for thousands, even date formatting and alignment. It's the string interpolation you know, with the format string built in."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "🧷", "t": "f\"Total: {price:.2f}\"", "s": "Float with 2 decimals — :.2f = fixed-point precision" },
-        { "e": "🔢", "t": "f\"{n:,} rows\"", "s": "12_345_678 → '12,345,678' — the comma format inserts separators" },
-        { "e": "🧮", "t": "Any expression works", "s": "f\"{len(items) * 2} slots\" — call functions, do math, inline" }
+      "h": 270,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 28.3, "w": 96, "h": 53.7, "t": "f-strings", "lines": ["total = 1234.5", "n = 1234567", "a = f\"{total{{:.2f}}}\"", "b = f\"{n{{:,}}}\"", "c = f\"{len(name) * 2} chars\""] },
+        { "id": "t", "k": "tag", "x": 50, "y": 70.4, "t": "no .format() · no concatenation", "e": "✓", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Look at the power here", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "gives you two decimals", "do": [["ln", "c", 3], ["hl", "c", 2], ["mark", "c", ":.2f"], ["out", "c", "1234.50", "good"]] },
+        { "at": "inserts thousands separators", "do": [["ln", "c", 4], ["hl", "c", 3], ["mark", "c", ":,"], ["out", "c", "1,234,567", "good"]] },
+        { "at": "braces take any expression", "do": [["ln", "c", 5], ["hl", "c", 4], ["mark", "c", ""], ["out", "c", "10 chars", "good"]] },
+        { "at": "One line", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Look at the power here. f-quote total colon point two f — gives you two decimals. f-quote n colon comma — inserts thousands separators. And the braces take any expression: function calls, math, whatever. One line, no string dot format, no concatenation. You'll use this constantly in logging and LLM prompt building."
     },
@@ -118,30 +157,67 @@
       "narration": "C sharp's null becomes None in Python — capital N. Same idea: the absence of a value. But Python goes further: nearly every object is either truthy or falsy. Empty string, empty list, zero, None — all falsy. Non-empty collections and non-zero numbers are truthy. So you can write 'if items:' instead of 'if items dot count greater than zero'."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🕳️", "t": "Falsy: None, 0, \"\", [], {}", "s": "None · zero · empty string · empty list · empty dict — all falsy" },
-        { "e": "✅", "t": "Truthy: almost everything else", "s": "Non-empty collections, non-zero numbers, non-empty strings" },
-        { "e": "⚠️", "t": "Explicit check for None", "s": "Use `is None`, not `== None` — identity vs equality" }
+      "h": 290,
+      "actors": [
+        { "id": "n0", "k": "chip", "x": 20, "y": 7.6, "t": "None", "c": "sm" },
+        { "id": "n1", "k": "chip", "x": 50, "y": 7.6, "t": "0", "c": "sm" },
+        { "id": "n2", "k": "chip", "x": 80, "y": 7.6, "t": "\"\"", "c": "sm" },
+        { "id": "n3", "k": "chip", "x": 20, "y": 20.0, "t": "[]", "c": "sm" },
+        { "id": "n4", "k": "chip", "x": 50, "y": 20.0, "t": "{}", "c": "sm" },
+        { "id": "f", "k": "tag", "x": 80, "y": 20.0, "t": "all → False", "tone": "bad" },
+        { "id": "tr", "k": "tag", "x": 80, "y": 20.0, "t": "else → True", "tone": "good" },
+        { "id": "c", "k": "code", "x": 50, "y": 47.5, "w": 96, "h": 31.6, "t": "idiom.py", "lines": ["if x is None:", "if x == None:"] }
+      ],
+      "steps": [
+        { "at": "The falsy family", "do": [["show", "n0"], ["show", "n1"], ["show", "n2"], ["show", "n3"], ["show", "n4"], ["show", "f"], ["tone", "n0", "bad"], ["tone", "n1", "bad"], ["tone", "n2", "bad"], ["tone", "n3", "bad"], ["tone", "n4", "bad"]] },
+        { "at": "Everything else is true", "do": [["hide", "f"], ["show", "tr"], ["dim", "n0"], ["dim", "n1"], ["dim", "n2"], ["dim", "n3"], ["dim", "n4"]] },
+        { "at": "check for None with", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "✓ idiomatic, faster", "good"]] },
+        { "at": "not double-equals", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "✗ avoid", "bad"]] },
+        { "at": "Is compares identity", "do": [["hl", "c", 0], ["mark", "c", ""], ["out", "c", "is → the one None object", "good"]] }
       ],
       "narration": "The falsy family: None, zero, empty string, empty list, empty dict — all read as false. Everything else is true. And one habit from your spec: check for None with 'is None', not double-equals. Is compares identity — is it literally the None object. It's the idiomatic, slightly faster check."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · OPERATORS & RANGES",
       "title": "The operators that **surprise** C# devs",
       "sub": "is vs == · in · range()",
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.0, "w": 96, "h": 50.9, "t": "operators", "lines": ["a == b         # same value?", "a is b         # same object?", "\"hi\" in text    # inside?", "range(5)        # lazy numbers"] },
+        { "id": "r0", "k": "chip", "x": 14, "y": 66.4, "t": "0", "c": "sm" },
+        { "id": "r1", "k": "chip", "x": 32, "y": 66.4, "t": "1", "c": "sm" },
+        { "id": "r2", "k": "chip", "x": 50, "y": 66.4, "t": "2", "c": "sm" },
+        { "id": "r3", "k": "chip", "x": 68, "y": 66.4, "t": "3", "c": "sm" },
+        { "id": "r4", "k": "chip", "x": 86, "y": 66.4, "t": "4", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 84.8, "t": "not a list · iterate once", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Three operators", "do": [["show", "c"]] },
+        { "at": "First: double-equals", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "[1] == [1]  →  True", "good"]] },
+        { "at": "while 'is' checks identity", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "[1] is [1]  →  False (2 objects)", "bad"]] },
+        { "at": "Second: 'in' tests", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "\"hi\" in \"hi there\" → True", "good"]] },
+        { "at": "Third: range generates", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "range(0, 5)"], ["show", "r0"], ["show", "r1"], ["show", "r2"], ["show", "r3"], ["show", "r4"]] },
+        { "at": "not a list", "do": [["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Three operators to rewire in your head. First: double-equals checks value equality, while 'is' checks identity — same object in memory. Second: 'in' tests membership — is this value inside that collection. Third: range generates numbers lazily — range of five is not a list, it's a sequence you iterate once."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "🆚", "t": "== vs is", "s": "a == b (equal values) vs a is b (same object) — use == for data" },
-        { "e": "🎯", "t": "\"prompt\" in text", "s": "Membership test — works on strings, lists, dicts, sets" },
-        { "e": "🔁", "t": "for i in range(5)", "s": "Yields 0,1,2,3,4 — lazy, not a list; wrap in list() if you need one" }
+      "h": 260,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 29.4, "w": 96, "h": 55.8, "t": "in practice", "lines": ["a == b               # data", "x is None            # None only", "\"DONE\" in reply       # marker?", "for i in range(5):    # 0..4", "list(range(5))        # real list"] }
+      ],
+      "steps": [
+        { "at": "In practice", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "compare data with =="]] },
+        { "at": "use 'is' only for None", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "is → None & sentinels", "good"]] },
+        { "at": "Membership with 'in'", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "LLM output has the marker ✓", "good"]] },
+        { "at": "range of five feeds a loop", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "0 1 2 3 4"]] },
+        { "at": "If you need an actual list", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "[0, 1, 2, 3, 4]", "good"]] }
       ],
       "narration": "In practice: compare data with double-equals, use 'is' only for None and sentinel objects. Membership with 'in' — quote prompt in text — is how you'll check if an LLM's output contains a marker. And range of five feeds a loop zero through four. If you need an actual list, wrap it: list of range five."
     },

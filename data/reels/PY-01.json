@@ -41,12 +41,21 @@
       "narration": "First decision: which Python? Unlike dot-net's one big SDK, Python has many versions alive at once. Rule of thumb: newest stable for learning, exact same version in production. You can hold several versions side by side, exactly like multiple dot-net SDKs on one machine."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "⬇️", "pk": "⬇️", "t": "Install from python.org or Homebrew", "s": "macOS: brew install python@3.13 — Windows: the official installer" },
-        { "e": "🔄", "pk": "🔄", "t": "Switch versions with uv or pyenv", "s": "uv python install 3.13 — modern, fast, written in Rust" },
-        { "e": "✅", "pk": "✅", "t": "Verify: python --version", "s": "Also check pip --version — it should point at the same Python" }
+      "h": 300,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.4, "w": 96, "h": 60.2, "t": "terminal", "lines": ["# 1 install", "$ brew install python@3.13", "# 2 switch versions", "$ uv python install 3.13", "# 3 verify", "$ python --version", "$ pip --version"] },
+        { "id": "a", "k": "chip", "x": 27, "y": 89.3, "t": "python → 3.13", "tone": "good", "c": "sm" },
+        { "id": "b", "k": "chip", "x": 73, "y": 89.3, "t": "pip → 3.9", "tone": "bad", "c": "sm" },
+        { "id": "x", "k": "tag", "x": 50, "y": 80.0, "t": "two Pythons, one path", "e": "⚠️", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Install from python dot org", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "To juggle versions", "do": [["ln", "c", 4], ["hl", "c", 3]] },
+        { "at": "Then verify", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "Python 3.13.1", "good"]] },
+        { "at": "check that pip points", "do": [["ln", "c", 7], ["hl", "c", 6], ["out", "c", "pip 24.3 (python 3.13)", "good"]] },
+        { "at": "Two Pythons fighting", "do": [["hl", "c", -1], ["out", "c", "pip ≠ python  ✗", "bad"], ["show", "a"], ["show", "b"], ["show", "x"], ["pulse", "b"]] }
       ],
       "narration": "Install from python dot org, or Homebrew on a Mac. To juggle versions, use uv — it installs and switches Pythons in seconds. Then verify: run python dash dash version, and check that pip points at the same install. Two Pythons fighting on one path is the classic day-one bug."
     },
@@ -108,39 +117,86 @@
       "narration": "Three commands to remember. First: python dash m venv dot venv — creates a private Python inside your project. Second: activate it — on Mac, source dot venv slash bin slash activate. Third: install packages — and use uv instead of pip when you can. It's the same workflow, ten times faster."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 2,
-      "cards": [
-        { "e": "📄", "t": "requirements.txt", "s": "Just a list of names. No metadata, loose versions, no build config." },
-        { "e": "📘", "t": "pyproject.toml", "s": "One file: metadata, dependencies, tool config, build rules. The modern standard.", "win": true }
+      "h": 300,
+      "actors": [
+        { "id": "r", "k": "code", "x": 50, "y": 14.9, "w": 96, "h": 28.5, "t": "requirements.txt", "lines": ["requests", "openai>=1.0", "pydantic"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 34.0, "t": "✗ no metadata, loose versions", "tone": "bad" },
+        { "id": "p", "k": "code", "x": 50, "y": 60.8, "w": 96, "h": 40.3, "t": "pyproject.toml", "lines": ["[project]", "name = \"my-app\"", "requires-python = \">=3.13\"", "dependencies = [\"openai\"]", "[tool.ruff]"] },
+        { "id": "t2", "k": "tag", "x": 50, "y": 88.7, "t": "✓ new projects: always this", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "How do you declare dependencies", "do": [["show", "r"], ["ln", "r", 3]] },
+        { "at": "just a flat list", "do": [["hl", "r", 0, 2], ["show", "t1"]] },
+        { "at": "The modern way", "do": [["dim", "r"], ["dim", "t1"], ["show", "p"], ["ln", "p", 1], ["hot", "p"]] },
+        { "at": "One file holds your metadata", "do": [["ln", "p", 3], ["hl", "p", 1, 2]] },
+        { "at": "exact dependency rules", "do": [["ln", "p", 4], ["hl", "p", 3]] },
+        { "at": "tool configuration", "do": [["ln", "p", 5], ["hl", "p", 4]] },
+        { "at": "New projects", "do": [["hl", "p", -1], ["show", "t2"], ["pulse", "p"]] }
       ],
       "narration": "How do you declare dependencies? The old way is requirements dot text — just a flat list, like a NuGet packages file with no project file around it. The modern way is pie project dot toml. One file holds your metadata, exact dependency rules, and tool configuration. New projects: always pie project dot toml."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "📝", "pk": "📝", "t": "[project] table", "s": "name, version, requires-python, dependencies — the essentials" },
-        { "e": "🔒", "pk": "🔒", "t": "Lockfile: uv.lock / requirements.lock", "s": "Pins exact versions — 'works on my machine' becomes reproducible" },
-        { "e": "🧹", "pk": "🧹", "t": "Tools read the same file", "s": "Ruff, mypy, pytest all configure themselves from pyproject.toml" }
+      "h": 325,
+      "actors": [
+        { "id": "p", "k": "code", "x": 50, "y": 22.6, "w": 96, "h": 42.7, "t": "pyproject.toml", "lines": ["[project]", "name = \"my-app\"", "version = \"0.1.0\"", "dependencies = [", "  \"openai>=1.0\",", "]"] },
+        { "id": "l", "k": "code", "x": 50, "y": 69.8, "w": 96, "h": 33.7, "t": "uv.lock", "lines": ["openai 1.54.3", "httpx 0.27.2", "pydantic 2.9.2"] },
+        { "id": "cmd", "k": "tag", "x": 74, "y": 48.3, "t": "$ uv lock", "e": "🔒" },
+        { "id": "t", "k": "tag", "x": 50, "y": 94.2, "t": "every tool reads one file", "e": "🧹" }
+      ],
+      "steps": [
+        { "at": "Inside pie project", "do": [["show", "p"], ["ln", "p", 1]] },
+        { "at": "the project table holds name", "do": [["ln", "p", 3], ["hl", "p", 1, 2]] },
+        { "at": "and dependencies", "do": [["ln", "p", 6], ["hl", "p", 3, 5]] },
+        { "at": "Add a lockfile", "do": [["hl", "p", -1], ["dim", "p"], ["show", "cmd"], ["pulse", "cmd"]] },
+        { "at": "every install is byte-for-byte", "do": [["show", "l"], ["ln", "l", 3], ["hl", "l", 0, 2], ["out", "l", "exact · reproducible ✓", "good"]] },
+        { "at": "Bonus: every modern tool", "do": [["undim", "p"], ["hl", "l", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Inside pie project dot toml, the project table holds name, version, and dependencies. Add a lockfile — generated by uv lock — and every install is byte-for-byte reproducible, like packages dot lock in dot-net. Bonus: every modern tool reads this same file, so your whole toolchain shares one configuration."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 3 · YOUR EDITOR",
       "title": "VS Code is **enough** — set it up once",
       "sub": "Debugger + formatter + linter = the Visual Studio trio",
+      "h": 300,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 16.2, "w": 96, "h": 28.5, "t": "settings · extensions", "lines": ["✓ Python", "✓ Pylance   (IntelliSense)", "✓ Ruff       (format + lint)"] },
+        { "id": "d", "k": "code", "x": 50, "y": 61.9, "w": 96, "h": 42.4, "t": "main.py", "lines": ["def greet(name):", "    msg = f\"hi {name}\"", "    return msg", "print(greet(\"Ada\"))"] },
+        { "id": "f5", "k": "tag", "x": 78, "y": 37.3, "t": "F5  ▶", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "For your editor", "do": [["show", "c"]] },
+        { "at": "three extensions", "do": [["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "Pylance for IntelliSense", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "Ruff for formatting", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "The debugger works", "do": [["hl", "c", -1], ["dim", "c"], ["show", "d"], ["ln", "d", 4]] },
+        { "at": "breakpoints, step over", "do": [["hl", "d", 1], ["out", "d", "msg = \"hi Ada\"  ◀ paused"]] },
+        { "at": "step over", "do": [["hl", "d", 2]] },
+        { "at": "Press F5 and go", "do": [["show", "f5"], ["pulse", "f5"], ["hl", "d", 3], ["out", "d", "hi Ada", "good"]] }
+      ],
       "narration": "For your editor, VS Code with three extensions covers everything: Python, Pylance for IntelliSense, and Ruff for formatting and linting. The debugger works like Visual Studio's — breakpoints, step over, watch variables. Press F5 and go. PyCharm is the other excellent option if you prefer a batteries-included IDE."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🧠", "t": "Pylance = IntelliSense", "s": "Type-aware autocomplete and navigation — free Roslyn-style analysis" },
-        { "e": "🎨", "t": "Ruff = formatter + linter", "s": "One blazing-fast tool replacing Black, isort, and a dozen flake8 rules" },
-        { "e": "🐞", "t": "F5 debugging", "s": "launch.json once, then breakpoints and stepping like you're used to" }
+      "h": 300,
+      "actors": [
+        { "id": "e", "k": "code", "x": 50, "y": 21.5, "w": 96, "h": 40.3, "t": "editor", "lines": ["import os", "os.pa▌", "  ├ path", "  ├ pardir", "  └ pathsep"] },
+        { "id": "r", "k": "code", "x": 50, "y": 66.9, "w": 96, "h": 42.4, "t": "ruff", "lines": ["x=1;y =2", "↓ ruff format", "x = 1", "y = 2"] },
+        { "id": "j", "k": "code", "x": 50, "y": 15.6, "w": 96, "h": 28.5, "t": "launch.json", "lines": ["{ \"type\": \"debugpy\",", "  \"request\": \"launch\",", "  \"program\": \"${file}\" }"] }
+      ],
+      "steps": [
+        { "at": "Quick tour", "do": [["show", "e"], ["ln", "e", 2]] },
+        { "at": "Roslyn-quality autocomplete", "do": [["ln", "e", 5], ["hl", "e", 2, 4]] },
+        { "at": "Ruff is one tool", "do": [["hide", "e"], ["show", "r"], ["ln", "r", 2]] },
+        { "at": "formats and lints", "do": [["ln", "r", 4], ["hl", "r", 2, 3], ["out", "r", "fixed in 8 ms ✓", "good"]] },
+        { "at": "And the debugger", "do": [["hide", "r"], ["show", "j"], ["ln", "j", 3]] },
+        { "at": "exactly like Visual Studio", "do": [["hl", "j", 0, 2], ["hot", "j"]] }
       ],
       "narration": "Quick tour. Pylance gives you Roslyn-quality autocomplete and go-to-definition. Ruff is one tool that formats and lints — it replaces an entire stack of older tools and runs in milliseconds. And the debugger needs one small launch dot json, then it's breakpoints and stepping exactly like Visual Studio."
     },

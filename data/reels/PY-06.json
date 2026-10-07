@@ -13,20 +13,43 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · IMPORTS",
       "title": "Every **.py file is a module**",
       "sub": "import = namespaces, not includes",
+      "h": 255,
+      "actors": [
+        { "id": "f", "k": "code", "x": 50, "y": 14.8, "w": 96, "h": 26.5, "t": "config.py", "lines": ["DB = \"postgres://db\"", "TIMEOUT = 30"] },
+        { "id": "m", "k": "code", "x": 50, "y": 57.1, "w": 96, "h": 49.9, "t": "main.py", "lines": ["import config", "config.DB", "from config import DB", "from config import *   # avoid"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 92.5, "t": "folder + __init__.py = package", "e": "📦", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Every Python file is a module", "do": [["show", "f"], ["ln", "f", 2]] },
+        { "at": "a folder of modules", "do": [["show", "t"]] },
+        { "at": "Import loads a module once", "do": [["show", "m"], ["ln", "m", 1], ["hl", "m", 0], ["out", "m", "namespace bound to \"config\""]] },
+        { "at": "then dot into it", "do": [["ln", "m", 2], ["hl", "m", 1], ["out", "m", "\"postgres://db\"", "good"]] },
+        { "at": "import specific names", "do": [["ln", "m", 3], ["hl", "m", 2], ["out", "m", "DB — just the name"]] },
+        { "at": "or star", "do": [["ln", "m", 4], ["hl", "m", 3], ["out", "m", "pollutes namespace ✗", "bad"], ["text", "t", "star breaks tooling — avoid"], ["tone", "t", "bad"]] }
+      ],
       "narration": "Every Python file is a module, and a folder of modules with an init file is a package. Import loads a module once and binds its namespace to a name — it's closer to C sharp's using plus a static class than to a text include. Import the module, then dot into it: import config, then config dot database. You can also import specific names, or star — though star pollutes your namespace and breaks tooling; avoid it in real code."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "📥", "t": "import services.users", "s": "Binds the module — call services.users.find_all(). Verbose but unambiguous" },
-        { "e": "🎯", "t": "from services import users", "s": "Binds the name directly — users.find_all()" },
-        { "e": "🧭", "t": "import alias: import numpy as np", "s": "Community-standard aliases: np, pd, plt — follow them" }
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 65.2, "t": "imports.py", "lines": ["import myproject.services.users", "from myproject.services import users", "import numpy as np", "import pandas as pd"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 85.1, "t": "the whole ecosystem expects np / pd", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Three import styles", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Import the full path", "do": [["hl", "c", 0], ["out", "c", "myproject.services.users.get()"]] },
+        { "at": "From-import", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "users.get()  — shorter", "good"]] },
+        { "at": "And aliases", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "np.array(...)  pd.DataFrame(...)"]] },
+        { "at": "these aren't optional", "do": [["show", "t"], ["pulse", "t"]] },
+        { "at": "One rule", "do": [["hl", "c", -1], ["text", "t", "names collide? import the module"], ["tone", "t", "accent"], ["out", "c", ""]] },
+        { "at": "import the name when it won", "do": [["text", "t", "no collision? import the name"], ["tone", "t", "good"]] }
       ],
       "narration": "Three import styles. Import the full path — most explicit. From-import — shorter at call sites, and the style you'll use for packages you own. And aliases: numpy as np, pandas as pd — these aren't optional style; the whole ecosystem expects them. One rule: import the module when names might collide, import the name when it won't."
     },
@@ -57,13 +80,21 @@
       "narration": "Here's the folder layout the ecosystem converged on. A src folder holding your package — this matters because it forces imports to go through the installed package instead of accidently importing from the current folder. Tests in their own tree. Configuration — pyproject, readmes, dot env — at the root. Small projects can skip src, but start with it and you'll never have the 'works from one folder but not another' disease."
     },
     {
-      "type": "arch",
+      "type": "story",
       "chapter": 1,
-      "layers": [
-        { "e": "📁", "t": "myproject/", "s": "pyproject.toml · README · .env · .venv/" },
-        { "e": "📦", "t": "src/myproject/", "s": "__init__.py · config.py · services/" },
-        { "e": "🧩", "t": "services/", "s": "users.py · billing.py — one module per domain" },
-        { "e": "🧪", "t": "tests/", "s": "test_users.py — mirrors the package structure" }
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 40.0, "w": 96, "h": 76.9, "t": "project tree", "lines": ["myproject/", "├─ pyproject.toml", "├─ README.md", "├─ .env", "├─ src/myproject/", "│  ├─ __init__.py", "│  └─ services/users.py", "└─ tests/", "   └─ test_users.py"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.8, "t": "import myproject.services.users", "e": "📦", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Picture it top to bottom", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "The project root holds", "do": [["ln", "c", 4], ["hl", "c", 1, 3]] },
+        { "at": "Inside, src contains", "do": [["ln", "c", 6], ["hl", "c", 4, 5]] },
+        { "at": "always imported by its full name", "do": [["ln", "c", 7], ["hl", "c", 6], ["show", "t"]] },
+        { "at": "Each module owns one domain", "do": [["pulse", "t"]] },
+        { "at": "And tests mirror", "do": [["hide", "t"], ["ln", "c", 9], ["hl", "c", 7, 8]] },
+        { "at": "one test file per module", "do": [["hl", "c", 6, 8], ["pulse", "c"]] }
       ],
       "narration": "Picture it top to bottom. The project root holds configuration, readme, environment. Inside, src contains your actual package — always imported by its full name, myproject dot services dot users. Each module owns one domain. And tests mirror the package tree, one test file per module. This shape works for a hundred-line tool and a ten-thousand-line service."
     },
@@ -95,12 +126,26 @@
       "narration": "Python allows relative imports — dot dot for parent, single dot for sibling. They work, until you move a file or run a script directly, and then they explode. The community rule: absolute imports, always — from myproject dot services import users. The second classic failure is circular imports — module A imports B, B imports A. Python handles some cycles, but the fix is architectural: extract the shared piece into a third module both import."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "🚫", "t": "from . import users", "s": "Relative — breaks when files move or scripts run directly" },
-        { "e": "✅", "t": "from myproject.services import users", "s": "Absolute — unambiguous, tool-friendly, refactorable" },
-        { "e": "⭕", "t": "Circular import?", "s": "A imports B, B imports A → extract shared code to module C" }
+      "h": 275,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 18.1, "w": 96, "h": 33.3, "t": "python main.py", "lines": ["# a.py   from b import B", "# b.py   from a import A"] },
+        { "id": "a", "k": "chip", "x": 20, "y": 47.3, "t": "a.py", "tone": "bad", "c": "sm" },
+        { "id": "x", "k": "tag", "x": 50, "y": 47.3, "t": "⇄", "tone": "bad" },
+        { "id": "b", "k": "chip", "x": 80, "y": 47.3, "t": "b.py", "tone": "bad", "c": "sm" },
+        { "id": "sh", "k": "chip", "x": 50, "y": 75.6, "t": "shared.py", "tone": "good", "c": "sm" },
+        { "id": "u1", "k": "tag", "x": 33, "y": 61.8, "t": "▲", "tone": "good" },
+        { "id": "u2", "k": "tag", "x": 67, "y": 61.8, "t": "▲", "tone": "good" },
+        { "id": "t", "k": "tag", "x": 50, "y": 90.9, "t": "dependencies flow one way", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Memorize the left column", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "partially initialized module", "do": [["out", "c", "ImportError: partially initialized module", "bad"], ["show", "a"], ["show", "x"], ["show", "b"]] },
+        { "at": "The cure isn't reordering", "do": [["pulse", "x"]] },
+        { "at": "moving the shared code", "do": [["show", "sh"], ["hide", "x"]] },
+        { "at": "that both sides import", "do": [["show", "u1"], ["show", "u2"], ["tone", "a", "good"], ["tone", "b", "good"], ["out", "c", "no cycle ✓", "good"]] },
+        { "at": "Dependencies then flow", "do": [["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Memorize the left column as don't, the right as do. And when you see an import error that mentions partially initialized module — that's the circular import. The cure isn't reordering imports; it's moving the shared code — usually models or constants — into its own module that both sides import. Dependencies then flow one direction, always."
     },
@@ -129,12 +174,22 @@
       "narration": "Every module has a hidden variable, dunder name. When Python runs a file directly, that variable equals the string main. When the file is imported instead, it equals the module's name. So the idiom if name equals main wraps code that should only run as a script — demos, test data, CLI behavior. It's how one file can be both an importable library and a runnable tool."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🚀", "pk": "🚀", "t": "python -m myproject.cli", "s": "Runs as main inside the package — imports work, no path hacks" },
-        { "e": "🧷", "pk": "🧷", "t": "pyproject [project.scripts]", "s": "cli = \"myproject.cli:main\" → install a real `myproject` command" },
-        { "e": "📦", "pk": "📦", "t": "uv pip install -e .", "s": "Editable install: your package importable everywhere while you edit" }
+      "h": 245,
+      "actors": [
+        { "id": "t", "k": "code", "x": 50, "y": 24.0, "w": 96, "h": 44.7, "t": "terminal", "lines": ["$ python -m myproject.main", "$ my-agent --help", "$ uv pip install -e ."] },
+        { "id": "p", "k": "code", "x": 50, "y": 64.8, "w": 96, "h": 27.6, "t": "pyproject.toml", "lines": ["[project.scripts]", "my-agent = \"myproject.cli:main\""] },
+        { "id": "d", "k": "tag", "x": 50, "y": 90.6, "t": "edit → effect, no reinstall", "e": "⚡", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Three ways to run", "do": [["show", "t"], ["ln", "t", 1]] },
+        { "at": "Python dash m runs a module", "do": [["hl", "t", 0], ["out", "t", "runs as __main__"]] },
+        { "at": "declare a console script", "do": [["show", "p"], ["ln", "p", 2], ["hl", "p", 0, 1], ["out", "t", ""]] },
+        { "at": "after install your command", "do": [["ln", "t", 2], ["hl", "t", 1], ["out", "t", "my-agent is now on PATH ✓", "good"]] },
+        { "at": "editable install", "do": [["ln", "t", 3], ["hl", "t", 2], ["out", "t", "editable ✓"]] },
+        { "at": "every edit takes effect", "do": [["show", "d"], ["pulse", "d"]] },
+        { "at": "This is your daily workflow", "do": [["pulse", "t"]] }
       ],
       "narration": "Three ways to run. Python dash m runs a module as main — the reliable way during development. Then the grown-up path: declare a console script in pie project, and after install your command exists on the path. And the development trick of the trade — editable install. Your package behaves as if fully installed, but every edit takes effect immediately. This is your daily workflow from now on."
     },

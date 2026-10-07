@@ -14,29 +14,67 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · ARGS & KWARGS",
       "title": "Positional, keyword, and the famous **\\*\\***",
       "sub": "How tool-call arguments arrive in agent code",
+      "h": 240,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 24.5, "w": 96, "h": 45.6, "t": "def.py", "lines": ["def call({{a}}, {{b=2}}, {{*args}}, {{**kwargs}}):", "    print(a, b, args, kwargs)", "call(1, 2, 3, 4, x=5, y=6)"] },
+        { "id": "ll", "k": "pkg", "x": 13, "y": 71.7, "e": "🤖" },
+        { "id": "j", "k": "tag", "x": 42, "y": 71.7, "t": "{\"city\": \"Oslo\"}" },
+        { "id": "k", "k": "tag", "x": 80, "y": 71.7, "t": "**kwargs", "tone": "good" },
+        { "id": "ag", "k": "tag", "x": 50, "y": 90.0, "t": "powers every agent framework", "e": "⚙️", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Define with def", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "positional", "do": [["mark", "c", "a"], ["hl", "c", 0], ["out", "c", "a = 1"]] },
+        { "at": "keyword with defaults", "do": [["mark", "c", "b=2"], ["out", "c", "b = 2 (default)"]] },
+        { "at": "star args gathers", "do": [["ln", "c", 3], ["hl", "c", 2], ["mark", "c", "*args"], ["out", "c", "args = (3, 4)"]] },
+        { "at": "star star kwargs gathers", "do": [["mark", "c", "**kwargs"], ["out", "c", "kwargs = {'x': 5, 'y': 6}", "good"]] },
+        { "at": "when an LLM calls your tool", "do": [["hl", "c", -1], ["mark", "c", ""], ["out", "c", ""], ["show", "ll"], ["show", "j"]] },
+        { "at": "becomes kwargs", "do": [["move", "j", 42, 71.7], ["show", "k"], ["pulse", "k"]] },
+        { "at": "This pattern powers", "do": [["show", "ag"]] }
+      ],
       "narration": "Define with def, then three kinds of parameters: positional, keyword with defaults, and the collectors — star args gathers extra positionals into a tuple, star star kwargs gathers extra keywords into a dict. If you remember one thing: when an LLM calls your tool, the arguments arrive as a dict that becomes kwargs. This pattern powers every agent framework."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "📞", "t": "def call(model, temperature=0.7, **kwargs)", "s": "Defaults make args optional; **kwargs swallows the rest as a dict" },
-        { "e": "🧾", "t": "call(\"gpt-4o\", temperature=0.2)", "s": "Keyword args can arrive in any order — self-documenting at the call site" },
-        { "e": "🤖", "t": "tool_args = {\"temperature\": 0.2}", "s": "call(\"gpt-4o\", **tool_args) — a dict splats into keyword arguments" }
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.6, "w": 96, "h": 58.0, "t": "calls.py", "lines": ["def search(q, limit=10, **opts): ...", "search(\"llm\")", "search(\"llm\", limit=3, lang=\"en\")", "args = {\"q\": \"llm\", \"limit\": 3}", "search(**args)"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 76.8, "t": "LLM JSON → your function", "e": "🤖", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Look at the calling conventions", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Defaults make parameters optional", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "limit = 10 (default)"]] },
+        { "at": "Star star kwargs collects", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "opts = {'lang': 'en'}", "good"]] },
+        { "at": "And the reverse", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "search(q='llm', limit=3)", "good"]] },
+        { "at": "That last move is how an agent", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Look at the calling conventions. Defaults make parameters optional. Star star kwargs collects anything extra into a dict. And the reverse — a dict splatted with double star becomes keyword arguments. That last move is how an agent framework takes the JSON arguments an LLM produced and calls your Python function with them."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · THE TRAP",
       "title": "The **mutable default** — Python's #1 gotcha",
       "sub": "Default values are created ONCE, and shared",
+      "h": 255,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.0, "w": 96, "h": 56.9, "t": "gotcha.py", "lines": ["def add(x, items=[]):", "    items.append(x)", "    return items", "add(1)", "add(2)"] },
+        { "id": "once", "k": "tag", "x": 50, "y": 65.9, "t": "default built ONCE, at def time", "e": "⚠️", "tone": "bad" },
+        { "id": "sh", "k": "chip", "x": 50, "y": 81.6, "t": "shared list: [ ]", "tone": "dashed", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Now the most famous bug", "do": [["show", "c"], ["ln", "c", 3]] },
+        { "at": "A default value is evaluated once", "do": [["hl", "c", 0], ["show", "once"], ["pulse", "once"]] },
+        { "at": "So a default of empty list", "do": [["show", "sh"], ["hl", "c", 0]] },
+        { "at": "Add an item in one call", "do": [["ln", "c", 4], ["hl", "c", 3], ["text", "sh", "shared list: [1]"], ["out", "c", "[1]"], ["pulse", "sh"]] },
+        { "at": "and it's still there", "do": [["ln", "c", 5], ["hl", "c", 4], ["text", "sh", "shared list: [1, 2]"], ["tone", "sh", "bad"], ["out", "c", "[1, 2]   ← expected [2]", "bad"], ["pulse", "sh"]] }
+      ],
       "narration": "Now the most famous bug in Python. A default value is evaluated once — when the function is defined — not each call. So a default of empty list means every call shares the same list. Add an item in one call, and it's still there in the next. C sharp devs never see this because params can't have defaults backed by mutable state like this."
     },
     {
@@ -66,20 +104,41 @@
       "narration": "Wrong: default of empty list — items accumulate across calls. Right: default of None, then create a fresh list inside. It's the universal safe pattern, and every experienced Python dev writes it automatically. When you review agent code that keeps 'remembering' things it shouldn't — check for mutable defaults first."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · LAMBDA & CLOSURES",
       "title": "lambda = one-expression function. Closures = captured state.",
       "sub": "Small tools, composed inline",
+      "h": 255,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.0, "w": 96, "h": 56.9, "t": "closures.py", "lines": ["double = lambda x: x * 2", "def make_adder(n):", "    return lambda x: x + n", "add5 = make_adder(5)", "add5(10)"] },
+        { "id": "n", "k": "chip", "x": 50, "y": 72.9, "t": "remembers n = 5", "tone": "good", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.6, "t": "LINQ-style, no ceremony", "e": "✨", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "A lambda is a tiny anonymous", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "double(4) → 8"]] },
+        { "at": "one expression, no statements", "do": [["hot", "c"]] },
+        { "at": "A closure is a function that remembers", "do": [["unhot", "c"], ["ln", "c", 3], ["hl", "c", 1, 2]] },
+        { "at": "variables around where it was created", "do": [["ln", "c", 4], ["hl", "c", 3], ["show", "n"], ["out", "c", "add5 = closure over n"]] },
+        { "at": "like a C sharp lambda", "do": [["ln", "c", 5], ["hl", "c", 4], ["pulse", "n"], ["out", "c", "15", "good"]] },
+        { "at": "Together they give you", "do": [["show", "t"]] }
+      ],
       "narration": "A lambda is a tiny anonymous function — one expression, no statements. Fine for short transforms you pass to other functions. A closure is a function that remembers the variables around where it was created — like a C sharp lambda capturing local variables. Together they give you LINQ-style composition without ceremony."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "λ", "t": "sorted(models, key=lambda m: len(m))", "s": "Lambda as the sort key — inline, no named helper needed" },
-        { "e": "🧠", "t": "Closures capture variables, not values", "s": "The late-binding gotcha: loop variables are shared unless bound as defaults" },
-        { "e": "🎯", "t": "Use named def beyond one expression", "s": "PEP 8: if the lambda needs a name, give it a real def" }
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.6, "w": 96, "h": 58.0, "t": "rules.py", "lines": ["sorted(models, key=lambda m: len(m))", "fns = [lambda: i for i in range(3)]", "fns[0]()", "fns = [lambda {{i=i}}: i for i in range(3)]", "fns[0]()"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 76.8, "t": "bigger than one expression? name it", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Practical rules", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "shortest names first", "good"]] },
+        { "at": "Closures capture the variable", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "all seeing the last value", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "2  ← every lambda sees last i", "bad"]] },
+        { "at": "fix it by binding", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["mark", "c", "i=i"], ["out", "c", "0  ✓", "good"]] },
+        { "at": "one expression is the limit", "do": [["mark", "c", ""], ["hl", "c", -1], ["out", "c", ""], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Practical rules. Sorted with a lambda key — shortest models first — is the everyday use. Closures capture the variable, not a snapshot — the classic bug is lambdas in a loop all seeing the last value; fix it by binding the loop variable as a default argument. And style: one expression is the limit — anything bigger deserves a name."
     },
@@ -107,12 +166,27 @@
       "narration": "A decorator wraps a function with extra behavior — the exact shape of ASP dot net middleware or an ActionFilter. You write at-sign retry above a function, and every call now retries on failure. The mechanism is beautifully simple: a function that takes a function and returns a wrapped function. In agent systems, decorators add logging, timing, and rate-limit handling to every tool."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🎁", "pk": "🎁", "t": "@timer above def call_api():", "s": "Syntactic sugar: call_api = timer(call_api) — same thing, spelled better" },
-        { "e": "🧩", "pk": "🧩", "t": "functools.wraps preserves the name/doc", "s": "Without it, every wrapped function claims to be called 'wrapper'" },
-        { "e": "🔌", "pk": "🔌", "t": "Stack them: @log @retry @validate", "s": "Order matters — top decorator runs first on the way in, last on the way out" }
+      "h": 215,
+      "actors": [
+        { "id": "a", "k": "code", "x": 50, "y": 27.3, "w": 96, "h": 50.9, "t": "decorator", "lines": ["@log", "def run(): ...", "# same as: run = log(run)"] },
+        { "id": "b", "k": "code", "x": 50, "y": 39.7, "w": 96, "h": 75.7, "t": "functools", "lines": ["from functools import wraps", "def log(fn):", "    {{@wraps(fn)}}", "    def wrapper(*a, **k):", "        return fn(*a, **k)", "    return wrapper"] },
+        { "id": "bad", "k": "tag", "x": 50, "y": 88.4, "t": "traces say 'wrapper'", "e": "⚠️", "tone": "bad" },
+        { "id": "s", "k": "code", "x": 50, "y": 25.9, "w": 96, "h": 48.0, "t": "stack", "lines": ["@log", "@retry", "@validate", "def call_llm(p): ..."] },
+        { "id": "v", "k": "chip", "x": 20, "y": 66.0, "t": "validate", "tone": "accent", "c": "sm" },
+        { "id": "r", "k": "chip", "x": 50, "y": 66.0, "t": "retry", "tone": "accent", "c": "sm" },
+        { "id": "l", "k": "chip", "x": 80, "y": 66.0, "t": "log", "tone": "accent", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Mechanics", "do": [["show", "a"], ["ln", "a", 3], ["hl", "a", 0]] },
+        { "at": "is sugar for passing the function", "do": [["hl", "a", 2], ["out", "a", "run now = the wrapped version", "good"]] },
+        { "at": "Use functools dot wraps", "do": [["hide", "a"], ["show", "b"], ["ln", "b", 6], ["mark", "b", "@wraps(fn)"], ["hl", "b", 2], ["out", "b", "keeps name + docstring ✓", "good"]] },
+        { "at": "otherwise your stack traces", "do": [["mark", "b", ""], ["hl", "b", -1], ["show", "bad"], ["tone", "b", "bad"], ["out", "b", "without wraps → \"wrapper\"", "bad"]] },
+        { "at": "And decorators stack", "do": [["hide", "b"], ["hide", "bad"], ["show", "s"], ["ln", "s", 4], ["hl", "s", 0, 2]] },
+        { "at": "applied bottom-up", "do": [["hl", "s", 2], ["show", "v"], ["hot", "v"]] },
+        { "at": "then retry", "do": [["hl", "s", 1], ["unhot", "v"], ["show", "r"], ["hot", "r"]] },
+        { "at": "then log", "do": [["hl", "s", 0], ["unhot", "r"], ["show", "l"], ["hot", "l"]] }
       ],
       "narration": "Mechanics: at-sign name above a function is sugar for passing the function through the decorator. Use functools dot wraps so the wrapper keeps the original name and docstring — otherwise your stack traces all say 'wrapper'. And decorators stack, applied bottom-up: validate, then retry, then log — each one wrapping the previous."
     },
@@ -141,12 +215,26 @@
       "narration": "A generator is a function that yields values one at a time and pauses between them — Python's IEnumerable, but written as an ordinary function. Each yield hands out one item and freezes the function's state until the next call. No list in memory, no index bookkeeping. This is how you stream LLM responses token by token and process gigabyte files on a laptop."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "🌊", "t": "yield streams; return materializes", "s": "Processing 10M rows via yield uses constant memory" },
-        { "e": "🔗", "t": "Generators compose into pipelines", "s": "read() → parse() → embed() → store(), each stage lazy" },
-        { "e": "📦", "t": "Generator expressions: (x*x for x in nums)", "s": "Parentheses version of a comprehension — lazy, feeds sums/loops" }
+      "h": 265,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 32.2, "w": 96, "h": 61.4, "t": "pipeline.py", "lines": ["def read_lines(f):", "    for line in f:", "        yield line", "lines = read_lines(f)", "rows = (parse(l) for l in lines)", "vecs = (embed(r) for r in rows)"] },
+        { "id": "r", "k": "chip", "x": 18, "y": 77.7, "t": "read", "c": "sm" },
+        { "id": "p", "k": "chip", "x": 50, "y": 77.7, "t": "parse", "c": "sm" },
+        { "id": "e", "k": "chip", "x": 82, "y": 77.7, "t": "embed", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 92.8, "t": "every serious RAG pipeline", "e": "🔗", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "The payoff", "do": [["show", "c"], ["ln", "c", 3], ["hl", "c", 0, 2]] },
+        { "at": "because only one item exists", "do": [["out", "c", "1 item in memory at a time", "good"], ["pulse", "c"]] },
+        { "at": "And generators chain", "do": [["ln", "c", 6], ["hl", "c", 3, 5], ["show", "r"], ["show", "p"], ["show", "e"]] },
+        { "at": "read lines", "do": [["hot", "r"]] },
+        { "at": "parse records", "do": [["unhot", "r"], ["hot", "p"]] },
+        { "at": "embed them", "do": [["unhot", "p"], ["hot", "e"]] },
+        { "at": "each stage pulling", "do": [["unhot", "e"], ["out", "c", "each stage pulls on demand"]] },
+        { "at": "That's the architecture", "do": [["show", "t"], ["pulse", "t"]] },
+        { "at": "Generator expressions", "do": [["hl", "c", 4, 5], ["hide", "t"]] }
       ],
       "narration": "The payoff: constant memory regardless of data size, because only one item exists at a time. And generators chain — read lines, parse records, embed them — each stage pulling from the previous on demand. That's the architecture of every serious data and RAG pipeline you'll build. Generator expressions, parentheses instead of brackets, are the lazy cousin of comprehensions."
     },

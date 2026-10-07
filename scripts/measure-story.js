@@ -30,10 +30,12 @@ const srv=http.createServer((q,r)=>{let f=path.join(root,decodeURIComponent(q.ur
      const bad=await p.evaluate(()=>{
        const stg=document.querySelector('.st-stage:last-of-type')||[...document.querySelectorAll('.st-stage')].pop();
        const sr=stg.getBoundingClientRect(), out=[];
-       const els=[...stg.querySelectorAll('.st-a.on')].map(e=>({e,r:e.getBoundingClientRect(),k:[...e.classList].find(c=>/^st-(panel|chip|pkg|tag|term)$/.test(c)),t:(e.textContent||'').trim().slice(0,18)}));
+       const els=[...stg.querySelectorAll('.st-a.on')].map(e=>({e,r:e.getBoundingClientRect(),k:[...e.classList].find(c=>/^st-(panel|chip|pkg|tag|term|code)$/.test(c)),t:(e.textContent||'').trim().slice(0,18)}));
        els.forEach(a=>{ const r=a.r; if(r.left<sr.left-2||r.right>sr.right+2||r.top<sr.top-2||r.bottom>sr.bottom+2) out.push('OFF '+a.t); 
          if(a.k==='st-chip'||a.k==='st-tag'){ if(a.e&&0){} const el=a.e; if(el.scrollWidth>el.clientWidth+2) out.push('CLIP '+a.t);} });
-       const cont=k=>k==='st-panel'||k==='st-term';
+       stg.querySelectorAll('.st-code.on').forEach(c=>{const cr=c.getBoundingClientRect(),o=c.querySelector('.cd-out.on'),ot=o?o.getBoundingClientRect().top:cr.bottom;
+         c.querySelectorAll('.cl.on').forEach(l=>{ if(l.scrollWidth>l.clientWidth+1||l.getBoundingClientRect().right>cr.right+1) out.push('CODE-CLIP '+l.textContent.trim().slice(0,20)); if(l.getBoundingClientRect().bottom>ot+1) out.push('CODE-COVERED '+l.textContent.trim().slice(0,20)); }); });
+       const cont=k=>k==='st-panel'||k==='st-term'||k==='st-code';
        for(let x=0;x<els.length;x++)for(let y=x+1;y<els.length;y++){const A=els[x],B=els[y];
          const o=!(A.r.right-3<=B.r.left||B.r.right-3<=A.r.left||A.r.bottom-3<=B.r.top||B.r.bottom-3<=A.r.top); if(!o)continue;
          const ca=cont(A.k),cb=cont(B.k); if(ca!==cb){const I=ca?B.r:A.r,O=ca?A.r:B.r; if(I.left>=O.left-2&&I.right<=O.right+2&&I.top>=O.top-2&&I.bottom<=O.bottom+2)continue;}

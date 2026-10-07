@@ -15,32 +15,45 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · CLASSES",
       "title": "class is the same. **self** is the difference.",
       "sub": "The instance passes itself to every method",
+      "h": 265,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 68.2, "t": "agent.py", "lines": ["class Agent:", "    def __init__({{self}}, name):", "        {{self}}.name = name", "    def greet({{self}}):", "        return \"hi \" + {{self}}.name", "bot = Agent(\"Ada\")", "bot.greet()"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 80.0, "t": "_x → 'please don't'", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 92.1, "t": "__x → name-mangled, really don't", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "A Python class looks familiar", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "methods inside", "do": [["ln", "c", 5], ["hl", "c", 1, 4]] },
+        { "at": "takes self as its first parameter", "do": [["mark", "c", "self"], ["hl", "c", -1]] },
+        { "at": "you pass it explicitly", "do": [["ln", "c", 7], ["hl", "c", 6], ["out", "c", "bot.greet()  ≡  greet(bot)"]] },
+        { "at": "Self is this", "do": [["hot", "c"]] },
+        { "at": "The constructor is a dunder", "do": [["unhot", "c"], ["mark", "c", ""], ["hl", "c", 1], ["out", "c", "__init__ builds the object", "good"]] },
+        { "at": "No access modifiers either", "do": [["hl", "c", -1], ["show", "t1"]] },
+        { "at": "two means", "do": [["show", "t2"], ["pulse", "t2"]] }
+      ],
       "narration": "A Python class looks familiar — class keyword, methods inside. The big difference: every instance method takes self as its first parameter, and you pass it explicitly. Self is this — but visible. The constructor is a dunder method called init. No access modifiers either: one underscore means 'please don't', two means 'name-mangled, really don't' — it's convention, not enforcement."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        {
-          "e": "🏗️",
-          "t": "def __init__(self, name)",
-          "s": "The constructor — runs on Model(name=\"gpt\")"
-        },
-        {
-          "e": "🙋",
-          "t": "self.name = name",
-          "s": "Attributes are created by assignment — no field declarations"
-        },
-        {
-          "e": "🔓",
-          "t": "_private by convention",
-          "s": "_x = 'please don't' · __x = name-mangled — trust, not enforcement"
-        }
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 41.3, "w": 96, "h": 79.4, "t": "attrs.py", "lines": ["class Agent:", "    def __init__(self, name):", "        self.name = name", "        self._cache = {}", "        self.__key = \"sk-...\"", "a = Agent(\"Ada\")", "a.tier = \"pro\"", "a._Agent__key"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 91.2, "t": "Python trusts you", "e": "🤝", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Mechanics", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "init runs at construction", "do": [["ln", "c", 3], ["hl", "c", 1], ["out", "c", "Agent(\"Ada\") → init runs"]] },
+        { "at": "Attributes just appear", "do": [["ln", "c", 7], ["hl", "c", 2], ["out", "c", "created on assignment", "good"]] },
+        { "at": "no declaration block", "do": [["hl", "c", 6], ["out", "c", "a.tier added — no declaration", "good"]] },
+        { "at": "underscore prefix says", "do": [["hl", "c", 3], ["out", "c", "_cache = \"internal, hands off\""]] },
+        { "at": "double underscore makes", "do": [["ln", "c", 8], ["hl", "c", 4], ["out", "c", "__key → _Agent__key", "bad"]] },
+        { "at": "Python trusts you", "do": [["hl", "c", 7], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Mechanics: init runs at construction. Attributes just appear when you assign them — no declaration block, no types required. And privacy is by honor: underscore prefix says 'internal', double underscore makes the compiler rename it so subclasses can't collide. Python trusts you more than C sharp does — that includes trusting you not to break things."
     },
@@ -70,54 +83,74 @@
       "narration": "Dunder means double underscore. These methods plug your class into Python's own syntax. Implement len and len of your object works. Implement eq and double-equals works. Implement str and print shows something human. It's C sharp's operator overloading plus interfaces plus ToString — one mechanism, everywhere, no ceremony."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        {
-          "e": "📏",
-          "t": "__len__ → len(obj)",
-          "s": "Also makes your object pass truthiness checks naturally"
-        },
-        {
-          "e": "🖨️",
-          "t": "__str__ / __repr__",
-          "s": "__str__ = pretty (print) · __repr__ = debug (REPL) — implement both"
-        },
-        {
-          "e": "➕",
-          "t": "__eq__, __add__, __getitem__",
-          "s": "==, +, and obj[i] all become overloadable"
-        }
+      "h": 255,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.5, "w": 96, "h": 63.8, "t": "prompt.py", "lines": ["class Prompt:", "  def __len__(self): ...  # len(p)", "  def __str__(self): ...  # print(p)", "  def __repr__(self): ...  # debug", "  def __eq__(self, o): ...  # ==", "  def __getitem__(self, i): ..."] },
+        { "id": "t", "k": "tag", "x": 50, "y": 75.3, "t": "teach Python what your object means", "tone": "accent" },
+        { "id": "p", "k": "tag", "x": 50, "y": 88.6, "t": "Pydantic models work this way", "e": "✨", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "The ones you'll write", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "len for length", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "len(p) → 11"]] },
+        { "at": "str for display", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "print(p) → hello world"]] },
+        { "at": "repr for debugging", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "Prompt(\"hello world\")"]] },
+        { "at": "eq for value comparison", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "p == q → True", "good"]] },
+        { "at": "Add getitem", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "p[0] → \"h\""]] },
+        { "at": "The mindset shift", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] },
+        { "at": "This is exactly how Pydantic", "do": [["show", "p"], ["pulse", "p"]] }
       ],
       "narration": "The ones you'll write constantly: len for length, str for display, repr for debugging, eq for value comparison. Add getitem and square-bracket indexing works on your object. The mindset shift: you're not calling methods, you're teaching Python's operators what your object means. This is exactly how Pydantic models behave like plain data."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · INHERITANCE",
       "title": "Inheritance exists. **Prefer composition.**",
       "sub": "super() calls the parent — mixins are common",
+      "h": 275,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 26.7, "w": 96, "h": 50.5, "t": "inherit.py", "lines": ["class Tool:", "    def run(self): ...", "class Search(Tool):", "    def run(self):", "        super().run()", "        self.log()"] },
+        { "id": "a", "k": "chip", "x": 14, "y": 61.1, "t": "A", "tone": "bad", "c": "sm" },
+        { "id": "b", "k": "chip", "x": 34, "y": 61.1, "t": "B", "tone": "bad", "c": "sm" },
+        { "id": "cc", "k": "chip", "x": 54, "y": 61.1, "t": "C", "tone": "bad", "c": "sm" },
+        { "id": "d", "k": "chip", "x": 74, "y": 61.1, "t": "D", "tone": "bad", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 74.2, "t": "deep hierarchies: frowned on", "tone": "bad" },
+        { "id": "ag", "k": "chip", "x": 20, "y": 89.5, "t": "Agent", "tone": "good", "c": "sm" },
+        { "id": "llm", "k": "chip", "x": 55, "y": 89.5, "t": "LLM", "tone": "good", "c": "sm" },
+        { "id": "tl", "k": "chip", "x": 82, "y": 89.5, "t": "Tools", "tone": "good", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Inheritance works as you'd expect", "do": [["show", "c"], ["ln", "c", 4]] },
+        { "at": "class B of A", "do": [["hl", "c", 2]] },
+        { "at": "super calls the parent", "do": [["ln", "c", 5], ["hl", "c", 4]] },
+        { "at": "you can override or extend", "do": [["ln", "c", 6], ["hl", "c", 3, 5]] },
+        { "at": "Python's culture is blunter", "do": [["hl", "c", -1], ["dim", "c"], ["show", "a"], ["show", "b"], ["show", "cc"], ["show", "d"], ["show", "t"]] },
+        { "at": "Composition and duck typing", "do": [["dim", "a"], ["dim", "b"], ["dim", "cc"], ["dim", "d"], ["dim", "t"], ["show", "ag"], ["show", "llm"], ["show", "tl"]] },
+        { "at": "keep it shallow", "do": [["hide", "a"], ["hide", "b"], ["hide", "cc"], ["hide", "d"], ["hide", "t"], ["undim", "c"], ["hl", "c", 0, 2], ["pulse", "ag"]] }
+      ],
       "narration": "Inheritance works as you'd expect: class B of A, super calls the parent, and you can override or extend. But Python's culture is blunter than C sharp's: deep hierarchies are frowned on. Composition and duck typing solve most problems inheritance used to. When you do inherit, keep it shallow — one level, maybe two."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        {
-          "e": "👪", "pk": "👪",
-          "t": "class Tool(BaseTool):",
-          "s": "Inherit, override run(), call super().run() to extend behavior"
-        },
-        {
-          "e": "🧬", "pk": "🧬",
-          "t": "super().__init__(...)",
-          "s": "Python 3: plain super() inside a method — no class name needed"
-        },
-        {
-          "e": "🧱", "pk": "🧱",
-          "t": "Mixins: small, single-purpose parents",
-          "s": "class JsonMixin, class LoggerMixin — composed, not deep trees"
-        }
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 32.9, "w": 96, "h": 62.6, "t": "mixins.py", "lines": ["class Tool(BaseTool):", "    def __init__(self):", "        super().__init__()", "class Log: ...", "class Retry: ...", "class Schema: ...", "class Search(Log, Retry, Tool): ..."] },
+        { "id": "l", "k": "chip", "x": 18, "y": 74.4, "t": "logging", "tone": "accent", "c": "sm" },
+        { "id": "r", "k": "chip", "x": 50, "y": 74.4, "t": "retries", "tone": "accent", "c": "sm" },
+        { "id": "s", "k": "chip", "x": 82, "y": 74.4, "t": "schema", "tone": "accent", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 90.4, "t": "stack them, stay flat", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Syntax: class Tool", "do": [["show", "c"], ["ln", "c", 3], ["hl", "c", 0]] },
+        { "at": "Super with empty parens", "do": [["hl", "c", 2], ["pulse", "c"]] },
+        { "at": "And a Python specialty", "do": [["ln", "c", 6], ["hl", "c", 3, 5]] },
+        { "at": "one mixin for logging", "do": [["hl", "c", 3], ["show", "l"], ["hot", "l"]] },
+        { "at": "one for retries", "do": [["hl", "c", 4], ["unhot", "l"], ["show", "r"], ["hot", "r"]] },
+        { "at": "one for schema", "do": [["hl", "c", 5], ["unhot", "r"], ["show", "s"], ["hot", "s"]] },
+        { "at": "stack them", "do": [["ln", "c", 7], ["hl", "c", 6], ["unhot", "s"], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Syntax: class Tool, parenthesis Base Tool. Super with empty parens calls the parent — cleaner than C sharp's base keyword. And a Python specialty: mixins — tiny classes that add one capability, composed together. Agent frameworks love them: one mixin for logging, one for retries, one for schema — stack them, stay flat."
     },
@@ -147,24 +180,20 @@
       "narration": "Here's the class you'll actually write most. Put at-dataclass above a class, list fields with type hints, and Python generates the constructor, equality, and a clean repr automatically. It's C sharp's record types — constructor, equality, ToString — with one decorator. Defaults, mutable defaults done safely, even frozen for immutability."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        {
-          "e": "⚡", "pk": "⚡",
-          "t": "@dataclass class Config:",
-          "s": "Three lines replace fifteen — init, eq, repr generated"
-        },
-        {
-          "e": "🔒", "pk": "🔒",
-          "t": "@dataclass(frozen=True)",
-          "s": "Immutable records — hashable, safe to share"
-        },
-        {
-          "e": "🧷", "pk": "🧷",
-          "t": "field(default_factory=list)",
-          "s": "Safe mutable defaults — the trap from Reel 4, handled for you"
-        }
+      "h": 260,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.7, "w": 96, "h": 76.3, "t": "config.py", "lines": ["@dataclass({{frozen=True}})", "class Config:", "    model: str = \"gpt-5\"", "    temp: float = 0.2", "    tags: list = field(", "        {{default_factory=list}})", "cfg = Config()", "cfg.temp = 1.0"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 89.2, "t": "outgrow it? → Pydantic · Reel 9", "e": "➡️", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "The essentials", "do": [["show", "c"], ["ln", "c", 4], ["hl", "c", 0]] },
+        { "at": "then fields as class annotations", "do": [["hl", "c", 2, 3]] },
+        { "at": "Frozen equals true", "do": [["mark", "c", "frozen=True"], ["hl", "c", 0]] },
+        { "at": "makes it immutable", "do": [["mark", "c", ""], ["ln", "c", 8], ["hl", "c", 6, 7], ["out", "c", "FrozenInstanceError", "bad"]] },
+        { "at": "And field with default factory", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["mark", "c", "default_factory=list"], ["out", "c", "fresh list per instance ✓", "good"]] },
+        { "at": "When you outgrow dataclasses", "do": [["mark", "c", ""], ["hl", "c", -1], ["out", "c", ""], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The essentials: at-dataclass, then fields as class annotations with defaults. Frozen equals true makes it immutable — perfect for config and value objects. And field with default factory creates fresh mutable values per instance — the mutable-default trap, solved by design. When you outgrow dataclasses, Pydantic models are the next step — that's Reel 9."
     },
@@ -199,50 +228,60 @@
       "narration": "C sharp interfaces are nominal — you declare them. Python has two options. Abstract base classes: the C sharp way, explicit inheritance. Protocols: the modern way — you define the methods you expect, and any class that happens to implement them automatically satisfies the protocol. No inheritance needed. It's structural typing, exactly like TypeScript."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 4,
-      "cards": [
-        {
-          "e": "🅰️",
-          "t": "ABC (nominal)",
-          "s": "class Storage(ABC) + @abstractmethod. Explicit, but forces inheritance."
-        },
-        {
-          "e": "🅿️",
-          "t": "Protocol (structural)",
-          "s": "class Storage(Protocol): def save(...) — any match qualifies. Zero coupling.",
-          "win": true
-        }
+      "h": 305,
+      "actors": [
+        { "id": "a", "k": "code", "x": 50, "y": 22.2, "w": 96, "h": 41.7, "t": "ABC", "lines": ["class Store(ABC):", "    @abstractmethod", "    def get(self): ...", "Mem()   # forgot get()"] },
+        { "id": "p", "k": "code", "x": 50, "y": 68.7, "w": 96, "h": 41.7, "t": "Protocol", "lines": ["class Store(Protocol):", "    def get(self) -> str: ...", "class Mem: ...  # has get()", "x: Store = Mem()"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 94.4, "t": "2026: reach for Protocol first", "e": "✨", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Side by side", "do": [["show", "a"], ["ln", "a", 3], ["hl", "a", 0]] },
+        { "at": "you inherit from it", "do": [["hl", "a", 0, 2]] },
+        { "at": "forget a method", "do": [["ln", "a", 4], ["hl", "a", 3], ["out", "a", "TypeError: can't instantiate", "bad"]] },
+        { "at": "Protocol: you just declare", "do": [["dim", "a"], ["show", "p"], ["ln", "p", 2], ["hl", "p", 0, 1]] },
+        { "at": "mypy checks that anything", "do": [["ln", "p", 4], ["hl", "p", 2, 3], ["out", "p", "mypy ✓ shape matches", "good"]] },
+        { "at": "define them as protocols", "do": [["hl", "p", -1], ["hot", "p"]] },
+        { "at": "In 2026 codebases", "do": [["unhot", "p"], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Side by side. ABC: you inherit from it, and forget a method — instantiation fails loudly. Protocol: you just declare the shape, and mypy checks that anything passed in matches. Your vector store, your cache, your LLM client — define them as protocols and test doubles become trivial. In 2026 codebases, reach for Protocol first."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 5,
       "kicker": "CHAPTER 6 · @PROPERTY",
       "title": "Methods that behave like **fields**",
       "sub": "@property = computed values without ()",
+      "h": 268,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.2, "w": 96, "h": 67.4, "t": "temp.py", "lines": ["class Temp:", "    def __init__(self, c):", "        self._c = c", "    {{@property}}", "    def f(self): return self._c*9/5+32", "t = Temp(100)", "t.f"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 79.9, "t": "validation + derived values", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 89.6, "t": "+ setter = C# property, Python-style", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Last tool: property", "do": [["show", "c"], ["ln", "c", 3]] },
+        { "at": "turns a method into an attribute", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["mark", "c", "@property"]] },
+        { "at": "Access it without parentheses", "do": [["ln", "c", 7], ["hl", "c", 6], ["mark", "c", ""], ["out", "c", "212.0", "good"]] },
+        { "at": "computes on every read", "do": [["pulse", "c"]] },
+        { "at": "This is where validation", "do": [["hl", "c", -1], ["show", "t1"]] },
+        { "at": "Pair it with a setter", "do": [["show", "t2"], ["pulse", "t2"]] }
+      ],
       "narration": "Last tool: property turns a method into an attribute. Access it without parentheses, but it computes on every read. This is where validation and derived values live: a temperature in Celsius that also exposes Fahrenheit, or a config that reads an environment variable lazily. Pair it with a setter and you get C sharp property syntax, Python-style."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 5,
-      "items": [
-        {
-          "e": "✨", "pk": "✨",
-          "t": "@property def cost_usd(self)",
-          "s": "model.cost_usd — no parens, computed fresh each read"
-        },
-        {
-          "e": "🛡️", "pk": "🛡️",
-          "t": "@cost.setter validates on write",
-          "s": "Raise ValueError on bad input — validation lives in the class"
-        },
-        {
-          "e": "💡", "pk": "💡",
-          "t": "Cache with functools.cached_property",
-          "s": "Compute once, then serve the cached value forever"
-        }
+      "h": 240,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 43.0, "w": 96, "h": 82.7, "t": "props.py", "lines": ["@property", "def temp(self): return self._t", "@temp.setter", "def temp(self, v):", "    if v < -273: raise ValueError", "    self._t = v", "@cached_property", "def vec(self): return embed(self.text)"] }
+      ],
+      "steps": [
+        { "at": "The pattern", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "at-name dot setter", "do": [["ln", "c", 4], ["hl", "c", 2, 3]] },
+        { "at": "ValueError on anything invalid", "do": [["ln", "c", 6], ["hl", "c", 4], ["out", "c", "temp = -300 → ValueError", "bad"]] },
+        { "at": "fail fast", "do": [["hl", "c", 5], ["out", "c", "temp = 20 ✓", "good"]] },
+        { "at": "cached property from functools", "do": [["ln", "c", 8], ["hl", "c", 6, 7], ["out", "c", "computed once, then memoized", "good"]] }
       ],
       "narration": "The pattern: at-property for computed reads, at-name dot setter for guarded writes. ValueError on anything invalid — fail fast, close to the data. And when the computation is expensive but stable, cached property from functools computes once and memoizes. Clean, testable, and no boilerplate getters in sight."
     },

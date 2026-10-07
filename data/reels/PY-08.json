@@ -13,20 +13,41 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · BASIC HINTS",
       "title": "Annotate the **shape**, keep the freedom",
       "sub": "Hints are for readers and checkers — Python ignores them at runtime",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.3, "w": 96, "h": 50.9, "t": "hints.py", "lines": ["def greet({{name: str}}) {{-> str}}:", "    return \"hi \" + name", "count: int = \"oops\""] },
+        { "id": "m", "k": "chip", "x": 28, "y": 67.9, "t": "mypy", "tone": "accent", "c": "sm" },
+        { "id": "p", "k": "chip", "x": 62, "y": 67.9, "t": "pyright", "tone": "accent", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 86.5, "t": "adopt gradually: file by file", "e": "🪜", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Type hints are annotations", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0]] },
+        { "at": "colons and arrows", "do": [["mark", "c", "name: str|-> str"]] },
+        { "at": "Python itself ignores them", "do": [["mark", "c", ""], ["ln", "c", 3], ["hl", "c", 2], ["out", "c", "runs fine — Python never checks"]] },
+        { "at": "external checkers", "do": [["show", "m"], ["show", "p"], ["out", "c", "mypy: str ≠ int  ✗", "bad"], ["tone", "c", "bad"], ["pulse", "m"]] },
+        { "at": "C sharp-style safety", "do": [["tone", "c", "good"], ["out", "c", "safety, Python flexibility ✓", "good"]] },
+        { "at": "adopt it gradually", "do": [["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Type hints are annotations — colons and arrows that describe what a function takes and returns. Python itself ignores them completely at runtime; the power comes from external checkers that read your code statically. That means you get C sharp-style safety without giving up Python's flexibility — and you can adopt it gradually, file by file, function by function."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "🔤", "t": "def greet(name: str) -> str:", "s": "Parameters and return — the two annotations every function gets" },
-        { "e": "📚", "t": "list[str] · dict[str, int]", "s": "Built-in generics — parameterize collections like List<string> in C#" },
-        { "e": "🧓", "t": "Legacy: from typing import List", "s": "Pre-3.9 code used typing.List — modern code uses lowercase builtins" }
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 43.8, "w": 96, "h": 83.5, "t": "syntax.py", "lines": ["name: str = \"ada\"", "def add(a: int, b: int) {{-> int}}:", "    return a + b", "ids: list[str] = [\"a\", \"b\"]", "scores: dict[str, int] = {}", "# old: from typing import List"] }
+      ],
+      "steps": [
+        { "at": "The syntax", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "name colon type"]] },
+        { "at": "an arrow before the return type", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["mark", "c", "-> int"], ["out", "c", "returns an int"]] },
+        { "at": "Collections take parameters", "do": [["mark", "c", ""], ["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "list[str] · dict[str, int]", "good"]] },
+        { "at": "before Python 3.9", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "old style: List, Dict", "bad"]] },
+        { "at": "today lowercase builtins", "do": [["hl", "c", 3, 4], ["out", "c", "today: lowercase builtins ✓", "good"]] }
       ],
       "narration": "The syntax: name colon type, and an arrow before the return type. Collections take parameters in square brackets — list of string, dict of string to int. And a modernization note: before Python 3.9 you imported capital-L List from typing; today lowercase builtins are the standard. If you see capital versions in older codebases, that's the reason."
     },
@@ -58,12 +79,20 @@
       "narration": "In C sharp, string can be null unless you enable nullable reference types. In Python-with-hints, the rule is explicit: a parameter typed string does not accept None — if None is legal, you must say Optional of string, which means string or None. The checker will then force every caller to handle the None case. This one annotation eliminates the most common runtime crash in the language."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "🤝", "t": "str | int (modern) / Union[str, int]", "s": "Either type is acceptable — the pipe syntax is Python 3.10+" },
-        { "e": "❓", "t": "Optional[str] ≡ str | None", "s": "None is just another type in a union — write it explicitly" },
-        { "e": "🛡️", "t": "The checker enforces handling", "s": "Callers of Optional must narrow: if x is not None — mypy verifies" }
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 36.3, "w": 96, "h": 69.3, "t": "unions.py", "lines": ["def clean(x: {{str | None}}) -> str:", "    return x.strip()", "def safe(x: str | None) -> str:", "    if isinstance(x, str):", "        return x.strip()", "    return \"\""] },
+        { "id": "t", "k": "tag", "x": 50, "y": 84.3, "t": "feels like getting the compiler back", "e": "✨", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Unions say", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["mark", "c", "str | None"]] },
+        { "at": "if a value might be None", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "x may be None  ✗ red squiggle", "bad"], ["tone", "c", "bad"]] },
+        { "at": "not a production incident", "do": [["pulse", "c"]] },
+        { "at": "Combined with isinstance", "do": [["mark", "c", ""], ["tone", "c", ""], ["ln", "c", 6], ["hl", "c", 2, 5], ["out", "c", ""]] },
+        { "at": "the checker understands your guard", "do": [["hl", "c", 3, 4], ["tone", "c", "good"], ["out", "c", "x is str here ✓", "good"]] },
+        { "at": "It genuinely feels", "do": [["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Unions say 'either'. Modern syntax: string pipe int. The checker tracks every path: if a value might be None, calling a string method on it is a red squiggle, not a production incident. Combined with isinstance narrowing — if isinstance of x comma string — the checker understands your guard and clears the error. It genuinely feels like getting the compiler back."
     },
@@ -93,30 +122,70 @@
       "narration": "Generics parameterize functions and classes over types — T in C sharp, TypeVar in Python. One function, first of list of T, type-checks for lists of anything while keeping the element type. And TypedDict is the gem you'll actually use daily: it gives a dictionary a fixed schema — which keys exist, what types they hold — which is precisely the shape of every LLM API payload you'll handle."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "🔁", "t": "def first[T](items: list[T]) -> T:", "s": "3.12+ syntax: [T] declares the type parameter inline (TypeVar before)" },
-        { "e": "📐", "t": "class ApiResponse(TypedDict):", "s": "model: str · tokens: int — dicts that check like classes" },
-        { "e": "⚖️", "t": "TypedDict vs dataclass", "s": "TypedDict = the data IS a dict (JSON land) · dataclass = a real object" }
+      "h": 265,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 68.2, "t": "generics.py", "lines": ["def first[T](xs: list[T]) -> T:", "    return xs[0]", "first([\"a\"])", "first([1])", "class Reply(TypedDict):", "    text: str", "    tokens: int"] },
+        { "id": "j", "k": "tag", "x": 50, "y": 80.0, "t": "JSON all the way → TypedDict", "tone": "accent" },
+        { "id": "o", "k": "tag", "x": 50, "y": 92.1, "t": "real object → dataclass / Pydantic", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Two tools, one choice", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "Generics with a type parameter", "do": [["hl", "c", 0, 1], ["out", "c", "T = whatever goes in"]] },
+        { "at": "get first of strings", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "→ str", "good"]] },
+        { "at": "first of ints", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "→ int", "good"]] },
+        { "at": "TypedDict declares schemas", "do": [["ln", "c", 7], ["hl", "c", 4, 6], ["out", "c", "a dict with a known shape"]] },
+        { "at": "if the data is JSON throughout", "do": [["hl", "c", -1], ["show", "j"], ["hot", "j"]] },
+        { "at": "if it's a real object", "do": [["unhot", "j"], ["show", "o"], ["hot", "o"]] },
+        { "at": "senior signal", "do": [["unhot", "o"], ["pulse", "o"]] }
       ],
       "narration": "Two tools, one choice. Generics with a type parameter T: write first, get first of strings, first of ints, all type-checked. TypedDict declares schemas for data that stays a dict — API responses, tool arguments. And the boundary: if the data is JSON throughout, TypedDict; if it's a real object with behavior, dataclass or Pydantic. Knowing which side of that line you're on is a senior signal."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · THE CHECKERS",
       "title": "mypy & pyright: **your new compiler**",
       "sub": "Run them in CI, watch them in your editor",
+      "h": 265,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 22.2, "w": 96, "h": 41.3, "t": "terminal", "lines": ["$ mypy src/", "app.py:12: error: int ≠ str", "Found 1 error in 1 file"] },
+        { "id": "m", "k": "chip", "x": 28, "y": 55.1, "t": "mypy · CI", "tone": "accent", "c": "sm" },
+        { "id": "p", "k": "chip", "x": 72, "y": 55.1, "t": "pyright · VS Code", "tone": "accent", "c": "sm" },
+        { "id": "e", "k": "tag", "x": 50, "y": 70.2, "t": "editor: red squiggles as you type", "tone": "good" },
+        { "id": "ci", "k": "tag", "x": 50, "y": 81.5, "t": "CI: type errors can never merge", "tone": "good" },
+        { "id": "s", "k": "tag", "x": 50, "y": 92.8, "t": "start lenient, tighten gradually", "e": "🪜", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "The two mainstream checkers", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "mypy — the original", "do": [["show", "m"], ["hot", "m"], ["ln", "c", 3], ["hl", "c", 1], ["out", "c", "1 error · the bug caught", "bad"]] },
+        { "at": "great in CI", "do": [["pulse", "m"]] },
+        { "at": "Pyright — Microsoft's engine", "do": [["unhot", "m"], ["show", "p"], ["hot", "p"]] },
+        { "at": "powers Pylance", "do": [["pulse", "p"]] },
+        { "at": "Either is fine", "do": [["unhot", "p"]] },
+        { "at": "Wire one into your editor", "do": [["show", "e"]] },
+        { "at": "and into CI", "do": [["show", "ci"]] },
+        { "at": "Start lenient", "do": [["show", "s"], ["pulse", "s"]] }
+      ],
       "narration": "The two mainstream checkers: mypy — the original, runs as a command line tool, great in CI. Pyright — Microsoft's engine, powers Pylance in VS Code, extremely fast with the best error messages. Either is fine; pyright if you live in VS Code. Wire one into your editor for red squiggles as you type, and into CI so type errors can never merge. Start lenient, tighten gradually."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🚀", "pk": "📝", "t": "Start: mypy --ignore-missing-imports src/", "s": "Third-party libraries without stubs won't block you on day one" },
-        { "e": "📈", "pk": "🔍", "t": "Gradual strictness", "s": "disallow_untyped_defs next; full strict when the codebase is ready" },
-        { "e": "🧪", "pk": "✅", "t": "CI gate: mypy src/ || exit 1", "s": "Types only help if they're enforced — make the build fail on errors" }
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.8, "w": 96, "h": 74.2, "t": "pyproject.toml", "lines": ["[tool.mypy]", "# day 1: loose, your code only", "files = [\"src\"]", "# week 2", "disallow_untyped_defs = true", "# then tighten", "strict = true", "# CI: fail the build on any error"] },
+        { "id": "bad", "k": "tag", "x": 50, "y": 87.7, "t": "unenforced contract = decoration", "e": "🎭", "tone": "bad" },
+        { "id": "ok", "k": "tag", "x": 50, "y": 87.7, "t": "one CI line makes it real", "e": "✅", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Adoption path", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Day one: run mypy loose", "do": [["ln", "c", 3], ["hl", "c", 1, 2]] },
+        { "at": "Week two", "do": [["ln", "c", 5], ["hl", "c", 3, 4]] },
+        { "at": "Then tighten toward strict", "do": [["ln", "c", 7], ["hl", "c", 5, 6]] },
+        { "at": "The trap to avoid", "do": [["hl", "c", -1], ["show", "bad"], ["pulse", "bad"]] },
+        { "at": "One CI line makes it real", "do": [["hide", "bad"], ["show", "ok"], ["ln", "c", 8], ["hl", "c", 7], ["pulse", "ok"]] }
       ],
       "narration": "Adoption path. Day one: run mypy loose, only on your code. Week two: require annotations on new functions — disallow untyped defs. Then tighten toward strict. The trap to avoid: annotating half a codebase and ignoring the checker output. Types are a contract; an unenforced contract is just decoration. One CI line makes it real — mypy, and fail the build."
     },

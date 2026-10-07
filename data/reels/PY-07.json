@@ -15,38 +15,88 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · EXCEPTIONS",
       "title": "Errors are **exceptions**, and they travel",
       "sub": "try → raise → catch where you can act",
+      "h": 295,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 28.9, "w": 96, "h": 55.2, "t": "errors.py", "lines": ["try:", "    data = load(path)", "except FileNotFoundError:", "    data = {}", "finally:", "    print(\"cleanup\")"] },
+        { "id": "o", "k": "chip", "x": 18, "y": 67.8, "t": "open()", "c": "sm" },
+        { "id": "l", "k": "chip", "x": 50, "y": 67.8, "t": "load()", "c": "sm" },
+        { "id": "m", "k": "chip", "x": 82, "y": 67.8, "t": "main()", "c": "sm" },
+        { "id": "e", "k": "pkg", "x": 18, "y": 81.4, "e": "💥" },
+        { "id": "t", "k": "tag", "x": 50, "y": 94.2, "t": "except Exception: ← a smell", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Python errors are exceptions", "do": [["show", "o"], ["show", "l"], ["show", "m"], ["show", "e"]] },
+        { "at": "travel up the call stack", "do": [["move", "e", 50, 81.4]] },
+        { "at": "until something catches", "do": [["move", "e", 82, 81.4]] },
+        { "at": "Wrap risky code in try", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "handle specific exceptions", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "FileNotFoundError → handled", "good"]] },
+        { "at": "put cleanup in finally", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["out", "c", "finally ALWAYS runs ✓", "good"]] },
+        { "at": "catching the bare Exception", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Python errors are exceptions — objects that travel up the call stack until something catches them. Wrap risky code in try, handle specific exceptions in except, and put cleanup in finally, which always runs. The C sharp shape is identical — the difference is culture: catching the bare Exception base class is a smell here; always catch what you can actually handle and let the rest crash loudly."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "🎯", "t": "except ValueError:", "s": "Catch the SPECIFIC error — bare except hides bugs and KeyboardInterrupt" },
-        { "e": "📦", "t": "except (A, B) as e:", "s": "Tuple of exceptions; `e` holds the instance with its message" },
-        { "e": "🔄", "t": "raise", "s": "Bare raise re-throws the current exception — add context, then re-raise" }
+      "h": 222,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.5, "w": 96, "h": 73.3, "t": "habits.py", "lines": ["try:", "    run(task)", "except ValueError as {{e}}:", "    log.error({{e}})", "    raise", "except:   # ✗ swallows Ctrl-C"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.3, "t": "silence = the worst failure", "e": "🤫", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Three habits", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "Catch specific exceptions", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "only what you can handle", "good"]] },
+        { "at": "never bare except", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "swallows even the stop keypress", "bad"]] },
+        { "at": "Capture the exception with", "do": [["hl", "c", 2], ["mark", "c", "e"], ["out", "c", "e = the error message"]] },
+        { "at": "re-raise with a bare raise", "do": [["mark", "c", ""], ["hl", "c", 3, 4], ["out", "c", "error still travels ✓", "good"]] },
+        { "at": "Silence is the worst", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Three habits. Catch specific exceptions — ValueError, FileNotFoundError — never bare except, which swallows everything including the keypress that should stop your program. Capture the exception with as-e when you need its message. And when you catch just to log, re-raise with a bare raise so the error still travels. Silence is the worst failure mode."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · CUSTOM EXCEPTIONS",
       "title": "Domain errors are **classes**",
       "sub": "class ConfigError(Exception) — three words, infinite clarity",
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "errors.py", "lines": ["class ConfigError(Exception): ...", "class LLMError(Exception): ...", "raise LLMError(\"bad JSON\")", "except LLMError: ..."] },
+        { "id": "r", "k": "chip", "x": 29, "y": 82.9, "t": "retry · transient", "tone": "good", "c": "sm" },
+        { "id": "a", "k": "chip", "x": 76, "y": 82.9, "t": "alert · fatal", "tone": "bad", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "When an LLM returns malformed", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "Define your own exceptions", "do": [["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "Callers can then catch exactly", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "catch exactly LLMError", "good"]] },
+        { "at": "stack traces read like documentation", "do": [["out", "c", "LLMError: bad JSON  ← self-explaining"]] },
+        { "at": "retry the transient ones", "do": [["show", "r"], ["hot", "r"]] },
+        { "at": "alert on the fatal ones", "do": [["unhot", "r"], ["show", "a"], ["hot", "a"]] }
+      ],
       "narration": "When an LLM returns malformed output, or a config file is missing a key — that's not a ValueError, that's a domain failure. Define your own exceptions by inheriting from Exception. Callers can then catch exactly your error, and stack traces read like documentation. In agent systems, custom exceptions become your control flow: retry the transient ones, alert on the fatal ones."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "🧱", "pk": "🧱", "t": "class LLMOutputError(Exception)", "s": "Inherit Exception (or a domain base like AppError)" },
-        { "e": "🔗", "pk": "🔗", "t": "Add context in the message", "s": "raise ConfigError(f\"missing key: {key}\") from original" },
-        { "e": "🌳", "pk": "🌳", "t": "Inherit domain bases", "s": "AppError → ConfigError, LLMError → RetryableError: catch hierarchies" }
+      "h": 260,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.7, "w": 96, "h": 60.2, "t": "tree.py", "lines": ["class AppError(Exception): ...", "class ConfigError(AppError): ...", "class LLMError(AppError): ...", "raise LLMError(\"empty reply\")", "raise ConfigError(\"x\") from e", "except AppError: ...   # all", "except LLMError: ...   # one"] },
+        { "id": "ap", "k": "chip", "x": 50, "y": 73.8, "t": "AppError", "tone": "accent", "c": "sm" },
+        { "id": "cf", "k": "chip", "x": 27, "y": 89.2, "t": "ConfigError", "c": "sm" },
+        { "id": "ll", "k": "chip", "x": 73, "y": 89.2, "t": "LLMError", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "The pattern: a small tree", "do": [["show", "c"], ["ln", "c", 3], ["hl", "c", 0, 2], ["show", "ap"], ["show", "cf"], ["show", "ll"]] },
+        { "at": "AppError at the root", "do": [["hot", "ap"]] },
+        { "at": "Raise with a helpful message", "do": [["unhot", "ap"], ["ln", "c", 4], ["hl", "c", 3], ["pulse", "ll"]] },
+        { "at": "chain with 'from'", "do": [["ln", "c", 5], ["hl", "c", 4], ["pulse", "cf"]] },
+        { "at": "Callers catch the base", "do": [["ln", "c", 6], ["hl", "c", 5], ["hot", "ap"]] },
+        { "at": "or a leaf", "do": [["ln", "c", 7], ["hl", "c", 6], ["unhot", "ap"], ["hot", "ll"]] }
       ],
       "narration": "The pattern: a small tree. AppError at the root, then ConfigError, LLMError under it. Raise with a helpful message, and chain with 'from' when wrapping a lower error — it keeps both stack traces. Callers catch the base to handle everything, or a leaf to handle one thing. This is how you keep error handling readable at three in the morning."
     },
@@ -74,12 +124,21 @@
       "narration": "The with statement is C sharp's using block: acquire a resource, use it, and no matter what happens — exception, return, crash — cleanup runs automatically. Files are the textbook case, but anything with setup and teardown works: database connections, locks, even timed sections. In the LLM world you'll use it for httpx clients so connections are pooled and released correctly."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "📂", "pk": "📂", "t": "with open(\"config.json\") as f:", "s": "File closes even if parsing inside throws" },
-        { "e": "🧰", "pk": "🧰", "t": "Multiple in one line", "s": "with open(a) as fa, open(b) as fb: — nested or comma-separated" },
-        { "e": "🏗️", "pk": "🏗️", "t": "Build your own: contextlib", "s": "@contextmanager turns a generator into a context manager" }
+      "h": 240,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.3, "w": 96, "h": 75.2, "t": "with.py", "lines": ["with open(a) as f, open(b) as g:", "    copy(f, g)", "@contextmanager", "def temp_state():", "    set_flag()", "    {{yield}}", "    {{clear_flag()}}"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 89.2, "t": "retry logic · temporary state", "e": "🔁", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Details worth knowing", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "One with can hold multiple", "do": [["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "Files close even when", "do": [["out", "c", "both files closed — even on error ✓", "good"]] },
+        { "at": "contextlib's contextmanager", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", ""]] },
+        { "at": "write a generator that yields", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["mark", "c", "yield"]] },
+        { "at": "everything after yield", "do": [["ln", "c", 7], ["hl", "c", 6], ["mark", "c", "clear_flag()"], ["out", "c", "cleanup runs after yield", "good"]] },
+        { "at": "It's the idiomatic way", "do": [["mark", "c", ""], ["hl", "c", -1], ["out", "c", ""], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Details worth knowing. One with can hold multiple resources — comma separated. Files close even when the code inside raises. And you can build your own using contextlib's contextmanager decorator — write a generator that yields the resource, and everything after yield becomes the cleanup. It's the idiomatic way to wrap retry logic or temporary state."
     },
@@ -112,12 +171,22 @@
       "narration": "New rule: never manipulate file paths as strings. Pathlib's Path object joins with a slash operator, reads text in one call, lists directories with glob patterns, and never has a double-slash bug. It reads like the problem: data folder slash file dot json. Windows, Mac, Linux — one code path. This is the modern standard, and it's been built in since 3.4."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🔗", "t": "Path(\"data\") / \"raw\" / \"users.json\"", "s": "Slash operator builds OS-correct paths — no string concat" },
-        { "e": "📖", "t": ".read_text() / .write_text()", "s": "One-liner file IO: path.read_text(encoding=\"utf-8\")" },
-        { "e": "🌍", "t": ".glob(\"*.csv\") · .exists() · .mkdir()", "s": "Pattern listing, checks, and directory creation built in" }
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.0, "w": 96, "h": 72.4, "t": "paths.py", "lines": ["p = Path(\"data\") / \"docs.json\"", "p.read_text({{encoding=\"utf-8\"}})", "p.write_text(s, {{encoding=\"utf-8\"}})", "Path(\"data\").glob(\"*.csv\")", "p.exists()", "Path(\"out\").mkdir(parents=True)"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 87.1, "t": "#1 cross-platform bug: no encoding", "e": "⚠️", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Your daily set", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "build with slash", "do": [["hl", "c", 0], ["out", "c", "data/docs.json"]] },
+        { "at": "read with dot read text", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "→ file contents (str)"]] },
+        { "at": "write with dot write text", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "→ saved"]] },
+        { "at": "always specify utf-8", "do": [["mark", "c", "encoding=\"utf-8\""], ["show", "t"], ["pulse", "t"]] },
+        { "at": "Then glob for patterns", "do": [["mark", "c", ""], ["hide", "t"], ["ln", "c", 4], ["hl", "c", 3], ["out", "c", "[a.csv, b.csv]"]] },
+        { "at": "exists for checks", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "True", "good"]] },
+        { "at": "mkdir with parents", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "folders created ✓", "good"]] }
       ],
       "narration": "Your daily set: build with slash, read with dot read text, write with dot write text — always specify utf-8 encoding, by the way; that's the most common cross-platform bug. Then glob for patterns — all CSVs, all JSONs — exists for checks, and mkdir with parents equals true to create folders. Every path operation you'll need lives on Path."
     },
@@ -153,30 +222,63 @@
       "narration": "JSON is the lingua franca of every API you'll touch, and Python maps it perfectly: JSON objects become dicts, arrays become lists, strings, numbers, booleans, and null becomes None. The json module converts with two calls — loads for strings, dumps for output. Every LLM response you receive and every request you send goes through these two functions."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "📥", "pk": "📥", "t": "json.loads(text) → dict", "s": "Parse API responses; json.load(f) reads straight from a file object" },
-        { "e": "📤", "pk": "📤", "t": "json.dumps(obj, indent=2)", "s": "Serialize; indent=2 for humans, default compact for APIs" },
-        { "e": "🧬", "pk": "🧬", "t": "dataclasses/Pydantic bridge", "s": "Parse into typed objects instead of raw dicts — Reel 9 (Pydantic)" }
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 42.7, "w": 96, "h": 81.4, "t": "json.py", "lines": ["data = json.loads(response.text)", "data[\"model\"]", "data.get(\"usage\")", "json.dumps(data, indent=2)", "data[\"usage\"][\"tokens\"]", "reply = Reply.model_validate(data)"] }
+      ],
+      "steps": [
+        { "at": "The round trip", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "loads turns response text", "do": [["hl", "c", 0], ["out", "c", "nested dicts"]] },
+        { "at": "access with square brackets", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "\"gpt-5\""]] },
+        { "at": "Dumps goes back out", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "pretty JSON text"]] },
+        { "at": "raw dicts don't validate", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "KeyError: \"usage\" — 3 calls later", "bad"]] },
+        { "at": "The professional move", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "typed + validated ✓", "good"]] },
+        { "at": "That's when JSON stops", "do": [["pulse", "c"]] }
       ],
       "narration": "The round trip: loads turns response text into nested dicts — access with square brackets or get. Dumps goes back out, with indent for pretty printing. One warning: raw dicts don't validate anything. A missing key fails three functions later. The professional move is parsing straight into typed objects — dataclasses today, Pydantic models in Reel 9. That's when JSON stops being fragile."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 5,
       "kicker": "CHAPTER 6 · CONFIG & SECRETS",
       "title": "**Env vars** are how config leaves your code",
       "sub": "os.environ + python-dotenv — never hardcode secrets",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 16.1, "w": 96, "h": 28.8, "t": "config.py", "lines": ["KEY = os.environ[\"OPENAI_API_KEY\"]", "MODEL = os.getenv(\"MODEL\", \"gpt-5\")"] },
+        { "id": "e", "k": "code", "x": 50, "y": 49.3, "w": 96, "h": 28.8, "t": ".env  (dev)", "lines": ["OPENAI_API_KEY=sk-...", "MODEL=gpt-5"] },
+        { "id": "p", "k": "tag", "x": 50, "y": 75.7, "t": "prod: the platform injects them", "e": "🚀", "tone": "accent" },
+        { "id": "g", "k": "tag", "x": 50, "y": 89.4, "t": "secrets never enter git", "e": "🚫", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Last chapter: configuration", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "read via os dot environ", "do": [["hl", "c", 0]] },
+        { "at": "The dot env file holds them", "do": [["hl", "c", -1], ["show", "e"], ["ln", "e", 2]] },
+        { "at": "in production, the platform", "do": [["show", "p"]] },
+        { "at": "secrets never enter source control", "do": [["show", "g"], ["pulse", "g"]] },
+        { "at": "Not even once", "do": [["hot", "g"]] }
+      ],
       "narration": "Last chapter: configuration. Anything that changes between environments — API keys, endpoints, model names — comes from environment variables, read via os dot environ. The dot env file holds them during development, loaded by python-dotenv; in production, the platform injects them. And the iron rule, the one with career consequences: secrets never enter source control. Not even once, not even for a minute."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 5,
-      "items": [
-        { "e": "🔑", "t": "os.environ[\"OPENAI_API_KEY\"]", "s": "KeyError if missing — os.getenv(\"KEY\") returns None instead" },
-        { "e": "📄", "t": ".env file + python-dotenv", "s": "KEY=value lines; dotenv loads them on startup; .env lives in .gitignore" },
-        { "e": "🚫", "t": "git commit -m \"add key\" = breach", "s": "Keys in git history are compromised forever — rotate immediately" }
+      "h": 218,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.0, "w": 96, "h": 58.3, "t": "mechanics.py", "lines": ["os.environ[\"API_KEY\"]      # required", "os.getenv(\"TIMEOUT\", \"30\")  # default", "# .gitignore", "{{.env}}"] },
+        { "id": "b", "k": "tag", "x": 50, "y": 74.3, "t": "bots scan GitHub within minutes", "e": "🤖", "tone": "bad" },
+        { "id": "t", "k": "tag", "x": 50, "y": 89.0, "t": "same discipline for every agent", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Mechanics", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "environ with square brackets", "do": [["hl", "c", 0], ["out", "c", "KeyError if missing — good", "bad"]] },
+        { "at": "Getenv returns none", "do": [["hl", "c", 1], ["out", "c", "\"30\" fallback", "good"]] },
+        { "at": "The dot env file keeps", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "dev convenience"]] },
+        { "at": "gitignore from the first commit", "do": [["mark", "c", ".env"], ["hl", "c", 3], ["out", "c", ".env never committed ✓", "good"]] },
+        { "at": "If a key ever lands", "do": [["mark", "c", ""], ["hl", "c", -1], ["show", "b"], ["pulse", "b"]] },
+        { "at": "This discipline carries", "do": [["show", "t"]] }
       ],
       "narration": "Mechanics: environ with square brackets throws when missing — good for required config. Getenv returns none — fine with defaults. The dot env file keeps development convenient, and it must sit in gitignore from the first commit. If a key ever lands in history, rotating it isn't optional — bots scan GitHub within minutes. This discipline carries directly into every agent you deploy."
     },

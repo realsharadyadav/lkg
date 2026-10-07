@@ -7,10 +7,10 @@
 const fs = require('fs'), path = require('path'), cp = require('child_process');
 const root = path.join(__dirname, '..');
 const STAGE_W = 292;                                   // real stage width on a 360px phone (~0.81 x viewport); 316 on 390, 348 on 430 — design for the smallest
-const OPS = { show: 2, hide: 2, hot: 2, unhot: 2, dim: 2, undim: 2, tone: 3, text: 3, move: 4, pulse: 2 };
+const OPS = { show: 2, hide: 2, hot: 2, unhot: 2, dim: 2, undim: 2, tone: 3, text: 3, move: 4, pulse: 2, ln: 3, hl: 4, mark: 3, out: 4 };
 const TONES = ['good', 'bad', 'accent', 'dashed', ''];
-const KINDS = ['panel', 'chip', 'pkg', 'tag', 'term'];
-const CONTAINERS = ['panel', 'term'];
+const KINDS = ['panel', 'chip', 'pkg', 'tag', 'term', 'code'];
+const CONTAINERS = ['panel', 'term', 'code'];
 
 const args = process.argv.slice(2);
 const files = (args.length ? args.map(a => a.replace(/\.json$/, '') + '.json') : fs.readdirSync(path.join(root, 'data/reels')).filter(f => f.endsWith('.json')).sort());
@@ -60,7 +60,7 @@ for (const f of files) {
       if (!KINDS.includes(a.k)) err(id, i, `actor ${a.id}: unknown kind "${a.k}"`);
       if (typeof a.x !== 'number' || typeof a.y !== 'number') err(id, i, `actor ${a.id}: x,y must be numbers (% of stage)`);
       if (a.tone != null && !TONES.includes(a.tone)) err(id, i, `actor ${a.id}: unknown tone "${a.tone}"`);
-      if ((a.k === 'panel' || a.k === 'term') && (!a.w || !a.h)) warn(id, i, `actor ${a.id}: ${a.k} needs w and h`);
+      if ((a.k === 'panel' || a.k === 'term' || a.k === 'code') && (!a.w || !a.h)) warn(id, i, `actor ${a.id}: ${a.k} needs w and h`);
     });
     const narr = sc.narration.replace(/\*/g, '').toLowerCase();
     let last = -1;
@@ -72,7 +72,7 @@ for (const f of files) {
       } else if (typeof s.at !== 'number') err(id, i, `step ${n}: "at" must be a phrase string`);
       (s.do || []).forEach(op => {
         if (!Array.isArray(op) || !(op[0] in OPS)) return err(id, i, `step ${n}: bad op ${JSON.stringify(op)}`);
-        if (op.length !== OPS[op[0]]) err(id, i, `step ${n}: op ${op[0]} takes ${OPS[op[0]] - 1} args: ${JSON.stringify(op)}`);
+        if (op[0] === 'hl' && op.length === 3) op.push(null); if (op[0] === 'out' && op.length === 3) op.push(null); if (op.length !== OPS[op[0]]) err(id, i, `step ${n}: op ${op[0]} takes ${OPS[op[0]] - 1} args: ${JSON.stringify(op)}`);
         if (!A[op[1]]) err(id, i, `step ${n}: op ${op[0]} refers to unknown actor "${op[1]}"`);
         if (op[0] === 'tone' && !TONES.includes(op[2])) err(id, i, `step ${n}: unknown tone "${op[2]}"`);
         if (op[0] === 'move' && (typeof op[2] !== 'number' || typeof op[3] !== 'number')) err(id, i, `step ${n}: move needs numeric x,y`);

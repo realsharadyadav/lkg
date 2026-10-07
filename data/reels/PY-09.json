@@ -33,12 +33,20 @@
       "narration": "Here's the single most valuable library for your GenAI work. Pydantic's BaseModel is a class where every field is declared with a type — and when you construct it from raw data, every value is validated and coerced. String where an int belongs? Error, immediately, with a readable message. Missing required field? Error. This is the difference between hoping JSON is well-formed and knowing it — parse, don't pray."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "🏗️", "pk": "📋", "t": "class Config(BaseModel): model: str · temp: float = 0.7", "s": "Type-annotated fields double as validation rules" },
-        { "e": "🧲", "pk": "🧪", "t": "Config(**json_data) or model_validate(json)", "s": "Construction IS validation — bad payloads raise ValidationError" },
-        { "e": "🔧", "pk": "💎", "t": "Smart coercion: \"42\" → 42 · \"true\" → True", "s": "Strings from JSON become proper types when unambiguous" }
+      "h": 222,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.5, "w": 96, "h": 73.3, "t": "user.py", "lines": ["class User(BaseModel):", "    name: str", "    age: int", "data = {\"name\": \"Ada\", \"age\": \"42\"}", "u = User.model_validate(data)", "User(age=\"forty\")"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.3, "t": "feed the errors back to the LLM", "e": "🤖", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "The workflow", "do": [["show", "c"], ["ln", "c", 3], ["hl", "c", 0, 2]] },
+        { "at": "same syntax as a dataclass", "do": [["pulse", "c"]] },
+        { "at": "Then parse incoming data", "do": [["ln", "c", 5], ["hl", "c", 3, 4]] },
+        { "at": "Coercion is smart", "do": [["out", "c", "u.age → 42  (str became int)", "good"]] },
+        { "at": "And when validation fails", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "ValidationError: 2 problems", "bad"], ["tone", "c", "bad"]] },
+        { "at": "exactly what you show an LLM", "do": [["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The workflow: declare your model with type-annotated fields — same syntax as a dataclass. Then parse incoming data with model validate, or construct directly from a dict. Coercion is smart: the string forty-two becomes an integer if the field says int. And when validation fails, you get one ValidationError listing every problem — which is exactly what you show an LLM in the retry loop."
     },
@@ -67,12 +75,22 @@
       "narration": "Types catch wrong shapes; validators catch wrong values. A temperature of nine hundred is a perfectly good float and a completely broken model call. Pydantic lets you attach validation functions to fields — check the range, check the format, check that the model name is one you actually support. Write the rule once, and every parse enforces it, everywhere, forever."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "📏", "t": "@field_validator(\"temperature\")", "s": "classmethod receiving the value — raise ValueError to reject" },
-        { "e": "🤖", "t": "Validate LLM output: allowed models only", "s": "Reject 'gpt-99' before it costs you a confusing API error" },
-        { "e": "🏭", "t": "@model_validator — cross-field rules", "s": "\"max_tokens must exceed min_tokens\" lives here" }
+      "h": 228,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.5, "w": 96, "h": 71.4, "t": "validators.py", "lines": ["@field_validator(\"temp\")", "def temp_ok(cls, v):", "    if v > 2: raise ValueError", "@model_validator(mode=\"after\")", "def max_beats_min(self): ...", "ALLOWED = {\"gpt-5\", \"claude\"}"] },
+        { "id": "a", "k": "chip", "x": 20, "y": 87.7, "t": "gpt-5", "tone": "good", "c": "sm" },
+        { "id": "b", "k": "chip", "x": 50, "y": 87.7, "t": "claude", "tone": "good", "c": "sm" },
+        { "id": "x", "k": "chip", "x": 80, "y": 87.7, "t": "gpt-9000", "tone": "bad", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "Two levels", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Field validators run per field", "do": [["ln", "c", 3], ["hl", "c", 0, 2], ["out", "c", "temp must be ≤ 2"]] },
+        { "at": "Raise ValueError", "do": [["out", "c", "ValueError → ValidationError report", "good"]] },
+        { "at": "Model validators see", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "cross-field: max > min"]] },
+        { "at": "whitelisting", "do": [["ln", "c", 6], ["hl", "c", 5], ["show", "a"], ["show", "b"], ["out", "c", "only tested models pass"]] },
+        { "at": "Garbage gets stopped", "do": [["show", "x"], ["pulse", "x"], ["out", "c", "gpt-9000 ✗ blocked at the door", "bad"]] }
       ],
       "narration": "Two levels. Field validators run per field — range checks, membership in an allowed set. Raise ValueError and Pydantic wraps it into the validation report. Model validators see the whole object for cross-field logic — max must beat min, end date after start date. For agents, the killer use is whitelisting: only model names you've tested, only tools that exist. Garbage gets stopped at the door."
     },
@@ -104,33 +122,69 @@
       "narration": "Remember environment variables from Reel 7? pydantic-settings upgrades that pattern: a BaseSettings subclass whose fields populate from environment variables automatically — with names, prefixes, defaults, and full validation. Twelve-factor config, but typed. A missing required key fails at startup with a clear message instead of failing three API calls later. This is how every service you'll build should boot."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "🌱", "t": "class Settings(BaseSettings):", "s": "model_config = SettingsConfigDict(env_prefix=\"APP_\")" },
-        { "e": "✅", "t": "Validation at boot", "s": "OPENAI_API_KEY empty or missing → loud crash on startup, not mid-request" },
-        { "e": "🧊", "t": "@lru_cache on get_settings()", "s": "One settings instance for the whole app — the FastAPI pattern" }
+      "h": 272,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 66.4, "t": "settings.py", "lines": ["class Settings(BaseSettings):", "  {{model_config = dict(env_prefix=\"APP_\")}}", "  api_key: str", "  model: str = \"gpt-5\"", "{{@lru_cache}}", "def get_settings():", "  return Settings()"] },
+        { "id": "env", "k": "chip", "x": 30, "y": 78.7, "t": "APP_API_KEY=sk-…", "tone": "accent", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 91.9, "t": "typed + verified before request 1", "e": "✅", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "The shape", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "subclass BaseSettings", "do": [["ln", "c", 4], ["hl", "c", 0, 3]] },
+        { "at": "configure an env prefix", "do": [["hl", "c", 1], ["mark", "c", "model_config = dict(env_prefix=\"APP_\")"]] },
+        { "at": "Values flow in", "do": [["mark", "c", ""], ["show", "env"], ["move", "env", 50, 78.7], ["out", "c", "APP_API_KEY → api_key ✓", "good"]] },
+        { "at": "through your validators", "do": [["pulse", "env"]] },
+        { "at": "FastAPI idiom", "do": [["ln", "c", 7], ["hl", "c", 4, 6], ["mark", "c", "@lru_cache"], ["out", "c", ""]] },
+        { "at": "one immutable settings object", "do": [["out", "c", "one shared object", "good"]] },
+        { "at": "Dependency injection reads it", "do": [["mark", "c", ""], ["hl", "c", -1], ["out", "c", "tests override it"]] },
+        { "at": "Simple, typed", "do": [["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The shape: subclass BaseSettings, declare fields, configure an env prefix like app underscore. Values flow in from the environment and through your validators at startup. And the FastAPI idiom you'll see everywhere — a get settings function cached with lru cache, so the whole app shares one immutable settings object. Dependency injection reads it; tests override it. Simple, typed, verified before the first request."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · JSON SCHEMA",
       "title": "The bridge to **structured output**",
       "sub": "model_json_schema() → the exact JSON Schema LLMs can be forced to return",
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 65.2, "t": "schema.py", "lines": ["class Reply(BaseModel): ...", "schema = Reply.model_json_schema()", "resp = client.parse(schema=schema)", "reply = Reply.model_validate(resp)"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 85.1, "t": "one source of truth, end to end", "e": "🎯", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Now the payoff", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "Every Pydantic model can export", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "{\"type\": \"object\", ...}"]] },
+        { "at": "Modern LLM APIs accept a schema", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "API enforces the shape", "good"]] },
+        { "at": "parse the reply back", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "Reply ✓ typed + validated", "good"]] },
+        { "at": "One source of truth", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Now the payoff that connects to Stage 2. Every Pydantic model can export its JSON Schema — the formal contract of its shape. Modern LLM APIs accept a schema and guarantee the response conforms to it: OpenAI's structured outputs, tool calling parameters — all schema-driven. Define once in Pydantic, export the schema, hand it to the model, parse the reply back into the same model. One source of truth, end to end."
     },
     {
-      "type": "diagram",
+      "type": "story",
       "chapter": 3,
-      "nodes": [
-        { "e": "🐍", "t": "Pydantic model", "s": "typed fields + validators" },
-        { "e": "📋", "t": "JSON Schema", "s": "model_json_schema()" },
-        { "e": "🧠", "t": "LLM call", "s": "response_format = schema" },
-        { "e": "✅", "t": "Validated object", "s": "Model.model_validate_json()" }
+      "h": 235,
+      "actors": [
+        { "id": "a", "k": "chip", "x": 24, "y": 20.4, "t": "Pydantic model", "tone": "accent", "c": "sm" },
+        { "id": "r1", "k": "tag", "x": 50, "y": 20.4, "t": "→" },
+        { "id": "b", "k": "chip", "x": 76, "y": 20.4, "t": "JSON Schema", "tone": "accent", "c": "sm" },
+        { "id": "d1", "k": "tag", "x": 76, "y": 40.9, "t": "↓" },
+        { "id": "c", "k": "chip", "x": 76, "y": 60.4, "t": "LLM API", "tone": "accent", "c": "sm" },
+        { "id": "r2", "k": "tag", "x": 50, "y": 60.4, "t": "←" },
+        { "id": "d", "k": "chip", "x": 24, "y": 60.4, "t": "typed object", "tone": "good", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 87.7, "t": "define → export → constrain → parse", "e": "🔁", "tone": "good" }
       ],
-      "linkLabel": "feeds",
+      "steps": [
+        { "at": "Follow the loop", "do": [["show", "a"], ["hot", "a"]] },
+        { "at": "exports its schema", "do": [["show", "r1"], ["show", "b"], ["unhot", "a"], ["hot", "b"]] },
+        { "at": "The API call includes it", "do": [["show", "d1"], ["show", "c"], ["unhot", "b"], ["hot", "c"]] },
+        { "at": "physically cannot return", "do": [["pulse", "c"]] },
+        { "at": "You parse the reply back", "do": [["show", "r2"], ["show", "d"], ["unhot", "c"], ["hot", "d"]] },
+        { "at": "This loop", "do": [["unhot", "d"], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Follow the loop. Your Pydantic model exports its schema. The API call includes it as the response format. The model physically cannot return shape-violating JSON — the API enforces it. You parse the reply back into your model and get a fully typed, validated object. This loop — define, export, constrain, parse — is the backbone of reliable AI features. Stage 2 uses it constantly."
     },
     {

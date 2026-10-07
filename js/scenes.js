@@ -4,6 +4,21 @@
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const mark = s => s.replace(/\*\*(.+?)\*\*/g, '<span class="hl">$1</span>');
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  /* tiny Python/TOML/shell highlighter for story `code` actors. {{x}} makes x a markable token (op: mark) */
+  const KW = /^(def|class|return|if|elif|else|for|while|in|not|and|or|is|import|from|as|with|try|except|finally|raise|lambda|yield|pass|None|True|False|self|async|await|assert|global|nonlocal)$/;
+  const hiCode = line => String(line).split(/(\{\{.+?\}\})/).map(part => {
+    const m = part.match(/^\{\{(.+?)\}\}$/);
+    if (m) return `<span class="mk" data-m="${esc(m[1])}">${hiCode(m[1])}</span>`;
+    return part.replace(/(#.*$)|((?:f|r|b)?"(?:[^"\\]|\\.)*"|(?:f|r|b)?'(?:[^'\\]|\\.)*')|(@[\w.]+)|(\b\d[\d_.]*\b)|(\b[A-Za-z_]\w*\b)|([^\s\w]+|\s+)/g, (x, c, st, dec, num, id, o) => {
+      if (c) return `<i class="tc">${esc(c)}</i>`;
+      if (st) return `<i class="ts">${esc(st)}</i>`;
+      if (dec) return `<i class="td">${esc(dec)}</i>`;
+      if (num) return `<i class="tn">${num}</i>`;
+      if (id) return KW.test(id) ? `<i class="tk">${id}</i>` : id;
+      return esc(o);
+    });
+  }).join('');
 
   /* split rendered HTML into per-word spans (keeps the **highlight** spans) so words can rise in one by one */
   const kinetic = html => {
@@ -523,6 +538,10 @@
       (sc.actors || []).forEach(a => {
         const d = h('div', 'st-a st-' + (a.k || 'chip') + (a.c ? ' ' + a.c : ''));
         if (a.k === 'term') d.appendChild(h('pre'));
+        else if (a.k === 'code') {
+          d.innerHTML = `<div class="cd-bar"><i></i><i></i><i></i><span>${esc(a.t || '')}</span></div><div class="cd-body">${(a.lines || []).map(l => `<div class="cl">${hiCode(l)}</div>`).join('')}</div><div class="cd-out"></div>`;
+          if (a.n == null) a.n = a.on ? (a.lines || []).length : 0;
+        }
         else d.innerHTML = (a.e ? `<span class="e">${a.e}</span>` : '') + (a.t ? `<b>${mark(a.t)}</b>` : '') + (a.s ? `<small>${mark(a.s)}</small>` : '');
         if (a.w) d.style.width = a.w + '%';
         if (a.h) d.style.height = a.h + '%';
@@ -530,6 +549,11 @@
         recs[a.id] = { a, d, iv: 0, txt: '' };
       });
 
+      const codeOf = r => ({ ls: [...r.d.querySelectorAll('.cl')], out: r.d.querySelector('.cd-out') });
+      const setLines = (r, n, instant) => {
+        codeOf(r).ls.forEach((l, i) => { l.style.transitionDelay = instant ? '0ms' : (Math.max(0, i - (r.shown || 0)) * 230) + 'ms'; l.classList.toggle('on', i < n); });
+        r.shown = n;
+      };
       const setText = (r, str, instant) => {
         clearInterval(r.iv);
         if (r.a.k !== 'term') {
@@ -552,6 +576,11 @@
         r.d.style.transitionDelay = '0ms';
         place(r);
         if (r.a.k === 'term') { r.txt = r.a.t || ''; r.d.firstChild.textContent = r.txt; }
+        else if (r.a.k === 'code') {
+          const c = codeOf(r); r.shown = 0; setLines(r, r.a.on ? c.ls.length : 0, true);
+          c.ls.forEach(l => l.classList.remove('hl')); r.d.classList.remove('hasHl');
+          r.d.querySelectorAll('.mk').forEach(m => m.classList.remove('m')); c.out.className = 'cd-out'; c.out.textContent = '';
+        }
         else { const b = r.d.querySelector('b'); if (b && r.a.t) b.innerHTML = mark(r.a.t); }
       });
       const apply = (op, i, instant) => {
@@ -567,6 +596,10 @@
           case 'tone': TONES.forEach(t => r.d.classList.remove(t)); if (op[2]) r.d.classList.add(op[2]); break;
           case 'text': setText(r, op[2], instant); break;
           case 'move': r.d.style.left = op[2] + '%'; r.d.style.top = op[3] + '%'; break;
+          case 'ln': setLines(r, op[2], instant); break;
+          case 'hl': { const c = codeOf(r); c.ls.forEach((l, k) => l.classList.toggle('hl', k >= op[2] && k <= (op[3] == null ? op[2] : op[3]))); r.d.classList.toggle('hasHl', op[2] >= 0); break; }
+          case 'mark': r.d.querySelectorAll('.mk').forEach(m => m.classList.toggle('m', !!op[2] && op[2].split('|').includes(m.dataset.m))); break;
+          case 'out': { const o = codeOf(r).out; o.className = 'cd-out' + (op[2] ? ' on' + (op[3] ? ' ' + op[3] : '') : ''); o.textContent = op[2] || ''; break; }
           case 'pulse': r.d.classList.remove('pulse'); void r.d.offsetWidth; r.d.classList.add('pulse'); break;
         }
       };

@@ -14,37 +14,80 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · LIST & TUPLE",
       "title": "list = **List<T>**. tuple = a frozen one.",
       "sub": "Ordered sequences — one mutable, one not",
+      "h": 245,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.6, "w": 96, "h": 51.9, "t": "lists.py", "lines": ["models = [\"gpt\", \"claude\"]", "models.append(\"gemini\")", "point = (3, 4)", "point[0] = 9"] },
+        { "id": "m0", "k": "chip", "x": 18, "y": 67.8, "t": "gpt", "c": "sm" },
+        { "id": "m1", "k": "chip", "x": 46, "y": 67.8, "t": "claude", "c": "sm" },
+        { "id": "m2", "k": "chip", "x": 78, "y": 67.8, "t": "gemini", "tone": "good", "c": "sm" },
+        { "id": "fz", "k": "tag", "x": 50, "y": 85.7, "t": "tuple = frozen record", "e": "🔒" }
+      ],
+      "steps": [
+        { "at": "A Python list is", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["show", "m0"], ["show", "m1"]] },
+        { "at": "ordered, zero-indexed, growable", "do": [["ln", "c", 2], ["hl", "c", 1], ["show", "m2"], ["pulse", "m2"], ["out", "c", "list grew to 3 ✓", "good"]] },
+        { "at": "A tuple is the same thing", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "point = (3, 4)"], ["show", "fz"]] },
+        { "at": "once created, never changed", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "TypeError: no item assignment", "bad"], ["pulse", "fz"]] }
+      ],
       "narration": "A Python list is C sharp's List of T — ordered, zero-indexed, growable, mixed types allowed. A tuple is the same thing but immutable: once created, never changed. Use lists for collections that evolve; tuples for fixed records — like a coordinate pair, or a row you don't want anyone, including yourself, mutating by accident."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 0,
-      "cards": [
-        { "e": "📋", "t": "list [1, 2, 3]", "s": "Mutable: append, insert, remove, sort. The default workhorse.", "win": true },
-        { "e": "🔒", "t": "tuple (1, 2, 3)", "s": "Immutable: fixed size, hashable, slightly faster. Fixed records." }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "list vs tuple", "lines": ["nums = [3, 1, 2]", "nums.sort()          # in place", "t = (3, 1, 2)", "t.sort()             # ✗", "d = {(1, 2): \"pin\"}  # key ✓"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 86.5, "t": "indexing · slicing · loops: same", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Compare: lists mutate", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "append, insert, remove", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "[1, 2, 3]", "good"]] },
+        { "at": "Tuples are frozen", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "no changes, ever", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "AttributeError: no sort", "bad"]] },
+        { "at": "Tuples are hashable", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "tuple works as a dict key", "good"]] },
+        { "at": "Everything else about them", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Compare: lists mutate — append, insert, remove, sort in place. Tuples are frozen — no changes, ever. Tuples are hashable, so they can be dict keys, and they signal intent: this record is complete. Everything else about them — indexing, slicing, iteration — is identical."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · DICT",
       "title": "dict — **the** most-used structure in Python",
       "sub": "Hash map with literal syntax: {\"key\": value}",
+      "h": 245,
+      "actors": [
+        { "id": "py", "k": "code", "x": 50, "y": 24.0, "w": 96, "h": 44.7, "t": "dicts.py", "lines": ["ages = {\"ada\": 36, \"linus\": 54}", "reply = response.json()", "reply[\"model\"]"] },
+        { "id": "ar", "k": "tag", "x": 50, "y": 55.5, "t": "JSON object → dict", "e": "⬇️" },
+        { "id": "js", "k": "code", "x": 50, "y": 75.8, "w": 96, "h": 27.6, "t": "response (JSON)", "lines": ["{ \"model\": \"gpt-5\",", "  \"temp\": 0.2 }"] }
+      ],
+      "steps": [
+        { "at": "The dictionary is Python's hash map", "do": [["show", "py"], ["ln", "py", 1], ["hl", "py", 0]] },
+        { "at": "Curly braces, key colon value", "do": [["mark", "py", ""], ["out", "py", "ages[\"ada\"] → 36"]] },
+        { "at": "every LLM API speaks JSON", "do": [["show", "js"], ["ln", "js", 2], ["hl", "js", 0, 1]] },
+        { "at": "every JSON object becomes", "do": [["show", "ar"], ["ln", "py", 3], ["hl", "py", 1, 2], ["out", "py", "\"gpt-5\"", "good"], ["pulse", "ar"]] },
+        { "at": "You will live in dicts", "do": [["hl", "py", -1], ["hot", "py"]] }
+      ],
       "narration": "The dictionary is Python's hash map — think Dictionary of string to object in C sharp, but with first-class syntax. Curly braces, key colon value. And here's why it matters for your future: every LLM API speaks JSON, and every JSON object becomes a dict in Python. You will live in dicts."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "🔑", "t": "Lookup, insert, delete are O(1)", "s": "config[\"model\"] · config[\"temp\"] = 0.7 · del config[\"temp\"]" },
-        { "e": "🚶", "t": ".items(), .keys(), .values()", "s": "for key, value in config.items() — iterate pairs directly" },
-        { "e": "🛡️", "t": ".get() avoids KeyError", "s": "config.get(\"temp\", 0.5) returns 0.5 if the key is missing" }
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 42.7, "w": 96, "h": 81.4, "t": "habits.py", "lines": ["d = {\"a\": 1, \"b\": 2}", "d[\"a\"]              # O(1)", "for k, v in d.items():", "    print(k, v)", "d[\"zzz\"]            # ?", "d.get(\"zzz\", 0)     # ?"] }
+      ],
+      "steps": [
+        { "at": "Three habits", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "One: lookup, insert", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "constant time — any size", "good"]] },
+        { "at": "Two: iterate with dot items", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "a 1 · b 2"]] },
+        { "at": "Three: use dot get", "do": [["ln", "c", 6], ["hl", "c", 5]] },
+        { "at": "square brackets on a missing key", "do": [["hl", "c", 4], ["out", "c", "KeyError: \"zzz\"", "bad"]] },
+        { "at": "and dot get just returns", "do": [["hl", "c", 5], ["out", "c", "0  (your default)", "good"]] }
       ],
       "narration": "Three habits. One: lookup, insert, and delete are constant time. Two: iterate with dot items to get key-value pairs in one step. Three: use dot get with a default instead of square brackets when the key might be missing — square brackets on a missing key throws KeyError, and dot get just returns your default."
     },
@@ -76,12 +119,21 @@
       "narration": "A set is exactly C sharp's HashSet: unordered collection of unique items. Add a duplicate and it silently ignores it. Its superpower is membership testing — 'is this item in the set' is constant time, even with a million entries. Use it for deduplication and for 'have I seen this before' checks."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "➕", "t": "{1, 2} | {2, 3} → {1, 2, 3}", "s": "Pipe = union, & = intersection, - = difference — set algebra built in" },
-        { "e": "✂️", "t": "list(set(items)) = dedupe", "s": "The classic one-liner; order is lost (use dict.fromkeys to keep it)" },
-        { "e": "⚡", "t": "x in my_set is O(1)", "s": "Same as C# HashSet.Contains — even at 10 million items" }
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 40.1, "w": 96, "h": 76.9, "t": "sets.py", "lines": ["a = {1, 2, 3}", "b = {3, 4}", "a | b    # {1, 2, 3, 4}", "a & b    # {3}", "a - b    # {1, 2}", "list(set(xs))      # dedupe", "dict.fromkeys(xs)  # keep order"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 90.2, "t": "x in s → always fast", "e": "⚡", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Sets come with algebra", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "pipe for union", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "everything from both"]] },
+        { "at": "ampersand for intersection", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "only the shared 3"]] },
+        { "at": "minus for difference", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "a without b"]] },
+        { "at": "Dedupe a list", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "unique — order lost", "bad"]] },
+        { "at": "use dict dot fromkeys", "do": [["ln", "c", 7], ["hl", "c", 6], ["out", "c", "unique — order kept", "good"]] },
+        { "at": "membership checks never slow", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Sets come with algebra: pipe for union, ampersand for intersection, minus for difference. Dedupe a list by converting to set and back — though order disappears; use dict dot fromkeys if you need to preserve it. And remember: membership checks never slow down as the set grows."
     },
@@ -114,12 +166,19 @@
       "narration": "This is the feature that makes Python feel like magic. A comprehension transforms a collection in a single readable line — it's LINQ's select and where, fused. Square brackets make a list, curly braces make a set or dict. Once your eyes adjust, you'll read them as easily as a loop."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🗺️", "t": "[m.upper() for m in models]", "s": "Select: like models.Select(m => m.ToUpper())" },
-        { "e": "🔍", "t": "[m for m in models if \"gpt\" in m]", "s": "Where + Select combined — filter and transform in one pass" },
-        { "e": "📊", "t": "{m: len(m) for m in models}", "s": "Dict comprehension: model name → its length" }
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 65.2, "t": "comprehensions.py", "lines": ["names = [\"gpt-4\", \"claude\", \"gpt-5\"]", "[{{n.upper()}} for n in names]", "[n for n in names {{if \"gpt\" in n}}]", "{n: len(n) for n in names}"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 86.2, "t": "longer than a line? use a loop", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Read left to right", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Uppercase every model name", "do": [["ln", "c", 2], ["hl", "c", 1], ["mark", "c", "n.upper()"], ["out", "c", "[\"GPT-4\",\"CLAUDE\",\"GPT-5\"]"]] },
+        { "at": "Keep only names containing", "do": [["ln", "c", 3], ["hl", "c", 2], ["mark", "c", "if \"gpt\" in n"], ["out", "c", "[\"gpt-4\", \"gpt-5\"]", "good"]] },
+        { "at": "the dict version", "do": [["ln", "c", 4], ["hl", "c", 3], ["mark", "c", ""], ["out", "c", "{gpt-4: 5, claude: 6, gpt-5: 5}"]] },
+        { "at": "If a comprehension gets longer", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "Read left to right: expression, for, items, optional if. Uppercase every model name — that's select. Keep only names containing g-p-t, transformed — that's where plus select. And the dict version maps each name to its length. Same idea, three shapes. If a comprehension gets longer than one line, go back to a plain loop."
     },
@@ -158,12 +217,24 @@
       "narration": "Slicing pulls sub-ranges out of lists, tuples, and strings. The rule: start inclusive, end exclusive — exactly like C sharp's substring. a square bracket one colon three gives you elements at index one and two. Leave the start empty to begin at zero; leave the end empty to go to the finish; negative numbers count from the back."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "✂️", "t": "a[:3] · a[2:] · a[-2:]", "s": "First three · from index 2 on · last two — negatives count from the end" },
-        { "e": "🧳", "t": "first, *rest = items", "s": "Unpacking: first gets items[0], rest gets everything else as a list" },
-        { "e": "🔄", "t": "a, b = b, a", "s": "Swap without a temp variable — tuple packing behind the scenes" }
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 36.3, "w": 96, "h": 69.3, "t": "slicing.py", "lines": ["xs = [10, 20, 30, 40, 50]", "xs[:3]", "xs[2:]", "xs[-2:]", "first, *rest = xs", "a, b = b, a"] },
+        { "id": "i0", "k": "chip", "x": 12, "y": 85.1, "t": "10", "c": "sm" },
+        { "id": "i1", "k": "chip", "x": 31, "y": 85.1, "t": "20", "c": "sm" },
+        { "id": "i2", "k": "chip", "x": 50, "y": 85.1, "t": "30", "c": "sm" },
+        { "id": "i3", "k": "chip", "x": 69, "y": 85.1, "t": "40", "c": "sm" },
+        { "id": "i4", "k": "chip", "x": 88, "y": 85.1, "t": "50", "c": "sm" }
+      ],
+      "steps": [
+        { "at": "The patterns you", "do": [["show", "c"], ["ln", "c", 1], ["show", "i0"], ["show", "i1"], ["show", "i2"], ["show", "i3"], ["show", "i4"]] },
+        { "at": "a colon three", "do": [["ln", "c", 2], ["hl", "c", 1], ["hot", "i0"], ["hot", "i1"], ["hot", "i2"], ["out", "c", "[10, 20, 30]"]] },
+        { "at": "Two colon", "do": [["ln", "c", 3], ["hl", "c", 2], ["unhot", "i0"], ["unhot", "i1"], ["hot", "i3"], ["hot", "i4"], ["out", "c", "[30, 40, 50]"]] },
+        { "at": "Minus two colon", "do": [["ln", "c", 4], ["hl", "c", 3], ["unhot", "i2"], ["out", "c", "[40, 50]"]] },
+        { "at": "Unpacking spreads", "do": [["ln", "c", 5], ["hl", "c", 4], ["unhot", "i3"], ["unhot", "i4"], ["hot", "i0"], ["out", "c", "first=10 · rest=[20, 30, 40, 50]"]] },
+        { "at": "And the famous swap", "do": [["ln", "c", 6], ["hl", "c", 5], ["unhot", "i0"], ["out", "c", "no temp variable ✓", "good"]] }
       ],
       "narration": "The patterns you'll type daily: a colon three — first three. Two colon — everything from index two. Minus two colon — last two. Unpacking spreads a collection into names: first comma star rest — first gets one element, rest gets the remainder. And the famous swap: a comma b equals b comma a. No temp variable. Tuples make it work."
     },
