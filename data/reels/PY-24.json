@@ -13,47 +13,91 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · ARRAYS",
       "title": "Python lists are slow. **Arrays are 50x fast.**",
       "sub": "One type, tightly packed, computed in C",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.4, "w": 96, "h": 59.2, "t": "lists vs arrays", "lines": ["xs = [1, 2, 3]     # pointers to boxed ints", "[x * 2 for x in xs]   # interpreted loop", "a = np.array([1, 2, 3])  # packed, one type", "a * 2             # compiled C, no loop"] }
+      ],
+      "steps": [
+        { "at": "Python lists are arrays of pointers", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "boxed numbers · interpreted loop", "bad"]] },
+        { "at": "NumPy's ndarray changes the deal", "do": [["ln", "c", 4], ["hl", "c", 2], ["out", "c", "one type, packed contiguously", "good"]] },
+        { "at": "operations dispatched to compiled C", "do": [["hl", "c", 3], ["out", "c", "50–100× faster", "good"]] },
+        { "at": "pandas, scikit-learn, PyTorch", "do": [["hl", "c", -1], ["out", "c", "all built on this", "good"]] },
+        { "at": "natural home of embeddings", "do": [["pulse", "c"]] }
+      ],
       "narration": "Python lists are arrays of pointers to objects — flexible, but every number is boxed and every loop is interpreted. NumPy's ndarray changes the deal: one type, numbers packed contiguously in memory, and operations dispatched to compiled C. The result is loop-free, vectorized code that runs fifty to a hundred times faster. Every data and ML library — pandas, scikit-learn, PyTorch — is built on this foundation. And it's the natural home of embeddings."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "⚡", "t": "np.array([1, 2, 3]) — one dtype, fixed shape", "s": "a * 2 multiplies every element — no loop, no list comprehension" },
-        { "e": "📐", "t": "Shape & dtype are first-class", "s": "a.shape · a.dtype — (1536,) float32 = a 1,536-dim embedding" },
-        { "e": "🧊", "t": "2D+: a[0] row, a[:, 0] column", "s": "Matrices embed naturally: one row per document" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "essentials", "lines": ["v = np.array(vec, dtype=np.float32)", "v.shape           # (1536,)", "v * 2             # element-wise", "M[0]    M[:, 0]    # row 0 · column 0", "M = np.stack(chunk_vectors)"] }
+      ],
+      "steps": [
+        { "at": "Create with np dot array", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0], ["out", "c", "1,536 float32 = one embedding", "good"]] },
+        { "at": "Arithmetic is element-wise", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "multiply the array, multiply everything"]] },
+        { "at": "2D indexing reads like the math", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "row 0 · column 0"]] },
+        { "at": "Store your corpus as one matrix", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "a row per chunk", "good"]] }
       ],
       "narration": "The essentials. Create with np dot array; the array has a shape and a dtype, and those matter — a 1,536-element float32 array is exactly one OpenAI embedding. Arithmetic is element-wise and vectorized: multiply the array, multiply everything. And 2D indexing reads like the math: a zero gives row zero, a colon comma zero gives column zero. Store your corpus as one matrix — a row per chunk — and every similarity computation becomes array math."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · THE MATH",
       "title": "**Dot product** = how much two vectors agree",
       "sub": "Multiply element-wise, sum. The norm = vector length.",
+      "h": 210,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 32.2, "w": 96, "h": 60.6, "t": "dot & norm", "lines": ["np.dot(a, b)       # Σ aᵢ·bᵢ", "# high: same way · negative: opposite", "np.linalg.norm(a)  # √Σ aᵢ²", "# → cosine similarity"] }
+      ],
+      "steps": [
+        { "at": "Two operations run the embedding world", "do": [["show", "c"]] },
+        { "at": "The dot product", "do": [["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "multiply pairs, sum them"]] },
+        { "at": "The norm", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "vector length · Pythagoras"]] },
+        { "at": "Together they produce cosine similarity", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "arithmetic + a geometric picture", "good"]] }
+      ],
       "narration": "Two operations run the embedding world. The dot product: multiply corresponding elements and sum the results — high when vectors point the same way, negative when they oppose. The norm: the vector's length — square root of the sum of squares, straight from Pythagoras. Together they produce cosine similarity. No PhD required — it's arithmetic with a geometric picture, and NumPy computes both in one call."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "✖️", "t": "np.dot(a, b) — the dot product", "s": "Sum of element-wise products: big & positive = aligned" },
-        { "e": "📏", "t": "np.linalg.norm(a) — the length", "s": "√(a₁² + a₂² + …) — unit vectors have norm 1.0" },
-        { "e": "🖼️", "t": "The picture", "s": "Vectors are arrows; agreement = angle between them, not distance" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "geometry", "lines": ["embedding = arrow from the origin", "dot ↑ with length and alignment", "norm = arrow length", "similarity = the ANGLE between arrows"] }
+      ],
+      "steps": [
+        { "at": "Anchor the geometry", "do": [["show", "c"]] },
+        { "at": "Think of each embedding as an arrow", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "direction + length"]] },
+        { "at": "dot product grows with arrow length", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "The norm is just the arrow", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "Similarity is about the ANGLE", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "direction, not size", "good"]] },
+        { "at": "Stage 4 searches documents", "do": [["hl", "c", -1], ["pulse", "c"]] }
       ],
       "narration": "Anchor the geometry. Think of each embedding as an arrow from the origin. The dot product grows with arrow length and with alignment. The norm is just the arrow's length. Similarity is about the ANGLE between arrows — direction, not size — which is exactly why we normalize and why cosine similarity is the standard for embeddings. When Stage 4 searches documents, this is the entire computation under the hood."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · COSINE SIMILARITY",
       "title": "cos(θ) = dot ÷ (length × length)",
       "sub": "1.0 = same direction · 0 = unrelated · −1 = opposite",
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.8, "w": 96, "h": 63.6, "t": "cosine.py", "lines": ["cos = np.dot(a, b) / (norm(a) * norm(b))", "#  1  identical meaning", "#  0  unrelated", "# -1  opposite"] }
+      ],
+      "steps": [
+        { "at": "Cosine similarity divides the dot product", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "magnitude cancels · direction stays"]] },
+        { "at": "The score ranges from one", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "through zero", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "minus one", "do": [["ln", "c", 4], ["hl", "c", 3]] },
+        { "at": "'cat' and 'kitten' score high", "do": [["hl", "c", -1], ["out", "c", "cat·kitten 0.8 · cat·tax law 0.02", "good"]] }
+      ],
       "narration": "Cosine similarity divides the dot product by both vectors' norms — canceling magnitude so only direction remains. The score ranges from one — identical meaning — through zero — unrelated — to minus one — opposite. 'cat' and 'kitten' score high; 'cat' and 'tax law' near zero. This single number, computed a billion times a day, is how retrieval finds 'the chunks most like your question'. One line of NumPy — and one of the highest-leverage lines in the whole field."
     },
     {
@@ -72,20 +116,36 @@
       "narration": "See it in a flattened view. Similar meanings cluster: cat and kitten sit close, scoring point nine two. Unrelated concepts sit far apart in direction: cat and tax law, essentially zero. Real embeddings live in 1,536 dimensions — impossible to picture — but the geometry is identical: distance in direction equals difference in meaning. Retrieval is literally: compute this score between your question and every chunk, return the top few."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · BROADCASTING",
       "title": "Broadcasting: array-op **magic**",
       "sub": "Different shapes that still compute — by the rules",
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.8, "w": 96, "h": 63.6, "t": "broadcast", "lines": ["M.shape   # (10000, 1536)  chunks", "q.shape   # (1536,)       query", "M @ q     # 10,000 dot products", "for row in M: ...   # ✗ loop"] }
+      ],
+      "steps": [
+        { "at": "NumPy's broadcasting", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "align from the right", "do": [["hl", "c", 0, 1], ["out", "c", "dims must match or be one"]] },
+        { "at": "a matrix of ten thousand chunk vectors", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "one operation · one compiled call", "good"]] },
+        { "at": "If you write a Python loop over rows", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "100× speedup left on the table", "bad"]] }
+      ],
       "narration": "NumPy's broadcasting lets arrays of different shapes compute together under strict rules: align from the right, and dimensions must match or one of them must be one. The payoff for embeddings is huge — a matrix of ten thousand chunk vectors against one query vector broadcasts into a single operation: ten thousand dot products, no loop, one compiled call. If you write a Python loop over rows, you've left a hundredfold speedup on the table."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🎯", "t": "query @ corpus.T", "s": "@ is matmul: (1,1536) × (1536,10000) → 10,000 similarities at once" },
-        { "e": "🧊", "t": "Normalize first: v / norm(v)", "s": "Unit vectors → dot product IS cosine similarity — skip the division later" },
-        { "e": "⚠️", "t": "float32 vs float64", "s": "Embeddings usually float32 — half the memory, check dtype before mixing" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "search.py", "lines": ["M = M / norm(M, axis=1, keepdims=True)", "q = q / norm(q)", "scores = M @ q        # all similarities", "top = np.argsort(-scores)[:5]"] }
+      ],
+      "steps": [
+        { "at": "The production pattern", "do": [["show", "c"]] },
+        { "at": "Normalize all vectors to unit length", "do": [["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "divide each by its norm"]] },
+        { "at": "a single matrix multiplication", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "every similarity at once", "good"]] },
+        { "at": "the entire search primitive", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "a vector DB, hand-rolled", "good"]] },
+        { "at": "FAISS and friends", "do": [["hl", "c", -1], ["pulse", "c"]] }
       ],
       "narration": "The production pattern, step by step. Normalize all vectors to unit length — divide each by its norm — then a single matrix multiplication against the corpus transpose returns every similarity score at once. That's the entire search primitive of a vector database, hand-rolled in three lines. Later you'll meet FAISS and friends, which optimize this same computation — but you'll never be confused about what they do, because you just wrote it."
     },

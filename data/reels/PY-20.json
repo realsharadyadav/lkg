@@ -15,110 +15,213 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · SQLALCHEMY",
       "title": "SQLAlchemy = **EF Core**, twice",
       "sub": "Core (SQL builder) and ORM (object mapper) under one roof",
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.0, "w": 96, "h": 56.5, "t": "models.py", "lines": ["select(users.c.name).where(...)  # Core", "class User(Base):          # ORM", "    id: Mapped[int] = mapped_column()", "s.add(User(name=\"Ada\"))"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 75.6, "t": "Core ≈ Dapper-plus · ORM ≈ EF", "e": "🔁", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "SQLAlchemy is the standard", "do": [["show", "c"]] },
+        { "at": "Core: a SQL expression builder", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "Python compiles to SQL", "good"]] },
+        { "at": "ORM: maps classes to tables", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "objects save and load", "good"]] },
+        { "at": "unit-of-work via session", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "session tracks changes"]] },
+        { "at": "Your C sharp instincts transfer", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "SQLAlchemy is the standard Python database toolkit, and it mirrors EF Core so closely that you'll be productive in an hour. Two layers. Core: a SQL expression builder — Python code that compiles to SQL, explicit about queries, perfect for reports and analytics-shaped work. ORM: maps classes to tables — your objects save and load, relationships navigate, unit-of-work via session. Your C sharp instincts transfer directly: Core is like Dapper-plus, the ORM is like EF. Most real projects mix both."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "🔌", "t": "engine = create_engine(\"mssql+pyodbc://…\")", "s": "One engine per database; the URL names the driver" },
-        { "e": "🗺️", "t": "ORM: class Ticket(Base) → table tickets", "s": "Declarative classes; session.add/commit — the EF shape" },
-        { "e": "🧱", "t": "Core: select(tickets).where(tickets.c.priority == \"P1\")", "s": "Composable, parameterized SQL as Python objects" }
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.0, "w": 96, "h": 72.4, "t": "mapping.py", "lines": ["engine = create_engine(URL)", "class Base(DeclarativeBase): ...", "with Session(engine) as s:", "    s.add(obj); s.commit()", "stmt = select(t).where(t.c.x > 1)", "# ORM = writes · Core = analytics reads"] }
+      ],
+      "steps": [
+        { "at": "The mental mapping", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Engine", "do": [["hl", "c", 0], ["out", "c", "connection config, created once"]] },
+        { "at": "a Base class", "do": [["ln", "c", 4], ["hl", "c", 1, 3], ["out", "c", "add + commit = DbContext", "good"]] },
+        { "at": "Core layer", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "parameterized SQL", "good"]] },
+        { "at": "Rule of thumb", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "same split as in C sharp", "good"]] }
       ],
       "narration": "The mental mapping. Engine — your connection string and configuration, created once. ORM layer: a Base class, columns as typed attributes, and a session that tracks changes — add, commit, exactly like DbContext. Core layer: table objects with a c attribute for columns, select-where-order expressions that compile to parameterized SQL. Both layers share the engine, transactions, and pooling. Rule of thumb: ORM for domain writes, Core (or plain text SQL) for analytics reads — same split you already make in C sharp."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · SQL SERVER",
       "title": "pyodbc: the **bridge home**",
       "sub": "Your existing SQL Server estates, from Python",
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.8, "w": 96, "h": 63.6, "t": "mssql.py", "lines": ["url = \"mssql+pyodbc://…\"", "engine = create_engine(url)", "# same ORM + Core code runs on MSSQL", "# Windows auth · encrypted · native driver"] }
+      ],
+      "steps": [
+        { "at": "SQL Server is the gravity well", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "pyodbc is the ODBC bridge", "do": [["hl", "c", 0], ["out", "c", "any DB with an ODBC driver", "good"]] },
+        { "at": "SQLAlchemy's mssql-plus-pyodbc dialect", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "same code, MSSQL backend", "good"]] },
+        { "at": "Native client drivers", "do": [["ln", "c", 4], ["hl", "c", 3]] },
+        { "at": "one connection string", "do": [["hl", "c", -1], ["out", "c", "15 years of schema, queryable", "good"]] }
+      ],
       "narration": "At Deloitte, SQL Server is the gravity well — good news: the path is paved. pyodbc is the ODBC bridge: any database with an ODBC driver, including every SQL Server since forever. In practice you rarely touch pyodbc directly; SQLAlchemy's mssql-plus-pyodbc dialect sits on top, so the same ORM and Core code runs against MSSQL. Native client drivers, Windows auth, encrypted connections — all supported. Your first agent that reads the enterprise warehouse needs exactly this: one connection string, and fifteen years of schema is queryable from Python."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "🔗", "t": "mssql+pyodbc://user:pw@server/db?driver=ODBC+Driver+18+for+SQL+Server", "s": "The connection URL; driver 18+ for modern encryption defaults" },
-        { "e": "🔐", "t": "Trusted_Connection / Entra auth", "s": "Windows and Entra-ID auth flow through ODBC — enterprise auth patterns intact" },
-        { "e": "🚫", "t": "No f-string SQL here either", "s": "Core/ORM parameterize automatically; raw text SQL needs bound params" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "conn string", "lines": ["mssql+pyodbc://host/db", "  ?driver=ODBC+Driver+18+for+SQL+Server", "  &Trusted_Connection=yes", "text(\"SELECT * FROM t WHERE id = :id\")", "conn.execute(q, {\"id\": 5})"] }
+      ],
+      "steps": [
+        { "at": "Connection-string anatomy", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "dialect plus driver", "do": [["hl", "c", 0]] },
+        { "at": "ODBC Driver 18", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "current encryption behavior", "good"]] },
+        { "at": "trusted connection or Entra ID", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "enterprise auth flows through"]] },
+        { "at": "hand-written SQL must use bound parameters", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", ":id bound — never concatenated", "good"]] }
       ],
       "narration": "Connection-string anatomy: dialect plus driver in the URL, modern ODBC Driver 18 for current encryption behavior, and enterprise authentication — trusted connection or Entra ID — flows through the same ODBC layer. One security note travels with you: the moment you write raw SQL text, the parameter-binding rules from Reel 7 are law — the ORM protects you; hand-written SQL must use bound parameters. This is the same SQL-Injection battle you've fought since ASP dot net, on a new front."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · POOLING",
       "title": "Connections are **expensive**. Reuse them.",
       "sub": "Pool sizing: the art of enough-but-not-too-many",
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.8, "w": 96, "h": 63.6, "t": "pool", "lines": ["engine = create_engine(url,", "    pool_size=5, max_overflow=10)", "with engine.connect() as c: ...", "# checked out → used → returned"] }
+      ],
+      "steps": [
+        { "at": "A database connection costs", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "engine pools by default", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "you never manage them", "good"]] },
+        { "at": "too few and requests queue", "do": [["hl", "c", 0, 1], ["out", "c", "too few → queue · too many → DB drowns"]] },
+        { "at": "Start small", "do": [["out", "c", "5–10, then tune on wait times", "good"]] },
+        { "at": "ADO dot net connection pooling", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
       "narration": "A database connection costs a handshake, memory server-side, and a seat in the license headcount. SQLAlchemy's engine pools by default: connections are checked out, used, and returned — your code never manages them explicitly. Sizing matters: too few and requests queue; too many and the database drowns. Start small — five to ten — and tune by watching wait times. And one async note: pooling works the same in async engines; each awaits its checkout. This is ADO dot net connection pooling wearing a Python jacket — same physics, same tuning instincts."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "♻️", "t": "Engine = one pool, app-wide", "s": "Create once at startup; sessions borrow and return" },
-        { "e": "🔢", "t": "pool_size=5, max_overflow=10", "s": "Baseline for services; scale out replicas before growing pools" },
-        { "e": "⏱️", "t": "pool_pre_ping=True", "s": "Cheap liveness check — kills 'connection reset by peer' surprises" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "rules.py", "lines": ["engine = create_engine(url,     # ONCE", "    pool_size=5, max_overflow=10,", "    pool_pre_ping=True)", "# more replicas > bigger pools"] }
+      ],
+      "steps": [
+        { "at": "Operational rules", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "One engine per database", "do": [["hl", "c", 0], ["out", "c", "at startup, injected everywhere", "good"]] },
+        { "at": "Pool size five with overflow ten", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "a sane service baseline"]] },
+        { "at": "prefer more app replicas", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "many small polite clients", "good"]] },
+        { "at": "enable pre-ping", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "stale connection → seamless reconnect", "good"]] }
       ],
       "narration": "Operational rules. One engine per database, created at application startup, injected everywhere — never per request. Pool size five with overflow ten is a sane service baseline; when saturated, prefer more app replicas over bigger pools — databases prefer many small polite clients to one giant rude one. And enable pre-ping: a lightweight liveness check on checkout that converts stale-connection errors into seamless reconnects. Five percent overhead, ninety-five percent fewer 2am pages."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · ALEMBIC",
       "title": "Schema changes = **versioned migrations**",
       "sub": "Alembic: EF Migrations' Python twin",
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "alembic", "lines": ["alembic revision --autogenerate -m \"add x\"", "# review + edit the script", "def upgrade(): op.add_column(...)", "def downgrade(): op.drop_column(...)", "alembic upgrade head"] }
+      ],
+      "steps": [
+        { "at": "Alembic is SQLAlchemy", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "autogenerate compares your models", "do": [["hl", "c", 0], ["out", "c", "drafts a migration script"]] },
+        { "at": "you review, edit, commit", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "Upgrade and downgrade functions", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "reversible = schema rollback", "good"]] },
+        { "at": "alembic upgrade head", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "at startup or as a release step", "good"]] }
+      ],
       "narration": "Schema evolution without versioning is how databases become archaeology sites. Alembic is SQLAlchemy's migration tool — autogenerate compares your models to the live schema and drafts a migration script; you review, edit, commit. Upgrade and downgrade functions make changes reversible — the schema equivalent of rollback. Wire migrations into deployment: containers run alembic upgrade head at startup or as a release step. Your EF Migrations muscle memory maps one-to-one: snapshot the model, generate, review, apply, version."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "⚙️", "pk": "📝", "t": "alembic revision --autogenerate -m \"add tickets table\"", "s": "Diff models vs database → a draft upgrade()/downgrade() script" },
-        { "e": "👀", "pk": "👀", "t": "Review every autogenerate", "s": "Autogenerate drafts; destructive changes (drops) always hand-checked" },
-        { "e": "🚀", "pk": "🚀", "t": "alembic upgrade head in CI/CD", "s": "Migrations run as a release step — schema and code ship together" }
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.8, "w": 96, "h": 63.6, "t": "workflow", "lines": ["autogenerate → draft", "# drops · type changes: check by hand", "git commit: code + migration", "alembic upgrade head   # versioned, logged"] }
+      ],
+      "steps": [
+        { "at": "The workflow", "do": [["show", "c"]] },
+        { "at": "Autogenerate to draft", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "eyeball the diff"]] },
+        { "at": "especially drops and type changes", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "autogenerate is cautious here", "bad"]] },
+        { "at": "Commit the migration with the code", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "ship them together", "good"]] },
+        { "at": "Apply at release time", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "one command", "good"]] },
+        { "at": "Downgrade functions matter", "do": [["hl", "c", -1], ["pulse", "c"]] }
       ],
       "narration": "The workflow. Autogenerate to draft, eyeball the diff — especially drops and type changes, which autogenerate handles cautiously at best. Commit the migration with the code that needs it. Apply at release time: one command, versioned, logged. Downgrade functions matter more than they look — they're your drill for the day a deploy goes sideways at 3am. If your team has ever repaired a production schema by hand over a screenshare, Alembic is the vaccine — the exact same discipline as EF Migrations, which you already trust."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · POSTGRES",
       "title": "Postgres: the AI era's **default database**",
       "sub": "Free, everywhere, and extensible into vector land",
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 65.2, "t": "postgres", "lines": ["docker run -p 5432:5432 postgres:16", "# free · runs everywhere", "# extensions: pgvector · FTS · JSON", "# laptop → production, no rewrite"] }
+      ],
+      "steps": [
+        { "at": "Why does every AI tutorial", "do": [["show", "c"]] },
+        { "at": "It's free and runs everywhere", "do": [["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "Docker one-liner → managed cloud", "good"]] },
+        { "at": "Its ecosystem is the deepest", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "vectors · search · JSON · time series", "good"]] },
+        { "at": "And it scales honestly", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "prototype → production", "good"]] },
+        { "at": "One skill, every environment", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
       "narration": "Why does every AI tutorial use Postgres? Three reasons. It's free and runs everywhere — Docker one-liner to managed cloud. Its ecosystem is the deepest in the open-source world — extensions for vectors, full-text search, JSON, time series, geospatial. And it scales honestly: from your laptop prototype to serious production without a rewrite. For your architecture work, the practical takeaway: prototype AI apps against Postgres locally in Docker, and the same SQL and drivers carry to any managed Postgres a client prefers. One skill, every environment."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "🐘", "t": "Docker: postgres:16", "s": "Local dev parity in one container; pgAdmin or psql to explore" },
-        { "e": "🧩", "t": "Extensions: the superpower", "s": "pgvector, pg_trgm, PostGIS, TimescaleDB — CREATE EXTENSION and go" },
-        { "e": "🤝", "t": "Same SQLAlchemy, new URL", "s": "postgresql+psycopg://user:pw@localhost/db — everything else identical" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "onboarding", "lines": ["docker run postgres:16", "# SQLAlchemy code unchanged:", "- mssql+pyodbc://…", "+ postgresql://…", "CREATE EXTENSION vector;"] }
+      ],
+      "steps": [
+        { "at": "The onboarding path", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "connect with psql or a GUI", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "only the connection URL changes", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "code works unchanged", "good"]] },
+        { "at": "add pgvector", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "relational DB gains semantic search", "good"]] },
+        { "at": "Postgres plus extensions", "do": [["hl", "c", -1], ["pulse", "c"], ["out", "c", "security + budget + roadmap ✓", "good"]] }
       ],
       "narration": "The onboarding path. Run Postgres 16 in Docker; connect with psql or a GUI; your SQLAlchemy code works unchanged — only the connection URL changes from mssql to postgresql. Then explore extensions, because they're why Postgres won AI: add pgvector and your relational database gains semantic search — which is the next chapter. Architect's take: in client conversations, 'Postgres plus extensions' is frequently the answer that satisfies security review, budget review, and the roadmap simultaneously. It's the new default, and it lives on your laptop today."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 5,
       "kicker": "CHAPTER 6 · PGVECTOR",
       "title": "Vectors **inside** Postgres — pgvector",
       "sub": "One database for rows AND embeddings",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.7, "w": 96, "h": 75.7, "t": "pgvector", "lines": ["ALTER TABLE docs", "  ADD COLUMN emb vector(1536);", "CREATE INDEX ON docs", "  USING hnsw (emb vector_cosine_ops);", "SELECT * FROM docs", "  ORDER BY emb <=> :q LIMIT 5;"] }
+      ],
+      "steps": [
+        { "at": "pgvector is the extension", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "Add a column of type vector", "do": [["hl", "c", 0, 1], ["out", "c", "embeddings next to your rows"]] },
+        { "at": "create an index", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "approximate nearest neighbor", "good"]] },
+        { "at": "order by embedding distance and limit k", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["out", "c", "semantic top-5, plain SQL", "good"]] },
+        { "at": "ONE store", "do": [["hl", "c", -1], ["out", "c", "docs + metadata + embeddings together", "good"]] }
+      ],
       "narration": "pgvector is the extension that turns Postgres into a vector database. Add a column of type vector with your dimension, insert embeddings alongside your rows, create an index — and SQL gains nearest-neighbor operators: order by embedding distance and limit k. The architectural elegance: your documents, metadata, permissions, and embeddings live in ONE store — joins between semantic search and relational filters are ordinary SQL. No sync pipelines, no second system to secure and back up. It won't out-scale dedicated vector databases — GA-10 covers that decision — but for a huge fraction of real workloads, one Postgres is the whole answer."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 5,
-      "items": [
-        { "e": "➕", "pk": "📋", "t": "ALTER TABLE docs ADD COLUMN embedding vector(1536)", "s": "CREATE INDEX … USING hnsw (embedding vector_cosine_ops)" },
-        { "e": "🔍", "pk": "🏗️", "t": "SELECT * FROM docs ORDER BY embedding <=> $1 LIMIT 5", "s": "<=> = cosine distance · combine with WHERE tenant_id = $2 freely" },
-        { "e": "🏗️", "pk": "🔍", "t": "The one-database pattern", "s": "Semantic search + filters + permissions in ONE system of record" }
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.0, "w": 96, "h": 72.4, "t": "hybrid query", "lines": ["emb vector(1536)   -- sized to model", "USING hnsw (emb vector_cosine_ops)", "ORDER BY emb <=> :q   -- cosine", "WHERE tenant = :t", "  AND created > :d", "LIMIT 5;"] }
+      ],
+      "steps": [
+        { "at": "Vector type sized to your model", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "The distance operator", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "ascending, limit k"]] },
+        { "at": "filter freely", "do": [["ln", "c", 6], ["hl", "c", 3, 4], ["out", "c", "relational filter + vector search", "good"]] },
+        { "at": "one query, one transaction, one backup", "do": [["hl", "c", -1], ["pulse", "c"], ["out", "c", "no sync pipeline to break", "good"]] }
       ],
       "narration": "The essentials. Vector type sized to your model; an HNSW index for approximate nearest-neighbor speed — GA-09 explains the algorithm. The distance operator: less-equal-greater-than is cosine distance — order ascending, limit k. And the killer feature: filter freely — where tenant equals this, where date after that — vector and relational in one query, one transaction, one backup. For multi-tenant systems with moderate scale, this pattern deletes entire categories of integration risk. GA-10 puts pgvector on the selection matrix against the dedicated stores — with honest limits."
     },

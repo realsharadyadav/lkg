@@ -13,11 +13,23 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · ROUTES",
       "title": "Routes: the controllers you already know",
       "sub": "Decorators, path/query params — ASP.NET energy, Python syntax",
+      "h": 190,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 66.9, "t": "main.py", "lines": ["app = FastAPI()", "@app.get(\"/users/{uid}\")", "def user({{uid: int}}, {{limit: int = 20}}):", "    return {\"id\": uid}"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 84.2, "t": "signatures are the contract", "e": "📜", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "An app object", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "routes as decorated functions", "do": [["ln", "c", 4], ["hl", "c", 1, 3]] },
+        { "at": "declare user-id as int", "do": [["mark", "c", "uid: int"], ["out", "c", "/users/abc → 422 ✗", "bad"]] },
+        { "at": "Query parameters are plain", "do": [["mark", "c", "limit: int = 20"], ["hl", "c", 2], ["out", "c", "?limit=5 → optional, validated", "good"]] },
+        { "at": "function SIGNATURES are the contract", "do": [["mark", "c", ""], ["hl", "c", -1], ["out", "c", ""], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "If you've written controllers in dot-NET, FastAPI's mental model is instantly familiar. An app object; routes as decorated functions; get, post, put, delete — HTTP verbs mapped to Python functions. Path parameters live in the URL — slash users slash user-id — and double as types: declare user-id as int and FastAPI rejects 'abc' with a clean 422 before your code runs. Query parameters are plain function arguments with defaults — limit equals twenty becomes optional and validated. The philosophy: function SIGNATURES are the contract — types in, types out — and everything else is generated from them."
     },
     {
@@ -34,11 +46,23 @@
       "narration": "One file, the whole idea. The request model carries its own constraints — min-length, max-length, range — so malformed input dies at the door with a precise error, not deep in your logic. response-model shapes the OUTGOING contract too: extra fields stripped, types enforced, the API surface stays clean as internals evolve. And note async def: FastAPI endpoints run as coroutines, so awaiting your vector search and LLM calls inside a route is natural — no executor bridging, PY-10 concurrency straight in your controllers. This is why FastAPI became the default for LLM backends: the I/O-heavy shape of GenAI apps fits it perfectly."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · DEPENDENCY INJECTION",
       "title": "Depends(): **DI like .NET**, without the ceremony",
       "sub": "Reusable, testable, auto-documented dependencies",
+      "h": 218,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.2, "w": 96, "h": 74.7, "t": "deps.py", "lines": ["def get_db():", "    with Session() as db: yield db", "@app.get(\"/items\")", "def items(db = Depends(get_db)):", "    return db.query(Item)", "app.dependency_overrides[get_db]=fake"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 89.0, "t": "auth · sessions · rate limits", "e": "🧰", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Dependency injection in FastAPI", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "A function declares what it needs", "do": [["ln", "c", 5], ["hl", "c", 2, 4]] },
+        { "at": "FastAPI calls the provider", "do": [["out", "c", "provider runs once per request", "good"]] },
+        { "at": "cross-cutting needs", "do": [["show", "t"], ["pulse", "t"]] },
+        { "at": "OVERRIDE them in tests", "do": [["hide", "t"], ["ln", "c", 6], ["hl", "c", 5], ["out", "c", "fake db — routes untouched", "good"]] }
+      ],
       "narration": "Dependency injection in FastAPI is a parameter with Depends. A function declares what it needs — a database session, the current user, a rate limiter — as a typed parameter, and FastAPI calls the provider, caches it per-request, and injects the result. The dot-NET comparison is apt: constructor injection becomes function parameters, scopes become the request lifecycle, and everything stays explicit in the signature. Why it matters in practice: cross-cutting needs — auth, sessions, common query building — stop being copy-pasted boilerplate and become named, testable units. And because dependencies are functions, you can OVERRIDE them in tests — swap the real database for a fake without touching route code."
     },
     {
@@ -55,11 +79,23 @@
       "narration": "The dependency graph resolves itself: my-usage needs a user; the user needs a database and a token; FastAPI builds the chain, caches each per request, and tears down yield-dependencies in reverse. Three wins. Testability: dependency-overrides swaps any provider — test routes with a fake user, no token forging. Explicitness: the signature IS the route's requirements — read it and you know exactly what the endpoint needs, unlike middleware where behavior hides. Shared logic without globals: the db session is created once per request and shared everywhere it's injected — no thread-local session hacks. For GenAI apps, inject your vector store client and LLM client the same way — one provider, mocked in tests."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · MIDDLEWARE & TASKS",
       "title": "Cross-cutting concerns, background work, live streams",
       "sub": "Middleware, CORS, BackgroundTasks, SSE",
+      "h": 172,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 44.5, "w": 96, "h": 84.3, "t": "middleware.py", "lines": ["@app.middleware(\"http\")  # every request", "async def timing(req, call_next): ...", "app.add_middleware(CORS, origins=O)", "tasks.add_task(send_audit, user)", "return StreamingResponse(llm_tokens())"] }
+      ],
+      "steps": [
+        { "at": "Middleware wraps every request", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "CORS middleware is the one", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "browsers block cross-origin by default"]] },
+        { "at": "not wildcard-plus-credentials", "do": [["out", "c", "* + credentials ✗", "bad"]] },
+        { "at": "BackgroundTasks", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "response first, task after", "good"]] },
+        { "at": "StreamingResponse with server-sent events", "do": [["ln", "c", 5], ["hl", "c", 4]] },
+        { "at": "RE-EMIT them", "do": [["out", "c", "words appear as the model writes", "good"]] }
+      ],
       "narration": "Middleware wraps every request — logging, timing, request-ids — a decorator around the whole app rather than per route. CORS middleware is the one every frontend developer meets: browsers block cross-origin API calls by default, and the middleware whitelists which origins may call you — for a public API, configure origins deliberately, not wildcard-plus-credentials. BackgroundTasks: work that must happen but shouldn't delay the response — audit logging, notifications, cache warming; the response returns, the task completes after. StreamingResponse with server-sent events is the headline act for GenAI: PY-12 taught you to consume LLM token streams; here you RE-EMIT them — the browser shows words appearing as the model generates them."
     },
     {
@@ -76,20 +112,42 @@
       "narration": "Four mechanisms, one snippet. Middleware runs around everything — request-id and timing headers become observability you got for free. CORS is deliberate: exact origins, because allow-origins star plus credentials is a security hole browsers warn you about for a reason. BackgroundTasks for genuinely deferrable work — if the response NEEDS the result, it's not a background task, it's just the handler. And EventSourceResponse completes the streaming story: httpx streams tokens from the LLM — PY-12 — your generator yields them, and the browser's EventSource reads them as server-sent events. Time from model token to user screen: milliseconds. That loop — LLM to server to browser, all streaming — is the architecture under every modern AI chat UI."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · AUTH & DOCS",
       "title": "JWT auth in five lines. **Docs you never wrote.**",
       "sub": "OAuth2PasswordBearer + the OpenAPI miracle",
+      "h": 222,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.5, "w": 96, "h": 73.3, "t": "auth.py", "lines": ["bearer = OAuth2PasswordBearer(\"token\")", "def me(tok = Depends(bearer)):", "    return verify(tok)   # sig + expiry", "# HS256: one shared secret", "# RS256: private signs, public verifies", "# → Swagger UI live at /docs"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.3, "t": "docs are a side effect of the API", "e": "📖", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Auth: OAuth2PasswordBearer", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "declare it as a dependency", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "token → verified → user", "good"]] },
+        { "at": "HS256 is a shared secret", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "one key signs + verifies"]] },
+        { "at": "RS256 is a key pair", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "verifiers can’t sign", "good"]] },
+        { "at": "live Swagger UI", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "interactive · always in sync", "good"]] },
+        { "at": "Your API documentation is a side effect", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Auth: OAuth2PasswordBearer is FastAPI's built-in JWT pattern — declare it as a dependency, read the bearer token from the Authorization header, verify its signature and expiry, inject the user. RS256 versus HS256 matters at deployment: HS256 is a shared secret — one key signs and verifies, fine for a single service; RS256 is a key pair — the identity provider signs with a private key, your service verifies with the public one — so services can verify without holding signing power. Now the docs: every type hint and Pydantic model you've written has been feeding OpenAPI; FastAPI generates a full OpenAPI spec and a live Swagger UI at slash docs — interactive, try-it-now, always in sync with code. Your API documentation is a side effect of writing the API."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🎫", "t": "OAuth2PasswordBearer", "s": "Reads Bearer token · verify signature + expiry · inject user via Depends" },
-        { "e": "🔑", "t": "RS256 for multi-service", "s": "Public key verifies without signing power — services verify, only IdP signs" },
-        { "e": "📖", "t": "/docs Swagger UI", "s": "OpenAPI generated from type hints · always current · interactive try-it-out" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "takeaways", "lines": ["openapi.json  → typed TS client", "HS256 + env secret  → internal", "RS256 from a provider → multi-service", "verify-only: never the private key", "Depends(bearer) + your verify()"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 85.9, "t": "backend pillar complete · next: quality", "e": "✅", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "The docs point deserves emphasis", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "frontend builds, stops asking", "good"]] },
+        { "at": "Generate typed clients", "do": [["out", "c", "Python types → TypeScript"]] },
+        { "at": "service-to-internal", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "anything multi-service", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "user-facing → proper IdP"]] },
+        { "at": "verify-only services never hold", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "no signing power ✓", "good"]] },
+        { "at": "FastAPI gives you both", "do": [["ln", "c", 5], ["hl", "c", 4]] },
+        { "at": "Stage 5's backend pillar", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The docs point deserves emphasis because it changes behavior: when calling your API is a click away, frontend devs stop asking you questions and start building — the spec becomes a contract both sides trust. Generate typed clients from the OpenAPI spec and your Python backend types flow into a TypeScript frontend automatically. And the auth summary: for service-to-internal, HS256 with an env secret is fine; anything multi-service or user-facing should accept RS256 tokens from a proper identity provider — verify-only services never hold the private key. FastAPI gives you both: the bearer dependency for extraction, and your own verify function for the cryptography. Stage 5's backend pillar is complete — next, quality."
     },

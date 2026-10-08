@@ -13,47 +13,116 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · THE GIL",
       "title": "The GIL: why threads don't speed up **CPU work**",
       "sub": "One interpreter lock; only one thread runs Python bytecode at a time",
+      "h": 262,
+      "actors": [
+        { "id": "t1", "k": "chip", "x": 22, "y": 9.2, "t": "Thread 1", "c": "sm" },
+        { "id": "t2", "k": "chip", "x": 78, "y": 9.2, "t": "Thread 2", "c": "sm" },
+        { "id": "key", "k": "pkg", "x": 22, "y": 23.7, "e": "🔑" },
+        { "id": "c", "k": "code", "x": 50, "y": 56.0, "w": 96, "h": 41.8, "t": "who runs in parallel?", "lines": ["pure-Python math → takes turns ✗", "file / network I/O → released ✓", "NumPy, C extensions → released ✓"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 91.6, "t": "threads can't parallelize pure Python", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "has a Global Interpreter Lock", "do": [["show", "t1"], ["show", "t2"], ["show", "key"]] },
+        { "at": "still take turns", "do": [["move", "key", 78, 23.7]] },
+        { "at": "never runs in parallel across threads", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "one thread at a time", "bad"]] },
+        { "at": "is RELEASED during I/O", "do": [["ln", "c", 2], ["hl", "c", 1], ["move", "key", 50, 23.7], ["out", "c", "threads still help here", "good"]] },
+        { "at": "calls into C extensions", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "NumPy, crypto, DB drivers", "good"]] },
+        { "at": "isn't 'Python can't do concurrency'", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "CPython — the Python you run — has a Global Interpreter Lock: a single lock each thread must hold to execute Python bytecode. Two threads on two cores still take turns; pure-Python CPU work never runs in parallel across threads. This surprises every developer arriving from C-sharp or Java, where threads do parallelize CPU work. But here's the nuance people miss: the GIL is RELEASED during I/O and during calls into C extensions — NumPy, cryptography, many database drivers — so threads still help those cases. The GIL isn't 'Python can't do concurrency'; it's 'Python threads can't parallelize pure-Python computation'."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 0,
-      "cards": [
-        { "e": "🧵", "t": "Threads share memory", "s": "Same heap, cheap communication · GIL caps pure-Python CPU parallelism", "win": true },
-        { "e": "🏭", "t": "Processes own memory", "s": "Separate interpreters, true CPU parallelism · costly data transfer between them", "win": true },
-        { "e": "📞", "t": "GIL releases on I/O & C calls", "s": "Threads still win for I/O-bound and NumPy-heavy workloads despite the lock", "win": true }
+      "h": 282,
+      "actors": [
+        { "id": "th", "k": "code", "x": 50, "y": 20.8, "w": 96, "h": 38.8, "t": "Threads", "lines": ["one process, shared memory", "OS switches between threads", "GIL: one runs Python at a time"] },
+        { "id": "pr", "k": "code", "x": 50, "y": 62.7, "w": 96, "h": 38.8, "t": "Processes", "lines": ["separate interpreters", "own GIL each → real parallel", "data crosses via pickle + pipes"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 92.9, "t": "GIL drops on I/O + C extensions", "e": "⚡", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Threads: one process", "do": [["show", "th"], ["ln", "th", 1], ["hl", "th", 0]] },
+        { "at": "OS switches between them", "do": [["ln", "th", 3], ["hl", "th", 1, 2], ["out", "th", "great for waiting", "good"]] },
+        { "at": "Processes: separate interpreters", "do": [["dim", "th"], ["show", "pr"], ["ln", "pr", 1], ["hl", "pr", 0]] },
+        { "at": "truly parallel across cores", "do": [["ln", "pr", 3], ["hl", "pr", 1], ["out", "pr", "only way to speed up CPU work", "good"]] },
+        { "at": "pickling and pipes", "do": [["hl", "pr", 2], ["out", "pr", "slow for small tasks", "bad"]] },
+        { "at": "The third fact", "do": [["undim", "th"], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The mental model that resolves the confusion. Threads: one process, shared memory, OS switches between them — great for waiting, useless for parallel pure-Python math because of the GIL. Processes: separate interpreters, each with its own GIL, truly parallel across cores — the only way to speed up CPU-bound Python — but passing data between them means pickling and pipes, which is slow enough to erase gains for small tasks. The third fact is the cheat code: the GIL drops during I/O waits and C-extension calls, so threads parallelize network-bound work fine — and for heavy numeric code on NumPy, threads often parallelize better than you'd expect. Nuance beats slogans."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · THREADS",
       "title": "I/O-bound? Threads are the **boring, reliable** answer",
       "sub": "When you're waiting, not computing",
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.0, "w": 96, "h": 56.5, "t": "threads.py", "lines": ["with ThreadPoolExecutor(10) as ex:", "    pages = ex.map(download, urls)", "await loop.run_in_executor(", "    None, old_sdk.call)"] },
+        { "id": "a", "k": "chip", "x": 20, "y": 72.0, "t": "get 1", "c": "sm" },
+        { "id": "b", "k": "chip", "x": 50, "y": 72.0, "t": "get 2", "c": "sm" },
+        { "id": "d", "k": "chip", "x": 80, "y": 72.0, "t": "get 3", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.9, "t": "threads = the adapter, not the architecture", "e": "🔌", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Threads shine when", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "While one thread blocks", "do": [["show", "a"], ["show", "b"], ["show", "d"], ["hot", "a"]] },
+        { "at": "Ten threads, ten simultaneous", "do": [["hot", "a"], ["hot", "b"], ["hot", "d"], ["out", "c", "10 downloads at once", "good"]] },
+        { "at": "most of your I-O should already be asyncio", "do": [["unhot", "a"], ["unhot", "b"], ["unhot", "d"], ["dim", "a"], ["dim", "b"], ["dim", "d"], ["out", "c", "asyncio is cheaper per wait"]] },
+        { "at": "BLOCKING library you can't await", "do": [["undim", "a"], ["undim", "b"], ["undim", "d"], ["hide", "a"], ["hide", "b"], ["hide", "d"], ["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "old SDK runs off the loop ✓", "good"]] },
+        { "at": "Threads are the adapter", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Threads shine when the bottleneck is waiting — network calls, file reads, database round-trips. While one thread blocks on a socket, the GIL is released and another thread runs. Ten threads, ten simultaneous downloads — the throughput win is real even though only one executes Python at a time. The catch for GenAI apps: most of your I-O should already be asyncio — PY-10's event loop handles thousands of waits more cheaply than a thread per request. Reach for threads when you're integrating a BLOCKING library you can't await — an old SDK, a sync database driver — run it in a thread pool so the rest of your async app doesn't freeze. Threads are the adapter, not the architecture."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "📥", "t": "Many downloads/DB calls", "s": "Threads overlap the waits · GIL released during I/O" },
-        { "e": "🔌", "t": "Blocking lib in async app", "s": "run_in_executor(threadpool) → freeze-proof integration with sync SDKs" },
-        { "e": "⚠️", "t": "Shared state = locks", "s": "Threads share memory — mutable shared data still needs threading.Lock" }
+      "h": 285,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.0, "w": 96, "h": 57.1, "t": "race.py", "lines": ["counter = 0", "def work():", "    counter += 1    # read·add·write", "# 2 threads interleave → lost update", "def safe():", "    with lock: counter += 1"] },
+        { "id": "n", "k": "chip", "x": 50, "y": 69.5, "t": "counter = 0", "c": "sm" },
+        { "id": "t1", "k": "tag", "x": 50, "y": 81.4, "t": "asyncio: no locks · threads: locks", "e": "🔒", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 91.9, "t": "sometimes wrong under load? missing lock", "e": "🐛", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Threading's danger zone", "do": [["show", "c"], ["ln", "c", 3], ["show", "n"]] },
+        { "at": "The GIL protects bytecode execution", "do": [["hl", "c", 1, 2]] },
+        { "at": "two threads incrementing the same counter", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["text", "n", "counter = 1873  (want 2000)"], ["tone", "n", "bad"], ["out", "c", "updates lost", "bad"]] },
+        { "at": "you still need locks", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["text", "n", "counter = 2000 ✓"], ["tone", "n", "good"], ["out", "c", "lock = safe", "good"]] },
+        { "at": "The asyncio discipline", "do": [["hl", "c", -1], ["show", "t1"], ["pulse", "t1"]] },
+        { "at": "Practical GenAI pattern", "do": [["pulse", "c"]] },
+        { "at": "sometimes wrong under load", "do": [["show", "t2"], ["pulse", "t2"]] }
       ],
       "narration": "Threading's danger zone is shared mutable state. The GIL protects bytecode execution, NOT your data structures: two threads incrementing the same counter can interleave and lose updates — you still need locks for shared mutation. The asyncio discipline — no locks because switching is cooperative — does not transfer. Practical GenAI pattern: thread pools via run-in-executor wrap blocking calls for async code; ThreadPoolExecutor for batch sync work. And a debugging note: thread bugs are intermittent by nature — if a counter is 'sometimes wrong under load', suspect a missing lock before anything else. Race conditions don't show up in unit tests; they show up in production."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · PROCESSES",
       "title": "CPU-bound? Only processes give you **more cores**",
       "sub": "Embeddings math, parsing, transforms — parallel for real",
+      "h": 240,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.9, "w": 96, "h": 60.4, "t": "procs.py", "lines": ["with ProcessPoolExecutor(4) as ex:", "    ex.map(chunk_job, tasks)", "# each worker: own interpreter + GIL", "ex.map(f, big_docs)   # pickled ✗", "ex.map(f, [\"a.txt\"])  # paths ✓"] },
+        { "id": "k1", "k": "chip", "x": 16, "y": 75.0, "t": "1", "c": "sm" },
+        { "id": "k2", "k": "chip", "x": 38, "y": 75.0, "t": "2", "c": "sm" },
+        { "id": "k3", "k": "chip", "x": 60, "y": 75.0, "t": "3", "c": "sm" },
+        { "id": "k4", "k": "chip", "x": 82, "y": 75.0, "t": "4", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 90.0, "t": "chunk the WORK, not the data", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "CPU-bound Python", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "Each process gets its own interpreter", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "four processes genuinely use four cores", "do": [["show", "k1"], ["show", "k2"], ["show", "k3"], ["show", "k4"], ["hot", "k1"], ["hot", "k2"], ["hot", "k3"], ["hot", "k4"], ["out", "c", "4 cores busy at once", "good"]] },
+        { "at": "ProcessPoolExecutor wraps this", "do": [["unhot", "k1"], ["unhot", "k2"], ["unhot", "k3"], ["unhot", "k4"], ["hl", "c", 0]] },
+        { "at": "inter-process communication serializes", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "pickle every doc ✗", "bad"]] },
+        { "at": "Rule: chunk the WORK", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "workers read inputs themselves ✓", "good"], ["show", "t"]] }
+      ],
       "narration": "CPU-bound Python — tokenization, chunking at scale, image preprocessing, running evals serially — needs multiprocessing. Each process gets its own interpreter and its own GIL, so four processes genuinely use four cores. Multiprocessing spawns worker processes, hands them tasks through queues, and collects results; ProcessPoolExecutor wraps this in the familiar executor interface. The honest cost: inter-process communication serializes data — pickling every document you send to a worker and every result that comes back. For large payloads that transfer can dominate. Rule: chunk the WORK, not the data — send workers compact task descriptions and let them read big inputs themselves from disk or shared storage."
     },
     {
@@ -70,20 +139,40 @@
       "narration": "ProcessPoolExecutor is the friendly face of multiprocessing — same map interface you'd use on a list, but the work distributes across processes. Three production notes. First, the mapped function must live at module level — the worker imports your module by name, so lambdas and closures fail with obscure pickling errors. Second, chunksize: each task travels to a worker as a pickled message; a million tiny tasks means a million pickling round-trips. Batch with chunksize — sixty-four tasks per trip is a sane starting point. Third, memory: every worker loads its own copy of your module and models — eight workers loading an embedding model means eight copies in RAM. Factor model size into max-workers."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · THE DECISION",
       "title": "One question picks the tool: **what is the bottleneck?**",
       "sub": "Waiting → async/threads · Computing → processes",
+      "h": 190,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 66.9, "t": "pick the tool", "lines": ["waiting on network   → asyncio", "blocking libraries    → threads", "computing in Python   → processes", "mixed pipeline        → per stage"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 84.2, "t": "bottleneck per stage, not per program", "e": "🎯", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Forget flowcharts", "do": [["show", "c"]] },
+        { "at": "Waiting on network", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "1 thread, thousands of waits", "good"]] },
+        { "at": "Waiting but stuck with blocking", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "or asyncio + run_in_executor"]] },
+        { "at": "Computing — parsing", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "only processes escape the GIL", "good"]] },
+        { "at": "Hybrid systems are the norm", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "FastAPI async + ProcessPool"]] },
+        { "at": "Identify the bottleneck", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Forget flowcharts — one diagnostic question decides: is your program mostly WAITING or mostly COMPUTING? Waiting on network — LLM APIs, vector DBs, webhooks — asyncIO first: thousands of concurrent waits, one thread, no locking. Waiting but stuck with blocking libraries — threads, or asyncio wrapping threads via run-in-executor. Computing — parsing, transforms, pure-Python algorithms, anything NumPy can't absorb — processes, because only separate interpreters escape the GIL. Hybrid systems are the norm: a FastAPI app with async endpoints spawning a ProcessPool for CPU-heavy ingestion. Identify the bottleneck per stage of your pipeline, not per program."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 3,
-      "cards": [
-        { "e": "🌐", "t": "asyncio — waiting", "s": "LLM/API calls, DB waits · thousands concurrent · first choice for I/O", "win": true },
-        { "e": "🧵", "t": "threads — blocked", "s": "Sync/blocking libraries, moderate I/O parallelism · simple, GIL-released on I/O", "win": true },
-        { "e": "🏭", "t": "processes — computing", "s": "CPU-bound pure-Python · true multi-core · costs memory + pickling", "win": true }
+      "h": 185,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 41.4, "w": 96, "h": 78.4, "t": "cheat sheet", "lines": ["asyncio   → I/O, thousands of waits", "threads   → I/O, sync libs, modest", "processes → CPU-bound, real parallel", "threads for CPU?  → zero speedup", "unsure?  → time both, real workload"] }
+      ],
+      "steps": [
+        { "at": "The cheat sheet", "do": [["show", "c"], ["ln", "c", 3], ["hl", "c", 0, 2]] },
+        { "at": "the tiebreaker is scale", "do": [["hl", "c", 0, 1], ["out", "c", "scale vs. simplicity"]] },
+        { "at": "asyncio scales to thousands", "do": [["hl", "c", 0], ["out", "c", "structured cancellation", "good"]] },
+        { "at": "threads are simpler", "do": [["hl", "c", 1], ["out", "c", "modest concurrency", "good"]] },
+        { "at": "using threads hoping to parallelize", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "a mirage: overhead, no speedup", "bad"]] },
+        { "at": "When in doubt, measure", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "profilers beat intuition", "good"]] }
       ],
       "narration": "The cheat sheet. Notice threads and asyncio overlap for I-O — the tiebreaker is scale and control: asyncio scales to thousands of waits with structured cancellation; threads are simpler when concurrency is modest or libraries force sync. And the trap to avoid: using threads hoping to parallelize CPU work — the GIL makes that a mirage; you'll get context-switch overhead and zero speedup, the most common wasted afternoon in Python performance work. When in doubt, measure: time a thread version and a process version on your real workload — the bottleneck question sometimes has a surprising answer, and profilers beat intuition."
     },

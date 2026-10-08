@@ -201,20 +201,46 @@
       "narration": "Quick tour. Pylance gives you Roslyn-quality autocomplete and go-to-definition. Ruff is one tool that formats and lints — it replaces an entire stack of older tools and runs in milliseconds. And the debugger needs one small launch dot json, then it's breakpoints and stepping exactly like Visual Studio."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 4 · JUPYTER",
       "title": "Jupyter: the **scratchpad** for AI work",
       "sub": "Perfect for experiments — wrong place for production code",
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.1, "w": 96, "h": 56.1, "t": "notebook.ipynb", "lines": ["In [1]: prices = [3, 5, 8]", "In [2]: sum(prices) / len(prices)", "In [3]: ask_llm(\"Summarise sales\")"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 72.8, "t": "explore data · test LLM prompts", "e": "🧪", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 89.2, "t": "real code lives in .py files", "e": "📄", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Last tool: Jupyter notebooks", "do": [["show", "c"]] },
+        { "at": "A notebook is a page of code cells", "do": [["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "you run one by one", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "Out [2]: 5.33"]] },
+        { "at": "with results", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "Out [3]: \"Sales rose 12%…\"", "good"]] },
+        { "at": "kept inline", "do": [["pulse", "c"]] },
+        { "at": "It's the standard way", "do": [["show", "t1"]] },
+        { "at": "notebooks are for experiments", "do": [["tone", "t1", "dashed"]] },
+        { "at": "Real code lives", "do": [["show", "t2"], ["pulse", "t2"]] }
+      ],
       "narration": "Last tool: Jupyter notebooks. A notebook is a page of code cells you run one by one, with results — charts, tables, model output — kept inline. It's the standard way to explore data and test LLM prompts. But remember: notebooks are for experiments. Real code lives in dot-py files."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "▶️", "t": "Cells run in order — or don't", "s": "Shift+Enter runs a cell; hidden state makes 'run all' a fresh-start test" },
-        { "e": "🤖", "t": "The LLM workflow", "s": "Build a prompt, call the API, inspect the JSON — all in one page" },
-        { "e": "🚧", "t": "Know the limits", "s": "No git-friendly diffs by default, easy to hide broken state" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.3, "w": 96, "h": 50.9, "t": "notebook.ipynb", "lines": ["[1] x = 10", "[2] x = x + 5", "[3] print(x)"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 66.0, "t": "prompt an LLM → inspect the JSON", "e": "🤖", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 80.9, "t": "reusable code → real files", "e": "📄", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "How you", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "hit shift-enter", "do": [["hl", "c", 0], ["out", "c", "⇧⏎  ran"]] },
+        { "at": "see the result right below", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "15", "good"]] },
+        { "at": "prompting an LLM", "do": [["hl", "c", -1], ["show", "t1"], ["pulse", "t1"]] },
+        { "at": "cells can run out of order", "do": [["hl", "c", 1, 2], ["out", "c", "[3] ran before [2] → stale x", "bad"], ["tone", "c", "bad"]] },
+        { "at": "always test with run-all", "do": [["tone", "c", "good"], ["out", "c", "Restart + Run All ✓", "good"]] },
+        { "at": "keep anything reusable", "do": [["show", "t2"], ["pulse", "t2"]] }
       ],
       "narration": "How you'll actually use it: write a cell, hit shift-enter, see the result right below. This loop is perfect for prompting an LLM and inspecting the JSON it returns. Two warnings: cells can run out of order, hiding broken state — so always test with run-all from the top. And keep anything reusable out of the notebook and into real files."
     },

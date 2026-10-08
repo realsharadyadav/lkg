@@ -13,11 +13,22 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · PYTEST",
       "title": "pytest: tests as plain functions, power as decorators",
       "sub": "Fixtures share setup; parametrize multiplies cases",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 40.1, "w": 96, "h": 76.9, "t": "test_pytest.py", "lines": ["@pytest.fixture", "def db():", "    d = make_db(); yield d; d.close()", "@pytest.mark.parametrize(\"x,y\",", "    [(1, 2), (5, 6), (-1, 0)])", "def test_inc(db, x, y):", "    assert inc(x) == y"] }
+      ],
+      "steps": [
+        { "at": "Pytest's core bargain", "do": [["show", "c"], ["ln", "c", 7], ["hl", "c", 5, 6], ["out", "c", "plain function + assert", "good"]] },
+        { "at": "Fixtures: setup code", "do": [["hl", "c", 0, 2], ["out", "c", "built, shared, torn down per test", "good"]] },
+        { "at": "injected by naming it as a parameter", "do": [["hl", "c", 5], ["out", "c", "db arrives by name"]] },
+        { "at": "Parametrize: run ONE test function", "do": [["hl", "c", 3, 4], ["out", "c", "3 rows → 3 reported tests", "good"]] },
+        { "at": "plugin ecosystem come standard", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
       "narration": "Pytest's core bargain: write plain functions that assert, name them test-something, and the runner finds and executes them — no classes, no boilerplate, no framework ceremony. The two superpowers are fixtures and parametrize. Fixtures: setup code — a test database, a temp file, a client — written once as a decorated generator, injected by naming it as a parameter; pytest builds, shares, and tears them down per test. Parametrize: run ONE test function over a table of inputs — twenty edge cases become a single function plus a decorator, and each row reports as its own test. Test discovery, rich assertion introspection, and a plugin ecosystem come standard."
     },
     {
@@ -34,11 +45,22 @@
       "narration": "Notice the third parametrize row — an unanswerable question whose correct behavior is abstention. That's the GenAI testing mindset: test the CONTRACT — grounded answers, honest refusal, validation boundaries — not exact strings, because the model's phrasing varies run to run. Keep assertions structural: 'the answer contains the key fact', 'the answer cites a source', 'unknown questions are declined'. The fixture builds an in-memory vector store per test: hermetic — no shared state between tests, no test-order dependencies. If your tests pass alone and fail in the suite, shared mutable fixtures are the first suspect."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · MOCKING",
       "title": "Mock the LLM, keep the logic: **deterministic tests**",
       "sub": "Fake the boundary, test your code",
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.0, "w": 96, "h": 64.4, "t": "test_llm.py", "lines": ["def test_prompt(monkeypatch):", "    monkeypatch.setattr(sdk, \"chat\", fake)", "    out = answer(\"q\")", "    assert fake.last.model == \"gpt-5\"", "class FakeProvider: ...   # injected"] }
+      ],
+      "steps": [
+        { "at": "Never call a real LLM in unit tests", "do": [["show", "c"], ["ln", "c", 1], ["out", "c", "slow · costly · nondeterministic", "bad"]] },
+        { "at": "mock at the BOUNDARY", "do": [["ln", "c", 3], ["hl", "c", 0, 1], ["out", "c", "deterministic fake at the client call", "good"]] },
+        { "at": "assert your code used it correctly", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "right model · right parameters", "good"]] },
+        { "at": "define your own provider interface", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "no patching, no monkey business", "good"]] },
+        { "at": "one suite runs offline", "do": [["hl", "c", -1], ["out", "c", "milliseconds · forever deterministic", "good"]] }
+      ],
       "narration": "Never call a real LLM in unit tests: slow, costly, and nondeterministic — the same test could pass and fail with no code change. The rule: mock at the BOUNDARY — the client call — with a deterministic fake, and test everything YOUR code does around it: prompt construction, context assembly, error handling, citation formatting. unittest.mock patches the call site: patch the SDK method, return a canned response, assert your code used it correctly — right model, right parameters. Better still: define your own provider interface and inject a FakeProvider in tests — no patching, no monkey business, the same seam FastAPI taught. Either way, one suite runs offline, in milliseconds, forever deterministically."
     },
     {
@@ -55,41 +77,58 @@
       "narration": "The fake doubles as an inspector: recording every prompt it receives lets you assert on what your pipeline SENDS — context assembled, citation instructions present, question included — which is where real bugs live. This is the deepest testing insight for LLM apps: your code's job is everything up to the API call; test that, deterministically, forever. What you cannot unit-test is model QUALITY — that belongs to evals, GA-20 and GA-21. Keep the boundary sharp: unit tests with fakes for logic, evals with real models for quality, and a few end-to-end smoke tests with capped spend for wiring."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · LOGGING",
       "title": "Logs you'll actually read at 3 a.m.",
       "sub": "Structured logs, levels, and correlation IDs",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 36.3, "w": 96, "h": 69.3, "t": "logging", "lines": ["log.info(\"retrieval\", extra={", "  \"request_id\": rid, \"chunks\": 0,", "  \"rewrites\": 2})", "{\"ts\": \"…\", \"level\": \"INFO\",", "  \"event\": \"retrieval\", \"request_id\": \"a1\",", "  \"chunks\": 0}"] }
+      ],
+      "steps": [
+        { "at": "print debugging", "do": [["show", "c"], ["ln", "c", 3]] },
+        { "at": "structured logging", "do": [["ln", "c", 6], ["hl", "c", 3, 5], ["out", "c", "JSON, not prose", "good"]] },
+        { "at": "log JSON objects", "do": [["hl", "c", 3, 4], ["out", "c", "queryable · alertable", "good"]] },
+        { "at": "request-id from FastAPI", "do": [["hl", "c", 1], ["out", "c", "one correlation ID per request", "good"]] },
+        { "at": "log events with context", "do": [["hl", "c", 0, 2], ["out", "c", "\"0 chunks, rewritten twice\" ✓", "good"]] }
+      ],
       "narration": "print debugging doesn't survive production. The logging module gives you levels — debug, info, warning, error — filtered by environment: verbose in development, info-and-above in production. Structured logging is the upgrade that matters: log JSON objects — timestamp, level, event, request-id, key fields — not prose sentences; structured logs are queryable, aggregatable, alertable, and play natively with log aggregation stacks. The request-id from FastAPI's middleware becomes your correlation ID: attach it to every log line in the request, and a user report of 'it broke' becomes a single filtered query instead of an archaeology dig. Rule: log events with context, not narration — 'retrieval returned 0 chunks, query rewritten twice' beats 'something went wrong'."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        {
-          "e": "🎚️",
-          "t": "Levels discipline",
-          "s": "DEBUG for diagnosis · INFO for business events · ERROR for failures + stack traces"
-        },
-        {
-          "e": "🧱",
-          "t": "Structured JSON logs",
-          "s": "machine-queryable: filter retrieval.score < 0.5 across all requests in seconds"
-        },
-        {
-          "e": "🪢",
-          "t": "Correlation IDs",
-          "s": "request-id on every line → one filter reconstructs a full user session"
-        }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.4, "w": 96, "h": 59.2, "t": "what to log", "lines": ["log: question · rewrites · top scores · sources", "NEVER: secrets · PII prompts · full responses", "logging.config.dictConfig(CFG)", "QueueHandler → slow sink off the loop"] }
+      ],
+      "steps": [
+        { "at": "The GenAI-specific logging insight", "do": [["show", "c"]] },
+        { "at": "RETRIEVAL TELEMETRY", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "which stage regressed?", "good"]] },
+        { "at": "never log secrets", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "redact at the boundary", "bad"]] },
+        { "at": "logging config once at app startup", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "once, at startup", "good"]] },
+        { "at": "queue-based handlers", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "async + sync log = blocked loop", "bad"]] },
+        { "at": "Boring logging", "do": [["hl", "c", -1], ["pulse", "c"]] }
       ],
       "narration": "The GenAI-specific logging insight: log the RETRIEVAL TELEMETRY GA-15 asked you to capture — original question, rewritten queries, top scores, chunk sources. When answer quality drops, that trail is how you diagnose which stage regressed without reproducing anything. Also: never log secrets, prompts containing PII, or full LLM responses by default — redact at the logging boundary; compliance audits ask exactly these questions. Use logging config once at app startup, and in async code remember logging is sync — one slow log sink can block the loop; queue-based handlers exist for that. Boring logging is the difference between 'we saw errors' and 'we know why'."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · AUTOMATION",
       "title": "Let the toolchain **refuse** bad code before humans review it",
       "sub": "ruff + black + pre-commit hooks",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "quality gates", "lines": ["# pyproject.toml", "[tool.ruff]   # replaces flake8, isort…", "# black → one style, zero debates", "# .pre-commit-config.yaml", "hooks: [ruff, black, pytest-fast]"] }
+      ],
+      "steps": [
+        { "at": "Manual quality discipline decays", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Ruff is the modern Python linter", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "absurdly fast · one tool", "good"]] },
+        { "at": "Black is the formatter", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "diffs show substance only", "good"]] },
+        { "at": "Pre-commit wires both", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "commit REJECTED if any fail", "bad"]] },
+        { "at": "main stays green by construction", "do": [["hl", "c", -1], ["out", "c", "bad code never enters history", "good"]] }
+      ],
       "narration": "Manual quality discipline decays; automated discipline doesn't. Ruff is the modern Python linter — absurdly fast, one tool replacing flake8, isort, and a drawer of plugins; it catches unused imports, shadowed names, risky patterns, style violations — configurable via one pyproject file. Black is the formatter: one opinionated style, zero debates — run it and every diff shows substance, never formatting. Pre-commit wires both into git itself: a hooks file runs checks on every commit — lint, format, even pytest-fast or type checks — and REJECTS the commit if any fail. Bad code never enters history; reviewers never spend attention on style; main stays green by construction."
     },
     {

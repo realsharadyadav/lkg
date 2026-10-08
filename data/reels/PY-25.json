@@ -14,92 +14,198 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · ML TYPES",
       "title": "Learning from **labels** vs from **structure**",
       "sub": "Supervised: answers included. Unsupervised: find the groups.",
+      "h": 230,
+      "actors": [
+        { "id": "s", "k": "code", "x": 50, "y": 21.7, "w": 96, "h": 39.8, "t": "Supervised", "lines": ["spam / not spam → classification", "price → regression"] },
+        { "id": "u", "k": "code", "x": 50, "y": 68.6, "w": 96, "h": 39.8, "t": "Unsupervised", "lines": ["clustering → natural groups", "dimensionality reduction"] }
+      ],
+      "steps": [
+        { "at": "Machine learning splits in two", "do": [["show", "s"]] },
+        { "at": "Supervised learning trains on labeled", "do": [["ln", "s", 2], ["hl", "s", 0], ["out", "s", "learns the mapping", "good"]] },
+        { "at": "Classification for categories", "do": [["hl", "s", 0]] },
+        { "at": "regression for numbers", "do": [["hl", "s", 1]] },
+        { "at": "Unsupervised learning gets no labels", "do": [["dim", "s"], ["show", "u"], ["ln", "u", 2], ["hl", "u", 0], ["out", "u", "finds structure", "good"]] },
+        { "at": "Your day-to-day work touches both", "do": [["undim", "s"], ["hl", "u", 1], ["pulse", "s"], ["pulse", "u"]] }
+      ],
       "narration": "Machine learning splits in two. Supervised learning trains on labeled examples — emails marked spam or not, and the model learns the mapping. Classification for categories, regression for numbers. Unsupervised learning gets no labels — clustering finds natural groups, dimensionality reduction compresses while preserving structure. Your day-to-day work touches both: evaluating classifiers you built, and using embeddings — which come from unsupervised-ish training — for retrieval."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 0,
-      "cards": [
-        { "e": "🏷️", "t": "Supervised", "s": "Labeled data → predict labels. Spam filter, price estimation, ticket routing.", "win": true },
-        { "e": "🌀", "t": "Unsupervised", "s": "No labels → discover structure. Clustering customers, embeddings, topics." }
+      "h": 210,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 32.2, "w": 96, "h": 60.6, "t": "organizing idea", "lines": ["supervised   → measure vs truth", "unsupervised → structure only", "cluster → label a few → train classifier", "architect → consume + supervise evals"] }
+      ],
+      "steps": [
+        { "at": "The distinction that organizes everything", "do": [["show", "c"]] },
+        { "at": "Supervised: you have ground truth", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "most business ML · every eval", "good"]] },
+        { "at": "Unsupervised: no truth", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "clustering · embeddings · topics"]] },
+        { "at": "cluster your embeddings", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "cheap classifier", "good"]] },
+        { "at": "mostly CONSUME models", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "next three chapters", "good"]] }
       ],
       "narration": "The distinction that organizes everything. Supervised: you have ground truth and you measure against it — most business ML, and every eval you'll run. Unsupervised: no truth, just structure — clustering, embeddings, topic discovery. One bridges to the other constantly: cluster your embeddings, then label a few examples per cluster, then train a cheap classifier. As an architect, you'll mostly CONSUME models — but you'll supervise their evaluation, which is the next three chapters."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · OVERFITTING",
       "title": "Memorizing ≠ **learning**",
       "sub": "The test set is sacred — touch it once",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 28.8, "w": 96, "h": 54.1, "t": "split.py", "lines": ["train  → learn", "dev    → tune", "test   → ONE final number", "train 99% / test 60%  → overfit"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 68.9, "t": "golden set (GA-06) = a test set", "e": "🏅", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "A model can memorize its training data", "do": [["show", "c"], ["ln", "c", 1], ["out", "c", "perfect on seen data, fails on new", "bad"]] },
+        { "at": "That's overfitting", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "learned the noise, not the pattern", "bad"]] },
+        { "at": "train/test split", "do": [["ln", "c", 3], ["hl", "c", 0, 1]] },
+        { "at": "used ONCE, at the end", "do": [["hl", "c", 2], ["out", "c", "measures generalization", "good"]] },
+        { "at": "Reusing it for tuning", "do": [["out", "c", "leaks information", "bad"]] },
+        { "at": "your golden set from GA-06", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "A model can memorize its training data and score perfectly — then fail on anything new. That's overfitting: it learned the noise, not the pattern. The defense is the train/test split: train on one slice, evaluate on data the model has never seen. The test set measures generalization — real-world performance — and it's used ONCE, at the end. Reusing it for tuning leaks information and quietly overfits your decisions. In LLM work the same law applies: your golden set from GA-06 is a test set — tune on a dev split, keep the golden set clean."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "✂️", "t": "Train / dev / test", "s": "Train to fit · dev to tune · test to report — three separate buckets" },
-        { "e": "📉", "t": "The signature", "s": "Train score great + test score poor = overfitting → more data, simpler model" },
-        { "e": "🧠", "t": "LLM version: eval contamination", "s": "Benchmarks saturate when models see the test data in pretraining — same disease" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "practical rules", "lines": ["train → learning", "dev   → your tuning loop", "test  → the honest final number", "train ≫ test → overfit", "leaked test items → inflated leaderboard"] }
+      ],
+      "steps": [
+        { "at": "Practical rules", "do": [["show", "c"]] },
+        { "at": "Three splits, three jobs", "do": [["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "dev for your tuning loop", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "test for the final honest number", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "When train performance crushes test", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "more data · simpler model · regularize", "bad"]] },
+        { "at": "benchmark scores inflate", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "why GA-06 evals exist", "bad"]] }
       ],
       "narration": "Practical rules. Three splits, three jobs: train for learning, dev for your tuning loop, test for the final honest number. When train performance crushes test performance, you're overfit — the fixes are more data, simpler models, or regularization. And the LLM echo: benchmark scores inflate when test items leak into pretraining data. Skeptical of a shiny leaderboard? This is why. The eval discipline from GA-06 exists precisely because of this failure mode."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · METRICS",
       "title": "Accuracy lies when **classes are rare**",
       "sub": "Precision = trust it. Recall = finds all. F1 = the balance.",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 28.8, "w": 96, "h": 54.1, "t": "imbalance.py", "lines": ["predict(\"not fraud\") → 99% accurate", "precision = TP / flagged", "recall    = TP / real", "F1 = harmonic mean"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 67.2, "t": "false alarms waste time", "e": "🔔", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 80.9, "t": "misses cost money", "e": "💸", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "A classifier that flags everything", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "99% accurate — and useless", "bad"]] },
+        { "at": "Precision: of everything I flagged", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "user trust", "good"]] },
+        { "at": "Recall: of everything real", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "coverage", "good"]] },
+        { "at": "F1 is their harmonic mean", "do": [["ln", "c", 4], ["hl", "c", 3]] },
+        { "at": "false alarms waste time", "do": [["hl", "c", -1], ["show", "t1"]] },
+        { "at": "misses cost money", "do": [["show", "t2"], ["pulse", "t2"]] }
+      ],
       "narration": "Now the vocabulary of evaluation. A classifier that flags everything as 'not fraud' is ninety-nine percent accurate — and useless. When classes are imbalanced, you need precision and recall. Precision: of everything I flagged, how much was right — that's user trust. Recall: of everything real, how much did I catch — that's coverage. F1 is their harmonic mean. Choose by cost: false alarms waste time; misses cost money. State which you optimized, always."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "🎯", "t": "Precision = TP / (TP + FP)", "s": "Flagged → correct. 'When it says fraud, it's right 90% of the time'" },
-        { "e": "🕸️", "t": "Recall = TP / (TP + FN)", "s": "Actual → caught. 'It finds 95% of real fraud'" },
-        { "e": "⚖️", "t": "F1 = harmonic mean", "s": "One number for imbalance · optimize precision OR recall by business cost" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "translated", "lines": ["precision → can I trust a positive?", "recall    → what did I miss?", "LLM: precision = filled fields correct", "RAG: recall = right chunk retrieved", "report: P · R · F1 · business cost"] }
+      ],
+      "steps": [
+        { "at": "The formulas, translated", "do": [["show", "c"]] },
+        { "at": "Precision answers", "do": [["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "Recall answers", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "In LLM extraction", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "recall = found everything"]] },
+        { "at": "In RAG, recall means", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "no evidence, no answer", "good"]] },
+        { "at": "quote precision and recall separately", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "state what you optimized", "good"]] }
       ],
       "narration": "The formulas, translated. Precision answers: can I trust a positive? Recall answers: what did I miss? In LLM extraction, precision means the fields it fills are correct; recall means it found everything that was there. In RAG, recall means the retriever surfaced the right chunk at all — you can't answer from evidence you didn't retrieve. When you report evals — and you will — quote precision and recall separately, then the F1, then the business cost you optimized for."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · SCIKIT-LEARN",
       "title": "Classical ML in **five lines**",
       "sub": "fit / predict / score — the universal API",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "sklearn.py", "lines": ["model = LogisticRegression()", "Xtr, Xte, ytr, yte = train_test_split(X, y)", "model.fit(Xtr, ytr)", "pred = model.predict(Xte)", "model.score(Xte, yte)"] }
+      ],
+      "steps": [
+        { "at": "Scikit-learn is the workhorse", "do": [["show", "c"], ["ln", "c", 5]] },
+        { "at": "every model has fit for training", "do": [["hl", "c", 2], ["out", "c", "fit = training"]] },
+        { "at": "predict for inference", "do": [["hl", "c", 3], ["out", "c", "predict = inference"]] },
+        { "at": "score for evaluation", "do": [["hl", "c", 4], ["out", "c", "score = evaluation", "good"]] },
+        { "at": "Five lines: pick a model", "do": [["hl", "c", 0, 1], ["out", "c", "pick · split · fit · predict · score"]] },
+        { "at": "a fifty-line sklearn model", "do": [["hl", "c", -1], ["out", "c", "cheaper · faster · explainable", "good"]] }
+      ],
       "narration": "Scikit-learn is the workhorse of classical ML, and its genius is a single consistent API: every model has fit for training, predict for inference, and score for evaluation. Five lines: pick a model, split your data, fit, predict on the test split, score. Logistic regression, random forests, gradient boosting — all same shape. This is the fastest way to build baselines: before any LLM, ask if a fifty-line sklearn model already solves it. Often it does — cheaper, faster, explainable."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "🔤", "t": "The universal API", "s": "model.fit(X_train, y_train) · model.predict(X_test) · model.score(...)" },
-        { "e": "🏆", "t": "Baselines before LLMs", "s": "A tf-idf + logistic regression often beats a fine-tuned LLM on classification" },
-        { "e": "🧰", "t": "Pipelines keep preprocessing honest", "s": "Pipeline(vectorizer, model) — no leakage between fit and test" }
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.0, "w": 96, "h": 64.4, "t": "baseline.py", "lines": ["for M in [LogReg(), RF(), GBM()]:", "    M.fit(Xtr, ytr); print(M.score(Xte, yte))", "pipe = make_pipeline(TfidfVectorizer(),", "                     LogisticRegression())", "pipe.fit(texts_train, y_train)"] }
+      ],
+      "steps": [
+        { "at": "the universal API means trying five models", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "a loop, not a rewrite", "good"]] },
+        { "at": "tf-idf vectors plus logistic regression", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "strong text classifier · ms per call", "good"]] },
+        { "at": "Reach for an LLM when the baseline genuinely fails", "do": [["out", "c", "sentiment · nuance · reasoning"]] },
+        { "at": "preprocessing inside the pipeline", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "test data never touches the vectorizer", "good"]] },
+        { "at": "That leak silently inflates", "do": [["hl", "c", -1], ["out", "c", "like overfitting", "bad"]] }
       ],
       "narration": "Why it matters to YOU: first, the universal API means trying five models is a loop, not a rewrite. Second, the baseline discipline: tf-idf vectors plus logistic regression is a shockingly strong text classifier, and it costs milliseconds per prediction. Reach for an LLM when the baseline genuinely fails — sentiment, nuance, reasoning — not by default. Third, pipelines: preprocessing inside the pipeline prevents the classic leak where test data influences your vectorizer. That leak silently inflates scores exactly like overfitting."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · NEURAL NETS",
       "title": "Neural nets: **layers of knobs, tuned by error**",
       "sub": "Weights → prediction → loss → adjust. Repeat a million times.",
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.0, "w": 96, "h": 50.9, "t": "training loop", "lines": ["out = layer(x·W + b)   # nonlinearity", "loss = (out - y) ** 2", "W -= lr * grad(loss, W)  # downhill", "repeat × millions"] },
+        { "id": "i", "k": "chip", "x": 16, "y": 63.2, "t": "in", "c": "sm" },
+        { "id": "h", "k": "chip", "x": 50, "y": 63.2, "t": "layers", "c": "sm" },
+        { "id": "o", "k": "chip", "x": 84, "y": 63.2, "t": "out", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 81.6, "t": "the secret behind LLMs, embeddings, images", "e": "🧠", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "A neural network is layers", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["show", "i"], ["show", "h"], ["show", "o"]] },
+        { "at": "multiplies inputs by weights", "do": [["hot", "h"], ["out", "c", "weights · bias · nonlinearity"]] },
+        { "at": "run data forward", "do": [["unhot", "h"], ["hot", "i"], ["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "measure how wrong the output is", "do": [["hot", "o"], ["out", "c", "loss = how wrong", "bad"]] },
+        { "at": "propagate that error backward", "do": [["ln", "c", 3], ["hl", "c", 2], ["unhot", "i"], ["unhot", "o"], ["hot", "h"], ["out", "c", "nudge every weight downhill", "good"]] },
+        { "at": "Repeat over millions of examples", "do": [["ln", "c", 4], ["hl", "c", 3], ["unhot", "h"]] },
+        { "at": "That's gradient descent", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Finally, the intuition behind everything modern. A neural network is layers of simple units: each multiplies inputs by weights, adds a bias, applies a small nonlinearity — and passes the result on. Learning is a loop: run data forward, measure how wrong the output is — the loss — then propagate that error backward and nudge every weight slightly downhill. Repeat over millions of examples. That's gradient descent, and it's the entire secret behind LLMs, embedding models, and image models alike."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 4,
-      "layers": [
-        { "e": "📥", "pk": "📥", "t": "Input", "s": "Tokens / pixels / features" },
-        { "e": "🧮", "pk": "🧠", "t": "Hidden layers", "s": "Weighted sums + nonlinearities — patterns emerge level by level" },
-        { "e": "📤", "pk": "📤", "t": "Output", "s": "Prediction → compared to truth = loss" },
-        { "e": "🔁", "pk": "🔁", "t": "Backprop", "s": "Loss flows backward; every weight nudged downhill. Repeat × millions." }
+      "h": 250,
+      "actors": [
+        { "id": "i", "k": "chip", "x": 50, "y": 10.4, "t": "Input data", "tone": "accent" },
+        { "id": "h", "k": "chip", "x": 50, "y": 27.2, "t": "Hidden layers", "tone": "accent" },
+        { "id": "o", "k": "chip", "x": 50, "y": 44.0, "t": "Output vs truth → loss", "tone": "accent" },
+        { "id": "b", "k": "chip", "x": 50, "y": 60.8, "t": "Backprop adjusts weights", "tone": "accent" },
+        { "id": "t", "k": "tag", "x": 50, "y": 81.6, "t": "Transformers: same loop, special layers", "e": "⚡", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Input data flows", "do": [["show", "i"], ["hot", "i"]] },
+        { "at": "hidden layers", "do": [["unhot", "i"], ["show", "h"], ["hot", "h"]] },
+        { "at": "The output is compared to the truth", "do": [["unhot", "h"], ["show", "o"], ["hot", "o"]] },
+        { "at": "Backpropagation computes", "do": [["unhot", "o"], ["show", "b"], ["hot", "b"]] },
+        { "at": "Iterate across the dataset", "do": [["unhot", "b"], ["hot", "h"], ["pulse", "b"]] },
+        { "at": "Transformers", "do": [["unhot", "h"], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The picture, top to bottom. Input data flows through hidden layers — each one recombining the previous one's signals, so early layers catch simple patterns, deep layers catch abstractions. The output is compared to the truth, producing loss. Backpropagation computes how each weight contributed and adjusts them all slightly. Iterate across the dataset until the loss stops falling. Transformers — GA-01's attention stack — are this same loop with a particular layer design and a few trillion tokens of training data."
     },

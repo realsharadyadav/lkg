@@ -13,11 +13,27 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · ASYNC/AWAIT",
       "title": "Same idea as C# — **different runtime**",
       "sub": "Coroutines: functions that can pause and resume",
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.0, "w": 96, "h": 50.9, "t": "async.py", "lines": ["async def fetch(url):", "    return await client.get(url)", "coro = fetch(url)   # NOT run yet", "await coro          # now it runs"] },
+        { "id": "a", "k": "chip", "x": 20, "y": 64.0, "t": "LLM", "c": "sm" },
+        { "id": "b", "k": "chip", "x": 50, "y": 64.0, "t": "embed", "c": "sm" },
+        { "id": "d", "k": "chip", "x": 80, "y": 64.0, "t": "DB", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 82.4, "t": "one thread · thousands of calls", "e": "🧵", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "If you know", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "doesn't RUN when you call it", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "<coroutine> — paused", "bad"]] },
+        { "at": "Awaiting it hands control back", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "event loop takes over"]] },
+        { "at": "which runs other coroutines", "do": [["show", "a"], ["show", "b"], ["show", "d"], ["hot", "b"]] },
+        { "at": "LLM calls, embedding calls", "do": [["unhot", "b"], ["hot", "a"], ["hot", "b"], ["hot", "d"], ["hl", "c", -1], ["out", "c", "all waiting on I/O together", "good"]] },
+        { "at": "Concurrency without threads", "do": [["unhot", "a"], ["unhot", "b"], ["unhot", "d"], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "If you know C-sharp's async and await, the syntax will feel like home — but Python's runtime works differently underneath. An async def function doesn't RUN when you call it; it returns a coroutine — a paused function object waiting to be executed. Awaiting it hands control back to the event loop, which runs other coroutines while this one waits on I/O. The payoff in GenAI: LLM calls, embedding calls, database queries are all I-O — the CPU sits idle nearly all the time. Concurrency without threads, processes, or locks — one thread juggling thousands of in-flight network calls."
     },
     {
@@ -34,20 +50,47 @@
       "narration": "The mental model in one slide. Calling an async function returns a coroutine object — nothing has run yet. Awaiting it tells the event loop: run this, and while it waits on the network, run something else. Asyncio-dot-run creates the event loop and drives everything to completion — it's the entry point you call once, typically under if name equals main. The classic beginner bug: calling an async function, getting a coroutine object back, and printing it wondering where the answer is. If a function is async, SOMEONE must await it, all the way up the call chain to the event loop."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · EVENT LOOP",
       "title": "One thread, a to-do list, and **zero idle waiting**",
       "sub": "How Python schedules thousands of coroutines",
+      "h": 235,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 31.2, "w": 96, "h": 59.1, "t": "event loop", "lines": ["ready = [A, B, C]", "run A   → hits await", "run B   → hits await", "net done → A is ready again", "run C   → ...", "coroutine never awaits? ✗"] },
+        { "id": "A", "k": "chip", "x": 22, "y": 71.5, "t": "A", "c": "sm" },
+        { "id": "B", "k": "chip", "x": 50, "y": 71.5, "t": "B", "c": "sm" },
+        { "id": "C", "k": "chip", "x": 78, "y": 71.5, "t": "C", "c": "sm" },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.5, "t": "a coroutine that never awaits starves all", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "The event loop is a single thread", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "keeps a queue", "do": [["hl", "c", 0], ["show", "A"], ["show", "B"], ["show", "C"]] },
+        { "at": "picks one", "do": [["ln", "c", 2], ["hl", "c", 1], ["hot", "A"]] },
+        { "at": "then switches to the next ready", "do": [["ln", "c", 3], ["hl", "c", 2], ["unhot", "A"], ["dim", "A"], ["hot", "B"]] },
+        { "at": "a completion notification re-queues", "do": [["ln", "c", 4], ["hl", "c", 3], ["unhot", "B"], ["undim", "A"], ["pulse", "A"]] },
+        { "at": "one thread handles thousands", "do": [["ln", "c", 5], ["hl", "c", 4], ["hot", "C"]] },
+        { "at": "cooperative multitasking", "do": [["unhot", "C"], ["ln", "c", 6], ["hl", "c", 5]] },
+        { "at": "that never awaits starves", "do": [["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "The event loop is a single thread running one loop: it keeps a queue of coroutines that are READY to run, picks one, runs it until it hits an await — a pause point — then switches to the next ready coroutine. Crucially, when a coroutine awaits a network response, the loop doesn't sit there; it runs OTHER work, and a completion notification re-queues the paused coroutine when its I-O finishes. That's why one thread handles thousands of concurrent connections: the CPU is never the bottleneck in I-O-bound work — waiting is. Asyncio converts waiting into doing. It's cooperative multitasking: coroutines yield control at awaits, so a coroutine that never awaits starves everything else."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 1,
-      "layers": [
-        { "e": "🧵", "pk": "🧵", "t": "One thread", "s": "No context switching cost · no locks needed for shared state" },
-        { "e": "📋", "pk": "📍", "t": "Ready queue", "s": "Coroutines waiting for CPU time · loop picks one, runs to next await" },
-        { "e": "📡", "pk": "⚡", "t": "Completion events", "s": "Network I/O done → coroutine re-queued → loop resumes it" }
+      "h": 240,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.3, "w": 96, "h": 75.2, "t": "threads vs async", "lines": ["# threads: OS can switch anywhere", "with lock: counter += 1", "# coroutines: switch only at await", "counter += 1       # safe, no lock", "heavy_cpu()        # blocks the loop", "requests.get(url)  # sync SDK ✗", "await httpx.get(url)  # async ✓"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 89.2, "t": "waiting → async · CPU → threads/procs", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Compare with threads", "do": [["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1]] },
+        { "at": "so shared data needs locks", "do": [["out", "c", "shared data needs locks", "bad"]] },
+        { "at": "Coroutines switch only at awaits", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "no locks needed ✓", "good"]] },
+        { "at": "anything CPU-heavy inside", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "one CPU task blocks the whole loop", "bad"]] },
+        { "at": "Rule: async for waiting", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"], ["out", "c", ""]] },
+        { "at": "some libraries are secretly blocking", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "sync SDK freezes everything", "bad"]] },
+        { "at": "use async-native clients", "do": [["ln", "c", 7], ["hl", "c", 6], ["out", "c", "httpx keeps the loop alive ✓", "good"]] }
       ],
       "narration": "Compare with threads: the OS switches threads preemptively, mid-instruction, so shared data needs locks. Coroutines switch only at awaits — points where YOU know it's safe — so within one event loop, shared state needs no locks at all. The trade: anything CPU-heavy inside a coroutine blocks the entire loop, because nothing else can run until it awaits. Rule: async for waiting on the network, threads or processes for CPU work — PY-11 goes deep on that split. And a sharp edge for GenAI apps: some libraries are secretly blocking — a sync SDK call inside an async function freezes the whole loop; use async-native clients like httpx."
     },
@@ -80,20 +123,42 @@
       "narration": "This is the production pattern for batch LLM work — embedding a folder of documents, summarizing a backlog, evaluating a golden set. Three subtleties. First, gather preserves order: results align with inputs positionally, even though completion order is random — no manual matching. Second, the semaphore belongs INSIDE the worker function, so every code path through it shares one gate — semaphores scattered at call sites leak concurrency. Third, failure handling: by default one exception fails everything; for batch jobs you usually want return-exceptions equals True, so one bad document doesn't kill forty-nine good summaries. You'll see this exact pattern again in the Agentic stages — agent tools batch the same way."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · TIMEOUTS",
       "title": "Networks hang. **Your code must not.**",
       "sub": "Timeouts & cancellation: the reliability layer",
+      "h": 222,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.5, "w": 96, "h": 73.3, "t": "reliability.py", "lines": ["await asyncio.wait_for(call(), 30)", "# deadline passed → CancelledError", "for i in range(3):         # retry", "    await sleep(2 ** i)    # 1s 2s 4s", "async with asyncio.timeout(120):", "    await gather(*jobs)    # budget"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 87.4, "t": "no timeout = hung at 99%", "e": "⏳", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Without timeouts", "do": [["show", "t"]] },
+        { "at": "wraps a coroutine with a deadline", "do": [["hide", "t"], ["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "exceed it → CANCELLED", "bad"]] },
+        { "at": "per-request timeout", "do": [["hl", "c", 0], ["out", "c", "bounded single call", "good"]] },
+        { "at": "retry transient failures", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "wait 1s → 2s → 4s"]] },
+        { "at": "give the WHOLE gather a budget", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["out", "c", "whole job ≤ 120 s ✓", "good"]] },
+        { "at": "it's the difference between a demo", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
       "narration": "Without timeouts, one hung API call stalls a gather forever — your batch job dies of old age at ninety-nine percent complete. asyncio.wait-for wraps a coroutine with a deadline: exceed it, and the coroutine is CANCELLED — a CancelledError raised at its current await. Cancellation is cooperative: the coroutine should clean up at the await point — closing connections, releasing semaphores happen automatically with async-with. Layered strategy for API calls: a per-request timeout slightly above the API's own, retry transient failures with exponential backoff, and give the WHOLE gather a budget so fifty retries can't stretch your job to infinity. Reliability isn't a feature; it's the difference between a demo and a pipeline."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "⏱️", "t": "asyncio.wait_for", "s": "Hard deadline per call → CancelledError at the await point · release resources via async with" },
-        { "e": "🔁", "t": "Retry + backoff", "s": "Transient 429/5xx → exponential backoff · permanent 4xx → fail fast" },
-        { "e": "💰", "t": "Budget the batch", "s": "Whole-gather deadline · 50 retries × 3 attempts ≠ infinite runtime" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "policy.py", "lines": ["timeout = 30          # per call", "retries = 3          # 1s 2s 4s", "retry_on = {429, 500, 503}", "never_retry = {400, 401, 404}", "job_budget = 120     # whole gather"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 86.8, "t": "speed is worthless if worst case = forever", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "The three-layer reliability stack", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Timeouts make single calls bounded", "do": [["hl", "c", 0], ["out", "c", "tail latency can’t be infinite", "good"]] },
+        { "at": "Retry with exponential backoff", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "1 s → 2 s → 4 s"]] },
+        { "at": "rate limits and server errors", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "transient: retry ✓", "good"]] },
+        { "at": "4-x-x client errors", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "retrying cannot fix these", "bad"]] },
+        { "at": "budget the aggregate", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "cap the whole gather", "good"]] },
+        { "at": "Asynchronous code", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
       ],
       "narration": "The three-layer reliability stack. Timeouts make single calls bounded — without them, tail latency becomes infinite latency. Retry with exponential backoff handles the API's bad days: rate limits and server errors are transient, so wait — one second, two, four — and try again; but distinguish 4-x-x client errors, which retrying cannot fix. And budget the aggregate: per-call timeouts times retry counts can still sum into a hung job, so cap the whole gather. Note httpx has built-in timeout and retry-friendly behavior — PY-12 covers it — so much of this comes free with the right client. Asynchronous code's speed is worthless if its worst case is forever."
     },

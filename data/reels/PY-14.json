@@ -13,12 +13,24 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
-      "kicker": "CHAPTER 1 \u00b7 THE WIRE",
+      "kicker": "CHAPTER 1 · THE WIRE",
       "title": "WebSockets: one TCP connection, both directions, forever",
       "sub": "HTTP asks and answers; WebSocket converses",
-      "narration": "HTTP's limitation for live apps is structural: the client must ASK for everything \u2014 polling wastes bandwidth and freshness; long-polling hacks the gap. WebSockets upgrade the same HTTP connection \u2014 literally: the client sends an Upgrade request, the server answers 101 Switching Protocols, and from that moment the connection is a full-duplex pipe \u2014 either side pushes anytime, for as long as it lives. Key mechanics: MESSAGES not requests \u2014 the wire is frames, not HTTP envelopes; order is guaranteed but delivery is NOT \u2014 a dropped connection means lost messages unless your protocol acknowledges (you build that layer); and state is per-CONNECTION \u2014 the server keeps an in-memory object per client \u2014 which is why WebSocket servers scale by connection count, not request count. In FastAPI, an endpoint becomes a websocket endpoint with one decorator, and you send/receive with two calls \u2014 the entire API surface. The mental model from earlier reels: HTTP is AG-19's job queue (discrete, retriable tasks); WebSocket is the agent's live phone line (GA-28's realtime voice)."
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 46.0, "w": 96, "h": 88.1, "t": "ws.py", "lines": ["GET /chat   Upgrade: websocket", "101 Switching Protocols", "@app.websocket(\"/ws\")", "async def chat(ws: WebSocket):", "    await ws.accept()", "    msg = await ws.receive_text()", "    await ws.send_text(reply)"] }
+      ],
+      "steps": [
+        { "at": "HTTP's limitation", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "the client sends an Upgrade request", "do": [["hl", "c", 0]] },
+        { "at": "answers 101 Switching Protocols", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "full-duplex pipe: both sides push", "good"]] },
+        { "at": "but delivery is NOT", "do": [["hl", "c", -1], ["out", "c", "dropped = lost, unless you ack", "bad"]] },
+        { "at": "becomes a websocket endpoint with one decorator", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "one decorator"]] },
+        { "at": "send/receive with two calls", "do": [["ln", "c", 7], ["hl", "c", 5, 6], ["out", "c", "receive + send = the whole API", "good"]] }
+      ],
+      "narration": "HTTP's limitation for live apps is structural: the client must ASK for everything — polling wastes bandwidth and freshness; long-polling hacks the gap. WebSockets upgrade the same HTTP connection — literally: the client sends an Upgrade request, the server answers 101 Switching Protocols, and from that moment the connection is a full-duplex pipe — either side pushes anytime, for as long as it lives. Key mechanics: MESSAGES not requests — the wire is frames, not HTTP envelopes; order is guaranteed but delivery is NOT — a dropped connection means lost messages unless your protocol acknowledges (you build that layer); and state is per-CONNECTION — the server keeps an in-memory object per client — which is why WebSocket servers scale by connection count, not request count. In FastAPI, an endpoint becomes a websocket endpoint with one decorator, and you send/receive with two calls — the entire API surface. The mental model from earlier reels: HTTP is AG-19's job queue (discrete, retriable tasks); WebSocket is the agent's live phone line (GA-28's realtime voice)."
     },
     {
       "type": "code",
@@ -33,12 +45,23 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
-      "kicker": "CHAPTER 2 \u00b7 BUILDING",
+      "kicker": "CHAPTER 2 · BUILDING",
       "title": "Connection managers, rooms, and the killer app: token streaming",
       "sub": "The two patterns every realtime backend is made of",
-      "narration": "Pattern one: the CONNECTION MANAGER \u2014 because everything interesting involves MORE than two parties. A manager tracks live sockets \u2014 usually keyed by user or session ID in a dict \u2014 and provides broadcast: send to one, send to a room, send to all. Rooms are just key \u2192 set-of-sockets maps; chat channels, document collab, live dashboards are all the same shape underneath. Pattern two \u2014 and the reason this reel exists in a GenAI course: TOKEN STREAMING. LLM answers arrive token-by-token (GA-07); piping them straight to a WebSocket gives users text that appears as it's THOUGHT \u2014 the single biggest perceived-latency win in GenAI UI. The wiring: POST endpoint starts the job \u2192 the LLM's async stream is forwarded to the client's socket \u2192 done sentinel closes the stream (not the socket). Async is load-bearing here: while one client's LLM call streams over seconds, the same process must serve every other client \u2014 never block the event loop on a slow generation; each connection is an independent async task, and asyncio.gather runs them all on one thread."
+      "h": 210,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 44.9, "w": 96, "h": 86.0, "t": "manager.py", "lines": ["rooms = {\"room1\": {ws_a, ws_b}}", "async def broadcast(room, msg):", "    for ws in rooms[room]:", "        await ws.send_text(msg)", "async for tok in llm.stream(q):", "    await ws.send_text(tok)", "await ws.send_text(\"[DONE]\")"] }
+      ],
+      "steps": [
+        { "at": "the CONNECTION MANAGER", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "provides broadcast", "do": [["ln", "c", 4], ["hl", "c", 1, 3], ["out", "c", "one → room → all"]] },
+        { "at": "TOKEN STREAMING", "do": [["ln", "c", 6], ["hl", "c", 4, 5], ["out", "c", "text appears as it is thought", "good"]] },
+        { "at": "done sentinel closes the stream", "do": [["ln", "c", 7], ["hl", "c", 6], ["out", "c", "stream ends · socket stays"]] },
+        { "at": "never block the event loop", "do": [["hl", "c", -1], ["pulse", "c"], ["out", "c", "each socket = its own async task", "good"]] }
+      ],
+      "narration": "Pattern one: the CONNECTION MANAGER — because everything interesting involves MORE than two parties. A manager tracks live sockets — usually keyed by user or session ID in a dict — and provides broadcast: send to one, send to a room, send to all. Rooms are just key → set-of-sockets maps; chat channels, document collab, live dashboards are all the same shape underneath. Pattern two — and the reason this reel exists in a GenAI course: TOKEN STREAMING. LLM answers arrive token-by-token (GA-07); piping them straight to a WebSocket gives users text that appears as it's THOUGHT — the single biggest perceived-latency win in GenAI UI. The wiring: POST endpoint starts the job → the LLM's async stream is forwarded to the client's socket → done sentinel closes the stream (not the socket). Async is load-bearing here: while one client's LLM call streams over seconds, the same process must serve every other client — never block the event loop on a slow generation; each connection is an independent async task, and asyncio.gather runs them all on one thread."
     },
     {
       "type": "code",
@@ -53,12 +76,23 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
-      "kicker": "CHAPTER 2 \u00b7 WEBHOOKS",
+      "kicker": "CHAPTER 2 · WEBHOOKS",
       "title": "Webhooks: the outside world's way of calling your app",
-      "sub": "HTTP inverted \u2014 events arrive as POSTs; trust nothing",
-      "narration": "WebSockets push YOUR server \u2192 YOUR client; WEBHOOKS push SOMEONE ELSE's server \u2192 yours: Stripe posts charge.succeeded, GitHub posts push events, the LLM provider posts a completed job \u2014 any time an external system must tell you something happened. Architecturally it's an endpoint plus a contract: the provider documents the payload shape and a SIGNING SECRET; your endpoint MUST verify every delivery \u2014 recompute the HMAC signature over the raw body with the secret, compare in constant time, reject mismatches \u2014 an unverified webhook endpoint is an open door where anyone POSTs 'payment received' (AG-23's trust-nothing discipline, inbound edition). Reliability mechanics, the same trio as AG-19: IDEMPOTENCY \u2014 providers REDELIVER on timeout, so dedupe by event ID; FAST ACK \u2014 return 200 in milliseconds and process async via a queue \u2014 your handler's slowness must never timeout the provider's retry logic; and ORDERING \u2014 deliveries can arrive out of order \u2014 version or timestamp your events if order matters. WebSocket and webhook are complements: webhook ingests the world's events; WebSocket fans them out to live clients."
+      "sub": "HTTP inverted — events arrive as POSTs; trust nothing",
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "webhook.py", "lines": ["sig = hmac.new(SECRET, body, sha256)", "if not compare_digest(sig, hdr):", "    raise HTTPException(401)", "if seen(event[\"id\"]): return 200", "queue.put(event); return 200"] }
+      ],
+      "steps": [
+        { "at": "WEBHOOKS push SOMEONE ELSE", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "your endpoint MUST verify every delivery", "do": [["ln", "c", 3], ["hl", "c", 0, 2], ["out", "c", "forged POST → 401", "bad"]] },
+        { "at": "IDEMPOTENCY", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "redelivery → deduped by id", "good"]] },
+        { "at": "FAST ACK", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "200 in ms · process async", "good"]] },
+        { "at": "ORDERING", "do": [["hl", "c", -1], ["out", "c", "out of order? version your events"]] }
+      ],
+      "narration": "WebSockets push YOUR server → YOUR client; WEBHOOKS push SOMEONE ELSE's server → yours: Stripe posts charge.succeeded, GitHub posts push events, the LLM provider posts a completed job — any time an external system must tell you something happened. Architecturally it's an endpoint plus a contract: the provider documents the payload shape and a SIGNING SECRET; your endpoint MUST verify every delivery — recompute the HMAC signature over the raw body with the secret, compare in constant time, reject mismatches — an unverified webhook endpoint is an open door where anyone POSTs 'payment received' (AG-23's trust-nothing discipline, inbound edition). Reliability mechanics, the same trio as AG-19: IDEMPOTENCY — providers REDELIVER on timeout, so dedupe by event ID; FAST ACK — return 200 in milliseconds and process async via a queue — your handler's slowness must never timeout the provider's retry logic; and ORDERING — deliveries can arrive out of order — version or timestamp your events if order matters. WebSocket and webhook are complements: webhook ingests the world's events; WebSocket fans them out to live clients."
     },
     {
       "type": "code",
@@ -73,12 +107,23 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
-      "kicker": "CHAPTER 4 \u00b7 PRODUCTION",
+      "kicker": "CHAPTER 4 · PRODUCTION",
       "title": "Hardening: heartbeats, backpressure, horizontal scale",
       "sub": "Demo sockets die quietly; production ones need a pulse",
-      "narration": "Three production concerns separate toys from systems. LIVENESS: proxies silently kill idle connections \u2014 so the server pings (protocol-level PING frames or app-level heartbeat messages) every ~30 seconds and terminates sockets that miss two \u2014 without this, half your 'connected' clients are zombies. BACKPRESSURE: a slow client with a fast producer \u2014 broadcasting stock ticks to a phone on a train \u2014 buffers unboundedly in memory until the server dies; the fix is a bounded outbound queue per socket: full \u2192 drop, close, or degrade \u2014 never grow forever. And SCALE-OUT: an in-memory connection manager lives in ONE process \u2014 two replicas don't share sockets. Scaling options in order of complexity: STICKY sessions per replica (fine to ~10k connections); a PUB/SUB BACKBONE \u2014 replicas publish events to Redis (PY-21); subscribers forward to their local sockets \u2014 the standard at scale; or dedicated realtime infra (managed socket services) when that's not your differentiator. Design rule from AG-25: if sockets are your product's core, the pub/sub backbone is where you build; if chat is a feature, buy the last option and keep your team on the agent."
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.2, "w": 96, "h": 72.5, "t": "hardening.py", "lines": ["every 30s: ping → 2 misses = close", "outbox = asyncio.Queue(maxsize=100)", "if outbox.full(): drop / close", "replicas do not share sockets", "redis.publish(\"room:42\", event)"] }
+      ],
+      "steps": [
+        { "at": "Three production concerns", "do": [["show", "c"]] },
+        { "at": "LIVENESS", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "no zombie connections", "good"]] },
+        { "at": "BACKPRESSURE", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "bounded queue — never grows", "good"]] },
+        { "at": "SCALE-OUT", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "in-memory manager = 1 process", "bad"]] },
+        { "at": "a PUB/SUB BACKBONE", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "replicas forward to local sockets", "good"]] }
+      ],
+      "narration": "Three production concerns separate toys from systems. LIVENESS: proxies silently kill idle connections — so the server pings (protocol-level PING frames or app-level heartbeat messages) every ~30 seconds and terminates sockets that miss two — without this, half your 'connected' clients are zombies. BACKPRESSURE: a slow client with a fast producer — broadcasting stock ticks to a phone on a train — buffers unboundedly in memory until the server dies; the fix is a bounded outbound queue per socket: full → drop, close, or degrade — never grow forever. And SCALE-OUT: an in-memory connection manager lives in ONE process — two replicas don't share sockets. Scaling options in order of complexity: STICKY sessions per replica (fine to ~10k connections); a PUB/SUB BACKBONE — replicas publish events to Redis (PY-21); subscribers forward to their local sockets — the standard at scale; or dedicated realtime infra (managed socket services) when that's not your differentiator. Design rule from AG-25: if sockets are your product's core, the pub/sub backbone is where you build; if chat is a feature, buy the last option and keep your team on the agent."
     },
     {
       "type": "code",

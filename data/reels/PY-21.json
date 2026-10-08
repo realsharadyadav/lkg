@@ -13,12 +13,24 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
-      "kicker": "CHAPTER 1 \u00b7 REDIS",
+      "kicker": "CHAPTER 1 · REDIS",
       "title": "Redis: a data structure server living in RAM",
-      "sub": "Strings, hashes, sets, sorted sets \u2014 with TTLs on everything",
-      "narration": "Redis is best understood not as a database but as a REMOTE DATA-STRUCTURE SERVER: everything lives in memory, everything is one of a handful of structures, and every key can carry a TTL. The four structures cover most of systems programming: STRINGS for caching \u2014 get/set with EX seconds \u2014 the canonical pattern: check Redis, return on hit, compute on miss, store with a TTL; HASHES for objects \u2014 HSET session:user:42 field value \u2014 update one field without rewriting the blob; SETS for membership and dedupe \u2014 SADD seen:event:123 returns 0 if it was already there \u2014 this ONE command is your webhook idempotency (PY-14) and job-dedupe (AG-19) in a single round trip; and SORTED SETS for leaderboards, rate limits, and priority queues \u2014 ZADD + ZRANGEBYSCORE is a sliding-window rate limiter in three commands. Two properties shape everything: SPEED \u2014 sub-millisecond reads \u2014 Redis is where 'fast enough' actually lives; and VOLATILITY \u2014 memory is not disk \u2014 treat Redis as an accelerator and a scratchpad, never as the only copy of anything that matters."
+      "sub": "Strings, hashes, sets, sorted sets — with TTLs on everything",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "redis", "lines": ["r.set(\"k\", v, ex=300)   # TTL", "r.hset(\"session:user:42\", \"page\", 3)", "r.sadd(\"seen:event:123\", id)", "r.zadd(\"window\", {id: ts})", "# memory is not disk"] }
+      ],
+      "steps": [
+        { "at": "Redis is best understood", "do": [["show", "c"]] },
+        { "at": "STRINGS for caching", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "check → hit | miss → compute → store", "good"]] },
+        { "at": "HASHES for objects", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "update one field, not the blob", "good"]] },
+        { "at": "SETS for membership and dedupe", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "returns 0 if already there → idempotent", "good"]] },
+        { "at": "SORTED SETS for leaderboards", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "sliding-window rate limiter", "good"]] },
+        { "at": "VOLATILITY", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "accelerator — never the only copy", "bad"]] }
+      ],
+      "narration": "Redis is best understood not as a database but as a REMOTE DATA-STRUCTURE SERVER: everything lives in memory, everything is one of a handful of structures, and every key can carry a TTL. The four structures cover most of systems programming: STRINGS for caching — get/set with EX seconds — the canonical pattern: check Redis, return on hit, compute on miss, store with a TTL; HASHES for objects — HSET session:user:42 field value — update one field without rewriting the blob; SETS for membership and dedupe — SADD seen:event:123 returns 0 if it was already there — this ONE command is your webhook idempotency (PY-14) and job-dedupe (AG-19) in a single round trip; and SORTED SETS for leaderboards, rate limits, and priority queues — ZADD + ZRANGEBYSCORE is a sliding-window rate limiter in three commands. Two properties shape everything: SPEED — sub-millisecond reads — Redis is where 'fast enough' actually lives; and VOLATILITY — memory is not disk — treat Redis as an accelerator and a scratchpad, never as the only copy of anything that matters."
     },
     {
       "type": "code",
@@ -33,12 +45,25 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
-      "kicker": "CHAPTER 2 \u00b7 INFRASTRUCTURE",
+      "kicker": "CHAPTER 2 · INFRASTRUCTURE",
       "title": "Redis as infrastructure: locks, queues, pub/sub, and circuit breakers",
       "sub": "The Swiss army knife behind AG-19, PY-14, and AG-23",
-      "narration": "Revisit the course through Redis-colored glasses and it appears everywhere. QUEUES: LPUSH + BRPOP is a battle-tested work queue \u2014 AG-19's job queues can start here before graduating to a broker; the pattern \u2014 enqueue fast, workers pop blocking \u2014 needs no extra service. DEDUPE and IDEMPOTENCY: SADD with the job ID as member \u2014 atomic, single round trip \u2014 the webhook idempotency from PY-14 and exactly-once-ish processing from AG-19 share this one command. PUB/SUB: publish event, N subscribers react \u2014 the horizontal-scale backbone for WebSockets from PY-14 (replica A publishes, replica B forwards to its sockets); a caveat \u2014 pub/sub is FIRE-AND-FORGET \u2014 a subscriber that's down misses the message \u2014 so it carries signals, not state. RATE LIMITING: ZADD/ZREMRANGEBYSCORE/ZCARD implements a sliding window \u2014 the per-tenant circuit breaker AG-25 and AG-23 demand. And LOCKS: SET key NX EX is a distributed lock \u2014 the NX (not-exists) makes acquisition atomic, the EX prevents dead locks when a holder crashes \u2014 use for 'only one worker rebuilds the cache' \u2014 but keep the critical section tiny and never hold a lock across a network call you don't control."
+      "h": 230,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.1, "w": 96, "h": 70.8, "t": "redis infra", "lines": ["r.lpush(\"jobs\", job); r.brpop(\"jobs\")", "r.sadd(\"done\", job_id)   # atomic", "r.publish(\"room:1\", evt)", "# subscriber down = message lost", "ZADD · ZREMRANGEBYSCORE · ZCARD", "r.set(\"lock\", 1, nx=True, ex=30)"] }
+      ],
+      "steps": [
+        { "at": "Revisit the course through Redis-colored glasses", "do": [["show", "c"]] },
+        { "at": "QUEUES", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "enqueue fast · workers pop blocking", "good"]] },
+        { "at": "DEDUPE and IDEMPOTENCY", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "one round trip", "good"]] },
+        { "at": "PUB/SUB", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "replica A publishes → B forwards"]] },
+        { "at": "FIRE-AND-FORGET", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "signals, not state", "bad"]] },
+        { "at": "RATE LIMITING", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "sliding window per tenant", "good"]] },
+        { "at": "LOCKS", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "NX atomic · EX frees dead locks", "good"]] }
+      ],
+      "narration": "Revisit the course through Redis-colored glasses and it appears everywhere. QUEUES: LPUSH + BRPOP is a battle-tested work queue — AG-19's job queues can start here before graduating to a broker; the pattern — enqueue fast, workers pop blocking — needs no extra service. DEDUPE and IDEMPOTENCY: SADD with the job ID as member — atomic, single round trip — the webhook idempotency from PY-14 and exactly-once-ish processing from AG-19 share this one command. PUB/SUB: publish event, N subscribers react — the horizontal-scale backbone for WebSockets from PY-14 (replica A publishes, replica B forwards to its sockets); a caveat — pub/sub is FIRE-AND-FORGET — a subscriber that's down misses the message — so it carries signals, not state. RATE LIMITING: ZADD/ZREMRANGEBYSCORE/ZCARD implements a sliding window — the per-tenant circuit breaker AG-25 and AG-23 demand. And LOCKS: SET key NX EX is a distributed lock — the NX (not-exists) makes acquisition atomic, the EX prevents dead locks when a holder crashes — use for 'only one worker rebuilds the cache' — but keep the critical section tiny and never hold a lock across a network call you don't control."
     },
     {
       "type": "code",
@@ -53,12 +78,25 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
-      "kicker": "CHAPTER 3 \u00b7 DOCUMENT DBs",
+      "kicker": "CHAPTER 3 · DOCUMENT DBs",
       "title": "Cosmos DB and MongoDB: documents where the shape is the schema",
-      "sub": "JSON in, JSON out \u2014 schema flexibility with real query power",
-      "narration": "Document databases store JSON-like documents in collections \u2014 no migrations for shape changes, nested structures kept whole \u2014 the fit for the schema-thrash era of rapid product iteration and for the agent world, where a memory record (AG-17) or an agent definition (AG-25) IS a JSON document with evolving fields. MONGODB is the category's open-source standard: rich query language \u2014 match on nested fields, arrays, aggregation pipelines \u2014 horizontal sharding built in; COSMOS DB is Azure's globally-distributed managed document store: MongoDB API compatibility as one of several APIs, turnkey multi-region replication with conflict resolution \u2014 the managed choice when GA-29's Azure stack is already the platform. The query model, once: find filters by fields; aggregation pipelines transform \u2014 match, group, project, the same vocabulary as Polars (PY-16) wearing JSON; and indexes still matter \u2014 'flexible schema' is not 'no indexes' \u2014 index what you filter on or every query is a collection scan. Where they fit in YOUR stack: user profiles, session state that outlives a TTL, event history, agent memory stores, content catalogs \u2014 anywhere the shape varies per record and joins are rare."
+      "sub": "JSON in, JSON out — schema flexibility with real query power",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "documents", "lines": ["{\"user\": \"ada\", \"prefs\": {\"dark\": true}}", "db.users.find({\"prefs.dark\": True})", "# multi-region · MongoDB API", "[{\"$match\": ..}, {\"$group\": ..}]", "db.users.create_index(\"email\")"] }
+      ],
+      "steps": [
+        { "at": "Document databases store JSON-like", "do": [["show", "c"]] },
+        { "at": "no migrations for shape", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "no migrations for shape changes", "good"]] },
+        { "at": "MONGODB is the category", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "match on nested fields · sharding built in"]] },
+        { "at": "COSMOS DB is Azure", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "managed, globally distributed", "good"]] },
+        { "at": "aggregation pipelines transform", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "match → group → project"]] },
+        { "at": "index what you filter on", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "flexible schema ≠ no indexes", "bad"]] },
+        { "at": "anywhere the shape varies per record", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
+      "narration": "Document databases store JSON-like documents in collections — no migrations for shape changes, nested structures kept whole — the fit for the schema-thrash era of rapid product iteration and for the agent world, where a memory record (AG-17) or an agent definition (AG-25) IS a JSON document with evolving fields. MONGODB is the category's open-source standard: rich query language — match on nested fields, arrays, aggregation pipelines — horizontal sharding built in; COSMOS DB is Azure's globally-distributed managed document store: MongoDB API compatibility as one of several APIs, turnkey multi-region replication with conflict resolution — the managed choice when GA-29's Azure stack is already the platform. The query model, once: find filters by fields; aggregation pipelines transform — match, group, project, the same vocabulary as Polars (PY-16) wearing JSON; and indexes still matter — 'flexible schema' is not 'no indexes' — index what you filter on or every query is a collection scan. Where they fit in YOUR stack: user profiles, session state that outlives a TTL, event history, agent memory stores, content catalogs — anywhere the shape varies per record and joins are rare."
     },
     {
       "type": "code",
@@ -73,12 +111,25 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
-      "kicker": "CHAPTER 4 \u00b7 CHOOSING",
+      "kicker": "CHAPTER 4 · CHOOSING",
       "title": "Choosing your store: the decision that quietly decides your architecture",
-      "sub": "Postgres, Redis, documents \u2014 a one-paragraph policy",
-      "narration": "The course has now handed you four storage tools \u2014 Postgres (GA-10's relational + vector workhorse), Redis, and document databases \u2014 and the final architectural skill is a DEFAULT POLICY you can state in one breath. RELATIONAL (Postgres) is the system of record: structured data, transactions, relations, vectors via pgvector \u2014 start EVERY project here until a need proves otherwise \u2014 the moment you have two stores, consistency questions multiply; REDIS is the accelerator on top: cache, locks, rate limits, pub/sub, lightweight queues \u2014 anything rebuildable, anything needing sub-millisecond speed \u2014 never the system of record; DOCUMENT DB is the escape hatch for genuinely shape-varying data at scale \u2014 profiles, catalogs, event streams \u2014 or when global distribution is the requirement (Cosmos). The failure mode to avoid is store sprawl \u2014 each new database is a new operational lifeform: backups, versions, dashboards, on-call knowledge \u2014 AG-25's platform discipline applies to storage too. When torn between two options: pick the one your team can operate in their sleep, and let the exotic one earn its place with a measured benchmark. That's the whole craft \u2014 and with that, the toolkit is complete."
+      "sub": "Postgres, Redis, documents — a one-paragraph policy",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "default policy", "lines": ["Postgres → system of record", "Redis → cache · locks · rate limits", "Document DB → shape-varying at scale", "# each store = new operational lifeform", "→ operate it in your sleep"] }
+      ],
+      "steps": [
+        { "at": "The course has now handed you", "do": [["show", "c"]] },
+        { "at": "RELATIONAL (Postgres)", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "start EVERY project here", "good"]] },
+        { "at": "REDIS is the accelerator", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "rebuildable · sub-millisecond", "good"]] },
+        { "at": "DOCUMENT DB is the escape hatch", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "profiles · catalogs · event streams"]] },
+        { "at": "store sprawl", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "backups · versions · on-call", "bad"]] },
+        { "at": "pick the one your team can operate", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "exotic must earn its place", "good"]] },
+        { "at": "the toolkit is complete", "do": [["hl", "c", -1], ["pulse", "c"]] }
+      ],
+      "narration": "The course has now handed you four storage tools — Postgres (GA-10's relational + vector workhorse), Redis, and document databases — and the final architectural skill is a DEFAULT POLICY you can state in one breath. RELATIONAL (Postgres) is the system of record: structured data, transactions, relations, vectors via pgvector — start EVERY project here until a need proves otherwise — the moment you have two stores, consistency questions multiply; REDIS is the accelerator on top: cache, locks, rate limits, pub/sub, lightweight queues — anything rebuildable, anything needing sub-millisecond speed — never the system of record; DOCUMENT DB is the escape hatch for genuinely shape-varying data at scale — profiles, catalogs, event streams — or when global distribution is the requirement (Cosmos). The failure mode to avoid is store sprawl — each new database is a new operational lifeform: backups, versions, dashboards, on-call knowledge — AG-25's platform discipline applies to storage too. When torn between two options: pick the one your team can operate in their sleep, and let the exotic one earn its place with a measured benchmark. That's the whole craft — and with that, the toolkit is complete."
     },
     {
       "type": "code",
@@ -93,12 +144,29 @@
       ]
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
-      "kicker": "STAGE 10 COMPLETE \u00b7 COURSE COMPLETE",
+      "kicker": "STAGE 10 COMPLETE · COURSE COMPLETE",
       "title": "LKG complete: 80 reels, three tracks, one architect",
-      "sub": "You arrived knowing C#/.NET. You leave speaking GenAI, agents, and Python \u2014 with the judgment layer on top.",
-      "narration": "Take the full measure of what was built. THREE TRACKS: Python \u2014 from PY-01's foundations through async, APIs, data, and realtime to the storage craft in this reel; GenAI \u2014 from GA-01's what-and-why through prompting, RAG, evals, security, and the Azure stack to the architect's toolkit; Agentic \u2014 from AG-01's mental models through planning, memory, tools, guardrails, MCP, production engineering, and multi-agent platforms. EIGHTY REELS, one idea repeated until it's instinct: MODELS ARE PROBABILISTIC, so systems earn trust through EVALS (GA-20), guardrails (AG-09), budgets (AG-23), and honest gates (GA-30). The course arc mirrors a real engagement: learn the tools, build pipelines, ship to production, then architect for others. What remains is practice \u2014 rebuild one project from each stage without looking, then design one agent platform for a domain you know deeply (AG-25's definition file is a fine starting skeleton). The reels stay here as a reference \u2014 80 answers, cross-linked, searchable. COURSE COMPLETE \u2014 but for an architect, every shipped system is just the next system's requirements document. Go build."
+      "sub": "You arrived knowing C#/.NET. You leave speaking GenAI, agents, and Python — with the judgment layer on top.",
+      "h": 250,
+      "actors": [
+        { "id": "p", "k": "chip", "x": 22, "y": 10.4, "t": "Python", "tone": "accent", "c": "sm" },
+        { "id": "g", "k": "chip", "x": 50, "y": 10.4, "t": "GenAI", "tone": "accent", "c": "sm" },
+        { "id": "a", "k": "chip", "x": 80, "y": 10.4, "t": "Agentic", "tone": "accent", "c": "sm" },
+        { "id": "c", "k": "code", "x": 50, "y": 47.8, "w": 96, "h": 50.9, "t": "80 reels", "lines": ["MODELS ARE PROBABILISTIC", "→ evals · guardrails · budgets · gates", "rebuild one project per stage", "design one agent platform"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.8, "t": "COURSE COMPLETE — go build", "e": "🎉", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "THREE TRACKS", "do": [["show", "p"], ["show", "g"], ["show", "a"]] },
+        { "at": "Python — from PY-01", "do": [["hot", "p"]] },
+        { "at": "GenAI — from GA-01", "do": [["unhot", "p"], ["hot", "g"]] },
+        { "at": "Agentic — from AG-01", "do": [["unhot", "g"], ["hot", "a"]] },
+        { "at": "MODELS ARE PROBABILISTIC", "do": [["unhot", "a"], ["show", "c"], ["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "trust is earned through evals", "good"]] },
+        { "at": "rebuild one project from each stage", "do": [["ln", "c", 4], ["hl", "c", 2, 3]] },
+        { "at": "COURSE COMPLETE", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
+      "narration": "Take the full measure of what was built. THREE TRACKS: Python — from PY-01's foundations through async, APIs, data, and realtime to the storage craft in this reel; GenAI — from GA-01's what-and-why through prompting, RAG, evals, security, and the Azure stack to the architect's toolkit; Agentic — from AG-01's mental models through planning, memory, tools, guardrails, MCP, production engineering, and multi-agent platforms. EIGHTY REELS, one idea repeated until it's instinct: MODELS ARE PROBABILISTIC, so systems earn trust through EVALS (GA-20), guardrails (AG-09), budgets (AG-23), and honest gates (GA-30). The course arc mirrors a real engagement: learn the tools, build pipelines, ship to production, then architect for others. What remains is practice — rebuild one project from each stage without looking, then design one agent platform for a domain you know deeply (AG-25's definition file is a fine starting skeleton). The reels stay here as a reference — 80 answers, cross-linked, searchable. COURSE COMPLETE — but for an architect, every shipped system is just the next system's requirements document. Go build."
     }
   ],
   "recap": [

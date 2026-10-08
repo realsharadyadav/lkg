@@ -15,110 +15,223 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · OPENPYXL",
       "title": "openpyxl: cells, sheets, formulas — **surgically**",
       "sub": "Read and write .xlsx without Excel installed",
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 39.2, "w": 96, "h": 74.4, "t": "openpyxl", "lines": ["wb = load_workbook(\"fin.xlsx\")", "ws = wb[\"Q3\"]", "ws[\"B3\"] = 42", "ws[\"B4\"] = \"=SUM(B1:B3)\"", "wb.save(\"new.xlsx\")"] }
+      ],
+      "steps": [
+        { "at": "openpyxl reads and writes xlsx", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0], ["out", "c", "no Excel needed · headless OK", "good"]] },
+        { "at": "walk sheets by name", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "B3 equals forty two", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "cell B3 = 42"]] },
+        { "at": "preserves formulas as strings", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "formula kept as text", "good"]] },
+        { "at": "one sheet in a fifty-sheet workbook", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "everything else byte-identical", "good"]] }
+      ],
       "narration": "openpyxl reads and writes xlsx files directly — no Excel required, works headless on a Linux server. Load a workbook, walk sheets by name, read and write cells by coordinate — B3 equals forty two. It preserves formulas as strings: you can read what a cell computes from, or write a new formula. This is the precision tool: when you need to touch one sheet in a fifty-sheet workbook while everything else stays byte-identical, openpyxl is the instrument."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 0,
-      "items": [
-        { "e": "📖", "t": "wb = load_workbook(\"report.xlsx\")", "s": "Sheets: wb.sheetnames · wb[\"Summary\"] · ws[\"B3\"].value" },
-        { "e": "➕", "t": "ws[\"C5\"] = \"=SUM(C1:C4)\"", "s": "Write formulas as strings — Excel computes on open" },
-        { "e": "🎨", "t": "Styles survive", "s": "Cell fills, borders, number formats are kept when you don't touch them" }
+      "h": 190,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 66.9, "t": "core moves", "lines": ["wb = load_workbook(path)", "ws = wb[\"Sheet1\"]", "ws[\"A1\"].value", "ws[\"C5\"] = \"=A1*2\""] }
+      ],
+      "steps": [
+        { "at": "The core moves", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "address sheets by name", "do": [["ln", "c", 2], ["hl", "c", 1]] },
+        { "at": "read cell values", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "value or formula string"]] },
+        { "at": "formula strings evaluate", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "evaluated when Excel opens it", "good"]] },
+        { "at": "untouched cells keep their styling", "do": [["hl", "c", -1], ["out", "c", "formatting round-trips", "good"]] },
+        { "at": "excellent, not omnipotent", "do": [["out", "c", "charts it can’t parse: dropped", "bad"]] }
       ],
       "narration": "The core moves. Load, address sheets by name, read cell values. Write values or formulas — formula strings evaluate when someone opens the file in Excel. And crucially, untouched cells keep their styling — openpyxl round-trips formatting it understands. The gaps — charts it can't parse, exotic features — are exactly why the next chapter's discipline exists. openpyxl is excellent, not omnipotent."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · PRESERVATION",
       "title": "A workbook is a **living document**",
       "sub": "Formulas, charts, pivot tables — know what your tool can't keep",
+      "h": 230,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 24.2, "w": 96, "h": 44.9, "t": "finance.xlsx", "lines": ["formulas across sheets", "charts fed by ranges", "pivot tables · named ranges", "VBA macros (xlsm)"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 54.8, "t": "load + save = silent amputation", "e": "✂️", "tone": "bad" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 69.6, "t": "never blind-save · audit changes", "e": "🔍", "tone": "good" },
+        { "id": "t3", "k": "tag", "x": 50, "y": 84.3, "t": "xlsm + openpyxl = risk", "e": "⚠️", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "A business workbook often contains", "do": [["show", "c"], ["ln", "c", 4]] },
+        { "at": "formulas referencing other sheets", "do": [["hl", "c", 0]] },
+        { "at": "charts fed by ranges", "do": [["hl", "c", 1]] },
+        { "at": "VBA macros", "do": [["hl", "c", 3]] },
+        { "at": "silently drops what it doesn", "do": [["show", "t1"], ["hl", "c", -1], ["pulse", "t1"]] },
+        { "at": "never blind-save", "do": [["show", "t2"]] },
+        { "at": "xlsm plus openpyxl", "do": [["show", "t3"], ["pulse", "t3"]] }
+      ],
       "narration": "Here's the danger zone. A business workbook often contains: formulas referencing other sheets, charts fed by ranges, pivot tables, conditional formatting, named ranges, and VBA macros in xlsm files. openpyxl keeps what it models and silently drops what it doesn't — old chart types, some pivot configs. One load-and-save cycle can quietly amputate the dashboard finance built. The rules: never blind-save; audit what changed; and for macro files especially, xlsm plus openpyxl equals risk — the VBA project may not survive."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 1,
-      "items": [
-        { "e": "🔍", "t": "load_workbook(f, keep_vba=True) for .xlsm", "s": "Without it, the macro project is dropped on save" },
-        { "e": "🧭", "t": "Change ONE thing at a time", "s": "Diff before/after structurally: sheet names, formula counts, chart counts" },
-        { "e": "🚫", "t": "Know the lossy list", "s": "Charts/pivots/features outside openpyxl's model → dropped silently. Check the docs" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "playbook", "lines": ["load_workbook(p, keep_vba=True)", "# one sheet, one region only", "wb.save(\"copy_v1.xlsx\")   # NEW file", "assert sheets == before", "assert formula_count == before"] }
+      ],
+      "steps": [
+        { "at": "The preservation playbook", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Macros: keep-vba true", "do": [["hl", "c", 0], ["out", "c", "or lose the VBA project", "bad"]] },
+        { "at": "minimal diffs", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "save as a NEW file first", "good"]] },
+        { "at": "after any save, programmatically compare", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "sheets · formulas · charts intact?", "good"]] },
+        { "at": "drive real Excel via COM or xlwings", "do": [["hl", "c", -1], ["out", "c", "Excel does the saving → fidelity", "good"]] }
       ],
       "narration": "The preservation playbook. Macros: keep-vba true or lose the project. Changes: minimal diffs — one sheet, one region, save as a NEW file first. Verification: after any save, programmatically compare — sheet names present, formula count unchanged, chart parts intact. If your workflow involves heavy formatting or macros, consider the alternative path: drive real Excel via COM or xlwings, which performs the edit in Excel itself — formatting preserved by definition, because Excel does the saving."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · PANDAS BRIDGE",
       "title": "Bulk data in/out: **pandas**",
       "sub": "read_excel / to_excel — when the sheet is basically a table",
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "bulk.py", "lines": ["df = pd.read_excel(\"t.xlsx\")", "# analyze like Reel 18", "df.to_excel(\"out.xlsx\")", "# to_excel REPLACES the sheet"] }
+      ],
+      "steps": [
+        { "at": "when a sheet is essentially a data table", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "read excel", "do": [["hl", "c", 0], ["out", "c", "headers row 1, records below", "good"]] },
+        { "at": "write back with to excel", "do": [["ln", "c", 3], ["hl", "c", 2]] },
+        { "at": "REPLACES the sheet", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "formatting on that sheet: gone", "bad"]] },
+        { "at": "Bulk extraction: pandas", "do": [["hl", "c", -1], ["out", "c", "bulk → pandas · surgical → openpyxl", "good"]] }
+      ],
       "narration": "Different job, different tool: when a sheet is essentially a data table — headers in row one, records below — pandas is faster than cell-by-cell. Read straight into a DataFrame with read excel; analyze with everything from Reel 18; write back with to excel. One caveat that bites everyone: to excel REPLACES the sheet's content — it does not edit in place. Writing to an existing workbook's sheet destroys that sheet's formatting and everything else on it. Bulk extraction: pandas. Surgical edits: openpyxl. Never confuse the two."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 2,
-      "items": [
-        { "e": "📥", "t": "pd.read_excel(f, sheet_name=\"Data\")", "s": "Sheet → DataFrame; sheet_name=None reads ALL sheets as a dict" },
-        { "e": "📤", "t": "df.to_excel(\"out.xlsx\", sheet_name=\"Clean\", index=False)", "s": "Writes a NEW file/sheet — replacement, not editing" },
-        { "e": "⚠️", "t": "Mixed content sheets = danger", "s": "Titles above the table, notes below → header rows misalign; clean first" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "rules.py", "lines": ["pd.read_excel(p, sheet_name=None)", "df.to_excel(\"NEW.xlsx\")", "# title rows · merged cells · footnotes", "pd.read_excel(p, skiprows=3,", "    header=0, usecols=\"A:F\")"] }
+      ],
+      "steps": [
+        { "at": "Working rules", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "all sheets at once returns a dict", "do": [["hl", "c", 0], ["out", "c", "dict of DataFrames", "good"]] },
+        { "at": "Writing is destructive", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "create a NEW artifact, never update theirs", "bad"]] },
+        { "at": "LOOK at them", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "humans decorate spreadsheets"]] },
+        { "at": "Skiprows, header index", "do": [["ln", "c", 5], ["hl", "c", 3, 4], ["out", "c", "first 10 min = reconnaissance", "good"]] }
       ],
       "narration": "Working rules. Reading is forgiving — sheet name optional, all sheets at once returns a dict of frames. Writing is destructive to structure — treat to excel as 'create a new artifact', never 'update theirs'. And before bulk-reading real-world sheets, LOOK at them: humans decorate spreadsheets with title rows, merged cells, and footnotes; all of it misaligns naive parsing. Skiprows, header index, and usecols exist for exactly this — the first ten minutes of any Excel job is reconnaissance."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · BATCH",
       "title": "One workbook is a task. **Five hundred** is a pipeline.",
       "sub": "Loop, log, and never let one bad file kill the run",
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 35.6, "w": 96, "h": 67.4, "t": "pipeline.py", "lines": ["for f in src.glob(\"*.xlsx\"):", "    out = dst / f.name", "    if out.exists(): continue   # resume", "    try: process(f, out)", "    except Exception as e: log.error(f, e)"] }
+      ],
+      "steps": [
+        { "at": "The moment the boss says", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "Iterate files, extract, transform", "do": [["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "outputs → a NEW folder", "good"]] },
+        { "at": "Log every file", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "processed · skipped · failed + why"]] },
+        { "at": "Wrap per-file work in try/except", "do": [["hl", "c", 3, 4], ["out", "c", "1 corrupt file ≠ 499 lost", "good"]] },
+        { "at": "make the loop resumable", "do": [["hl", "c", 2], ["out", "c", "crash at #300 → resume at #300", "good"]] }
+      ],
       "narration": "The moment the boss says 'do that for every file in the folder', you're running a pipeline — and pipelines have pipeline rules. Iterate files, extract, transform, write outputs to a NEW folder — never in place. Log every file with its status: processed, skipped, failed with reason. Wrap per-file work in try/except so one corrupt workbook doesn't abort the other four hundred ninety-nine. And make the loop resumable: skip outputs that already exist, so a crash at file three hundred doesn't restart from zero."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 3,
-      "items": [
-        { "e": "🗂️", "pk": "📂", "t": "glob → process → write to out/", "s": "New folder for results; inputs stay pristine and re-runnable" },
-        { "e": "📋", "pk": "⚙️", "t": "Per-file try/except + a results log", "s": "CSV log: file, status, rows, error — your audit trail" },
-        { "e": "♻️", "pk": "📁", "t": "Skip existing outputs", "s": "Idempotency: rerun safely; crash at 300 resumes at 300" }
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 34.7, "w": 96, "h": 65.2, "t": "hygiene", "lines": ["out/  ← outputs (inputs immutable)", "try: file 214 → log \"bad merge\"", "if out.exists(): skip", "# same rules as any ETL job"] }
+      ],
+      "steps": [
+        { "at": "Pipeline hygiene", "do": [["show", "c"]] },
+        { "at": "Outputs to a separate tree", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "runs are reproducible", "good"]] },
+        { "at": "Per-file isolation with logging", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "499 others still done", "good"]] },
+        { "at": "Idempotency", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "fragile batch → resumable batch", "good"]] },
+        { "at": "It is never only Excel", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "never \"only Excel\"", "bad"]] }
       ],
       "narration": "Pipeline hygiene. Outputs to a separate tree — inputs immutable, runs reproducible. Per-file isolation with logging — batch jobs fail at 2am on file 214 of 500; the log tells you which and why, and the other 499 still got done. Idempotency — checking for existing outputs turns a fragile batch into a resumable one. These are the same rules as any ETL job; spreadsheets just tempt people into skipping them because 'it's only Excel'. It is never only Excel."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 4,
       "kicker": "CHAPTER 5 · REAL EXCEL",
       "title": "Need **real** Excel? xlwings / COM",
       "sub": "Driving the application — formatting preserved by construction",
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 37.3, "w": 96, "h": 70.7, "t": "xlwings", "lines": ["import xlwings as xw", "wb = xw.Book(\"model.xlsx\")", "wb.app.calculate()   # real Excel", "wb.api.ExportAsFixedFormat(0, \"o.pdf\")", "wb.save(); wb.close()"] }
+      ],
+      "steps": [
+        { "at": "Sometimes the file is too complex", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "recalculating everything", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "recalc · pivots · PDFs", "good"]] },
+        { "at": "COM automation drives a real Excel process", "do": [["ln", "c", 5], ["hl", "c", 1, 4], ["out", "c", "Excel does the work", "good"]] },
+        { "at": "xlwings wraps this", "do": [["hl", "c", 3], ["out", "c", "total fidelity", "good"]] },
+        { "at": "requires Excel installed", "do": [["hl", "c", -1], ["out", "c", "desktop tool, not a server one", "bad"]] }
+      ],
       "narration": "Sometimes the file is too complex for libraries — or you need Excel itself: recalculating everything, refreshing pivots, exporting PDFs. On Windows, COM automation drives a real Excel process: open, manipulate, save, close — Excel does the work, so fidelity is total. xlwings wraps this beautifully and adds a Python↔Excel bridge where formulas can call Python functions. Constraints: requires Excel installed, a Windows or Mac box, and an interactive session in many cases — this is a desktop automation tool, not a server one."
     },
     {
-      "type": "list",
+      "type": "story",
       "chapter": 4,
-      "items": [
-        { "e": "🪟", "t": "Windows-only for servers", "s": "COM needs the Excel process — plan for a Windows VM or desktop" },
-        { "e": "🐢", "t": "Slower, faithful", "s": "Real Excel recalculates, refreshes pivots, keeps everything — at app speed" },
-        { "e": "🧙", "t": "Udf: Python inside Excel formulas", "s": "xlwings @udf — spreadsheet cells call Python functions" }
+      "h": 215,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 27.3, "w": 96, "h": 50.9, "t": "udf.py", "lines": ["@xw.func", "def price(spot, vol):", "    return black_scholes(spot, vol)"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 66.0, "t": "COM ✗ headless Linux · ✓ Windows desktop", "e": "🖥️", "tone": "accent" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 81.9, "t": "capstone Excel agent: FILES + openpyxl", "e": "📁", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "When to reach for it", "do": [["show", "c"]] },
+        { "at": "legacy chart types", "do": [["out", "c", "fidelity libraries can’t give", "good"]] },
+        { "at": "COM doesn't belong on a headless Linux", "do": [["show", "t1"]] },
+        { "at": "xlwings user-defined functions", "do": [["ln", "c", 3], ["hl", "c", 0, 2], ["out", "c", "a cell that calls your Python", "good"]] },
+        { "at": "the Excel agent targets FILES", "do": [["hl", "c", -1], ["show", "t2"], ["pulse", "t2"]] }
       ],
       "narration": "When to reach for it. Fidelity problems libraries can't solve: legacy chart types, pivot refreshes, formula recalculation across linked workbooks. Server reality check: COM doesn't belong on a headless Linux pipeline — it's a Windows desktop/VM tool. And the party trick: xlwings user-defined functions let a spreadsheet cell call your Python — pricing models, risk calculators, anything — with Excel as the UI. For the capstone in this course, the Excel agent targets FILES with openpyxl; but know this tier exists for the day a client says 'it must work inside Excel'."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 5,
       "kicker": "CHAPTER 6 · SAFE-WRITE",
       "title": "The **safe-write pattern** — never skip it",
       "sub": "Backup → dry-run → diff → write → verify → rollback",
+      "h": 250,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 30.6, "w": 96, "h": 58.0, "t": "safe_write.py", "lines": ["backup(src)       # timestamped copy", "plan = dry_run(src)  # what WOULD change", "print(plan.diff)", "write(plan, \"NEW.xlsx\")", "verify(\"NEW.xlsx\")  # sheets·formulas·values"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 73.6, "t": "only then: replace original, keep backup", "e": "🛡️", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "This chapter is a career insurance policy", "do": [["show", "c"]] },
+        { "at": "back up the original first", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "copy, timestamped", "good"]] },
+        { "at": "Dry-run the transformation", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "counts + samples"]] },
+        { "at": "Write to a NEW file", "do": [["ln", "c", 4], ["hl", "c", 3]] },
+        { "at": "Verify the output programmatically", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "sheet names · formula counts", "good"]] },
+        { "at": "Only then consider replacing", "do": [["hl", "c", -1], ["show", "t"]] }
+      ],
       "narration": "This chapter is a career insurance policy. Any automated Excel write follows the ritual: back up the original first — copy, timestamped. Dry-run the transformation and print what WOULD change — counts and samples. Diff the plan against expectations. Write to a NEW file. Verify the output programmatically — sheet names, formula counts, spot values. Only then consider replacing the original, keeping the backup. In production systems this is formalized: versioned inputs, audit logs, approval gates. The capstone agent in this course implements exactly this — backup, dry-run, diff, approve — because real money lives in those cells."
     },
     {
-      "type": "flow",
+      "type": "story",
       "chapter": 5,
-      "items": [
-        { "e": "💾", "pk": "💾", "t": "Backup: shutil.copy(f, f + \".bak-<ts>\")", "s": "Before anything touches the file — always" },
-        { "e": "🧪", "pk": "📋", "t": "Dry-run: report changes, write nothing", "s": "Human reviews the plan: '214 cells across 3 sheets will change' — approve?" },
-        { "e": "✅", "pk": "✅", "t": "Write new → verify → swap", "s": "Verify counts and spot values; atomic swap keeps a good file in place" }
+      "h": 205,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.0, "t": "the ritual", "lines": ["1 backup  → timestamped, automatic", "2 dry-run → describe intended changes", "3 write NEW → verify → swap", "# else: auditors find the bug"] }
+      ],
+      "steps": [
+        { "at": "The ritual, concretely", "do": [["show", "c"]] },
+        { "at": "Backup first", "do": [["ln", "c", 1], ["hl", "c", 0], ["out", "c", "non-negotiable", "good"]] },
+        { "at": "Dry-run second", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "a human approves", "good"]] },
+        { "at": "Write to a new path, verify", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "programmatic checks", "good"]] },
+        { "at": "the bot corrupted the quarter-end", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "not a bot story you want", "bad"]] },
+        { "at": "Build the ritual in from day one", "do": [["hl", "c", -1], ["pulse", "c"]] }
       ],
       "narration": "The ritual, concretely. Backup first — timestamped, automatic, non-negotiable. Dry-run second — the system describes its intended changes and a human approves; this is the human-in-the-loop principle from GA-02 applied to spreadsheets. Write to a new path, verify programmatically, then swap. When your agent touches finance's workbook at scale, this pattern is the difference between 'the bot updated the files' and 'the bot corrupted the quarter-end numbers and we found out from the auditors'. Build the ritual in from day one."
     },

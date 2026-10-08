@@ -13,29 +13,64 @@
   ],
   "scenes": [
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 0,
       "kicker": "CHAPTER 1 · CLIENTS",
       "title": "requests wrote the textbook. **httpx wrote the sequel.**",
       "sub": "One API, two modes: sync and async",
+      "h": 232,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 33.0, "w": 96, "h": 62.5, "t": "clients.py", "lines": ["requests.get(url)       # sync only", "async def run():", "    requests.get(url)  # freezes loop", "    await client.get(url)  # httpx ✓", "import httpx   # HTTP/2 · timeouts"] },
+        { "id": "t1", "k": "tag", "x": 50, "y": 75.9, "t": "default to httpx", "e": "✅", "tone": "good" },
+        { "id": "t2", "k": "tag", "x": 50, "y": 88.8, "t": "OpenAI / Anthropic SDKs wrap httpx", "e": "🧩", "tone": "accent" }
+      ],
+      "steps": [
+        { "at": "Requests is Python's legendary", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "synchronous only", "do": [["out", "c", "one call at a time"]] },
+        { "at": "blocks the entire event loop", "do": [["ln", "c", 4], ["hl", "c", 1, 2], ["out", "c", "event loop blocked ✗", "bad"], ["tone", "c", "bad"]] },
+        { "at": "httpx is the modern successor", "do": [["tone", "c", "good"], ["hl", "c", 3], ["out", "c", "same shape, await added", "good"]] },
+        { "at": "also speaks HTTP/2", "do": [["ln", "c", 5], ["hl", "c", 4]] },
+        { "at": "default to httpx", "do": [["hl", "c", -1], ["out", "c", ""], ["show", "t1"], ["pulse", "t1"]] },
+        { "at": "already wrap httpx", "do": [["show", "t2"]] }
+      ],
       "narration": "Requests is Python's legendary HTTP library — simple API, huge ecosystem. But it is synchronous only, and in an async world that's a dealbreaker: a requests call inside an async function blocks the entire event loop — PY-10's cardinal sin. httpx is the modern successor: nearly identical API, PLUS first-class async support — same code shape, await added. It also speaks HTTP/2, which some APIs require, and has built-in timeout discipline. Rule for GenAI apps: default to httpx; use requests only in legacy sync scripts. Most official SDKs — OpenAI, Anthropic — already wrap httpx under the hood, so this choice mostly matters when you call APIs directly."
     },
     {
-      "type": "compare",
+      "type": "story",
       "chapter": 0,
-      "cards": [
-        { "e": "📗", "t": "requests", "s": "The classic · sync-only · blocking inside async code freezes the loop", "win": false },
-        { "e": "⚡", "t": "httpx (sync)", "s": "Same ergonomics · HTTP/2 · strict timeouts by default", "win": true },
-        { "e": "🌀", "t": "httpx (async)", "s": "awaitable client · the only sane choice inside asyncio · official SDKs wrap it", "win": true }
+      "h": 200,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 42.7, "w": 96, "h": 81.4, "t": "httpx.py", "lines": ["async with httpx.AsyncClient() as c:", "    r = await c.get(url, {{timeout=5}})", "with httpx.Client() as c:   # scripts", "    r = c.get(url)", "# one shared client = pooled sockets", "for u in urls: httpx.get(u)   # ✗"] }
+      ],
+      "steps": [
+        { "at": "The choice that matters most", "do": [["show", "c"], ["ln", "c", 2]] },
+        { "at": "Inside any async code", "do": [["hl", "c", 0, 1], ["out", "c", "event loop keeps breathing", "good"]] },
+        { "at": "a Client for scripts", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "same method names"]] },
+        { "at": "timeouts are NOT optional", "do": [["hl", "c", 1], ["mark", "c", "timeout=5"], ["out", "c", "hung calls surface fast", "good"]] },
+        { "at": "connection pooling via a shared client", "do": [["mark", "c", ""], ["ln", "c", 5], ["hl", "c", 4], ["out", "c", "sockets reused = lower latency", "good"]] },
+        { "at": "Client-per-request", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "new client per call ✗", "bad"]] }
       ],
       "narration": "The choice that matters most is the third card. Inside any async code — and your GenAI pipelines should be async — only an async client keeps the event loop breathing. httpx gives you one mental model for both worlds: instantiate an AsyncClient for pipelines, a Client for scripts, same method names, same response API. Two httpx specifics worth internalizing: timeouts are NOT optional — httpx enforces a default five-second timeout pool, which surfaces hung-call bugs immediately instead of silently; and connection pooling via a shared client instance reuses sockets across requests, a large latency win versus creating a client per call. Client-per-request is the requests habit you must unlearn."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 1,
       "kicker": "CHAPTER 2 · AUTH",
       "title": "Bearer tokens, API keys, OAuth — **speak the dialects**",
       "sub": "How credentials ride on HTTP headers",
+      "h": 225,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.0, "w": 96, "h": 72.4, "t": "auth.py", "lines": ["# API key", "{\"x-api-key\": KEY}", "# Bearer token", "{\"Authorization\": f\"Bearer {TOK}\"}", "# OAuth 2: id + secret → short token", "KEY = os.environ[\"API_KEY\"]"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 87.1, "t": "never hardcode secrets", "e": "🚫", "tone": "bad" }
+      ],
+      "steps": [
+        { "at": "Three auth dialects", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "API keys", "do": [["ln", "c", 2], ["hl", "c", 0, 1], ["out", "c", "custom header or query param"]] },
+        { "at": "Bearer tokens", "do": [["ln", "c", 4], ["hl", "c", 2, 3], ["out", "c", "OpenAI & most LLM APIs", "good"]] },
+        { "at": "OAuth 2", "do": [["ln", "c", 5], ["hl", "c", 4], ["out", "c", "acting ON BEHALF of users"]] },
+        { "at": "service-to-service", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "env var key is the norm", "good"]] },
+        { "at": "never hardcode secrets", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Three auth dialects cover most GenAI integrations. API keys: usually a custom header — x-api-key — or a query parameter, depending on the provider. Bearer tokens: the Authorization header with the word Bearer and a token — the OpenAI and most LLM APIs' pattern; it's OAuth's token format used directly. OAuth 2: a full handshake — your app exchanges a client-id and secret for a short-lived access token, refreshes it on expiry; use it when acting ON BEHALF of users — 'sign in with Google'-style flows — rather than service-to-service calls. For service-to-service, a long-lived API key or bearer token in an environment variable is the norm. One rule above all: never hardcode secrets — os.environ at minimum, a secrets manager in production."
     },
     {
@@ -52,11 +87,24 @@
       "narration": "The shared-client pattern: auth header configured once, connection pool reused across hundreds of calls, timeouts explicit. Two disciplines shown here. raise-for-status: an un-checked response means a 500-error page flows into your json parser as garbage; exceptions make failures loud and local. The timeout split matters operationally: a connect timeout of five seconds catches dead networks fast, while the read timeout carries the real work — thirty seconds for a heavy report. On OAuth, the production subtlety is refresh timing: refresh on a schedule before expiry — say at eighty percent of lifetime — rather than reacting to 401s mid-call, or every expiry becomes a failed request for some unlucky user."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 2,
       "kicker": "CHAPTER 3 · RETRIES",
       "title": "429 and 5xx are **transient weather**, not failures",
       "sub": "Retry with exponential backoff + jitter",
+      "h": 195,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 43.8, "w": 96, "h": 83.5, "t": "retry rules", "lines": ["400 401 404       → no retry ✗", "429 500 502 503   → retry ✓", "wait 1s, 2s, 4s, 8s … (capped)", "+ jitter → no synchronized waves", "@retry(wait=wait_random_exponential())", "Retry-After: 7   → wait exactly 7s"] }
+      ],
+      "steps": [
+        { "at": "APIs fail in two families", "do": [["show", "c"], ["ln", "c", 1]] },
+        { "at": "permanent", "do": [["hl", "c", 0], ["out", "c", "retrying is pointless and rude", "bad"]] },
+        { "at": "transient", "do": [["ln", "c", 2], ["hl", "c", 1], ["out", "c", "these PASS if you wait", "good"]] },
+        { "at": "exponential backoff", "do": [["ln", "c", 3], ["hl", "c", 2], ["out", "c", "1 → 2 → 4 → 8 s"]] },
+        { "at": "add jitter", "do": [["ln", "c", 4], ["hl", "c", 3], ["out", "c", "fleet won’t hammer in waves", "good"]] },
+        { "at": "Tenacity is the standard library", "do": [["ln", "c", 5], ["hl", "c", 4]] },
+        { "at": "respect the Retry-After header", "do": [["ln", "c", 6], ["hl", "c", 5], ["out", "c", "server says when to return", "good"]] }
+      ],
       "narration": "APIs fail in two families: permanent — 400 bad request, 401 unauthorized, 404 missing — retrying these is pointless and rude; and transient — 429 rate-limited, 500/502/503 server hiccups — these PASS, if you wait. The recipe: retry only transient statuses, with exponential backoff — one second, two, four, eight — capped at a max wait, and add jitter — small randomness — so a fleet of your instances doesn't retry in synchronized waves that hammer the recovering server. Tenacity is the standard library for this in Python: a decorator that encodes exactly these rules. And respect the Retry-After header when present — the server is literally telling you when to come back."
     },
     {
@@ -73,11 +121,23 @@
       "narration": "The full recipe in one decorator. Retries only the transient family — the gate is the important part, because retrying a 400 means hammering a server that is correctly rejecting you. Exponential growth respects recovering services; the random jitter is not decoration — if a thousand clients hit a failing endpoint and retry at exactly one, two, four seconds, the retry storm itself keeps the server down; jitter de-synchronizes the herd. Five attempts with a thirty-second cap means worst-case latency is bounded and knowable. Compose with PY-10: tenacity governs the retry rhythm, asyncio-dot-wait-for governs the absolute deadline — together they make 'how bad can it get' a number you can write down."
     },
     {
-      "type": "bigtext",
+      "type": "story",
       "chapter": 3,
       "kicker": "CHAPTER 4 · PAGINATION & STREAMING",
       "title": "Big results arrive in pieces — **or one token at a time**",
       "sub": "Pagination patterns + SSE streaming",
+      "h": 222,
+      "actors": [
+        { "id": "c", "k": "code", "x": 50, "y": 38.5, "w": 96, "h": 73.3, "t": "paging + streaming", "lines": ["page = get(\"/items\")", "while page[\"next\"]:", "    page = get(cursor=page[\"next\"])", "with client.stream(\"POST\", url) as r:", "    for chunk in r.iter_lines():", "        print(chunk)   # token by token"] },
+        { "id": "t", "k": "tag", "x": 50, "y": 88.3, "t": "first token: 20 s → 0.5 s", "e": "⚡", "tone": "good" }
+      ],
+      "steps": [
+        { "at": "Pagination: list endpoints", "do": [["show", "c"], ["ln", "c", 1], ["hl", "c", 0]] },
+        { "at": "cursor-based", "do": [["ln", "c", 3], ["hl", "c", 1, 2], ["out", "c", "opaque cursor → next page"]] },
+        { "at": "Loop until the cursor is empty", "do": [["out", "c", "cursor empty → done", "good"]] },
+        { "at": "Streaming: LLM responses", "do": [["ln", "c", 6], ["hl", "c", 3, 5], ["out", "c", "Hel|lo| wor|ld …"]] },
+        { "at": "time-to-first-token drops", "do": [["hl", "c", -1], ["show", "t"], ["pulse", "t"]] }
+      ],
       "narration": "Pagination: list endpoints return pages, not the whole collection — cursor-based, where the response hands you an opaque next-cursor that you feed into the next request, is the modern pattern, immune to shifting data; offset-based — skip the first N — is simpler but breaks when items are inserted mid-walk. Loop until the cursor is empty. Streaming: LLM responses arrive token-by-token via server-sent events — an HTTP response that never closes, emitting chunks. Why it matters: time-to-first-token drops from twenty seconds to half a second — the user starts reading while the model still thinks. Two consumption modes: iterate chunks for live UX, or accumulate to a full response for downstream processing."
     },
     {
