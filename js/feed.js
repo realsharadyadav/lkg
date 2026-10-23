@@ -41,7 +41,7 @@
       `<div class="cap-hint"><span class="arr">↑</span> swipe next · ← code · notes →</div>` +
       `</div>` +
       `<div class="rail">` +
-      `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">${SS.icon('heart')}</span><span class="lb">0</span></button>` +
+      `<button class="rail-btn rail-like" aria-label="Like"><span class="ic">${SS.icon('heart')}</span><span class="lb">like</span></button>` +
       (data.code ? `<button class="rail-btn rail-code" aria-label="Show code"><span class="ic">${SS.icon('code')}</span><span class="lb">code</span></button>` : '') +
       (data.notes ? `<button class="rail-btn rail-notes" aria-label="Show notes"><span class="ic">${SS.icon('doc')}</span><span class="lb">notes</span></button>` : '') +
       `<button class="rail-btn rail-share" aria-label="Share this reel"><span class="ic">${SS.icon('share')}</span><span class="lb">share</span></button>` +
