@@ -92,13 +92,13 @@
 
     _syncRail() {
       const likeBtn = this.root.querySelector('.rail-like');
-      const base = (this.data.num * 37) % 800 + 120;
-      this.likeBase = base;
-      likeBtn.querySelector('.lb').textContent = this._fmt(base + (SS.state.isLiked(this.data.id) ? 1 : 0));
-      likeBtn.classList.toggle('liked', SS.state.isLiked(this.data.id));
+      // No backend, so no public like count: the heart shows only this viewer's own like (on-device).
+      const liked = SS.state.isLiked(this.data.id);
+      likeBtn.querySelector('.lb').textContent = liked ? 'liked' : 'like';
+      likeBtn.classList.toggle('liked', liked);
+      likeBtn.setAttribute('aria-pressed', liked ? 'true' : 'false');
       this.root.querySelector('.rail-mute .ic').innerHTML = SS.icon(SS.narrator.muted ? 'mute' : 'sound');
     }
-    _fmt(n) { return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : '' + n; }
 
     /* ---------- lifecycle ---------- */
     start() {
