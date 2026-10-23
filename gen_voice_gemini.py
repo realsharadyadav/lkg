@@ -18,9 +18,10 @@ ap.add_argument("--reels", nargs="*", default=[], help="reel ids, e.g. PY-01")
 ap.add_argument("--all", action="store_true")
 ap.add_argument("--out", default="data/audio-gemini")
 ap.add_argument("--model", default=os.environ.get("GEMINI_TTS_MODEL", "gemini-3.1-flash-tts-preview"))
-ap.add_argument("--voice", default="Kore")
-ap.add_argument("--style", default="Say in a warm, clear, upbeat voice, like a friendly teacher explaining to a developer: ")
+ap.add_argument("--voice", default="Sadaltager")
+ap.add_argument("--style", default="You are a friendly young Indian developer recording a casual explainer for a friend. Natural, imperfect, conversational, with varied pace. Follow the bracketed directions as acting cues, do not read them aloud: ")
 ap.add_argument("--sleep", type=float, default=1.0, help="seconds between requests (free-tier rate limits)")
+ap.add_argument("--force", action="store_true", help="regenerate clips even if the mp3 exists")
 ap.add_argument("--dry", action="store_true", help="list clips and character count, call nothing")
 args = ap.parse_args()
 
@@ -44,7 +45,23 @@ def clips_for(reel):
         out.append((f"quiz{qi}_why", strip(q["why"])))
     return out
 
-FX = [("_fx/correct", "Correct!"), ("_fx/notquite", "Not quite.")]
+FX = [("_fx/correct", "[happy] Correct!"), ("_fx/notquite", "[gently] Not quite.")]
+
+def tagify(text, kind):
+    """add light acting cues (Gemini TTS reads these as direction, not words)"""
+    if kind == "hook":
+        return "[warmly] " + text
+    if kind == "recap":
+        return "[warmly] " + text.replace(". Also:", ". [short pause] Also:").replace(". Now", ". [short pause] [cheerfully] Now")
+    parts = re.split(r"(?<=[.!?]) +", text)
+    out = []
+    for i, p in enumerate(parts):
+        if p.endswith("!"):
+            p = "[excited] " + p
+        elif i and i % 3 == 0:
+            p = "[short pause] " + p
+        out.append(p)
+    return " ".join(out)
 
 def tts(text, key):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{args.model}:generateContent"
@@ -85,14 +102,14 @@ def main():
     todo = []
     for name, text in FX:
         p = os.path.join(args.out, name + ".mp3")
-        if not os.path.exists(p):
+        if args.force or not os.path.exists(p):
             todo.append((p, text))
     for meta in metas:
         d = json.load(open(meta["file"].replace("./", "")))
         for fname, text in clips_for(d):
             p = os.path.join(args.out, d["id"], fname + ".mp3")
-            if not os.path.exists(p):
-                todo.append((p, text))
+            if args.force or not os.path.exists(p):
+                todo.append((p, tagify(text, fname.split("_")[0] if fname in ("hook", "recap") else "x")))
     chars = sum(len(t) for _, t in todo)
     print(f"{len(todo)} clips, {chars} chars -> {args.out} (model {args.model}, voice {args.voice})", flush=True)
     if args.dry or not todo:
