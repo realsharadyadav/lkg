@@ -962,3 +962,13 @@ html.reduce-motion .list-item .dot,html.reduce-motion .cmp-card .em,html.reduce-
 
 /* theme switch: ease colours over ~.4s (Apple: avoid abrupt brightness jumps); gesture/spring transforms are untouched */
 .theme-fade,.theme-fade *,.theme-fade *::before,.theme-fade *::after{transition:background-color .4s ease,color .4s ease,border-color .4s ease,box-shadow .4s ease,fill .4s ease,stroke .4s ease!important}
+
+/* scroll edges: content fades under floating chrome instead of meeting a hard 1px divider */
+.sheet-head,.sheet.left .sheet-head,.sheet.right .sheet-head{border-bottom:0}
+.sheet-scroll{-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 16px,#000 calc(100% - 16px),transparent 100%)}
+
+/* materialize: bottom sheets arrive as a material (blur + scale + opacity together), not a plain slide */
+.sheet.bottom{transform:translateY(106%) scale(.96);transform-origin:50% 100%;opacity:0;filter:blur(10px);
+  transition:transform .5s var(--spring),opacity .3s ease,filter .45s var(--spring)}
+.sheet.bottom.open{transform:none;opacity:1;filter:none}
+@media (prefers-reduced-motion:reduce){.sheet.bottom{filter:none;transform:translateY(106%)}.sheet.bottom.open{transform:none}}

@@ -96,6 +96,7 @@
     if (openName && SIDE[openName] && openName !== name) { cancelSpring(); setSide(openName, 0, 0); sheets[openName].style.visibility = ''; }
     Object.values(sheets).forEach(s => s.classList.remove('open'));
     sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
+    if (!SIDE[name]) SS.haptic(6);
     if (SIDE[name]) {
       // opened by a button: content glides in a beat after the page
       sheets[name].classList.remove('glide'); void sheets[name].offsetWidth; sheets[name].classList.add('glide');
@@ -160,7 +161,7 @@
           Object.values(sheets).forEach(s => s.classList.remove('open'));
           sheets[n].classList.add('open'); scrim.classList.add('on'); openName = n;
           settleSide(n, true, v);   // narration keeps playing while reading code / notes
-          try { navigator.vibrate && navigator.vibrate(8); } catch (e) {}
+          SS.haptic(8);
         } else settleSide(n, false, v);
       }
     });

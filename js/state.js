@@ -28,6 +28,8 @@
 
   let resumeUsed = false;
   window.SS = window.SS || {};
+  // haptics: fire on the same frame as the visual change; only for meaningful moments (like, commit, result)
+  SS.haptic = p => { try { if (!data.prefs.reduceMotion && navigator.vibrate) navigator.vibrate(p); } catch (e) {} };
   SS.state = {
     get prefs() { return data.prefs; },
     save,

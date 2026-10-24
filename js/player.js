@@ -309,6 +309,7 @@
         const i = +btn.dataset.i, right = i === q.a;
         if (right) this.score++;
         btn.classList.add(right ? 'right' : 'wrong');
+        SS.haptic(right ? 12 : [30, 40, 30]);
         card.querySelectorAll('.quiz-opt').forEach((b, j) => { if (j !== i) b.classList.add(j === q.a ? 'right' : 'dim'); b.disabled = true; });
         card.querySelector('.quiz-why').classList.add('show');
         const next = card.querySelector('.quiz-next');
@@ -344,6 +345,7 @@
       const perfect = this.score === n;
       const xp = this.score * 10 + (first ? 20 : 0) + (perfect ? 10 : 0);
       SS.state.addXp(xp);
+      SS.haptic(perfect ? [10, 60, 10] : 12);
       const pop = h('div', 'done-pop',
         `<div class="ck">${perfect ? '🏆' : this.score >= n - 1 ? '✅' : '💪'}</div>` +
         `<b>Reel complete — ${this.score}/${n}</b>` +
@@ -434,6 +436,7 @@
     like(x, y) {
       const on = SS.state.toggleLike(this.data.id);
       this._syncRail();
+      if (on) SS.haptic(10);
       if (on && x != null) SS.fx.heart(x, y);
     }
 
