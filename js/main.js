@@ -44,10 +44,10 @@
   const SIDE = { code: 1, notes: -1 };          // +1 = lives to the right, -1 = to the left
   const feedsEl = $('#feeds'), topEl = $('#topbar');
   const appW = () => $('#app').clientWidth || innerWidth;
-  let settleTimer = 0;
+  let settleTimer = 0, curP = 0, springRAF = 0;
   const EASE = 'cubic-bezier(.22,1,.36,1)';
   function setSide(name, p, dur) {             // p: 0 = closed … 1 = open; dur in s (0 = follow the finger)
-    p = Math.max(0, Math.min(1, p));
+    p = Math.max(-0.08, Math.min(1.08, p)); curP = p;     // a little past either end = spring overshoot / rubber-band
     const dir = SIDE[name], el = sheets[name];
     const tr = dur ? `transform ${dur}s ${EASE}, opacity ${dur}s ${EASE}, border-radius ${dur}s ${EASE}` : 'none';
     el.style.transition = feedsEl.style.transition = topEl.style.transition = scrim.style.transition = tr;
@@ -55,25 +55,45 @@
     // the reel recedes: slides aside, shrinks a touch and rounds its corners (depth, like iOS)
     const back = p ? `translateX(${-dir * p * 30}%) scale(${1 - p * 0.06})` : '';
     feedsEl.style.transform = topEl.style.transform = back;
-    feedsEl.style.borderRadius = p ? (p * 28) + 'px' : '';
-    scrim.style.opacity = String(p * 0.3);
+    feedsEl.style.borderRadius = p ? Math.max(0, p * 28) + 'px' : '';
+    scrim.style.opacity = String(Math.max(0, p) * 0.3);
     el.style.visibility = 'visible';
   }
-  // flick speed (px/ms) shortens the settle: a fast swipe lands fast, a slow drag eases in
   // momentum projection (Apple's decay form): where a flick would come to rest, as a fraction of the width
   const projectP = v => (v * 0.99 / (1 - 0.99)) / appW();
-  const durFor = v => Math.max(0.26, Math.min(0.5, 0.5 - Math.abs(v || 0) * 0.12));
+  // rubber band: the further past the edge, the less the page follows
+  const rubber = (over, dim, c = 0.55) => (over * dim * c) / (dim + c * Math.abs(over));
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('reduce-motion');
+  function cancelSpring() { cancelAnimationFrame(springRAF); springRAF = 0; clearTimeout(settleTimer); }
+  /* Spring settle (damping ratio + response, like Apple's). It starts from the CURRENT on-screen value with the
+     finger's release velocity, so there is no seam between drag and animation, and a new touch can grab it mid-flight. */
   function settleSide(name, open, v) {
-    clearTimeout(settleTimer);
-    setSide(name, open ? 1 : 0, durFor(v));
-    if (!open) settleTimer = setTimeout(() => {     // fully closed: drop the transforms
-      feedsEl.style.transform = topEl.style.transform = feedsEl.style.borderRadius = ''; scrim.style.opacity = '';
-      sheets[name].style.visibility = '';
-    }, 520);
+    cancelSpring();
+    const target = open ? 1 : 0;
+    const finish = () => {
+      setSide(name, target, 0);
+      if (!open) { feedsEl.style.transform = topEl.style.transform = feedsEl.style.borderRadius = ''; scrim.style.opacity = ''; sheets[name].style.visibility = ''; }
+    };
+    if (reduced()) return finish();
+    setSide(name, curP, 0);                                            // paint the start state this frame (no flash)
+    let x = curP, vel = -SIDE[name] * (v || 0) * 1000 / appW();       // fraction/s toward open
+    // critically damped by default; a little bounce only when the gesture itself carried momentum
+    const zeta = Math.abs(v || 0) > 0.5 ? 0.82 : 1, w = 2 * Math.PI / 0.4, k = w * w, c = 2 * zeta * w;
+    let last = performance.now();
+    const step = now => {
+      let dt = Math.min(0.032, (now - last) / 1000); last = now;
+      for (; dt > 0; dt -= 1 / 240) {                                  // fixed sub-steps keep it stable
+        const h = Math.min(dt, 1 / 240);
+        vel += (-k * (x - target) - c * vel) * h; x += vel * h;
+      }
+      if (Math.abs(x - target) < 0.0015 && Math.abs(vel) < 0.02) return finish();
+      setSide(name, x, 0); springRAF = requestAnimationFrame(step);
+    };
+    springRAF = requestAnimationFrame(step);
   }
   function openSheet(name) {
     fireClose();
-    if (openName && SIDE[openName] && openName !== name) settleSide(openName, false);
+    if (openName && SIDE[openName] && openName !== name) { cancelSpring(); setSide(openName, 0, 0); sheets[openName].style.visibility = ''; }
     Object.values(sheets).forEach(s => s.classList.remove('open'));
     sheets[name].classList.add('open'); scrim.classList.add('on'); openName = name;
     if (SIDE[name]) {
@@ -129,7 +149,7 @@
         const n = dx < 0 ? 'code' : 'notes';
         if (!player.data[n]) return null;
         if (n === 'code') SS.ui.fillCode(player.data); else SS.ui.fillNotes(player.data);
-        clearTimeout(settleTimer);
+        cancelSpring();
         sheets[n].classList.remove('glide');
         return n;
       },
@@ -150,8 +170,11 @@
     const dir = SIDE[name];
     hswipe(sheets[name], {
       canStart: t => openName === name && !t.closest('pre, table, select, input'),
-      decide: dx => dx * dir > 0 ? name : null,
-      move: (n, dx) => setSide(n, 1 - Math.max(0, dx * dir) / appW(), 0),
+      decide: () => { cancelSpring(); return name; },
+      move: (n, dx) => {
+        const r = dx * dir;                                        // >0 closing, <0 pulling past fully open
+        setSide(n, r >= 0 ? 1 - r / appW() : 1 + rubber(-r, appW()) / appW(), 0);
+      },
       end: (n, dx, v) => { if ((dx * dir) / appW() > 0.25 || v * dir > 0.3 || 1 - ((dx * dir) / appW() + projectP(v * dir)) < 0.5) closeSheets(v); else settleSide(n, true, v); }
     });
   });

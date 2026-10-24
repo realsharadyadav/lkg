@@ -77,7 +77,9 @@ const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++
   await touch('touchEnd'); await p.waitForTimeout(80);   // quick short flick
   ok(await p.evaluate(() => document.querySelector('#codePanel').classList.contains('open')), 'quick flick opens code');
   await p.click('#codePanel .close-sheet'); await p.waitForTimeout(600);
-  await swipe(300, 250); await p.waitForTimeout(600);   // too short: snaps back
+  await p.mouse.move(300, 420); await p.mouse.down();   // a slow, short drag (not a flick): snaps back
+  for (let k = 1; k <= 5; k++) { await p.mouse.move(300 - 10 * k, 420); await p.waitForTimeout(40); }
+  await p.waitForTimeout(150); await p.mouse.up(); await p.waitForTimeout(600);
   ok(await p.evaluate(() => !document.querySelector('#codePanel').classList.contains('open') && !SS.feed.activePlayer().paused), 'short drag snaps back closed');
   const i0 = await p.evaluate(() => SS.feed.activePlayer().sceneIdx);
   await p.mouse.click(370, 300); await p.waitForTimeout(300);
