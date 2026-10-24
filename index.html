@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#e8f5e9">
+<meta name="theme-color" content="#f7f6f2">
+<meta name="color-scheme" content="light dark">
+<script>(function(){try{var t=(JSON.parse(localStorage.getItem("lkg_v1")||"{}").prefs||{}).theme||"auto";var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=d?"dark":"light";}catch(e){}})();</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Free course for .NET / C# developers to become GenAI architects: Python, LLMs, RAG, embeddings, AI agents and MCP in 80 short animated reels with voiceover, notes and quizzes.">
@@ -22,7 +24,7 @@
 <link rel="icon" href="icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>LKG School — Learn Python, GenAI &amp; AI Agents in Short Reels (Free)</title>
-<link rel="stylesheet" href="css/app.css?v=49">
+<link rel="stylesheet" href="css/app.css?v=50">
 </head>
 <body>
 <div id="app">
@@ -111,6 +113,10 @@
 
       <div class="set-gh">Display</div>
       <div class="set-group">
+        <div class="set-item stack">
+          <div class="si-row"><span class="si-ic" style="--c:#6e6e73"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span><span class="si-t">Appearance</span></div>
+          <div class="seg-pick" id="themePick" role="group" aria-label="Appearance"><button data-v="auto">System</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
+        </div>
         <div class="set-item"><span class="si-ic" style="--c:#5e5ce6"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V5h11v2M9.5 5v14M7.5 19h4M14 12.5V11h7v1.5M17.5 11v8M16 19h3"/></svg></span><span class="si-t">Caption size</span>
           <div class="seg-pick sm" id="sizePick" role="group" aria-label="Caption size"><button data-v="s">S</button><button data-v="m">M</button><button data-v="l">L</button></div>
         </div>
@@ -143,7 +149,7 @@
         <button id="resetBtn" class="set-item danger-item"><span class="si-ic" style="--c:#ff3b30"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12M9 7V4.5h6V7"/></svg></span><span class="si-t">Reset all progress</span></button>
       </div>
 
-      <p class="set-hint">Progress, likes &amp; streak live on this device only.<br>build 49 · 80 reels · 10 stages<br>made by <b>Shyshifter</b></p>
+      <p class="set-hint">Progress, likes &amp; streak live on this device only.<br>build 50 · 80 reels · 10 stages<br>made by <b>Shyshifter</b></p>
     </div>
   </section>
 
@@ -152,15 +158,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>
-<script src="js/icons.js?v=49"></script>
-<script src="js/state.js?v=49"></script>
-<script src="js/motion.js?v=49"></script>
-<script src="js/audio.js?v=49"></script>
-<script src="js/narrator.js?v=49"></script>
-<script src="js/scenes.js?v=49"></script>
-<script src="js/data.js?v=49"></script>
-<script src="js/player.js?v=49"></script>
-<script src="js/feed.js?v=49"></script>
-<script src="js/main.js?v=49"></script>
+<script src="js/icons.js?v=50"></script>
+<script src="js/state.js?v=50"></script>
+<script src="js/motion.js?v=50"></script>
+<script src="js/audio.js?v=50"></script>
+<script src="js/narrator.js?v=50"></script>
+<script src="js/scenes.js?v=50"></script>
+<script src="js/data.js?v=50"></script>
+<script src="js/player.js?v=50"></script>
+<script src="js/feed.js?v=50"></script>
+<script src="js/main.js?v=50"></script>
 </body>
 </html>

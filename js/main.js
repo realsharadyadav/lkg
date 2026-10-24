@@ -376,6 +376,7 @@
     };
     pick('#speedPick', SS.state.prefs.speed || 1, v => SS.audio.setSpeed(+v));
     pick('#sizePick', SS.state.prefs.textSize || 'm', v => { SS.state.prefs.textSize = v; SS.state.save(); applyLook(); });
+    pick('#themePick', SS.state.prefs.theme || 'auto', v => { SS.state.prefs.theme = v; SS.state.save(); applyTheme(); });
     const auto = $('#autoSel'); auto.checked = SS.state.prefs.autonext !== false;
     auto.addEventListener('change', () => { SS.state.prefs.autonext = auto.checked; SS.state.save(); });
     const mo = $('#motionSel'); mo.checked = !!SS.state.prefs.reduceMotion;
@@ -416,8 +417,17 @@
   ['pointerup', 'touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, unlock, { passive: true }));
   window.addEventListener('contextmenu', e => { if (!e.target.closest('.sheet')) e.preventDefault(); });
 
+  /* theme: 'auto' follows the phone, or force light ("moon white") / dark ("metal black") */
+  const darkMQ = matchMedia('(prefers-color-scheme: dark)');
+  function applyTheme() {
+    const t = SS.state.prefs.theme || 'auto', dark = t === 'dark' || (t === 'auto' && darkMQ.matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0b0c0e' : '#f7f6f2';
+  }
+  darkMQ.addEventListener('change', applyTheme);
   function applyLook() {
     const p = SS.state.prefs, root = document.documentElement;
+    applyTheme();
     root.classList.remove('ts-s', 'ts-l');
     if (p.textSize === 's' || p.textSize === 'l') root.classList.add('ts-' + p.textSize);
     root.classList.toggle('reduce-motion', !!p.reduceMotion);

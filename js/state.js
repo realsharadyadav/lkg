@@ -4,7 +4,7 @@
   const blank = () => ({
     completed: {}, likes: {}, xp: 0,
     streak: { last: null, count: 0 },
-    prefs: { muted: false, rate: 1.05, voiceURI: null, expr: 0.6, speed: 1, textSize: 'm', autonext: true, reduceMotion: false },
+    prefs: { muted: false, rate: 1.05, voiceURI: null, expr: 0.6, speed: 1, textSize: 'm', autonext: true, reduceMotion: false, theme: 'auto' },
     last: { reel: null, at: null }
   });
 

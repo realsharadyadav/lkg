@@ -261,7 +261,7 @@
           requestAnimationFrame(() => requestAnimationFrame(() => { line.style.transform = `rotate(${Math.atan2(dy, dx)}rad) scaleX(1)`; }));
           if (pr.tag) {
             const tag = h('div', 'vtag', pr.tag);
-            tag.style.cssText += `left:${(ax + bx) / 2}px;top:${(ay + by) / 2 - 16}px;color:${pr.color || '#4ade80'};background:rgba(255,255,255,.93);border:1px solid ${pr.color || '#4ade80'};box-shadow:0 2px 10px rgba(53,88,52,.2)`;
+            tag.style.cssText += `left:${(ax + bx) / 2}px;top:${(ay + by) / 2 - 16}px;color:${pr.color || '#4ade80'};background:rgba(var(--paper),.93);border:1px solid ${pr.color || '#4ade80'};box-shadow:0 2px 10px rgba(var(--ink),.2)`;
             plane.appendChild(tag);
             anims.push(tag.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 380, delay: 620, fill: 'forwards', easing: 'cubic-bezier(.2,1.5,.4,1)' }));
           }
