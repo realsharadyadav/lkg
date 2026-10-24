@@ -905,3 +905,39 @@ b.si-v{color:var(--genai-deep);font-weight:800}
 @media (prefers-reduced-motion:reduce){.scene-inner.mm{transform:none}.list-item .dot,.cmp-card .em,.vs{animation:none}}
 html.reduce-motion .scene-inner.mm{transform:none}
 html.reduce-motion .list-item .dot,html.reduce-motion .cmp-card .em,html.reduce-motion .vs{animation:none}
+
+/* ============ Apple pass — springs, press feedback, materials, type (from the apple-design skill) ============ */
+:root{
+  --spring:cubic-bezier(.22,1,.36,1);            /* critically damped: fast in, no overshoot */
+  --spring-flick:cubic-bezier(.2,1.25,.4,1);     /* a touch of bounce, only for momentum / pop moments */
+}
+/* response: feedback lands on touch-down, instantly; release springs back */
+.iconbtn,.rail-btn .ic,.tab,.chap-dot,.quiz-opt,.quiz-next,.set-row,.nextup,.sd-card,.bigplay{transition:transform .38s var(--spring),background .2s,border-color .2s,box-shadow .3s}
+.iconbtn:active,.rail-btn:active .ic,.chap-dot:active,.nextup:active,.bigplay:active{transform:scale(.92);transition-duration:.08s}
+.tab:active{transform:scale(.94);transition-duration:.08s}
+.quiz-opt:active:not(:disabled),.quiz-next:active,.set-row:active{transform:scale(.97);transition-duration:.08s}
+
+/* sheets: spring settle + thicker material for bigger surfaces */
+.sheet{transition-timing-function:var(--spring);transition-duration:.5s;
+  -webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);
+  border-top-color:rgba(255,255,255,.7)}                     /* bright top edge = light catching the material */
+.sheet.bottom{box-shadow:0 -24px 70px -10px rgba(28,43,30,.3),inset 0 1px 0 rgba(255,255,255,.8)}
+.toast,#toast{-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%);background:rgba(255,255,255,.78);transition-timing-function:var(--spring)}
+
+/* type: tighter tracking as text grows, looser leading on body */
+.hook-text,.big-h{letter-spacing:-.035em;line-height:1.1;font-optical-sizing:auto}
+.big-h.sm,.cap-title,.sheet-title,.teaser h3{letter-spacing:-.022em}
+.sd-card h2{letter-spacing:-.03em;line-height:1.1}
+.cap-text,.notes-body,.about-body{letter-spacing:-.005em}
+.cap-text{line-height:1.55}
+
+/* accessibility: gentler, not absent */
+@media (prefers-reduced-motion:reduce){
+  .sheet{transition-property:opacity,visibility}
+}
+@media (prefers-reduced-transparency:reduce){
+  .sheet,#toast,.nextup,.iconbtn,.rail-btn .ic,.top-right,.bigplay,.chap-dot{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:#fff!important}
+}
+@media (prefers-contrast:more){
+  .sheet,#toast,.nextup,.iconbtn,.rail-btn .ic,.top-right,.bigplay{background:#fff!important;border:1px solid var(--text)!important}
+}

@@ -60,6 +60,8 @@
     el.style.visibility = 'visible';
   }
   // flick speed (px/ms) shortens the settle: a fast swipe lands fast, a slow drag eases in
+  // momentum projection (Apple's decay form): where a flick would come to rest, as a fraction of the width
+  const projectP = v => (v * 0.99 / (1 - 0.99)) / appW();
   const durFor = v => Math.max(0.26, Math.min(0.5, 0.5 - Math.abs(v || 0) * 0.12));
   function settleSide(name, open, v) {
     clearTimeout(settleTimer);
@@ -134,7 +136,7 @@
       move: (n, dx) => setSide(n, Math.max(0, dx * dirOf(n)) / appW(), 0),
       end: (n, dx, v) => {
         const p = Math.max(0, dx * dirOf(n)) / appW(), flick = v * dirOf(n);
-        if (p > 0.25 || flick > 0.3) {   // forgiving: a quarter of the way, or a light flick
+        if (p > 0.25 || flick > 0.3 || p + projectP(flick) > 0.5) {   // forgiving: a quarter of the way, a light flick, or a throw that would land past halfway
           Object.values(sheets).forEach(s => s.classList.remove('open'));
           sheets[n].classList.add('open'); scrim.classList.add('on'); openName = n;
           settleSide(n, true, v);   // narration keeps playing while reading code / notes
@@ -150,7 +152,7 @@
       canStart: t => openName === name && !t.closest('pre, table, select, input'),
       decide: dx => dx * dir > 0 ? name : null,
       move: (n, dx) => setSide(n, 1 - Math.max(0, dx * dir) / appW(), 0),
-      end: (n, dx, v) => { if ((dx * dir) / appW() > 0.25 || v * dir > 0.3) closeSheets(v); else settleSide(n, true, v); }
+      end: (n, dx, v) => { if ((dx * dir) / appW() > 0.25 || v * dir > 0.3 || 1 - ((dx * dir) / appW() + projectP(v * dir)) < 0.5) closeSheets(v); else settleSide(n, true, v); }
     });
   });
   // one-time hint about the side swipes
@@ -159,6 +161,8 @@
       setTimeout(() => { toast('← swipe for code · swipe → for notes'); localStorage.setItem('lkg_swipe_hint', '1'); }, 9000);
     }
   } catch (e) {}
+  // iOS Safari only applies :active (press feedback on touch-down) when some touchstart listener exists
+  document.addEventListener('touchstart', () => {}, { passive: true });
   document.querySelectorAll('.close-sheet').forEach(b => b.addEventListener('click', closeSheets));
 
   /* ---------------- python highlighting ---------------- */
