@@ -959,3 +959,6 @@ html.reduce-motion .list-item .dot,html.reduce-motion .cmp-card .em,html.reduce-
 @media (prefers-contrast:more){
   .sheet,#toast,.nextup,.iconbtn,.rail-btn .ic,.top-right,.bigplay{background:var(--panel)!important;border:1px solid var(--text)!important}
 }
+
+/* theme switch: ease colours over ~.4s (Apple: avoid abrupt brightness jumps); gesture/spring transforms are untouched */
+.theme-fade,.theme-fade *,.theme-fade *::before,.theme-fade *::after{transition:background-color .4s ease,color .4s ease,border-color .4s ease,box-shadow .4s ease,fill .4s ease,stroke .4s ease!important}

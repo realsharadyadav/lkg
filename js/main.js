@@ -421,7 +421,11 @@
   const darkMQ = matchMedia('(prefers-color-scheme: dark)');
   function applyTheme() {
     const t = SS.state.prefs.theme || 'auto', dark = t === 'dark' || (t === 'auto' && darkMQ.matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    const root = document.documentElement, next = dark ? 'dark' : 'light';
+    if (root.dataset.theme && root.dataset.theme !== next && !reduced()) {      // ease the brightness change, don't jump
+      root.classList.add('theme-fade'); clearTimeout(applyTheme.t); applyTheme.t = setTimeout(() => root.classList.remove('theme-fade'), 450);
+    }
+    root.dataset.theme = next;
     const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0b0c0e' : '#f7f6f2';
   }
   darkMQ.addEventListener('change', applyTheme);
